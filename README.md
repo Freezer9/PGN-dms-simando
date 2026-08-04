@@ -94,24 +94,6 @@ Frontend/                   Blazor Server UI — pure HTTP client of the Api
 
 Auth model: the Frontend keeps a cookie-authenticated Blazor circuit, but the cookie's claims (identity + role + the API's JWT) come from calling the Api's login endpoint rather than a local Identity store. Every Frontend→Api call rides on that forwarded bearer token, so authorization is enforced by the Api regardless of what the Frontend UI shows or hides.
 
-## CSS
-
-Two CSS bundles:
-
-| File | Source |
-|---|---|
-| `_content/BlazorBlueprint.Components/blazorblueprint.css` | Component styles (from NuGet package) |
-| `wwwroot/css/app.generated.css` | Tailwind utilities for app markup |
-| `wwwroot/app.css` | Custom component CSS (cards, tables, badges, timeline, etc.) |
-
-To regenerate Tailwind CSS after adding new utility classes:
-
-```bash
-cd Frontend
-npm install  # one-time
-npx tailwindcss -i ./Styles/app.tailwind.css -o ./wwwroot/css/app.generated.css --minify
-```
-
 ## Tech Stack
 
 - .NET 10 / Blazor Web App (InteractiveServer)
@@ -122,18 +104,32 @@ npx tailwindcss -i ./Styles/app.tailwind.css -o ./wwwroot/css/app.generated.css 
 
 ## Deployment (Docker)
 
-Three containers behind Caddy, which handles automatic HTTPS from just a domain name:
+Production domain: **simando.legain.id**. This stack does *not* run its own reverse proxy — `api` and `frontend` join a pre-existing external Docker network (`caddy`) that an already-running, separately-managed Caddy instance is also attached to. Neither container publishes a host port; they're reachable only by container name (`api:8080`, `frontend:8080`) to whatever else is on that `caddy` network.
 
 ```bash
+# one-time, only if the network doesn't already exist:
+docker network create caddy
+
 cp .env.example .env
-# edit .env: set DOMAIN to your real domain (must already point at this server),
-# and JWT_KEY to a real secret, e.g. `openssl rand -base64 48`
+# edit .env: set JWT_KEY to a real secret, e.g. `openssl rand -base64 48`
 
 docker compose up -d --build
 ```
 
-- **`caddy`** — public entrypoint on 80/443, gets a Let's Encrypt cert for `DOMAIN`, routes `/api/*` to the `api` container and everything else to `frontend`.
-- **`api`** — the Api container. Its SQLite database (`Data/app.db`) and uploaded documents (`wwwroot/uploads`) live in named Docker volumes (`api_data`, `api_uploads`) so they survive `docker compose down`/rebuilds.
-- **`frontend`** — the Frontend container. Talks to `api` directly over the internal Docker network (`http://api:8080`), not through Caddy.
+- **`api`** — SQLite database (`Data/app.db`) and uploaded documents (`wwwroot/uploads`) live in named Docker volumes (`api_data`, `api_uploads`) so they survive `docker compose down`/rebuilds.
+- **`frontend`** — talks to `api` directly over the internal `caddy` network (`http://api:8080`), not through the external reverse proxy.
+
+Add this site block to the **external** Caddy's own Caddyfile (not part of this repo) so it can route to these containers by name:
+
+```
+simando.legain.id {
+    handle /api/* {
+        reverse_proxy api:8080
+    }
+    handle {
+        reverse_proxy frontend:8080
+    }
+}
+```
 
 Rebuild after a code change: `docker compose up -d --build`. Tear down (keeps volumes): `docker compose down`. Wipe the database too: `docker compose down -v`.

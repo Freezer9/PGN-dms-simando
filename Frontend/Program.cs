@@ -1,5 +1,6 @@
 using BlazorBlueprint.Components;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.HttpOverrides;
 using Pgn.Dms.Web.Components;
 using Pgn.Dms.Web.Components.Account;
 using Pgn.Dms.Web.Data;
@@ -60,7 +61,16 @@ builder.Services.AddHttpClient<IUserService, UserService>(c => c.BaseAddress = n
 
 builder.Services.AddScoped<CommandPaletteService>();
 
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
 var app = builder.Build();
+
+app.UseForwardedHeaders();
 
 if (!app.Environment.IsDevelopment())
 {
