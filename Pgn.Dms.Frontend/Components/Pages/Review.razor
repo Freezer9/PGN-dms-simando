@@ -1,0 +1,68 @@
+@page "/review"
+@attribute [Authorize(Policy = SimandoPolicies.CanReview)]
+@rendermode InteractiveServer
+@inject IWorkflowService Workflow
+
+<PageTitle>Review - SIMANDO</PageTitle>
+
+<AppShell>
+<div class="space-y-4 page-content">
+    <div class="page-header">
+        <div>
+            <h1>Antrian Review</h1>
+            <p>@pending.Count berlangganan menunggu review.</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-content" style="padding: 0">
+            @if (pending.Count == 0)
+            {
+                <div class="empty-state">
+                    <div class="empty-state-title">Tidak ada antrian</div>
+                    <div class="empty-state-desc">Semua review sudah selesai.</div>
+                </div>
+            }
+            else
+            {
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Perusahaan</th>
+                            <th>Area</th>
+                            <th>Sales</th>
+                            <th>Update</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var sub in pending)
+                        {
+                            <tr>
+                                <td>
+                                    <a href="/subscriptions/@sub.Id" class="font-medium">@sub.CompanyName</a>
+                                </td>
+                                <td class="text-sm">@sub.AreaName</td>
+                                <td class="text-sm text-muted-foreground">@sub.CreatedByName</td>
+                                <td class="text-sm text-muted-foreground">@sub.UpdatedAt.ToString("d MMM yyyy")</td>
+                                <td>
+                                    <a href="/subscriptions/@sub.Id" class="btn btn-sm btn-outline">Review</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+</div>
+</AppShell>
+
+@code {
+    private List<SubscriptionDto> pending = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        pending = await Workflow.GetPendingReviewAsync();
+    }
+}

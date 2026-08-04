@@ -1,0 +1,20 @@
+@{
+    var (label, css) = Status switch
+    {
+        SubscriptionStatus.Directory => ("Directory", "badge-directory"),
+        SubscriptionStatus.Plotting => ("Plotting", "badge-plotting"),
+        SubscriptionStatus.Prospect => ("Prospect", "badge-prospect"),
+        SubscriptionStatus.Survey => ("Survey", "badge-survey"),
+        SubscriptionStatus.A1 => ("A1", "badge-a1"),
+        SubscriptionStatus.PermohonanNOL => ("Permohonan NOL", "badge-permohonan"),
+        SubscriptionStatus.Disetujui => ("Disetujui", "badge-approved"),
+        SubscriptionStatus.Ditolak => ("Ditolak", "badge-rejected"),
+        _ => (Status.ToString(), "badge-pending")
+    };
+}
+
+<span class="badge @css">@label</span>
+
+@code {
+    [Parameter] public SubscriptionStatus Status { get; set; }
+}

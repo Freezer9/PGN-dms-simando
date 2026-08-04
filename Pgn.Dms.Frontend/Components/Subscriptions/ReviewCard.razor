@@ -1,0 +1,54 @@
+@inject IWorkflowService Workflow
+@inject ToastService Toasts
+
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">Review - Langkah @CurrentStep.StepOrder</div>
+    </div>
+    <div class="card-content space-y-4">
+        <div class="form-group">
+            <label class="form-label">Komentar</label>
+            <textarea class="form-control" @bind="comment" rows="3" placeholder="Tulis komentar..."></textarea>
+        </div>
+
+        <div class="review-actions">
+            <BbButton Size="ButtonSize.Small" OnClick="@(() => SubmitReview(ReviewAction.Setuju))" Disabled="@submitting">
+                <LucideIcon Name="check" Class="h-4 w-4" />
+                Setuju
+            </BbButton>
+            <BbButton Variant="ButtonVariant.Outline" Size="ButtonSize.Small" OnClick="@(() => SubmitReview(ReviewAction.Revisi))" Disabled="@submitting">
+                <LucideIcon Name="undo-2" Class="h-4 w-4" />
+                Revisi
+            </BbButton>
+            <BbButton Variant="ButtonVariant.Destructive" Size="ButtonSize.Small" OnClick="@(() => SubmitReview(ReviewAction.Tolak))" Disabled="@submitting">
+                <LucideIcon Name="x" Class="h-4 w-4" />
+                Tolak
+            </BbButton>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public SubscriptionDto Subscription { get; set; } = default!;
+    [Parameter] public ReviewStepDto CurrentStep { get; set; } = default!;
+    [Parameter] public EventCallback OnReviewed { get; set; }
+
+    private string comment = "";
+    private bool submitting;
+
+    private async Task SubmitReview(ReviewAction action)
+    {
+        submitting = true;
+        try
+        {
+            await Workflow.SubmitReviewAsync(Subscription.Id, action, comment);
+            Toasts.Success($"Review {action} berhasil.");
+            comment = "";
+            await OnReviewed.InvokeAsync();
+        }
+        finally
+        {
+            submitting = false;
+        }
+    }
+}

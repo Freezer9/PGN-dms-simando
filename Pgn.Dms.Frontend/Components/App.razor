@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="/" />
+    <ResourcePreloader />
+    <link rel="stylesheet" href="_content/BlazorBlueprint.Components/css/themes.css" />
+    <link rel="stylesheet" href="_content/BlazorBlueprint.Components/blazorblueprint.css" />
+    <link rel="stylesheet" href="css/app.generated.css" />
+    <link rel="stylesheet" href="app.css" />
+    <ImportMap />
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <HeadOutlet />
+</head>
+
+<body class="bg-background text-foreground">
+    <Routes />
+    <ReconnectModal />
+    <script src="_framework/blazor.web.js"></script>
+    <script>
+        window.registerKeyboardShortcut = function (dotNetRef) {
+            document.addEventListener('keydown', function (e) {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                    e.preventDefault();
+                    dotNetRef.invokeMethodAsync('OpenFromJs');
+                }
+            });
+        };
+    </script>
+</body>
+
+</html>

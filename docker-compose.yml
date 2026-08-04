@@ -1,0 +1,49 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Pgn.Dms.Api/Dockerfile
+    expose:
+      - "8080"
+    environment:
+      - Jwt__Key=${JWT_KEY}
+      - Jwt__Issuer=${JWT_ISSUER:-simando}
+      - Jwt__Audience=${JWT_AUDIENCE:-simando}
+    volumes:
+      - api_data:/app/Data
+      - api_uploads:/app/wwwroot/uploads
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Pgn.Dms.Frontend/Dockerfile
+    expose:
+      - "8080"
+    environment:
+      - Api__BaseUrl=http://api:8080
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - DOMAIN=${DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+      - frontend
+    restart: unless-stopped
+
+volumes:
+  api_data:
+  api_uploads:
+  caddy_data:
+  caddy_config:

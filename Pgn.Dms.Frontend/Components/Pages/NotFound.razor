@@ -1,0 +1,15 @@
+@page "/not-found"
+@layout MainLayout
+@rendermode InteractiveServer
+
+<PageTitle>Tidak ditemukan - SIMANDO</PageTitle>
+
+<AppShell>
+    <BbEmpty Title="Halaman tidak ditemukan"
+             Description="Halaman yang diminta tidak ada atau Anda tidak memiliki akses.">
+        <Icon><LucideIcon Name="file-question" /></Icon>
+        <ChildContent>
+            <BbButton Href="/" Variant="ButtonVariant.Outline">Kembali ke Dashboard</BbButton>
+        </ChildContent>
+    </BbEmpty>
+</AppShell>

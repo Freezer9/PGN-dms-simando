@@ -1,0 +1,215 @@
+@page "/"
+@attribute [Authorize(Policy = SimandoPolicies.CanViewDashboard)]
+@rendermode InteractiveServer
+@inject ISubscriptionService Subscriptions
+@inject IActivityService Activity
+
+<PageTitle>Dashboard - SIMANDO</PageTitle>
+
+<AppShell>
+<div class="space-y-6 page-content">
+    <div class="page-header">
+        <div>
+            <h1>Dashboard</h1>
+            <p>Sistem Manajemen Proses Berlangganan Gas</p>
+        </div>
+        <AuthorizeView Policy="@SimandoPolicies.CanCreateSubscription">
+            <BbButton OnClick="@(() => showCreateDialog = true)">
+                <LucideIcon Name="plus" Class="h-4 w-4" />
+                Buat Berlangganan
+            </BbButton>
+        </AuthorizeView>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-tile">
+            <div class="stat-icon"><LucideIcon Name="file-text" Class="h-5 w-5" /></div>
+            <div>
+                <div class="stat-value">@stats.Total</div>
+                <div class="stat-label">Total Berlangganan</div>
+            </div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-icon"><LucideIcon Name="clipboard-check" Class="h-5 w-5" /></div>
+            <div>
+                <div class="stat-value">@stats.PendingReview</div>
+                <div class="stat-label">Menunggu Review</div>
+            </div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-icon"><LucideIcon Name="check-circle" Class="h-5 w-5" /></div>
+            <div>
+                <div class="stat-value">@stats.Approved</div>
+                <div class="stat-label">Disetujui</div>
+            </div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-icon"><LucideIcon Name="clock" Class="h-5 w-5" /></div>
+            <div>
+                <div class="stat-value">@stats.InProgress</div>
+                <div class="stat-label">Dalam Proses</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="content-grid content-grid-3">
+        <div class="card col-span-2">
+            <div class="card-header">
+                <div class="card-title">Berlangganan Terbaru</div>
+                <div class="card-description">Data berlangganan yang baru diupdate.</div>
+            </div>
+            <div class="card-content">
+                @if (recent.Count == 0)
+                {
+                    <div class="empty-state">
+                        <div class="empty-state-title">Belum ada data</div>
+                    </div>
+                }
+                else
+                {
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Perusahaan</th>
+                                <th>Area</th>
+                                <th>Status</th>
+                                <th>Update</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var sub in recent)
+                            {
+                                <tr>
+                                    <td>
+                                        <a href="/subscriptions/@sub.Id" class="text-sm font-medium">@sub.CompanyName</a>
+                                    </td>
+                                    <td class="text-sm text-muted-foreground">@sub.AreaName</td>
+                                    <td><StatusBadge Status="@sub.Status" /></td>
+                                    <td class="text-sm text-muted-foreground">@sub.UpdatedAt.ToString("d MMM yyyy")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">Aktivitas Terbaru</div>
+            </div>
+            <div class="card-content">
+                <div class="timeline">
+                    @foreach (var entry in activityLogs)
+                    {
+                        <div class="timeline-item">
+                            <div class="timeline-item-title">@entry.ActorName @entry.Action</div>
+                            <div class="timeline-item-time">@Ago(entry.At)</div>
+                            @if (!string.IsNullOrEmpty(entry.Details))
+                            {
+                                <div class="timeline-item-desc">@entry.Details</div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (showCreateDialog)
+{
+    <BbDialog Open="true" OnOpenChange="@(open => showCreateDialog = open)">
+        <BbDialogContent Class="sm:max-w-md">
+            <BbDialogHeader>
+                <BbDialogTitle>Buat Berlangganan Baru</BbDialogTitle>
+            </BbDialogHeader>
+            <div class="space-y-4">
+                <div class="form-group">
+                    <label class="form-label">Nama Perusahaan</label>
+                    <InputText class="form-control" @bind-Value="newCompany" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Alamat</label>
+                    <InputText class="form-control" @bind-Value="newAddress" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Area</label>
+                    <select class="form-control" @bind="newAreaId">
+                        <option value="">Pilih Area</option>
+                        @foreach (var area in areas)
+                        {
+                            <option value="@area.Id">@area.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="flex gap-2 justify-end">
+                    <BbButton Variant="ButtonVariant.Outline" OnClick="@(() => showCreateDialog = false)">Batal</BbButton>
+                    <BbButton OnClick="@CreateSubscription">Simpan</BbButton>
+                </div>
+            </div>
+        </BbDialogContent>
+    </BbDialog>
+}
+</AppShell>
+
+@code {
+    private (int Total, int PendingReview, int Approved, int InProgress) stats;
+    private List<SubscriptionDto> recent = [];
+    private List<ActivityLogDto> activityLogs = [];
+    private List<AreaDto> areas = [];
+    private bool showCreateDialog;
+    private string newCompany = "";
+    private string newAddress = "";
+    private int? newAreaId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        areas = (await Subscriptions.GetAreasAsync()).ToList();
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        var all = await Subscriptions.GetAllAsync();
+        stats = (
+            all.Count,
+            all.Count(s => s.Status == SubscriptionStatus.PermohonanNOL),
+            all.Count(s => s.Status == SubscriptionStatus.Disetujui),
+            all.Count(s => s.Status != SubscriptionStatus.Disetujui && s.Status != SubscriptionStatus.Ditolak)
+        );
+        recent = all.Take(8).ToList();
+        activityLogs = (await Activity.GetRecentAsync(8)).ToList();
+    }
+
+    private async Task CreateSubscription()
+    {
+        if (string.IsNullOrWhiteSpace(newCompany) || newAreaId is null) return;
+
+        await Subscriptions.CreateAsync(new CreateSubscriptionRequest
+        {
+            CompanyName = newCompany,
+            Address = newAddress,
+            AreaId = newAreaId.Value
+        });
+
+        showCreateDialog = false;
+        newCompany = "";
+        newAddress = "";
+        newAreaId = null;
+        await LoadAsync();
+    }
+
+    private static string Ago(DateTime at)
+    {
+        var delta = DateTime.UtcNow - at;
+        return delta switch
+        {
+            { TotalMinutes: < 1 } => "baru saja",
+            { TotalHours: < 1 } => $"{(int)delta.TotalMinutes}m lalu",
+            { TotalDays: < 1 } => $"{(int)delta.TotalHours}j lalu",
+            { TotalDays: < 30 } => $"{(int)delta.TotalDays}h lalu",
+            _ => at.ToString("d MMM")
+        };
+    }
+}

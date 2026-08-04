@@ -1,0 +1,269 @@
+@page "/subscriptions/{Id:int}"
+@attribute [Authorize(Policy = SimandoPolicies.CanViewSubscriptions)]
+@rendermode InteractiveServer
+@inject ISubscriptionService Subscriptions
+@inject IWorkflowService Workflow
+@inject IActivityService Activity
+@inject IUserService Users
+@inject ToastService Toasts
+
+<PageTitle>Detail Berlangganan - SIMANDO</PageTitle>
+
+<AppShell>
+@if (subscription is null)
+{
+    <div class="empty-state">
+        <div class="empty-state-title">Data tidak ditemukan</div>
+    </div>
+}
+else
+{
+    <div class="space-y-6 page-content">
+        <div class="page-header">
+            <div>
+                <h1>@subscription.CompanyName</h1>
+                <p>@subscription.Address - @subscription.AreaName, @subscription.RegionName</p>
+            </div>
+            <StatusBadge Status="@subscription.Status" />
+        </div>
+
+        <WorkflowSteps CurrentStatus="@subscription.Status" IsRejected="@(subscription.Status == SubscriptionStatus.Ditolak)" />
+
+        <div class="detail-grid">
+            <div class="space-y-4">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Informasi</div>
+                    </div>
+                    <div class="card-content">
+                        <div class="detail-row">
+                            <span class="detail-label">Sales Area</span>
+                            <span class="detail-value">@subscription.CreatedByName</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Dibuat</span>
+                            <span class="detail-value">@subscription.CreatedAt.ToString("d MMM yyyy HH:mm")</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Update Terakhir</span>
+                            <span class="detail-value">@subscription.UpdatedAt.ToString("d MMM yyyy HH:mm")</span>
+                        </div>
+                        @if (subscription.Status == SubscriptionStatus.A1)
+                        {
+                            <div class="detail-row">
+                                <span class="detail-label">Tanda Tangan Digital</span>
+                                <span class="detail-value">@(subscription.SignedOff ? "Sudah" : "Belum")</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                @if (CanUpload)
+                {
+                    <DocumentUpload Subscription="@subscription" OnUploaded="@LoadAsync" />
+                }
+
+                @if (subscription.Status == SubscriptionStatus.A1 && !subscription.SignedOff && CanUpload)
+                {
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Tanda Tangan Digital A1</div>
+                        </div>
+                        <div class="card-content">
+                            <div class="form-check" style="margin-bottom: 1rem">
+                                <InputCheckbox @bind-Value="signOffConfirmed" id="signoff" />
+                                <label for="signoff" class="form-label">Saya menyetujui dokumen A1 ini secara digital</label>
+                            </div>
+                            <BbButton Size="ButtonSize.Small" OnClick="@SignOff" Disabled="@(!signOffConfirmed || signingOff)">
+                                Tanda Tangani
+                            </BbButton>
+                        </div>
+                    </div>
+                }
+
+                @if (CanAdvanceStatus)
+                {
+                    <BbButton OnClick="@AdvanceStatus" Disabled="@advancing">
+                        <LucideIcon Name="arrow-up" Class="h-4 w-4" />
+                        Naik Status
+                    </BbButton>
+                }
+            </div>
+
+            <div class="space-y-4">
+                @if (reviewSteps.Count > 0)
+                {
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Review Steps</div>
+                        </div>
+                        <div class="card-content">
+                            @foreach (var step in reviewSteps)
+                            {
+                                <div class="detail-row">
+                                    <span class="detail-label">Reviewer @step.StepOrder: @step.ReviewerName</span>
+                                    <span class="detail-value">
+                                        @if (step.Action.HasValue)
+                                        {
+                                            <span class="badge @(step.Action == ReviewAction.Setuju ? "badge-approved" : step.Action == ReviewAction.Tolak ? "badge-rejected" : "badge-revision")">
+                                                @step.Action
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-pending">Menunggu</span>
+                                        }
+                                    </span>
+                                </div>
+                                @if (!string.IsNullOrEmpty(step.Comment))
+                                {
+                                    <p class="text-sm text-muted-foreground" style="padding: 0.25rem 0">@step.Comment</p>
+                                }
+                            }
+                        </div>
+                    </div>
+                }
+
+                @if (currentReviewStep is not null && IsCurrentReviewer)
+                {
+                    <ReviewCard Subscription="@subscription" CurrentStep="@currentReviewStep" OnReviewed="@LoadAsync" />
+                }
+
+                <AuthorizeView Policy="@SimandoPolicies.CanAdminister">
+                    @if (subscription.Status == SubscriptionStatus.PermohonanNOL || subscription.ReviewerIds.Length > 0)
+                    {
+                    }
+                    else
+                    {
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title">Assign Reviewer</div>
+                            </div>
+                            <div class="card-content space-y-2">
+                                @foreach (var reviewer in reviewers)
+                                {
+                                    <div class="form-check">
+                                        <InputCheckbox @bind="selectedReviewers[reviewer.Id]" id="@reviewer.Id" />
+                                        <label for="@reviewer.Id" class="form-label">@reviewer.FullName</label>
+                                    </div>
+                                }
+                                <BbButton Size="ButtonSize.Small" OnClick="@AssignReviewers">Simpan Reviewer</BbButton>
+                            </div>
+                        </div>
+                    }
+                </AuthorizeView>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Riwayat Aktivitas</div>
+                    </div>
+                    <div class="card-content">
+                        <div class="timeline">
+                            @foreach (var entry in activityLogs)
+                            {
+                                <div class="timeline-item">
+                                    <div class="timeline-item-title">@entry.Action</div>
+                                    <div class="timeline-item-time">@entry.At.ToString("d MMM HH:mm") - @entry.ActorName</div>
+                                    @if (!string.IsNullOrEmpty(entry.Details))
+                                    {
+                                        <div class="timeline-item-desc">@entry.Details</div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+</AppShell>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
+
+    private SubscriptionDto? subscription;
+    private List<ReviewStepDto> reviewSteps = [];
+    private List<ActivityLogDto> activityLogs = [];
+    private List<UserInfo> reviewers = [];
+    private Dictionary<string, bool> selectedReviewers = [];
+    private ReviewStepDto? currentReviewStep;
+    private string userId = "";
+    private bool signOffConfirmed;
+    private bool signingOff;
+    private bool advancing;
+
+    private bool CanUpload => subscription is not null
+        && subscription.Status != SubscriptionStatus.Disetujui
+        && subscription.Status != SubscriptionStatus.Ditolak
+        && subscription.Status != SubscriptionStatus.PermohonanNOL;
+
+    private bool CanAdvanceStatus => subscription is not null
+        && subscription.Status != SubscriptionStatus.PermohonanNOL
+        && subscription.Status != SubscriptionStatus.Disetujui
+        && subscription.Status != SubscriptionStatus.Ditolak
+        && subscription.Submissions.Any(s => s.Stage == subscription.Status)
+        && (subscription.Status != SubscriptionStatus.A1 || subscription.SignedOff);
+
+    private bool IsCurrentReviewer => currentReviewStep is not null && currentReviewStep.ReviewerId == userId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthState is not null)
+        {
+            userId = CurrentUser.UserId((await AuthState).User) ?? "";
+        }
+
+        var allUsers = await Users.GetUsersAsync();
+        reviewers = allUsers.Where(u => u.Role is SimandoRoles.Reviewer or SimandoRoles.DivisionHead).ToList();
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        subscription = await Subscriptions.GetAsync(Id);
+        if (subscription is null) return;
+
+        reviewSteps = subscription.ReviewSteps.OrderBy(r => r.StepOrder).ToList();
+        activityLogs = await Activity.GetForSubscriptionAsync(Id);
+        currentReviewStep = reviewSteps.FirstOrDefault(r => r.ReviewerId == userId && r.Action == null && r.StepOrder == subscription.CurrentReviewerIndex);
+    }
+
+    private async Task AdvanceStatus()
+    {
+        advancing = true;
+        try
+        {
+            await Workflow.AdvanceStatusAsync(Id);
+            await LoadAsync();
+        }
+        finally
+        {
+            advancing = false;
+        }
+    }
+
+    private async Task SignOff()
+    {
+        signingOff = true;
+        try
+        {
+            await Workflow.SignOffAsync(Id);
+            Toasts.Success("Dokumen A1 berhasil ditandatangani.");
+            await LoadAsync();
+        }
+        finally
+        {
+            signingOff = false;
+        }
+    }
+
+    private async Task AssignReviewers()
+    {
+        var ids = selectedReviewers.Where(kv => kv.Value).Select(kv => kv.Key).ToArray();
+        await Workflow.AssignReviewersAsync(Id, ids);
+        Toasts.Success("Reviewer berhasil diassign.");
+        await LoadAsync();
+    }
+}

@@ -1,0 +1,117 @@
+@page "/evaluation"
+@attribute [Authorize(Policy = SimandoPolicies.CanAccessEvaluation)]
+@rendermode InteractiveServer
+@inject ISubscriptionService Subscriptions
+@inject IEvaluationService EvaluationSvc
+@inject ToastService Toasts
+
+<PageTitle>Evaluasi - SIMANDO</PageTitle>
+
+<AppShell>
+<div class="space-y-4 page-content">
+    <div class="page-header">
+        <div>
+            <h1>Resume Evaluasi</h1>
+            <p>Analisis kelayakan dan resume evaluasi berlangganan.</p>
+        </div>
+    </div>
+
+    <div class="flex gap-2" style="margin-bottom: 1rem">
+        <select class="form-control" style="width: auto" @bind="selectedSubId" @bind:after="LoadEvaluation">
+            <option value="0">Pilih Berlangganan</option>
+            @foreach (var sub in eligibleSubscriptions)
+            {
+                <option value="@sub.Id">@sub.CompanyName - @sub.AreaName</option>
+            }
+        </select>
+    </div>
+
+    @if (selectedSubId > 0)
+    {
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">Resume Evaluasi</div>
+            </div>
+            <div class="card-content space-y-4">
+                <textarea class="form-control" @bind="resumeContent" rows="10" placeholder="Tulis resume evaluasi dan analisis kelayakan..."></textarea>
+                <BbButton OnClick="@SaveResume" Disabled="@saving">
+                    @if (saving) { <span>Menyimpan...</span> } else { <span>Simpan Resume</span> }
+                </BbButton>
+            </div>
+        </div>
+    }
+
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Semua Berlangganan Siap Evaluasi</div>
+        </div>
+        <div class="card-content" style="padding: 0">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Perusahaan</th>
+                        <th>Area</th>
+                        <th>Status</th>
+                        <th>Resume</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var sub in eligibleSubscriptions)
+                    {
+                        <tr>
+                            <td><a href="/subscriptions/@sub.Id" class="font-medium">@sub.CompanyName</a></td>
+                            <td class="text-sm">@sub.AreaName</td>
+                            <td><StatusBadge Status="@sub.Status" /></td>
+                            <td class="text-sm text-muted-foreground">
+                                @(sub.ResumeEvaluasi is not null ? "Ada" : "Belum")
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline" @onclick="@(async () => { selectedSubId = sub.Id; await LoadEvaluation(); })">Edit</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</AppShell>
+
+@code {
+    private List<SubscriptionDto> eligibleSubscriptions = [];
+    private int selectedSubId;
+    private string resumeContent = "";
+    private bool saving;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var all = await Subscriptions.GetAllAsync();
+        eligibleSubscriptions = all
+            .Where(s => s.Status >= SubscriptionStatus.PermohonanNOL)
+            .ToList();
+    }
+
+    private async Task LoadEvaluation()
+    {
+        if (selectedSubId <= 0) return;
+        var resume = await EvaluationSvc.GetAsync(selectedSubId);
+        resumeContent = resume?.Content ?? "";
+    }
+
+    private async Task SaveResume()
+    {
+        if (selectedSubId <= 0) return;
+        saving = true;
+        try
+        {
+            await EvaluationSvc.SaveAsync(selectedSubId, resumeContent);
+            Toasts.Success("Resume evaluasi berhasil disimpan.");
+            await OnInitializedAsync();
+        }
+        finally
+        {
+            saving = false;
+        }
+    }
+}

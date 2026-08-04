@@ -1,0 +1,171 @@
+@inject ISubscriptionService Subscriptions
+@inject NavigationManager Navigation
+@inject CommandPaletteService Palette
+@inject IJSRuntime JS
+@implements IDisposable
+
+@if (isOpen)
+{
+    <div class="cmd-backdrop" @onclick="Close">
+        <div class="cmd-dialog" @onclick:stopPropagation="true">
+            <div class="cmd-input-wrap">
+                <LucideIcon Name="search" Class="h-4 w-4 cmd-input-icon" />
+                <input @ref="searchInput"
+                       type="text"
+                       class="cmd-input"
+                       placeholder="Cari berlangganan..."
+                       value="@query"
+                       @oninput="OnInput"
+                       @onkeydown="HandleKeyDown" />
+                <BbKbd Keys="Esc" Size="KbdSize.Small" />
+            </div>
+
+            <div class="cmd-results">
+                @if (results.Count == 0 && !string.IsNullOrEmpty(query))
+                {
+                    <div class="cmd-empty">
+                        <LucideIcon Name="search-x" Class="h-5 w-5" />
+                        <span>Tidak ditemukan hasil untuk "@query"</span>
+                    </div>
+                }
+                else if (results.Count == 0)
+                {
+                    <div class="cmd-empty">
+                        <LucideIcon Name="search" Class="h-5 w-5" />
+                        <span>Ketik untuk mencari berlangganan...</span>
+                    </div>
+                }
+                else
+                {
+                    @for (int i = 0; i < results.Count; i++)
+                    {
+                        var idx = i;
+                        var sub = results[i];
+                        <button class="cmd-item @(idx == selectedIndex ? "cmd-item-active" : "")"
+                                @onclick="@(() => NavigateTo(sub.Id))">
+                            <LucideIcon Name="file-text" Class="h-4 w-4 cmd-item-icon" />
+                            <div class="cmd-item-content">
+                                <span class="cmd-item-title">@sub.CompanyName</span>
+                                <span class="cmd-item-desc">@sub.AreaName - @sub.Status</span>
+                            </div>
+                            <LucideIcon Name="corner-down-left" Class="h-3.5 w-3.5 cmd-item-enter" />
+                        </button>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private ElementReference searchInput;
+    private string query = "";
+    private List<SubscriptionDto> results = [];
+    private List<SubscriptionDto> allSubscriptions = [];
+    private int selectedIndex;
+    private bool isOpen;
+    private DotNetObjectReference<CommandPalette>? objRef;
+
+    protected override void OnInitialized()
+    {
+        Palette.OnChange += HandlePaletteChange;
+        isOpen = Palette.IsOpen;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            objRef = DotNetObjectReference.Create(this);
+            try
+            {
+                await JS.InvokeVoidAsync("registerKeyboardShortcut", objRef);
+            }
+            catch { }
+        }
+
+        if (isOpen)
+        {
+            query = "";
+            selectedIndex = 0;
+            results = [];
+
+            if (allSubscriptions.Count == 0)
+            {
+                allSubscriptions = await Subscriptions.GetAllAsync();
+            }
+
+            await Task.Delay(50);
+            try { await searchInput.FocusAsync(); } catch { }
+        }
+    }
+
+    private void HandlePaletteChange()
+    {
+        isOpen = Palette.IsOpen;
+        InvokeAsync(StateHasChanged);
+    }
+
+    [JSInvokable]
+    public void OpenFromJs()
+    {
+        Palette.Open();
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        switch (e.Key)
+        {
+            case "Escape":
+                Close();
+                break;
+            case "ArrowDown":
+                selectedIndex = Math.Min(selectedIndex + 1, results.Count - 1);
+                break;
+            case "ArrowUp":
+                selectedIndex = Math.Max(selectedIndex - 1, 0);
+                break;
+            case "Enter":
+                if (results.Count > 0 && selectedIndex < results.Count)
+                {
+                    await NavigateTo(results[selectedIndex].Id);
+                }
+                break;
+        }
+    }
+
+    private void OnInput(ChangeEventArgs e)
+    {
+        query = e.Value?.ToString() ?? "";
+        selectedIndex = 0;
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            results = [];
+            return;
+        }
+
+        results = allSubscriptions
+            .Where(s => s.CompanyName.Contains(query, StringComparison.OrdinalIgnoreCase)
+                     || s.AreaName?.Contains(query, StringComparison.OrdinalIgnoreCase) == true
+                     || s.Address.Contains(query, StringComparison.OrdinalIgnoreCase))
+            .Take(8)
+            .ToList();
+    }
+
+    private async Task NavigateTo(int id)
+    {
+        Close();
+        Navigation.NavigateTo($"/subscriptions/{id}");
+    }
+
+    private void Close()
+    {
+        Palette.Close();
+    }
+
+    public void Dispose()
+    {
+        Palette.OnChange -= HandlePaletteChange;
+        objRef?.Dispose();
+    }
+}

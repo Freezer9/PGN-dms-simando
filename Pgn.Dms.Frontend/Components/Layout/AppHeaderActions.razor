@@ -1,0 +1,24 @@
+@inject CommandPaletteService Palette
+
+<div class="ml-auto flex items-center gap-2">
+    <BbButton Variant="ButtonVariant.Outline"
+              Size="ButtonSize.Small"
+              AriaLabel="Search"
+              Class="hidden gap-2 text-muted-foreground sm:inline-flex"
+              OnClick="@(() => Palette.Open())">
+        <LucideIcon Name="search" Class="h-4 w-4" />
+        <span>Cari</span>
+        <BbKbd Keys="Ctrl+K" Size="KbdSize.Small" Class="ml-4" />
+    </BbButton>
+
+    <BbButton Variant="ButtonVariant.Ghost"
+              Size="ButtonSize.Icon"
+              AriaLabel="Search"
+              Class="sm:hidden"
+              OnClick="@(() => Palette.Open())">
+        <LucideIcon Name="search" Class="h-4 w-4" />
+    </BbButton>
+
+    <BbDarkModeToggle Variant="ButtonVariant.Ghost" Size="ButtonSize.Icon" />
+    <UserMenu />
+</div>

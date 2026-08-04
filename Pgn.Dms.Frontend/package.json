@@ -1,0 +1,11 @@
+{
+  "name": "pgn-dms-web",
+  "private": true,
+  "devDependencies": {
+    "tailwindcss": "^4.3.0",
+    "@tailwindcss/cli": "^4.3.0"
+  },
+  "scripts": {
+    "build:css": "tailwindcss -i ./Styles/app.tailwind.css -o ./wwwroot/css/app.generated.css --minify"
+  }
+}

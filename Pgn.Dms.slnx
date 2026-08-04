@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="Pgn.Dms.Shared/Pgn.Dms.Shared.csproj" />
+  <Project Path="Pgn.Dms.Api/Pgn.Dms.Api.csproj" />
+  <Project Path="Pgn.Dms.Frontend/Pgn.Dms.Frontend.csproj" />
+</Solution>

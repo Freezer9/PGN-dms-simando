@@ -1,0 +1,78 @@
+@implements IDisposable
+@inject NavigationManager Navigation
+@inject ISubscriptionService Subscriptions
+
+<nav class="app-breadcrumb" aria-label="Breadcrumb">
+    <a href="/" class="breadcrumb-link">SIMANDO</a>
+
+    @foreach (var crumb in trail.SkipLast(1))
+    {
+        <span class="breadcrumb-sep">/</span>
+        <a href="@crumb.Href" class="breadcrumb-link">@crumb.Label</a>
+    }
+
+    @if (trail.Count > 0)
+    {
+        <span class="breadcrumb-sep">/</span>
+        <span class="breadcrumb-current">@trail[^1].Label</span>
+    }
+</nav>
+
+@code {
+    private record Crumb(string Label, string? Href);
+
+    private List<Crumb> trail = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        Navigation.LocationChanged += OnLocationChanged;
+        await BuildAsync();
+    }
+
+    private async void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        await BuildAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task BuildAsync()
+    {
+        var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+        var segments = uri.AbsolutePath.Trim('/').Split('/', StringSplitOptions.RemoveEmptyEntries);
+        var crumbs = new List<Crumb>();
+
+        switch (segments.FirstOrDefault())
+        {
+            case null:
+                break;
+            case "subscriptions":
+                crumbs.Add(new Crumb("Berlangganan", "/subscriptions"));
+                if (segments.Length > 1 && int.TryParse(segments[1], out var id))
+                {
+                    var sub = await Subscriptions.GetAsync(id);
+                    crumbs.Add(new Crumb(sub?.CompanyName ?? $"#{id}", null));
+                }
+                break;
+            case "review":
+                crumbs.Add(new Crumb("Review", null));
+                break;
+            case "evaluation":
+                crumbs.Add(new Crumb("Evaluasi", null));
+                break;
+            case "admin":
+                crumbs.Add(new Crumb("Admin", null));
+                crumbs.Add(new Crumb(Titleize(segments.ElementAtOrDefault(1) ?? ""), null));
+                break;
+            default:
+                crumbs.Add(new Crumb(Titleize(segments[0]), null));
+                break;
+        }
+
+        trail = crumbs;
+    }
+
+    private static string Titleize(string value) =>
+        value.Length == 0 ? value : char.ToUpperInvariant(value[0]) + value[1..];
+
+    public void Dispose() => Navigation.LocationChanged -= OnLocationChanged;
+}
