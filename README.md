@@ -104,7 +104,7 @@ Auth model: the Frontend keeps a cookie-authenticated Blazor circuit, but the co
 
 ## Deployment (Docker)
 
-Production domain: **simando.legain.id**. This stack does *not* run its own reverse proxy — `api` and `frontend` join a pre-existing external Docker network (`caddy`) that an already-running, separately-managed Caddy instance is also attached to. Neither container publishes a host port; they're reachable only by container name (`api:8080`, `frontend:8080`) to whatever else is on that `caddy` network.
+Production domain: **simando.legain.id**. This stack does *not* run its own reverse proxy — `api` and `frontend` join a pre-existing external Docker network (`caddy`) that an already-running, separately-managed Caddy instance is also attached to. Neither container publishes a host port; they're reachable only by their explicit container names (`pgn-dms-simando-api:8080`, `pgn-dms-simando-frontend:8080`) — set explicitly so they don't collide with a same-named `api`/`frontend` service from another stack sharing that network.
 
 ```bash
 # one-time, only if the network doesn't already exist:
@@ -117,17 +117,17 @@ docker compose up -d --build
 ```
 
 - **`api`** — SQLite database (`Data/app.db`) and uploaded documents (`wwwroot/uploads`) live in named Docker volumes (`api_data`, `api_uploads`) so they survive `docker compose down`/rebuilds.
-- **`frontend`** — talks to `api` directly over the internal `caddy` network (`http://api:8080`), not through the external reverse proxy.
+- **`frontend`** — talks to `api` directly over the internal `caddy` network (`http://pgn-dms-simando-api:8080`), not through the external reverse proxy.
 
 Add this site block to the **external** Caddy's own Caddyfile (not part of this repo) so it can route to these containers by name:
 
 ```
 simando.legain.id {
     handle /api/* {
-        reverse_proxy api:8080
+        reverse_proxy pgn-dms-simando-api:8080
     }
     handle {
-        reverse_proxy frontend:8080
+        reverse_proxy pgn-dms-simando-frontend:8080
     }
 }
 ```
