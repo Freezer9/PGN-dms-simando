@@ -8,8 +8,8 @@ A workflow management system for gas subscription processes, built with **Blazor
 
 ```bash
 export PATH="$HOME/.dotnet:$PATH"
-dotnet run --project Pgn.Dms.Api        # http://localhost:5010
-dotnet run --project Pgn.Dms.Frontend   # http://localhost:5009
+dotnet run --project Api        # http://localhost:5010
+dotnet run --project Frontend   # http://localhost:5009
 ```
 
 Open `http://localhost:5009`. The Api applies EF Core migrations and seeds demo data on startup.
@@ -31,8 +31,8 @@ All seeded on first run with password **`Passw0rd!`**:
 Delete the DB and restart:
 
 ```bash
-rm Pgn.Dms.Api/Data/app.db Pgn.Dms.Api/Data/app.db-wal Pgn.Dms.Api/Data/app.db-shm 2>/dev/null
-dotnet run --project Pgn.Dms.Api
+rm Api/Data/app.db Api/Data/app.db-wal Api/Data/app.db-shm 2>/dev/null
+dotnet run --project Api
 ```
 
 ## Pages
@@ -67,10 +67,10 @@ Directory → Plotting → Prospect → Survey → A1 → Permohonan NOL → Dis
 Three projects:
 
 ```
-Pgn.Dms.Shared/            DTOs and enums shared by Api and Frontend
+Shared/                     DTOs and enums shared by Api and Frontend
   Models.cs                 SubscriptionDto, ReviewStepDto, UserInfo, requests/responses, enums
 
-Pgn.Dms.Api/                ASP.NET Core Web API — all business logic and data access
+Api/                        ASP.NET Core Web API — all business logic and data access
   Data/
     ApplicationDbContext.cs EF Core context (SQLite), ApplicationUser, IdentitySeeder
     SimandoRoles.cs
@@ -78,7 +78,7 @@ Pgn.Dms.Api/                ASP.NET Core Web API — all business logic and data
   Controllers/               AuthController, SubscriptionsController, EvaluationController, UsersController
   Services/                  SubscriptionService, WorkflowService (status/review/sign-off logic)
 
-Pgn.Dms.Frontend/           Blazor Server UI — pure HTTP client of the Api
+Frontend/                   Blazor Server UI — pure HTTP client of the Api
   Services/                  Typed HttpClient wrappers (ISubscriptionService, IWorkflowService,
                               IEvaluationService, IActivityService, IUserService, IAuthService),
                               BearerTokenHandler forwards the JWT from the auth cookie's claims
@@ -107,7 +107,7 @@ Two CSS bundles:
 To regenerate Tailwind CSS after adding new utility classes:
 
 ```bash
-cd Pgn.Dms.Frontend
+cd Frontend
 npm install  # one-time
 npx tailwindcss -i ./Styles/app.tailwind.css -o ./wwwroot/css/app.generated.css --minify
 ```
@@ -133,7 +133,7 @@ docker compose up -d --build
 ```
 
 - **`caddy`** — public entrypoint on 80/443, gets a Let's Encrypt cert for `DOMAIN`, routes `/api/*` to the `api` container and everything else to `frontend`.
-- **`api`** — the Pgn.Dms.Api container. Its SQLite database (`Data/app.db`) and uploaded documents (`wwwroot/uploads`) live in named Docker volumes (`api_data`, `api_uploads`) so they survive `docker compose down`/rebuilds.
-- **`frontend`** — the Pgn.Dms.Frontend container. Talks to `api` directly over the internal Docker network (`http://api:8080`), not through Caddy.
+- **`api`** — the Api container. Its SQLite database (`Data/app.db`) and uploaded documents (`wwwroot/uploads`) live in named Docker volumes (`api_data`, `api_uploads`) so they survive `docker compose down`/rebuilds.
+- **`frontend`** — the Frontend container. Talks to `api` directly over the internal Docker network (`http://api:8080`), not through Caddy.
 
 Rebuild after a code change: `docker compose up -d --build`. Tear down (keeps volumes): `docker compose down`. Wipe the database too: `docker compose down -v`.

@@ -4,6 +4,8 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>Pgn.Dms.Api</AssemblyName>
+    <RootNamespace>Pgn.Dms.Api</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
@@ -11,7 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Pgn.Dms.Shared\Pgn.Dms.Shared.csproj" />
+    <ProjectReference Include="..\Shared\Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>

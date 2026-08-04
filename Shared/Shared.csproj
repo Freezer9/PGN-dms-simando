@@ -4,6 +4,8 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <AssemblyName>Pgn.Dms.Shared</AssemblyName>
+    <RootNamespace>Pgn.Dms.Shared</RootNamespace>
   </PropertyGroup>
 
 </Project>
