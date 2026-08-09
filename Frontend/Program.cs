@@ -16,6 +16,13 @@ builder.Services.AddBlazorBlueprintComponents(configureTheme: options =>
     options.DefaultBaseColor = BaseColor.Slate;
     options.DefaultPrimaryColor = PrimaryColor.Blue;
     options.DefaultRadius = 0.5;
+
+    // SIMANDO is light-only. All three are needed: DetectSystemPreference would let an
+    // OS dark setting win, and PersistToLocalStorage would restore a `bb-theme` entry
+    // saved before the toggle was removed.
+    options.DefaultDarkMode = false;
+    options.DetectSystemPreference = false;
+    options.PersistToLocalStorage = false;
 });
 
 builder.Services.AddCascadingAuthenticationState();
