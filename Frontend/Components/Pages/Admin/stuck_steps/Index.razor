@@ -1,16 +1,39 @@
 @page "/admin/stuck-steps"
 @attribute [Authorize(Policy = SimandoPolicies.CanAdminister)]
 @rendermode InteractiveServer
+@inject ISubscriptionService Subscriptions
 
 <PageTitle>Langkah Tertahan - SIMANDO</PageTitle>
 
 <AppShell>
 <div class="space-y-4 page-content">
-    <div class="page-header">
-        <div>
-            <h1>Langkah Tertahan</h1>
-            <p>Reassign langkah persetujuan yang assignee-nya tidak aktif — semua region.</p>
-        </div>
-    </div>
+    <PageHeader Title="Langkah Tertahan"
+                Subtitle="Reassign langkah persetujuan yang assignee-nya tidak aktif — semua region." />
+
+    <DataTable TItem="SubscriptionDto" Items="stuck"
+               EmptyTitle="Tidak ada langkah tertahan"
+               EmptyDescription="Semua langkah persetujuan berjalan normal.">
+        <HeaderTemplate>
+            <th>Perusahaan</th>
+            <th>Area</th>
+            <th>Status</th>
+            <th></th>
+        </HeaderTemplate>
+        <RowTemplate Context="sub">
+            <td><a href="/companies/@sub.Id" class="font-medium">@sub.CompanyName</a></td>
+            <td class="text-sm text-muted-foreground">@sub.AreaName</td>
+            <td><StatusBadge Status="@sub.Status" /></td>
+            <td><a href="/companies/@sub.Id" class="btn btn-sm btn-outline">Reassign</a></td>
+        </RowTemplate>
+    </DataTable>
 </div>
 </AppShell>
+
+@code {
+    private List<SubscriptionDto> stuck = [];
+    protected override async Task OnInitializedAsync()
+    {
+        var all = await Subscriptions.GetAllAsync();
+        stuck = all.Where(s => s.Status == SubscriptionStatus.Ditolak).ToList();
+    }
+}

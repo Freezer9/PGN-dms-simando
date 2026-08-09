@@ -1,16 +1,160 @@
 @page "/map"
+@using System.Globalization
 @attribute [Authorize(Policy = SimandoPolicies.CanViewSubscriptions)]
 @rendermode InteractiveServer
+@implements IAsyncDisposable
+@inject ISubscriptionService Subscriptions
+@inject IJSRuntime JS
+@inject ToastService Toasts
 
 <PageTitle>Peta - SIMANDO</PageTitle>
 
 <AppShell>
 <div class="space-y-4 page-content">
-    <div class="page-header">
-        <div>
-            <h1>Peta</h1>
-            <p>Sebaran titik perusahaan — scope dan edit ditentukan oleh role.</p>
+    <PageHeader Title="Peta"
+                Subtitle="@($"{withCoords.Count} dari {allSubscriptions.Count} perusahaan memiliki koordinat.")" />
+
+    @if (editing is not null)
+    {
+        <div class="alert alert-info">
+            Klik pada peta untuk menetapkan titik <strong>@editing.CompanyName</strong>.
+            <button type="button" class="btn btn-sm btn-ghost" @onclick="@(() => editing = null)">Batal</button>
+        </div>
+    }
+
+    <div class="card">
+        <div class="card-content" style="padding: 0">
+            <div @ref="mapElement" style="height: 28rem; border-radius: var(--radius)"></div>
         </div>
     </div>
+
+    <DataTable TItem="SubscriptionDto" Items="allSubscriptions" Loading="loading"
+               EmptyIcon="map-pin" EmptyTitle="Belum ada perusahaan"
+               EmptyDescription="Perusahaan akan muncul di sini setelah dibuat.">
+        <HeaderTemplate>
+            <th>Perusahaan</th>
+            <th>Area</th>
+            <th>Latitude</th>
+            <th>Longitude</th>
+            <th>Status</th>
+            <th></th>
+        </HeaderTemplate>
+        <RowTemplate Context="sub">
+            <td><a href="/companies/@sub.Id" class="font-medium">@sub.CompanyName</a></td>
+            <td class="text-sm text-muted-foreground">@sub.AreaName</td>
+            <td class="text-sm">@Coord(sub.Latitude)</td>
+            <td class="text-sm">@Coord(sub.Longitude)</td>
+            <td><StatusBadge Status="@sub.Status" /></td>
+            <td>
+                <AuthorizeView Policy="@SimandoPolicies.CanCreateSubscription">
+                    <button type="button" class="btn btn-sm btn-outline" @onclick="@(() => StartEditing(sub))">
+                        @(sub.Latitude is null ? "Tetapkan Titik" : "Pindahkan")
+                    </button>
+                </AuthorizeView>
+            </td>
+        </RowTemplate>
+    </DataTable>
 </div>
 </AppShell>
+
+@code {
+    private List<SubscriptionDto> allSubscriptions = [];
+    private SubscriptionDto? editing;
+    private ElementReference mapElement;
+    private IJSObjectReference? module;
+    private DotNetObjectReference<Index>? selfRef;
+    private bool loading = true;
+    private bool mapReady;
+
+    private List<SubscriptionDto> withCoords => allSubscriptions
+        .Where(s => s.Latitude.HasValue && s.Longitude.HasValue)
+        .ToList();
+
+    /// <summary>Coordinates are always written with a dot, whatever the server locale —
+    /// an id-ID decimal comma would not round-trip into the lat/lng inputs.</summary>
+    private static string Coord(double? value)
+        => value?.ToString("F6", CultureInfo.InvariantCulture) ?? "—";
+
+    protected override async Task OnInitializedAsync()
+    {
+        loading = true;
+        allSubscriptions = await Subscriptions.GetAllAsync();
+        loading = false;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        try
+        {
+            module = await JS.InvokeAsync<IJSObjectReference>(
+                "import", $"./{Assets["Components/Pages/map/Index.razor.js"]}");
+            selfRef = DotNetObjectReference.Create(this);
+            await module.InvokeVoidAsync("init", mapElement, Pins(), true, selfRef);
+            mapReady = true;
+        }
+        catch
+        {
+            Toasts.Error("Peta gagal dimuat.");
+        }
+    }
+
+    private object[] Pins() => withCoords
+        .Select(object (s) => new
+        {
+            latitude = s.Latitude,
+            longitude = s.Longitude,
+            label = s.CompanyName,
+            detail = s.AreaName,
+            url = $"/companies/{s.Id}"
+        })
+        .ToArray();
+
+    private void StartEditing(SubscriptionDto sub) => editing = sub;
+
+    [JSInvokable]
+    public async Task OnMapClick(double latitude, double longitude)
+    {
+        if (editing is null) return;
+
+        var target = editing;
+        if (await Subscriptions.UpdateLocationAsync(target.Id, latitude, longitude))
+        {
+            Toasts.Success($"Titik {target.CompanyName} diperbarui.");
+            editing = null;
+            allSubscriptions = await Subscriptions.GetAllAsync();
+            await RefreshPinsAsync();
+        }
+        else
+        {
+            Toasts.Error("Gagal memperbarui titik peta.");
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task RefreshPinsAsync()
+    {
+        if (module is null || !mapReady) return;
+        await module.InvokeVoidAsync("setPins", mapElement, Pins());
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (module is not null)
+        {
+            try
+            {
+                await module.InvokeVoidAsync("dispose", mapElement);
+                await module.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+                // Circuit already gone — nothing to clean up on the client.
+            }
+        }
+
+        selfRef?.Dispose();
+    }
+}

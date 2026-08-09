@@ -51,12 +51,16 @@ public class SubscriptionsController(SubscriptionService subs, WorkflowService w
     }
 
     [HttpPost("{id:int}/advance")]
-    [Authorize(Roles = "SalesArea")]
-    public async Task<IActionResult> Advance(int id)
-    {
-        var ok = await workflow.AdvanceStatusAsync(id, UserName);
-        return ok ? Ok() : BadRequest("Cannot advance");
-    }
+    [Authorize(Roles = "SalesArea,AdminRegional")]
+    public async Task<ActionResult<AdvanceResult>> Advance(int id)
+        => Ok(await workflow.AdvanceStatusAsync(id, UserName));
+
+    [HttpPatch("{id:int}/location")]
+    [Authorize(Roles = "SalesArea,AdminRegional")]
+    public async Task<IActionResult> UpdateLocation(int id, [FromBody] UpdateLocationRequest req)
+        => await subs.UpdateLocationAsync(id, req.Latitude, req.Longitude, UserName)
+            ? Ok()
+            : NotFound();
 
     [HttpPost("{id:int}/signoff")]
     [Authorize(Roles = "SalesArea")]
@@ -74,8 +78,9 @@ public class SubscriptionsController(SubscriptionService subs, WorkflowService w
         return Ok();
     }
 
+    // Every approver role has an inbox (Docs/14), not just the two that sit in ReviewSteps.
     [HttpGet("pending-review")]
-    [Authorize(Roles = "Reviewer,DivisionHead")]
+    [Authorize(Roles = "AreaHead,AdminRegional,Reviewer,DivisionHead")]
     public async Task<List<SubscriptionDto>> PendingReview() => await workflow.GetPendingReviewAsync(UserId);
 
     [HttpPost("{id:int}/review")]

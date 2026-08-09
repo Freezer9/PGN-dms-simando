@@ -1,16 +1,66 @@
 @page "/directory/read"
 @attribute [Authorize(Policy = SimandoPolicies.CanViewSubscriptions)]
 @rendermode InteractiveServer
+@inject ISubscriptionService Subscriptions
 
 <PageTitle>Direktori - SIMANDO</PageTitle>
 
 <AppShell>
 <div class="space-y-4 page-content">
-    <div class="page-header">
-        <div>
-            <h1>Direktori</h1>
-            <p>Daftar perusahaan area (read-only).</p>
-        </div>
-    </div>
+    <PageHeader Title="Direktori" Subtitle="@($"{filtered.Count} perusahaan di area Anda.")" />
+
+    <FilterBar @bind-SearchValue="searchQuery" Placeholder="Cari perusahaan...">
+        <select class="form-control" style="max-width: 12rem" @bind="filterStatus">
+            <option value="">Semua Status</option>
+            @foreach (var s in Enum.GetValues<SubscriptionStatus>())
+            {
+                <option value="@s">@SubscriptionStages.Label(s)</option>
+            }
+        </select>
+    </FilterBar>
+
+    <DataTable TItem="SubscriptionDto" Items="filtered" Loading="loading"
+               EmptyDescription="Belum ada perusahaan terdaftar di area Anda.">
+        <HeaderTemplate>
+            <th>Perusahaan</th>
+            <th>Alamat</th>
+            <th>Area</th>
+            <th>Sales</th>
+            <th>Status</th>
+            <th>Update</th>
+        </HeaderTemplate>
+        <RowTemplate Context="sub">
+            <td><a href="/companies/@sub.Id" class="font-medium">@sub.CompanyName</a></td>
+            <td class="text-sm text-muted-foreground">@Truncate(sub.Address, 35)</td>
+            <td class="text-sm text-muted-foreground">@sub.AreaName</td>
+            <td class="text-sm text-muted-foreground">@sub.CreatedByName</td>
+            <td><StatusBadge Status="@sub.Status" /></td>
+            <td class="text-sm text-muted-foreground">@sub.UpdatedAt.ToString("d MMM yyyy")</td>
+        </RowTemplate>
+    </DataTable>
 </div>
 </AppShell>
+
+@code {
+    private List<SubscriptionDto> allSubscriptions = [];
+    private bool loading = true;
+    private string searchQuery = "";
+    private string filterStatus = "";
+
+    private List<SubscriptionDto> filtered => allSubscriptions
+        .Where(s => string.IsNullOrWhiteSpace(searchQuery)
+            || s.CompanyName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
+        .Where(s => string.IsNullOrWhiteSpace(filterStatus) || s.Status.ToString() == filterStatus)
+        .OrderByDescending(s => s.UpdatedAt)
+        .ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        loading = true;
+        allSubscriptions = await Subscriptions.GetAllAsync();
+        loading = false;
+    }
+
+    private static string Truncate(string value, int max) =>
+        value.Length <= max ? value : string.Concat(value.AsSpan(0, max), "...");
+}

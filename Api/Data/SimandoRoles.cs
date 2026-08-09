@@ -7,6 +7,10 @@ public static class SimandoRoles
     public const string AdminRegional = "AdminRegional";
     public const string Reviewer = "Reviewer";
     public const string DivisionHead = "DivisionHead";
+    public const string SystemAdmin = "SystemAdmin";
 
-    public static readonly string[] All = [SalesArea, AreaHead, AdminRegional, Reviewer, DivisionHead];
+    // Must stay in sync with Frontend/Data/SimandoRoles.cs — the seeder creates exactly these,
+    // and a role missing here can never be assigned.
+    public static readonly string[] All =
+        [SalesArea, AreaHead, AdminRegional, Reviewer, DivisionHead, SystemAdmin];
 }

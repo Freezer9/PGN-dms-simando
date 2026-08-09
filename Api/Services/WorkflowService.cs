@@ -6,23 +6,28 @@ namespace Pgn.Dms.Api.Services;
 
 public class WorkflowService(ApplicationDbContext db)
 {
-    private static readonly SubscriptionStatus[] StageOrder =
-    [
-        SubscriptionStatus.Directory, SubscriptionStatus.Plotting, SubscriptionStatus.Prospect,
-        SubscriptionStatus.Survey, SubscriptionStatus.A1, SubscriptionStatus.PermohonanNOL
-    ];
-
-    public async Task<bool> AdvanceStatusAsync(int subscriptionId, string actorName)
+    public async Task<AdvanceResult> AdvanceStatusAsync(int subscriptionId, string actorName)
     {
         var sub = await db.Subscriptions.Include(s => s.Submissions).FirstOrDefaultAsync(s => s.Id == subscriptionId);
-        if (sub is null) return false;
+        if (sub is null) return Blocked("Perusahaan tidak ditemukan.");
 
-        var currentIdx = Array.IndexOf(StageOrder, sub.Status);
-        if (currentIdx < 0 || currentIdx >= StageOrder.Length - 1) return false;
-        if (!sub.Submissions.Any(s => s.Stage == sub.Status)) return false;
-        if (sub.Status == SubscriptionStatus.A1 && !sub.SignedOff) return false;
+        var next = SubscriptionStages.Next(sub.Status);
+        if (next is null)
+            return Blocked(SubscriptionStages.IsTerminal(sub.Status)
+                ? "Record sudah final dan tidak dapat dilanjutkan."
+                : "Sudah berada di tahap terakhir.");
 
-        sub.Status = StageOrder[currentIdx + 1];
+        var blockedBy = await CheckGateAsync(sub);
+        if (blockedBy is not null) return Blocked(blockedBy);
+
+        // Stamp the submission before moving on — the record leaves stage 6 exactly once.
+        if (sub.Status == SubscriptionStatus.PermohonanNOL)
+        {
+            var request = await db.NolRequests.FirstOrDefaultAsync(n => n.SubscriptionId == sub.Id);
+            if (request is not null) request.SubmittedAt ??= DateTime.UtcNow;
+        }
+
+        sub.Status = next.Value;
         sub.UpdatedAt = DateTime.UtcNow;
 
         if (sub.Status == SubscriptionStatus.PermohonanNOL && !string.IsNullOrWhiteSpace(sub.ReviewerIds))
@@ -37,9 +42,71 @@ public class WorkflowService(ApplicationDbContext db)
             }
         }
 
-        db.ActivityLogs.Add(new ActivityLog { SubscriptionId = sub.Id, ActorName = actorName, Action = $"Status naik ke {sub.Status}", At = DateTime.UtcNow });
+        db.ActivityLogs.Add(new ActivityLog { SubscriptionId = sub.Id, ActorName = actorName, Action = $"Status naik ke {SubscriptionStages.Label(sub.Status)}", At = DateTime.UtcNow });
         await db.SaveChangesAsync();
-        return true;
+        return new AdvanceResult { Ok = true, NewStatus = sub.Status };
+    }
+
+    private static AdvanceResult Blocked(string reason) => new() { Ok = false, Reason = reason };
+
+    /// <summary>
+    /// Stage gates from Docs/14-role-navigation-guide.md. Returns the blocking reason,
+    /// or null when the record may advance out of its current stage.
+    /// </summary>
+    private async Task<string?> CheckGateAsync(Subscription sub)
+    {
+        switch (sub.Status)
+        {
+            case SubscriptionStatus.Plotting:
+            {
+                var plotting = await db.Plottings.FirstOrDefaultAsync(p => p.SubscriptionId == sub.Id);
+                if (plotting is null || plotting.SalesUserId is null
+                    || plotting.PosisiPelanggan is null || plotting.Kawasan is null)
+                    return "Lengkapi Plotting By, Posisi Pelanggan, dan Kawasan terlebih dahulu.";
+                return null;
+            }
+
+            case SubscriptionStatus.Prospect:
+            {
+                var hasContact = await db.CompanyContacts.AnyAsync(c =>
+                    c.SubscriptionId == sub.Id && c.Nama != "" && c.Jabatan != "");
+                return hasContact ? null : "Tambahkan minimal 1 kontak PIC dengan nama dan jabatan.";
+            }
+
+            case SubscriptionStatus.Survey:
+                return sub.Submissions.Any(s => s.Stage == SubscriptionStatus.Survey)
+                    ? null
+                    : "Unggah dokumen KK0 yang sudah ditandatangani.";
+
+            case SubscriptionStatus.A1:
+            {
+                if (!sub.Submissions.Any(s => s.Stage == SubscriptionStatus.A1))
+                    return "Unggah dokumen A1 yang sudah ditandatangani.";
+                if (!sub.SignedOff)
+                    return "Bukti Kelayakan belum ditandatangani.";
+
+                var a1 = await db.A1Registrations.FirstOrDefaultAsync(a => a.SubscriptionId == sub.Id);
+                if (a1?.SkemaHarga == SkemaHarga.SiGas && !a1.MomSigasTersedia)
+                    return "Skema SiGas memerlukan MOM SiGas.";
+                return null;
+            }
+
+            case SubscriptionStatus.PermohonanNOL:
+            {
+                var nol = await db.NolRequests.FirstOrDefaultAsync(n => n.SubscriptionId == sub.Id);
+                if (nol?.CapexPreGr3 is null)
+                    return "Isi Capex Pre GR3 pada permohonan NOL.";
+                if (!sub.Submissions.Any(s => s.Stage == SubscriptionStatus.Survey))
+                    return "Dokumen KK0 belum terunggah.";
+                if (!sub.Submissions.Any(s => s.Stage == SubscriptionStatus.A1))
+                    return "Dokumen A1 belum terunggah.";
+                return null;
+            }
+
+            // Directory → Plotting and Evaluasi → Penerbitan carry no document gate.
+            default:
+                return null;
+        }
     }
 
     public async Task SignOffAsync(int subscriptionId, string actorName)
@@ -77,8 +144,10 @@ public class WorkflowService(ApplicationDbContext db)
         {
             case ReviewAction.Setuju:
                 var next = sub.ReviewSteps.FirstOrDefault(r => r.StepOrder == sub.CurrentReviewerIndex + 1 && r.Action == null);
+                // Last approval hands over to the Division Head rather than closing the record:
+                // Disetujui/Ditolak are now set only by issuance, which decides NOL vs RL.
                 if (next is not null) sub.CurrentReviewerIndex++;
-                else sub.Status = SubscriptionStatus.Disetujui;
+                else sub.Status = SubscriptionStatus.Penerbitan;
                 break;
             case ReviewAction.Tolak:
                 sub.Status = SubscriptionStatus.Ditolak;

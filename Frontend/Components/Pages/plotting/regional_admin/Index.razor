@@ -1,16 +1,61 @@
 @page "/plotting/region"
 @attribute [Authorize(Policy = SimandoPolicies.CanViewRegion)]
 @rendermode InteractiveServer
+@inject ISubscriptionService Subscriptions
 
 <PageTitle>Plotting Region - SIMANDO</PageTitle>
 
 <AppShell>
 <div class="space-y-4 page-content">
-    <div class="page-header">
-        <div>
-            <h1>Plotting Region</h1>
-            <p>Plotting seluruh area di region — edit region-wide.</p>
-        </div>
-    </div>
+    <PageHeader Title="Plotting Region"
+                Subtitle="@($"{allSubscriptions.Count} perusahaan seluruh area di region.")" />
+
+    <FilterBar @bind-SearchValue="searchQuery" Placeholder="Cari perusahaan...">
+        <select class="form-control" style="max-width: 12rem" @bind="filterArea">
+            <option value="">Semua Area</option>
+            @foreach (var area in areas)
+            {
+                <option value="@area.Name">@area.Name</option>
+            }
+        </select>
+    </FilterBar>
+
+    <DataTable TItem="SubscriptionDto" Items="filtered">
+        <HeaderTemplate>
+            <th>Perusahaan</th>
+            <th>Area</th>
+            <th>Sales</th>
+            <th>Status</th>
+            <th>Update</th>
+            <th></th>
+        </HeaderTemplate>
+        <RowTemplate Context="sub">
+            <td><a href="/companies/@sub.Id" class="font-medium">@sub.CompanyName</a></td>
+            <td class="text-sm text-muted-foreground">@sub.AreaName</td>
+            <td class="text-sm text-muted-foreground">@sub.CreatedByName</td>
+            <td><StatusBadge Status="@sub.Status" /></td>
+            <td class="text-sm text-muted-foreground">@sub.UpdatedAt.ToString("d MMM yyyy")</td>
+            <td><a href="/companies/@sub.Id" class="btn btn-sm btn-outline">Buka</a></td>
+        </RowTemplate>
+    </DataTable>
 </div>
 </AppShell>
+
+@code {
+    private List<SubscriptionDto> allSubscriptions = [];
+    private List<AreaDto> areas = [];
+    private string searchQuery = "";
+    private string filterArea = "";
+
+    private List<SubscriptionDto> filtered => allSubscriptions
+        .Where(s => string.IsNullOrWhiteSpace(searchQuery) || s.CompanyName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
+        .Where(s => string.IsNullOrWhiteSpace(filterArea) || s.AreaName == filterArea)
+        .OrderByDescending(s => s.UpdatedAt)
+        .ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        areas = await Subscriptions.GetAreasAsync();
+        allSubscriptions = await Subscriptions.GetAllAsync();
+    }
+}

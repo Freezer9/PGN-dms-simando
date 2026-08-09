@@ -28,9 +28,15 @@
 
                     <AuthorizeView Policy="@SimandoPolicies.CanApprove">
                         <BbSidebarMenuItem>
-                            <BbSidebarMenuButton Href="/tasks" Tooltip="Tugas Saya">
+                            <BbSidebarMenuButton Href="/tasks" Match="NavLinkMatch.All" Tooltip="Tugas Saya">
                                 <LucideIcon Name="inbox" />
                                 <span>Tugas Saya</span>
+                            </BbSidebarMenuButton>
+                        </BbSidebarMenuItem>
+                        <BbSidebarMenuItem>
+                            <BbSidebarMenuButton Href="/tasks/history" Tooltip="Riwayat Tindakan">
+                                <LucideIcon Name="history" />
+                                <span>Riwayat</span>
                             </BbSidebarMenuButton>
                         </BbSidebarMenuItem>
                     </AuthorizeView>
@@ -44,34 +50,48 @@
                         </BbSidebarMenuItem>
                     </AuthorizeView>
 
-                    <AuthorizeView Policy="@SimandoPolicies.CanCreateSubscription">
+                    @* Gated by role rather than policy: Docs/14 gives Direktori and Plotting to
+                       Sales Area (edit), Area Head (read-only) and Regional Admin (region-wide)
+                       only — Reviewer and Division Head get no entry, which no existing policy
+                       expresses. Regional Admin must be matched before Sales Area because it also
+                       satisfies CanCreateSubscription. *@
+                    <AuthorizeView Roles="@SimandoRoles.AdminRegional">
                         <BbSidebarMenuItem>
-                            <BbSidebarMenuButton Href="/directory" Tooltip="Direktori">
+                            <BbSidebarMenuButton Href="/directory/region" Tooltip="Direktori Region">
                                 <LucideIcon Name="building-2" />
                                 <span>Direktori</span>
                             </BbSidebarMenuButton>
                         </BbSidebarMenuItem>
-                    </AuthorizeView>
-
-                    <AuthorizeView Policy="@SimandoPolicies.CanViewSubscriptions">
                         <BbSidebarMenuItem>
-                            <BbSidebarMenuButton Href="/directory/read" Tooltip="Direktori">
-                                <LucideIcon Name="building-2" />
-                                <span>Direktori</span>
-                            </BbSidebarMenuButton>
-                        </BbSidebarMenuItem>
-                    </AuthorizeView>
-
-                    <AuthorizeView Policy="@SimandoPolicies.CanCreateSubscription">
-                        <BbSidebarMenuItem>
-                            <BbSidebarMenuButton Href="/plotting" Tooltip="Plotting">
+                            <BbSidebarMenuButton Href="/plotting/region" Tooltip="Plotting Region">
                                 <LucideIcon Name="map-pin" />
                                 <span>Plotting</span>
                             </BbSidebarMenuButton>
                         </BbSidebarMenuItem>
                     </AuthorizeView>
 
-                    <AuthorizeView Policy="@SimandoPolicies.CanViewSubscriptions">
+                    <AuthorizeView Roles="@SimandoRoles.SalesArea" Context="salesNav">
+                        <BbSidebarMenuItem>
+                            <BbSidebarMenuButton Href="/directory" Match="NavLinkMatch.All" Tooltip="Direktori">
+                                <LucideIcon Name="building-2" />
+                                <span>Direktori</span>
+                            </BbSidebarMenuButton>
+                        </BbSidebarMenuItem>
+                        <BbSidebarMenuItem>
+                            <BbSidebarMenuButton Href="/plotting" Match="NavLinkMatch.All" Tooltip="Plotting">
+                                <LucideIcon Name="map-pin" />
+                                <span>Plotting</span>
+                            </BbSidebarMenuButton>
+                        </BbSidebarMenuItem>
+                    </AuthorizeView>
+
+                    <AuthorizeView Roles="@SimandoRoles.AreaHead" Context="areaHeadNav">
+                        <BbSidebarMenuItem>
+                            <BbSidebarMenuButton Href="/directory/read" Tooltip="Direktori">
+                                <LucideIcon Name="building-2" />
+                                <span>Direktori</span>
+                            </BbSidebarMenuButton>
+                        </BbSidebarMenuItem>
                         <BbSidebarMenuItem>
                             <BbSidebarMenuButton Href="/plotting/read" Tooltip="Plotting">
                                 <LucideIcon Name="map-pin" />

@@ -1,20 +1,203 @@
 @page "/companies/{CompanyId:int}/prospect"
 @attribute [Authorize(Policy = SimandoPolicies.CanViewSubscriptions)]
 @rendermode InteractiveServer
+@inject ISubscriptionService Subscriptions
+@inject IStageService Stages
+@inject ToastService Toasts
 
 <PageTitle>Prospek - SIMANDO</PageTitle>
 
 <AppShell>
 <div class="space-y-4 page-content">
-    <div class="page-header">
-        <div>
-            <h1>Prospek</h1>
-            <p>Kontak perusahaan (PIC) — nama dan jabatan wajib, media sosial opsional.</p>
-        </div>
-    </div>
+    <PageHeader Title="Prospek"
+                Subtitle="Kontak perusahaan (PIC) — minimal 1 kontak dengan nama dan jabatan." />
+
+    @if (sub is null)
+    {
+        <EmptyState Title="Perusahaan tidak ditemukan" />
+    }
+    else
+    {
+        <FormSection Title="@sub.CompanyName" Description="@sub.AreaName" Spaced="false">
+            <div class="detail-row"><span class="detail-label">Alamat</span><span class="detail-value">@sub.Address</span></div>
+            <div class="detail-row"><span class="detail-label">Dibuat oleh</span><span class="detail-value">@sub.CreatedByName</span></div>
+        </FormSection>
+
+        <FormSection Title="Kontak PIC"
+                     Description="@($"{contacts.Count} kontak terdaftar.")">
+            @if (contacts.Count == 0)
+            {
+                <EmptyState Title="Belum ada kontak"
+                            Description="Tambahkan minimal 1 kontak PIC untuk melanjutkan ke tahap Survei." />
+            }
+            else
+            {
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Nama</th>
+                            <th>Jabatan</th>
+                            <th>Email</th>
+                            <th>No. HP</th>
+                            <th>Utama</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var contact in contacts)
+                        {
+                            <tr>
+                                <td class="font-medium">@contact.Nama</td>
+                                <td class="text-sm text-muted-foreground">@contact.Jabatan</td>
+                                <td class="text-sm text-muted-foreground">@contact.Email</td>
+                                <td class="text-sm text-muted-foreground">@contact.NoHp</td>
+                                <td>
+                                    @if (contact.IsPrimary)
+                                    {
+                                        <span class="badge badge-approved">Utama</span>
+                                    }
+                                </td>
+                                <td>
+                                    <AuthorizeView Policy="@SimandoPolicies.CanCreateSubscription">
+                                        <div class="flex gap-2">
+                                            <button type="button" class="btn btn-sm btn-ghost"
+                                                    @onclick="@(() => Edit(contact))">Ubah</button>
+                                            <button type="button" class="btn btn-sm btn-ghost"
+                                                    @onclick="@(() => Delete(contact))">Hapus</button>
+                                        </div>
+                                    </AuthorizeView>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </FormSection>
+
+        <AuthorizeView Policy="@SimandoPolicies.CanCreateSubscription">
+            <FormSection Title="@(editingId is null ? "Tambah Kontak" : "Ubah Kontak")">
+                <div class="form-group">
+                    <label class="form-label">Nama (wajib)</label>
+                    <InputText class="form-control" @bind-Value="form.Nama" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Jabatan (wajib)</label>
+                    <InputText class="form-control" @bind-Value="form.Jabatan" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <InputText class="form-control" @bind-Value="form.Email" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">No. HP</label>
+                    <InputText class="form-control" @bind-Value="form.NoHp" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">LinkedIn</label>
+                    <InputText class="form-control" @bind-Value="form.LinkedIn" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Instagram</label>
+                    <InputText class="form-control" @bind-Value="form.Instagram" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Facebook</label>
+                    <InputText class="form-control" @bind-Value="form.Facebook" />
+                </div>
+                <label class="flex gap-2 items-center">
+                    <InputCheckbox @bind-Value="form.IsPrimary" />
+                    <span>Jadikan kontak utama</span>
+                </label>
+                <div class="flex gap-2">
+                    <BbButton OnClick="@Save" Disabled="@saving">
+                        @(saving ? "Menyimpan..." : "Simpan Kontak")
+                    </BbButton>
+                    @if (editingId is not null)
+                    {
+                        <BbButton Variant="ButtonVariant.Outline" OnClick="@ResetForm">Batal</BbButton>
+                    }
+                </div>
+            </FormSection>
+        </AuthorizeView>
+    }
 </div>
 </AppShell>
 
 @code {
     [Parameter] public int CompanyId { get; set; }
+
+    private SubscriptionDto? sub;
+    private List<CompanyContactDto> contacts = [];
+    private SaveContactRequest form = new();
+    private int? editingId;
+    private bool saving;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        sub = await Subscriptions.GetAsync(CompanyId);
+        if (sub is not null)
+            contacts = await Stages.GetContactsAsync(CompanyId);
+    }
+
+    private void Edit(CompanyContactDto contact)
+    {
+        editingId = contact.Id;
+        form = new SaveContactRequest
+        {
+            Id = contact.Id,
+            Nama = contact.Nama,
+            Jabatan = contact.Jabatan,
+            Email = contact.Email,
+            NoHp = contact.NoHp,
+            LinkedIn = contact.LinkedIn,
+            Instagram = contact.Instagram,
+            Facebook = contact.Facebook,
+            IsPrimary = contact.IsPrimary
+        };
+    }
+
+    private void ResetForm()
+    {
+        editingId = null;
+        form = new SaveContactRequest();
+    }
+
+    private async Task Save()
+    {
+        if (string.IsNullOrWhiteSpace(form.Nama) || string.IsNullOrWhiteSpace(form.Jabatan))
+        {
+            Toasts.Error("Nama dan jabatan wajib diisi.");
+            return;
+        }
+
+        saving = true;
+        try
+        {
+            var (success, error) = await Stages.SaveContactAsync(CompanyId, form);
+            if (!success)
+            {
+                Toasts.Error(string.IsNullOrWhiteSpace(error) ? "Gagal menyimpan kontak." : error);
+                return;
+            }
+
+            Toasts.Success($"Kontak {form.Nama} tersimpan.");
+            ResetForm();
+            contacts = await Stages.GetContactsAsync(CompanyId);
+        }
+        finally { saving = false; }
+    }
+
+    private async Task Delete(CompanyContactDto contact)
+    {
+        if (await Stages.DeleteContactAsync(CompanyId, contact.Id))
+        {
+            Toasts.Success($"Kontak {contact.Nama} dihapus.");
+            if (editingId == contact.Id) ResetForm();
+            contacts = await Stages.GetContactsAsync(CompanyId);
+        }
+        else
+        {
+            Toasts.Error("Gagal menghapus kontak.");
+        }
+    }
 }

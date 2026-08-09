@@ -1,16 +1,44 @@
 @page "/dashboard/reviewer"
 @attribute [Authorize(Policy = SimandoPolicies.CanViewDashboard)]
 @rendermode InteractiveServer
+@inject IWorkflowService Workflow
 
 <PageTitle>Dashboard Reviewer - SIMANDO</PageTitle>
 
 <AppShell>
 <div class="space-y-6 page-content">
-    <div class="page-header">
-        <div>
-            <h1>Dashboard Reviewer</h1>
-            <p>Pending review dan turnaround Anda.</p>
-        </div>
+    <PageHeader Title="Dashboard Reviewer" Subtitle="Pending review dan turnaround Anda." />
+
+    <div class="stats-grid">
+        <StatTile Icon="inbox" Label="Menunggu Review" Value="@pending.Count.ToString()" />
     </div>
+
+    <DataTable TItem="SubscriptionDto" Items="pending"
+               EmptyTitle="Tidak ada antrean"
+               EmptyDescription="Semua review sudah selesai.">
+        <HeaderTemplate>
+            <th>Perusahaan</th>
+            <th>Area</th>
+            <th>Sales</th>
+            <th>Status</th>
+            <th></th>
+        </HeaderTemplate>
+        <RowTemplate Context="sub">
+            <td><a href="/companies/@sub.Id" class="font-medium">@sub.CompanyName</a></td>
+            <td class="text-sm text-muted-foreground">@sub.AreaName</td>
+            <td class="text-sm text-muted-foreground">@sub.CreatedByName</td>
+            <td><StatusBadge Status="@sub.Status" /></td>
+            <td><a href="/companies/@sub.Id" class="btn btn-sm btn-outline">Review</a></td>
+        </RowTemplate>
+    </DataTable>
 </div>
 </AppShell>
+
+@code {
+    private List<SubscriptionDto> pending = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        pending = await Workflow.GetPendingReviewAsync();
+    }
+}

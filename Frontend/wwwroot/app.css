@@ -193,6 +193,8 @@ hr {
 .badge-survey { background: #fce7f3; color: #be185d; }
 .badge-a1 { background: #d1fae5; color: #065f46; }
 .badge-permohonan { background: #ede9fe; color: #6d28d9; }
+.badge-evaluasi { background: #cffafe; color: #0e7490; }
+.badge-penerbitan { background: #ffedd5; color: #c2410c; }
 .badge-approved { background: #d1fae5; color: #065f46; }
 .badge-rejected { background: #fee2e2; color: #991b1b; }
 .badge-revision { background: #fef3c7; color: #b45309; }
@@ -285,6 +287,13 @@ hr {
     margin-bottom: 1rem;
 }
 
+/* Multi-column field layout for the long stage forms (survey, A1, NOL, evaluation). */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    gap: 0 1rem;
+}
+
 .form-label {
     font-size: 0.875rem;
     font-weight: 500;
@@ -368,6 +377,12 @@ select.form-control {
     border-color: #fee2e2;
     background-color: #fef2f2;
     color: #991b1b;
+}
+
+.alert-warning {
+    border-color: #fde68a;
+    background-color: #fffbeb;
+    color: #92400e;
 }
 
 .alert-info {

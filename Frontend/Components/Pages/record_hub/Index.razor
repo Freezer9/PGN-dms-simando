@@ -1,20 +1,460 @@
 @page "/companies/{CompanyId:int}"
+@using System.Globalization
 @attribute [Authorize(Policy = SimandoPolicies.CanViewSubscriptions)]
 @rendermode InteractiveServer
+@inject ISubscriptionService Subscriptions
+@inject IWorkflowService Workflow
+@inject IActivityService Activity
+@inject NavigationManager Navigation
+@inject ToastService Toasts
 
-<PageTitle>Record Hub - SIMANDO</PageTitle>
+<PageTitle>@(sub?.CompanyName ?? "Perusahaan") - SIMANDO</PageTitle>
 
 <AppShell>
 <div class="space-y-4 page-content">
-    <div class="page-header">
-        <div>
-            <h1>Record Hub</h1>
-            <p>Ringkasan, plotting, prospek, survei, A1, NOL, evaluasi, penerbitan, dokumen.</p>
+    @if (sub is null)
+    {
+        <div class="empty-state">
+            <div class="empty-state-title">Perusahaan tidak ditemukan</div>
         </div>
-    </div>
+    }
+    else
+    {
+        <div class="page-header">
+            <div>
+                <h1>@sub.CompanyName</h1>
+                <p>@sub.AreaName &middot; @sub.RegionName</p>
+            </div>
+            <div class="flex gap-2 items-center">
+                <StatusBadge Status="@sub.Status" />
+            </div>
+        </div>
+
+        <div class="workflow-steps">
+            @{
+                var currentIdx = SubscriptionStages.IndexOf(sub.Status);
+                var isDone = SubscriptionStages.IsTerminal(sub.Status);
+            }
+            @foreach (var (stage, idx) in SubscriptionStages.Order.Select((s, i) => (s, i)))
+            {
+                var isActive = currentIdx == idx;
+                var isCompleted = isDone || currentIdx > idx;
+                var css = isActive ? "workflow-step active" : isCompleted ? "workflow-step completed" : "workflow-step";
+                <span class="@css">@SubscriptionStages.Label(stage)</span>
+                @if (idx < SubscriptionStages.Order.Length - 1)
+                {
+                    <span class="workflow-arrow">&rarr;</span>
+                }
+            }
+            @if (sub.Status == SubscriptionStatus.Ditolak)
+            {
+                <span class="workflow-step rejected">Ditolak</span>
+            }
+        </div>
+
+        <div style="display: flex; gap: 0.25rem; border-bottom: 1px solid var(--border); margin-bottom: 1rem; overflow-x: auto">
+            @foreach (var tab in VisibleTabs)
+            {
+                <button class="btn btn-ghost btn-sm @(activeTab == tab.Key ? "btn-primary" : "")"
+                        style="border-radius: 0; border-bottom: 2px solid @(activeTab == tab.Key ? "var(--primary)" : "transparent")"
+                        @onclick="@(() => activeTab = tab.Key)">
+                    @tab.Label
+                </button>
+            }
+        </div>
+
+        @if (activeTab == "ringkasan")
+        {
+            <div class="detail-grid">
+                <div class="card">
+                    <div class="card-header"><div class="card-title">Informasi Perusahaan</div></div>
+                    <div class="card-content">
+                        <div class="detail-row"><span class="detail-label">Nama</span><span class="detail-value">@sub.CompanyName</span></div>
+                        <div class="detail-row"><span class="detail-label">Alamat</span><span class="detail-value">@sub.Address</span></div>
+                        <div class="detail-row"><span class="detail-label">Area</span><span class="detail-value">@sub.AreaName</span></div>
+                        <div class="detail-row"><span class="detail-label">Region</span><span class="detail-value">@sub.RegionName</span></div>
+                        <div class="detail-row"><span class="detail-label">Dibuat oleh</span><span class="detail-value">@sub.CreatedByName</span></div>
+                        <div class="detail-row"><span class="detail-label">Dibuat</span><span class="detail-value">@sub.CreatedAt.ToString("d MMM yyyy HH:mm")</span></div>
+                        <div class="detail-row"><span class="detail-label">Update terakhir</span><span class="detail-value">@sub.UpdatedAt.ToString("d MMM yyyy HH:mm")</span></div>
+                        <div class="detail-row"><span class="detail-label">Koordinat</span><span class="detail-value">@Coord(sub.Latitude), @Coord(sub.Longitude)</span></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><div class="card-title">Dokumen</div></div>
+                    <div class="card-content">
+                        @if (sub.Submissions.Count == 0)
+                        {
+                            <div class="text-sm text-muted-foreground">Belum ada dokumen diunggah.</div>
+                        }
+                        else
+                        {
+                            @foreach (var doc in sub.Submissions.OrderByDescending(d => d.UploadedAt))
+                            {
+                                <div class="detail-row">
+                                    <span class="detail-label">@doc.Stage</span>
+                                    <span class="detail-value text-sm">@doc.FileName</span>
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+        else if (activeTab == "tahapan")
+        {
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Data per Tahap</div>
+                    <div class="card-description">Buka tahap untuk melihat atau mengubah datanya.</div>
+                </div>
+                <div class="card-content" style="padding: 0">
+                    <table class="data-table">
+                        <thead>
+                            <tr><th>Tahap</th><th>Status</th><th></th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var stage in StageLinks)
+                            {
+                                <tr>
+                                    <td class="font-medium">@stage.Label</td>
+                                    <td class="text-sm text-muted-foreground">@stage.State</td>
+                                    <td><a href="@stage.Href" class="btn btn-sm btn-outline">Buka</a></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+        else if (activeTab == "aktivitas")
+        {
+            <div class="card">
+                <div class="card-header"><div class="card-title">Log Aktivitas</div></div>
+                <div class="card-content">
+                    @if (activityLogs.Count == 0)
+                    {
+                        <div class="text-sm text-muted-foreground">Belum ada aktivitas.</div>
+                    }
+                    else
+                    {
+                        <div class="timeline">
+                            @foreach (var entry in activityLogs)
+                            {
+                                <div class="timeline-item">
+                                    <div class="timeline-item-title">@entry.ActorName @entry.Action</div>
+                                    <div class="timeline-item-time">@entry.At.ToString("d MMM yyyy HH:mm")</div>
+                                    @if (!string.IsNullOrEmpty(entry.Details))
+                                    {
+                                        <div class="timeline-item-desc">@entry.Details</div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+        else if (activeTab == "review")
+        {
+            <div class="card">
+                <div class="card-header"><div class="card-title">Langkah Review</div></div>
+                <div class="card-content">
+                    @if (sub.ReviewSteps.Count == 0)
+                    {
+                        <div class="text-sm text-muted-foreground">Belum ada langkah review.</div>
+                    }
+                    else
+                    {
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Urutan</th>
+                                    <th>Reviewer</th>
+                                    <th>Aksi</th>
+                                    <th>Komentar</th>
+                                    <th>Waktu</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var step in sub.ReviewSteps.OrderBy(s => s.StepOrder))
+                                {
+                                    <tr>
+                                        <td class="text-sm">@step.StepOrder</td>
+                                        <td class="text-sm font-medium">@step.ReviewerName</td>
+                                        <td>
+                                            @if (step.Action.HasValue)
+                                            {
+                                                <BbBadge Variant="@(step.Action == ReviewAction.Setuju ? BadgeVariant.Default : BadgeVariant.Destructive)">
+                                                    @step.Action
+                                                </BbBadge>
+                                            }
+                                            else
+                                            {
+                                                <BbBadge Variant="BadgeVariant.Secondary">Menunggu</BbBadge>
+                                            }
+                                        </td>
+                                        <td class="text-sm text-muted-foreground">@step.Comment</td>
+                                        <td class="text-sm text-muted-foreground">@step.ReviewedAt?.ToString("d MMM yyyy HH:mm")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+            </div>
+        }
+        else if (activeTab == "dokumen")
+        {
+            <div class="card">
+                <div class="card-header"><div class="card-title">Unggah Dokumen</div></div>
+                <div class="card-content">
+                    <AuthorizeView Policy="@SimandoPolicies.CanCreateSubscription">
+                        <div class="flex gap-2 items-end">
+                            <div class="form-group" style="margin-bottom: 0; flex: 1">
+                                <label class="form-label">Pilih file</label>
+                                <InputFile OnChange="@HandleFileUpload" class="form-control" />
+                            </div>
+                            <BbButton OnClick="@UploadFile" Disabled="@(uploadFile is null || uploading)">
+                                @(uploading ? "Mengunggah..." : "Unggah")
+                            </BbButton>
+                        </div>
+                    </AuthorizeView>
+                </div>
+            </div>
+
+            <div class="card" style="margin-top: 1rem">
+                <div class="card-header"><div class="card-title">Daftar Dokumen</div></div>
+                <div class="card-content" style="padding: 0">
+                    @if (sub.Submissions.Count == 0)
+                    {
+                        <div class="empty-state">
+                            <div class="empty-state-title">Belum ada dokumen</div>
+                        </div>
+                    }
+                    else
+                    {
+                        <table class="data-table">
+                            <thead>
+                                <tr><th>File</th><th>Tahap</th><th>Diunggah oleh</th><th>Waktu</th></tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var doc in sub.Submissions.OrderByDescending(d => d.UploadedAt))
+                                {
+                                    <tr>
+                                        <td class="font-medium text-sm">@doc.FileName</td>
+                                        <td><StatusBadge Status="@doc.Stage" /></td>
+                                        <td class="text-sm text-muted-foreground">@doc.UploadedByName</td>
+                                        <td class="text-sm text-muted-foreground">@doc.UploadedAt.ToString("d MMM yyyy HH:mm")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+            </div>
+        }
+
+        <AuthorizeView Policy="@SimandoPolicies.CanApprove">
+            <div class="card" style="margin-top: 1rem">
+                <div class="card-header"><div class="card-title">Aksi Persetujuan</div></div>
+                <div class="card-content">
+                    <div class="review-actions">
+                        <BbButton OnClick="@(() => SubmitReview(ReviewAction.Setuju))">
+                            <LucideIcon Name="check" Class="h-4 w-4" /> Setuju
+                        </BbButton>
+                        <BbButton Variant="ButtonVariant.Outline" OnClick="@(() => showRevisiDialog = true)">
+                            <LucideIcon Name="edit" Class="h-4 w-4" /> Minta Revisi
+                        </BbButton>
+                        <BbButton Variant="ButtonVariant.Destructive" OnClick="@(() => showTolakDialog = true)">
+                            <LucideIcon Name="x" Class="h-4 w-4" /> Tolak
+                        </BbButton>
+                    </div>
+                </div>
+            </div>
+        </AuthorizeView>
+    }
 </div>
+
+@if (showRevisiDialog)
+{
+    <BbDialog Open="true" OnOpenChange="@(open => showRevisiDialog = open)">
+        <BbDialogContent Class="sm:max-w-md">
+            <BbDialogHeader><BbDialogTitle>Minta Revisi</BbDialogTitle></BbDialogHeader>
+            <div class="form-group">
+                <label class="form-label">Komentar (wajib)</label>
+                <textarea class="form-control" @bind="reviewComment" rows="4" placeholder="Jelaskan alasan revisi..."></textarea>
+            </div>
+            <div class="flex gap-2 justify-end">
+                <BbButton Variant="ButtonVariant.Outline" OnClick="@(() => showRevisiDialog = false)">Batal</BbButton>
+                <BbButton OnClick="@(() => SubmitReview(ReviewAction.Revisi))">Kirim Revisi</BbButton>
+            </div>
+        </BbDialogContent>
+    </BbDialog>
+}
+
+@if (showTolakDialog)
+{
+    <BbDialog Open="true" OnOpenChange="@(open => showTolakDialog = open)">
+        <BbDialogContent Class="sm:max-w-md">
+            <BbDialogHeader><BbDialogTitle>Tolak Permohonan</BbDialogTitle></BbDialogHeader>
+            <div class="form-group">
+                <label class="form-label">Komentar (wajib)</label>
+                <textarea class="form-control" @bind="reviewComment" rows="4" placeholder="Jelaskan alasan penolakan..."></textarea>
+            </div>
+            <div class="flex gap-2 justify-end">
+                <BbButton Variant="ButtonVariant.Outline" OnClick="@(() => showTolakDialog = false)">Batal</BbButton>
+                <BbButton Variant="ButtonVariant.Destructive" OnClick="@(() => SubmitReview(ReviewAction.Tolak))">Tolak</BbButton>
+            </div>
+        </BbDialogContent>
+    </BbDialog>
+}
 </AppShell>
 
 @code {
     [Parameter] public int CompanyId { get; set; }
+
+    private SubscriptionDto? sub;
+    private List<ActivityLogDto> activityLogs = [];
+    private string activeTab = "ringkasan";
+    private string reviewComment = "";
+    private bool showRevisiDialog;
+    private bool showTolakDialog;
+    private IBrowserFile? uploadFile;
+    private bool uploading;
+
+    [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
+
+    private string role = "";
+    private bool canEditStages;
+
+    private readonly (string Key, string Label)[] tabs = [
+        ("ringkasan", "Ringkasan"),
+        ("tahapan", "Tahapan"),
+        ("aktivitas", "Aktivitas"),
+        ("review", "Review"),
+        ("dokumen", "Dokumen")
+    ];
+
+    private (string Key, string Label)[] VisibleTabs => tabs;
+
+    /// <summary>
+    /// Per-stage links honouring the Docs tab-visibility matrix: Evaluasi and Penerbitan are
+    /// hidden from Sales Area and Area Head, Penerbitan is hidden from Reviewer, and every
+    /// role without edit rights on a stage gets its read-only route.
+    /// </summary>
+    private List<(string Label, string State, string Href)> StageLinks
+    {
+        get
+        {
+            var links = new List<(string, string, string)>
+            {
+                ("Plotting", StageState(SubscriptionStatus.Plotting), "/plotting"),
+                ("Prospek", StageState(SubscriptionStatus.Prospect), $"/companies/{CompanyId}/prospect"),
+                ("Survei (KK0)", StageState(SubscriptionStatus.Survey),
+                    canEditStages ? $"/companies/{CompanyId}/survey" : $"/companies/{CompanyId}/survey/read"),
+                ("Registrasi A1", StageState(SubscriptionStatus.A1),
+                    canEditStages ? $"/companies/{CompanyId}/a1" : $"/companies/{CompanyId}/a1/read"),
+                ("Permohonan NOL", StageState(SubscriptionStatus.PermohonanNOL),
+                    canEditStages ? $"/companies/{CompanyId}/nol-request" : $"/companies/{CompanyId}/nol-request/read")
+            };
+
+            if (role is not (SimandoRoles.SalesArea or SimandoRoles.AreaHead))
+            {
+                links.Add(("Evaluasi", StageState(SubscriptionStatus.Evaluasi),
+                    role == SimandoRoles.AdminRegional
+                        ? $"/companies/{CompanyId}/evaluation"
+                        : $"/companies/{CompanyId}/evaluation/read"));
+            }
+
+            if (role is SimandoRoles.AdminRegional or SimandoRoles.DivisionHead or SimandoRoles.SystemAdmin)
+            {
+                links.Add(("Penerbitan", StageState(SubscriptionStatus.Penerbitan),
+                    $"/companies/{CompanyId}/issuance"));
+            }
+
+            return links;
+        }
+    }
+
+    /// <summary>Coordinates always use a dot, whatever the server locale.</summary>
+    private static string Coord(double? value)
+        => value?.ToString("F6", CultureInfo.InvariantCulture) ?? "-";
+
+    private string StageState(SubscriptionStatus stage)
+    {
+        if (sub is null) return "—";
+        if (sub.Status == stage) return "Tahap saat ini";
+        return SubscriptionStages.IsAtOrAfter(sub.Status, stage) ? "Selesai" : "Belum";
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (AuthState is not null)
+        {
+            var user = (await AuthState).User;
+            role = CurrentUser.PrimaryRole(user);
+            canEditStages = role is SimandoRoles.SalesArea or SimandoRoles.AdminRegional;
+        }
+
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        sub = await Subscriptions.GetAsync(CompanyId);
+        if (sub is not null)
+        {
+            activityLogs = await Activity.GetForSubscriptionAsync(CompanyId);
+        }
+    }
+
+    private async Task SubmitReview(ReviewAction action)
+    {
+        if (sub is null) return;
+        if ((action == ReviewAction.Revisi || action == ReviewAction.Tolak) && string.IsNullOrWhiteSpace(reviewComment))
+        {
+            Toasts.Error("Komentar wajib diisi untuk revisi/penolakan.");
+            return;
+        }
+        var ok = await Workflow.SubmitReviewAsync(sub.Id, action, reviewComment);
+        if (ok)
+        {
+            Toasts.Success($"Aksi {action} berhasil.");
+            reviewComment = "";
+            showRevisiDialog = false;
+            showTolakDialog = false;
+            await LoadAsync();
+        }
+        else
+        {
+            Toasts.Error("Gagal memproses aksi.");
+        }
+    }
+
+    private async Task HandleFileUpload(InputFileChangeEventArgs e)
+    {
+        uploadFile = e.File;
+    }
+
+    private async Task UploadFile()
+    {
+        if (uploadFile is null || sub is null) return;
+        uploading = true;
+        try
+        {
+            using var stream = uploadFile.OpenReadStream(10 * 1024 * 1024);
+            await Subscriptions.UploadAsync(sub.Id, stream, uploadFile.Name, uploadFile.ContentType);
+            Toasts.Success("Dokumen berhasil diunggah.");
+            uploadFile = null;
+            await LoadAsync();
+        }
+        catch
+        {
+            Toasts.Error("Gagal mengunggah dokumen.");
+        }
+        finally
+        {
+            uploading = false;
+        }
+    }
 }

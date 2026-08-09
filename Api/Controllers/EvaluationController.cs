@@ -12,7 +12,7 @@ namespace Pgn.Dms.Api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class EvaluationController(WorkflowService workflow) : ControllerBase
+public class EvaluationController(WorkflowService workflow, StageService stages) : ControllerBase
 {
     private string UserId => User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "";
     private string UserName => User.FindFirst(ClaimTypes.Name)?.Value ?? "";
@@ -32,11 +32,21 @@ public class EvaluationController(WorkflowService workflow) : ControllerBase
         var resume = await workflow.SaveResumeAsync(subscriptionId, req.Content, UserId, UserName);
         return Ok(resume);
     }
+
+    /// <summary>Structured stage-7 data. The narrative Resume Evaluasi stays on the endpoints above.</summary>
+    [HttpGet("{subscriptionId:int}/detail")]
+    public async Task<ActionResult<NolEvaluationDto>> GetDetail(int subscriptionId)
+        => await stages.GetEvaluationAsync(subscriptionId) is { } dto ? Ok(dto) : NotFound();
+
+    [HttpPut("{subscriptionId:int}/detail")]
+    [Authorize(Roles = "AdminRegional")]
+    public async Task<ActionResult<NolEvaluationDto>> SaveDetail(int subscriptionId, [FromBody] NolEvaluationDto req)
+        => Ok(await stages.SaveEvaluationAsync(subscriptionId, req, UserId, UserName));
 }
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "AdminRegional")]
+[Authorize(Roles = "AdminRegional,SystemAdmin")]
 public class UsersController(UserManager<ApplicationUser> userManager, ApplicationDbContext db) : ControllerBase
 {
     [HttpGet]
@@ -65,11 +75,21 @@ public class UsersController(UserManager<ApplicationUser> userManager, Applicati
             FullName = req.FullName, AreaId = req.AreaId
         };
 
+        if (!SimandoRoles.All.Contains(req.Role))
+            return BadRequest($"Role '{req.Role}' tidak dikenali.");
+
         var result = await userManager.CreateAsync(user, req.Password);
         if (!result.Succeeded)
             return BadRequest(string.Join(", ", result.Errors.Select(e => e.Description)));
 
-        await userManager.AddToRoleAsync(user, req.Role);
+        var roleResult = await userManager.AddToRoleAsync(user, req.Role);
+        if (!roleResult.Succeeded)
+        {
+            // Don't leave a roleless account behind — it would fail every policy check.
+            await userManager.DeleteAsync(user);
+            return BadRequest(string.Join(", ", roleResult.Errors.Select(e => e.Description)));
+        }
+
         return Ok();
     }
 }

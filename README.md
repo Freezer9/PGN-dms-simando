@@ -85,7 +85,6 @@ Frontend/                   Blazor Server UI — pure HTTP client of the Api
   Components/
     Account/                 Login.razor calls Api's /api/auth/login, signs in a local cookie
     Layout/                  AppShell, AppSidebar, CommandPalette, UserMenu
-    Subscriptions/            StatusBadge, WorkflowSteps, DocumentUpload, ReviewCard
     Pages/                    Home, Review, Evaluation, Subscriptions/*, Admin/Users
   wwwroot/
     app.css                   Component-specific CSS

@@ -4,6 +4,9 @@
 @inject ISubscriptionService Subscriptions
 @inject IActivityService Activity
 
+@* Beranda dispatches to the role dashboard; the generic view below is the fallback
+   for roles without a dedicated one. *@
+
 <PageTitle>Dashboard - SIMANDO</PageTitle>
 
 <AppShell>
@@ -125,8 +128,30 @@
     private List<SubscriptionDto> recent = [];
     private List<ActivityLogDto> activityLogs = [];
 
+    [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
+        if (AuthState is not null)
+        {
+            var dashboard = CurrentUser.PrimaryRole((await AuthState).User) switch
+            {
+                SimandoRoles.SalesArea => "/dashboard/sales",
+                SimandoRoles.AreaHead => "/dashboard/area-head",
+                SimandoRoles.AdminRegional => "/dashboard/regional",
+                SimandoRoles.Reviewer => "/dashboard/reviewer",
+                SimandoRoles.DivisionHead => "/dashboard/division",
+                SimandoRoles.SystemAdmin => "/dashboard/admin",
+                _ => null
+            };
+
+            if (dashboard is not null)
+            {
+                Navigation.NavigateTo(dashboard, replace: true);
+                return;
+            }
+        }
+
         await LoadAsync();
     }
 

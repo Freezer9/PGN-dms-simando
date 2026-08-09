@@ -1,20 +1,83 @@
 @page "/companies/{CompanyId:int}/a1/read"
 @attribute [Authorize(Policy = SimandoPolicies.CanViewSubscriptions)]
 @rendermode InteractiveServer
+@inject ISubscriptionService Subscriptions
+@inject IStageService Stages
 
 <PageTitle>Registrasi A1 - SIMANDO</PageTitle>
 
 <AppShell>
 <div class="space-y-4 page-content">
-    <div class="page-header">
-        <div>
-            <h1>Registrasi (A1)</h1>
-            <p>Data registrasi dan harga (read-only).</p>
-        </div>
-    </div>
+    <PageHeader Title="Registrasi A1" Subtitle="Tampilan hanya-baca data registrasi dan harga." />
+
+    @if (sub is null)
+    {
+        <EmptyState Title="Perusahaan tidak ditemukan" />
+    }
+    else if (a1 is null)
+    {
+        <EmptyState Title="Registrasi A1 belum diisi"
+                    Description="Sales Area belum melengkapi formulir A1 untuk perusahaan ini." />
+    }
+    else
+    {
+        <FormSection Title="@sub.CompanyName" Description="@sub.AreaName" Spaced="false">
+            <div class="detail-row"><span class="detail-label">Tanggal Registrasi</span><span class="detail-value">@Text(a1.TanggalRegistrasi?.ToString("d MMM yyyy"))</span></div>
+            <div class="detail-row"><span class="detail-label">Penanggung Jawab</span><span class="detail-value">@Text(a1.NamaPenanggungJawab) — @Text(a1.JabatanPenanggungJawab)</span></div>
+            <div class="detail-row"><span class="detail-label">Bulan Dimulai</span><span class="detail-value">@Text(a1.BulanDimulai)</span></div>
+            <div class="detail-row"><span class="detail-label">Status Bangunan</span><span class="detail-value">@Text(a1.StatusBangunan?.ToString())</span></div>
+            <div class="detail-row"><span class="detail-label">Sektor</span><span class="detail-value">@Text(a1.Sektor?.ToString()) — @Text(a1.ProduksiUtama)</span></div>
+            <div class="detail-row"><span class="detail-label">Dokumen A1</span><span class="detail-value">@(sub.Submissions.Any(s => s.Stage == SubscriptionStatus.A1) ? "Tersedia" : "Belum ada")</span></div>
+            <div class="detail-row"><span class="detail-label">Metode Tanda Tangan</span><span class="detail-value">@Text(a1.SignatureMethod?.ToString())</span></div>
+        </FormSection>
+
+        <FormSection Title="Kontrak & Harga">
+            <div class="detail-row"><span class="detail-label">Basis Kontrak</span><span class="detail-value">@Text(a1.BasisKontrak?.ToString())</span></div>
+            <div class="detail-row"><span class="detail-label">Skema Harga</span><span class="detail-value">@Text(a1.SkemaHarga?.ToString())</span></div>
+            <div class="detail-row"><span class="detail-label">Segment</span><span class="detail-value">@Text(a1.SegmentName)</span></div>
+            <div class="detail-row"><span class="detail-label">Kode Harga</span><span class="detail-value">@Text(a1.KodeHarga)</span></div>
+            <div class="detail-row"><span class="detail-label">Harga</span><span class="detail-value">@Text(a1.HargaNilai?.ToString("N2")) @a1.HargaCurrency / @a1.HargaUnit</span></div>
+            <div class="detail-row"><span class="detail-label">Capex Awal</span><span class="detail-value">@Text(a1.CapexAwal?.ToString("N0"))</span></div>
+            <div class="detail-row"><span class="detail-label">MOM SiGas</span><span class="detail-value">@(a1.MomSigasTersedia ? "Tersedia" : "Belum")</span></div>
+            <div class="detail-row"><span class="detail-label">Peralatan Gas</span><span class="detail-value">@Text(a1.JenisPeralatanGas)</span></div>
+            <div class="detail-row"><span class="detail-label">Tekanan Operasi</span><span class="detail-value">@Text(a1.TekananOperasiBarg?.ToString()) barg</span></div>
+        </FormSection>
+
+        @if (a1.Periods.Count > 0)
+        {
+            <FormSection Title="Periode Pemakaian">
+                <table class="data-table">
+                    <thead><tr><th>Mulai</th><th>Selesai</th><th>Rata-rata</th><th>Minimum</th><th>Maksimum</th></tr></thead>
+                    <tbody>
+                        @foreach (var row in a1.Periods)
+                        {
+                            <tr>
+                                <td>@(row.PeriodeMulai?.ToString("d MMM yyyy") ?? "—")</td>
+                                <td>@(row.PeriodeSelesai?.ToString("d MMM yyyy") ?? "—")</td>
+                                <td>@row.RataRata</td>
+                                <td>@row.Minimum</td>
+                                <td>@row.Maksimum</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </FormSection>
+        }
+    }
 </div>
 </AppShell>
 
 @code {
     [Parameter] public int CompanyId { get; set; }
+
+    private SubscriptionDto? sub;
+    private A1RegistrationDto? a1;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        sub = await Subscriptions.GetAsync(CompanyId);
+        if (sub is not null) a1 = await Stages.GetA1Async(CompanyId);
+    }
+
+    private static string Text(string? value) => string.IsNullOrWhiteSpace(value) ? "—" : value;
 }

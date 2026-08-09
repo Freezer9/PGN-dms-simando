@@ -1,20 +1,346 @@
 @page "/companies/{CompanyId:int}/nol-request"
 @attribute [Authorize(Policy = SimandoPolicies.CanCreateSubscription)]
 @rendermode InteractiveServer
+@inject ISubscriptionService Subscriptions
+@inject IStageService Stages
+@inject IMasterDataService MasterData
+@inject IWorkflowService Workflow
+@inject ToastService Toasts
 
 <PageTitle>Permohonan NOL - SIMANDO</PageTitle>
 
 <AppShell>
 <div class="space-y-4 page-content">
-    <div class="page-header">
-        <div>
-            <h1>Permohonan NOL</h1>
-            <p>Volume kontrak, Lampiran 17 evaluasi, dan pengajuan persetujuan.</p>
+    <PageHeader Title="Permohonan NOL"
+                Subtitle="Volume kontrak, Lampiran 17, dan pengajuan persetujuan.">
+        <BbButton OnClick="@Save" Disabled="@saving">
+            @(saving ? "Menyimpan..." : "Simpan Permohonan")
+        </BbButton>
+    </PageHeader>
+
+    @if (sub is null)
+    {
+        <EmptyState Title="Perusahaan tidak ditemukan" />
+    }
+    else
+    {
+        <FormSection Title="Checklist Dokumen" Spaced="false"
+                     Description="Gerbang pengajuan: A1 + KK0 + Capex Pre GR3.">
+            <div class="detail-row">
+                <span class="detail-label">KK0 signed</span>
+                <span class="detail-value">@(HasKk0 ? "OK" : "Belum")</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">A1 signed</span>
+                <span class="detail-value">@(HasA1 ? "OK" : "Belum")</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Capex Pre GR3</span>
+                <span class="detail-value">@(nol.CapexPreGr3 is null ? "Belum diisi" : "OK")</span>
+            </div>
+        </FormSection>
+
+        <FormSection Title="Nota Dinas">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">Nomor Nota Dinas</label>
+                    <InputText class="form-control" @bind-Value="nol.NomorNotaDinas" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Jenis Registrasi</label>
+                    <select class="form-control" @bind="nol.RegistrationType">
+                        <option value="">Pilih jenis</option>
+                        <option value="@RegistrationType.RegistrasiBaru">Registrasi Baru</option>
+                        <option value="@RegistrationType.Amendemen">Amendemen</option>
+                        <option value="@RegistrationType.Perpanjangan">Perpanjangan</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Nama Pimpinan Perusahaan</label>
+                    <InputText class="form-control" @bind-Value="nol.NamaPimpinanPerusahaan" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Jangka Waktu Kontrak</label>
+                    <InputText class="form-control" @bind-Value="nol.JangkaWaktuKontrak" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Bulan Dimulai</label>
+                    <InputText class="form-control" @bind-Value="nol.BulanDimulai" />
+                </div>
+            </div>
+        </FormSection>
+
+        <FormSection Title="Kontrak & Harga">
+            <div class="flex gap-2 items-center">
+                <label class="flex gap-2 items-center">
+                    <InputCheckbox @bind-Value="nol.SamaDenganA1" />
+                    <span>Sama dengan A1</span>
+                </label>
+                <BbButton Variant="ButtonVariant.Outline" OnClick="@CopyFromA1" Disabled="@(a1 is null)">
+                    Salin dari A1
+                </BbButton>
+            </div>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">Basis Kontrak</label>
+                    <select class="form-control" @bind="nol.BasisKontrak">
+                        <option value="">Pilih basis</option>
+                        <option value="@BasisKontrak.Harian">Harian</option>
+                        <option value="@BasisKontrak.Bulanan">Bulanan</option>
+                        <option value="@BasisKontrak.Tahunan">Tahunan</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Skema Harga</label>
+                    <select class="form-control" @bind="nol.SkemaHarga">
+                        <option value="">Pilih skema</option>
+                        <option value="@SkemaHarga.Reguler">Reguler</option>
+                        <option value="@SkemaHarga.SiGas">SiGas</option>
+                        <option value="@SkemaHarga.Bersyarat">Bersyarat</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Segment</label>
+                    <select class="form-control" @bind="nol.SegmentId">
+                        <option value="">Pilih segment</option>
+                        @foreach (var segment in segments)
+                        {
+                            <option value="@segment.Id">@segment.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Kode Harga</label>
+                    <InputText class="form-control" @bind-Value="nol.KodeHarga" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Harga</label>
+                    <InputNumber class="form-control" @bind-Value="nol.HargaNilai" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Mata Uang</label>
+                    <select class="form-control" @bind="nol.HargaCurrency">
+                        <option value="">Pilih</option>
+                        <option value="@MoneyCurrency.Usd">USD</option>
+                        <option value="@MoneyCurrency.Idr">IDR</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Satuan Harga</label>
+                    <select class="form-control" @bind="nol.HargaUnit">
+                        <option value="">Pilih</option>
+                        <option value="@VolumeUnit.MMBtu">MMBtu</option>
+                        <option value="@VolumeUnit.M3">m³</option>
+                    </select>
+                </div>
+            </div>
+
+            @if (nol.SkemaHarga == SkemaHarga.Bersyarat)
+            {
+                <div class="form-group">
+                    <label class="form-label">Alasan Kontrak Bersyarat</label>
+                    <textarea class="form-control" rows="3" @bind="nol.AlasanKontrakBersyarat"></textarea>
+                </div>
+            }
+        </FormSection>
+
+        <FormSection Title="Volume Kontrak">
+            <RepeatingRows TItem="NolRequestPeriodDto" Items="nol.Periods"
+                           ItemFactory="@(() => new NolRequestPeriodDto())"
+                           AddLabel="Tambah Periode" EmptyDescription="Belum ada periode volume.">
+                <HeaderTemplate>
+                    <th>Mulai</th>
+                    <th>Selesai</th>
+                    <th>Rata-rata</th>
+                    <th>Minimum</th>
+                    <th>Maksimum</th>
+                </HeaderTemplate>
+                <RowTemplate Context="row">
+                    <td>
+                        <input type="date" class="form-control" value="@DateValue(row.PeriodeMulai)"
+                               @onchange="@(e => row.PeriodeMulai = ParseDate(e.Value))" />
+                    </td>
+                    <td>
+                        <input type="date" class="form-control" value="@DateValue(row.PeriodeSelesai)"
+                               @onchange="@(e => row.PeriodeSelesai = ParseDate(e.Value))" />
+                    </td>
+                    <td><InputNumber class="form-control" @bind-Value="row.RataRata" /></td>
+                    <td><InputNumber class="form-control" @bind-Value="row.Minimum" /></td>
+                    <td><InputNumber class="form-control" @bind-Value="row.Maksimum" /></td>
+                </RowTemplate>
+            </RepeatingRows>
+        </FormSection>
+
+        <FormSection Title="Biaya">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">Capex Pre GR3</label>
+                    <InputNumber class="form-control" @bind-Value="nol.CapexPreGr3" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Biaya Penyambungan — Reguler</label>
+                    <InputNumber class="form-control" @bind-Value="nol.BiayaPenyambunganReguler" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Biaya Penyambungan — Extra</label>
+                    <InputNumber class="form-control" @bind-Value="nol.BiayaPenyambunganExtra" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Jumlah (otomatis)</label>
+                    <input class="form-control" readonly value="@nol.BiayaPenyambunganJumlah.ToString("N0")" />
+                </div>
+            </div>
+        </FormSection>
+
+        <FormSection Title="Lampiran 17 — Evaluasi">
+            <div class="form-group">
+                <label class="form-label">Narasi Lampiran 17</label>
+                <textarea class="form-control" rows="8" @bind="nol.Lampiran17"
+                          placeholder="Uraian evaluasi untuk Lampiran 17..."></textarea>
+            </div>
+        </FormSection>
+
+        <FormSection Title="Dokumen Acuan">
+            <RepeatingRows TItem="NolRequestReferenceDto" Items="nol.References"
+                           ItemFactory="@(() => new NolRequestReferenceDto())"
+                           AddLabel="Tambah Acuan" EmptyDescription="Belum ada dokumen acuan.">
+                <HeaderTemplate>
+                    <th>Judul</th>
+                    <th>Nomor</th>
+                    <th>Tanggal</th>
+                </HeaderTemplate>
+                <RowTemplate Context="row">
+                    <td><InputText class="form-control" @bind-Value="row.Judul" /></td>
+                    <td><InputText class="form-control" @bind-Value="row.Nomor" /></td>
+                    <td>
+                        <input type="date" class="form-control" value="@DateValue(row.Tanggal)"
+                               @onchange="@(e => row.Tanggal = ParseDate(e.Value))" />
+                    </td>
+                </RowTemplate>
+            </RepeatingRows>
+        </FormSection>
+
+        <div class="flex gap-2" style="margin-top: 1rem">
+            <BbButton OnClick="@Save" Disabled="@saving">
+                @(saving ? "Menyimpan..." : "Simpan Permohonan")
+            </BbButton>
+            @if (SubscriptionStages.IsBefore(sub.Status, SubscriptionStatus.Evaluasi))
+            {
+                <BbButton OnClick="@SubmitForApproval" Disabled="@submitting">
+                    <LucideIcon Name="send" Class="h-4 w-4" />
+                    @(submitting ? "Mengajukan..." : "Ajukan untuk Persetujuan")
+                </BbButton>
+            }
+            <a href="/companies/@CompanyId" class="btn btn-outline">Kembali ke Record</a>
         </div>
-    </div>
+
+        @if (!string.IsNullOrWhiteSpace(blockingReason))
+        {
+            <div class="alert alert-warning">@blockingReason</div>
+        }
+    }
 </div>
 </AppShell>
 
 @code {
     [Parameter] public int CompanyId { get; set; }
+
+    private SubscriptionDto? sub;
+    private NolRequestDto nol = new();
+    private A1RegistrationDto? a1;
+    private List<MasterDataEntryDto> segments = [];
+    private bool saving;
+    private bool submitting;
+    private string? blockingReason;
+
+    private bool HasKk0 => sub?.Submissions.Any(s => s.Stage == SubscriptionStatus.Survey) ?? false;
+    private bool HasA1 => sub?.Submissions.Any(s => s.Stage == SubscriptionStatus.A1) ?? false;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        sub = await Subscriptions.GetAsync(CompanyId);
+        if (sub is null) return;
+
+        nol = await Stages.GetNolRequestAsync(CompanyId) ?? new NolRequestDto { SubscriptionId = CompanyId };
+        a1 = await Stages.GetA1Async(CompanyId);
+        segments = await MasterData.GetAsync(MasterCategory.Segment);
+    }
+
+    /// <summary>Copies the A1 pricing block. Volumes stay separate — NOL terms may differ.</summary>
+    private void CopyFromA1()
+    {
+        if (a1 is null) return;
+
+        nol.BasisKontrak = a1.BasisKontrak;
+        nol.SkemaHarga = a1.SkemaHarga;
+        nol.SegmentId = a1.SegmentId;
+        nol.KodeHarga = a1.KodeHarga;
+        nol.HargaNilai = a1.HargaNilai;
+        nol.HargaCurrency = a1.HargaCurrency;
+        nol.HargaUnit = a1.HargaUnit;
+        nol.BulanDimulai = a1.BulanDimulai;
+        nol.SamaDenganA1 = true;
+
+        if (nol.Periods.Count == 0)
+        {
+            nol.Periods = a1.Periods.Select(p => new NolRequestPeriodDto
+            {
+                PeriodeMulai = p.PeriodeMulai,
+                PeriodeSelesai = p.PeriodeSelesai,
+                RataRata = p.RataRata,
+                Minimum = p.Minimum,
+                Maksimum = p.Maksimum,
+                SortOrder = p.SortOrder
+            }).ToList();
+        }
+
+        Toasts.Success("Data harga disalin dari A1.");
+    }
+
+    private static string DateValue(DateTime? value) => value?.ToString("yyyy-MM-dd") ?? "";
+
+    private static DateTime? ParseDate(object? value)
+        => DateTime.TryParse(value?.ToString(), out var parsed) ? parsed : null;
+
+    private async Task Save()
+    {
+        if (sub is null) return;
+        saving = true;
+        try
+        {
+            nol = await Stages.SaveNolRequestAsync(CompanyId, nol);
+            Toasts.Success("Permohonan NOL tersimpan.");
+        }
+        catch
+        {
+            Toasts.Error("Gagal menyimpan permohonan.");
+        }
+        finally { saving = false; }
+    }
+
+    private async Task SubmitForApproval()
+    {
+        if (sub is null) return;
+        submitting = true;
+        try
+        {
+            // Persist first — the gate reads CapexPreGr3 from the saved row.
+            nol = await Stages.SaveNolRequestAsync(CompanyId, nol);
+
+            var result = await Workflow.AdvanceStatusAsync(sub.Id);
+            if (result.Ok)
+            {
+                blockingReason = null;
+                Toasts.Success("Permohonan berhasil diajukan.");
+                sub = await Subscriptions.GetAsync(CompanyId);
+            }
+            else
+            {
+                blockingReason = result.Reason;
+                Toasts.Error(result.Reason ?? "Gagal mengajukan permohonan.");
+            }
+        }
+        finally { submitting = false; }
+    }
 }

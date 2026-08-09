@@ -166,6 +166,125 @@ namespace Pgn.Dms.Api.Data.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("Pgn.Dms.Api.Data.A1Registration", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("BasisKontrak")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("BulanDimulai")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<double?>("CapexAwal")
+                        .HasColumnType("REAL");
+
+                    b.Property<int?>("HargaCurrency")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<double?>("HargaNilai")
+                        .HasColumnType("REAL");
+
+                    b.Property<int?>("HargaUnit")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("JabatanPenanggungJawab")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("JenisPeralatanGas")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("KodeHarga")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("MomSigasTersedia")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("NamaPenanggungJawab")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ProduksiUtama")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("SegmentId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("Sektor")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("SignatureMethod")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("SkemaHarga")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("StatusBangunan")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("SubscriptionId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("TanggalRegistrasi")
+                        .HasColumnType("TEXT");
+
+                    b.Property<double?>("TekananOperasiBarg")
+                        .HasColumnType("REAL");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SegmentId");
+
+                    b.HasIndex("SubscriptionId")
+                        .IsUnique();
+
+                    b.ToTable("A1Registrations");
+                });
+
+            modelBuilder.Entity("Pgn.Dms.Api.Data.A1UsagePeriod", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("A1RegistrationId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<double?>("Maksimum")
+                        .HasColumnType("REAL");
+
+                    b.Property<double?>("Minimum")
+                        .HasColumnType("REAL");
+
+                    b.Property<DateTime?>("PeriodeMulai")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("PeriodeSelesai")
+                        .HasColumnType("TEXT");
+
+                    b.Property<double?>("RataRata")
+                        .HasColumnType("REAL");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("A1RegistrationId");
+
+                    b.ToTable("A1UsagePeriods");
+                });
+
             modelBuilder.Entity("Pgn.Dms.Api.Data.ActivityLog", b =>
                 {
                     b.Property<int>("Id")
@@ -289,6 +408,569 @@ namespace Pgn.Dms.Api.Data.Migrations
                     b.HasIndex("RegionId");
 
                     b.ToTable("Areas");
+                });
+
+            modelBuilder.Entity("Pgn.Dms.Api.Data.BreakGlassGrant", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("GrantedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("GrantedById")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("GrantedToUserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SubscriptionId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExpiresAt");
+
+                    b.HasIndex("GrantedById");
+
+                    b.HasIndex("GrantedToUserId");
+
+                    b.HasIndex("SubscriptionId");
+
+                    b.ToTable("BreakGlassGrants");
+                });
+
+            modelBuilder.Entity("Pgn.Dms.Api.Data.CompanyContact", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Facebook")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Instagram")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsPrimary")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Jabatan")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LinkedIn")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Nama")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("NoHp")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("SubscriptionId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SubscriptionId");
+
+                    b.ToTable("CompanyContacts");
+                });
+
+            modelBuilder.Entity("Pgn.Dms.Api.Data.MasterDataEntry", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("AttributesJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Category")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Category", "SortOrder");
+
+                    b.ToTable("MasterData");
+                });
+
+            modelBuilder.Entity("Pgn.Dms.Api.Data.NolEvaluation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("AnalisisKomersial")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AnalisisKompetitor")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<double?>("CapexFinal")
+                        .HasColumnType("REAL");
+
+                    b.Property<int?>("DurasiPelaksanaanBulan")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("EvaluatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("EvaluatedById")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("FeedCompletedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("FeedStatus")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("JaminanJenis")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("JaminanMasaBerlaku")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("JaminanPenerbit")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("JaminanStatus")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Kesimpulan")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<double?>("KetersediaanPasokanBbtud")
+                        .HasColumnType("REAL");
+
+                    b.Property<double?>("MaksFlowrate")
+                        .HasColumnType("REAL");
+
+                    b.Property<double?>("MaksKapasitasMeterM3Jam")
+                        .HasColumnType("REAL");
+
+                    b.Property<int?>("MeterSizeId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("MrsSpecId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<double?>("PipaIndukDiameter")
+                        .HasColumnType("REAL");
+
+                    b.Property<double?>("PipaIndukPanjang")
+                        .HasColumnType("REAL");
+
+                    b.Property<int?>("PipaIndukUnit")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<double?>("PipaServiceDiameter")
+                        .HasColumnType("REAL");
+
+                    b.Property<double?>("PipaServicePanjang")
+                        .HasColumnType("REAL");
+
+                    b.Property<int?>("PipaServiceUnit")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<double?>("RadiusKompetitorKm")
+                        .HasColumnType("REAL");
+
+                    b.Property<int?>("SkemaPembayaran")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("StatusRkap")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("SubscriptionId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<double?>("Tekanan")
+                        .HasColumnType("REAL");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EvaluatedById");
+
+                    b.HasIndex("MeterSizeId");
+
+                    b.HasIndex("MrsSpecId");
+
+                    b.HasIndex("SubscriptionId")
+                        .IsUnique();
+
+                    b.ToTable("NolEvaluations");
+                });
+
+            modelBuilder.Entity("Pgn.Dms.Api.Data.NolEvaluationScenario", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("HasilAnalisis")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<double?>("IrrPct")
+                        .HasColumnType("REAL");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("NolEvaluationId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<double?>("Npv")
+                        .HasColumnType("REAL");
+
+                    b.Property<double?>("PaybackYears")
+                        .HasColumnType("REAL");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NolEvaluationId");
+
+                    b.ToTable("NolEvaluationScenarios");
+                });
+
+            modelBuilder.Entity("Pgn.Dms.Api.Data.NolIssuance", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("BerlakuSampai")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("BerlakuSejak")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Catatan")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("NomorNotaDinas")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Outcome")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("SignedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SignedById")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SubscriptionId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SignedById");
+
+                    b.HasIndex("SubscriptionId")
+                        .IsUnique();
+
+                    b.ToTable("NolIssuances");
+                });
+
+            modelBuilder.Entity("Pgn.Dms.Api.Data.NolIssuanceCondition", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Isi")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("NolIssuanceId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NolIssuanceId");
+
+                    b.ToTable("NolIssuanceConditions");
+                });
+
+            modelBuilder.Entity("Pgn.Dms.Api.Data.NolIssuanceTerm", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<double?>("Maksimum")
+                        .HasColumnType("REAL");
+
+                    b.Property<double?>("Minimum")
+                        .HasColumnType("REAL");
+
+                    b.Property<int>("NolIssuanceId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("PeriodeMulai")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("PeriodeSelesai")
+                        .HasColumnType("TEXT");
+
+                    b.Property<double?>("RataRata")
+                        .HasColumnType("REAL");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NolIssuanceId");
+
+                    b.ToTable("NolIssuanceTerms");
+                });
+
+            modelBuilder.Entity("Pgn.Dms.Api.Data.NolRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("AlasanKontrakBersyarat")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("BasisKontrak")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<double?>("BiayaPenyambunganExtra")
+                        .HasColumnType("REAL");
+
+                    b.Property<double?>("BiayaPenyambunganReguler")
+                        .HasColumnType("REAL");
+
+                    b.Property<string>("BulanDimulai")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<double?>("CapexPreGr3")
+                        .HasColumnType("REAL");
+
+                    b.Property<int?>("HargaCurrency")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<double?>("HargaNilai")
+                        .HasColumnType("REAL");
+
+                    b.Property<int?>("HargaUnit")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("JangkaWaktuKontrak")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("KodeHarga")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Lampiran17")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("NamaPimpinanPerusahaan")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("NomorNotaDinas")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("RegistrationType")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("SamaDenganA1")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("SegmentId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("SkemaHarga")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("SubmittedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SubscriptionId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SegmentId");
+
+                    b.HasIndex("SubscriptionId")
+                        .IsUnique();
+
+                    b.ToTable("NolRequests");
+                });
+
+            modelBuilder.Entity("Pgn.Dms.Api.Data.NolRequestPeriod", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<double?>("Maksimum")
+                        .HasColumnType("REAL");
+
+                    b.Property<double?>("Minimum")
+                        .HasColumnType("REAL");
+
+                    b.Property<int>("NolRequestId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("PeriodeMulai")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("PeriodeSelesai")
+                        .HasColumnType("TEXT");
+
+                    b.Property<double?>("RataRata")
+                        .HasColumnType("REAL");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NolRequestId");
+
+                    b.ToTable("NolRequestPeriods");
+                });
+
+            modelBuilder.Entity("Pgn.Dms.Api.Data.NolRequestReference", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Judul")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("NolRequestId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Nomor")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("Tanggal")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NolRequestId");
+
+                    b.ToTable("NolRequestReferences");
+                });
+
+            modelBuilder.Entity("Pgn.Dms.Api.Data.Plotting", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("Kawasan")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("PosisiPelanggan")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("SalesUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SubscriptionId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SalesUserId");
+
+                    b.HasIndex("SubscriptionId")
+                        .IsUnique();
+
+                    b.ToTable("Plottings");
                 });
 
             modelBuilder.Entity("Pgn.Dms.Api.Data.Region", b =>
@@ -465,6 +1147,258 @@ namespace Pgn.Dms.Api.Data.Migrations
                     b.ToTable("Subscriptions");
                 });
 
+            modelBuilder.Entity("Pgn.Dms.Api.Data.Survey", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("BahanBakarEksisting")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("BebanPuncak1Mulai")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("BebanPuncak1Selesai")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("BebanPuncak2Mulai")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("BebanPuncak2Selesai")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DeskripsiProsesProduksi")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("HariPerMinggu")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<double?>("JamKerjaPerHari")
+                        .HasColumnType("REAL");
+
+                    b.Property<int?>("JumlahKaryawan")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<double?>("JumlahKebutuhanEnergi")
+                        .HasColumnType("REAL");
+
+                    b.Property<int?>("JumlahShift")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<double?>("KapasitasListrik")
+                        .HasColumnType("REAL");
+
+                    b.Property<double?>("KapasitasNilai")
+                        .HasColumnType("REAL");
+
+                    b.Property<string>("KapasitasUnit")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("KebutuhanEnergi")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("KeteranganLain")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<double?>("MinEfisiensiDiharapkanPct")
+                        .HasColumnType("REAL");
+
+                    b.Property<string>("NamaPemasok")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<double?>("PemakaianListrik")
+                        .HasColumnType("REAL");
+
+                    b.Property<double?>("PemakaianNilai")
+                        .HasColumnType("REAL");
+
+                    b.Property<string>("PemakaianUnit")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<double?>("PipaTerdekatDiameter")
+                        .HasColumnType("REAL");
+
+                    b.Property<double?>("PipaTerdekatJarakM")
+                        .HasColumnType("REAL");
+
+                    b.Property<double?>("PipaTerdekatTekanan")
+                        .HasColumnType("REAL");
+
+                    b.Property<string>("RencanaPemanfaatanGas")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SubscriptionId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("SurveyorUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("TanggalSurvey")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<double?>("WillingnessToPayUsdMmbtu")
+                        .HasColumnType("REAL");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SubscriptionId")
+                        .IsUnique();
+
+                    b.HasIndex("SurveyorUserId");
+
+                    b.ToTable("Surveys");
+                });
+
+            modelBuilder.Entity("Pgn.Dms.Api.Data.SurveyEquipment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("BahanBakar")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<double?>("HargaBahanBakar")
+                        .HasColumnType("REAL");
+
+                    b.Property<int?>("HariPerMinggu")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<double?>("JamPerHari")
+                        .HasColumnType("REAL");
+
+                    b.Property<string>("Jenis")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<double?>("Kapasitas")
+                        .HasColumnType("REAL");
+
+                    b.Property<double?>("KonsumsiPerBulan")
+                        .HasColumnType("REAL");
+
+                    b.Property<double?>("KonversiKeGas")
+                        .HasColumnType("REAL");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("SurveyId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SurveyId");
+
+                    b.ToTable("SurveyEquipment");
+                });
+
+            modelBuilder.Entity("Pgn.Dms.Api.Data.SurveyMarket", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsEkspor")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Nama")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<double?>("PersentasePct")
+                        .HasColumnType("REAL");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("SurveyId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SurveyId");
+
+                    b.ToTable("SurveyMarkets");
+                });
+
+            modelBuilder.Entity("Pgn.Dms.Api.Data.SurveyProduct", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<double?>("Kapasitas")
+                        .HasColumnType("REAL");
+
+                    b.Property<string>("Nama")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("SurveyId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Unit")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SurveyId");
+
+                    b.ToTable("SurveyProducts");
+                });
+
+            modelBuilder.Entity("Pgn.Dms.Api.Data.SurveyRawMaterial", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsImpor")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Nama")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("NegaraAsal")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("SurveyId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SurveyId");
+
+                    b.ToTable("SurveyRawMaterials");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -567,6 +1501,35 @@ namespace Pgn.Dms.Api.Data.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Pgn.Dms.Api.Data.A1Registration", b =>
+                {
+                    b.HasOne("Pgn.Dms.Api.Data.MasterDataEntry", "Segment")
+                        .WithMany()
+                        .HasForeignKey("SegmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Pgn.Dms.Api.Data.Subscription", "Subscription")
+                        .WithOne()
+                        .HasForeignKey("Pgn.Dms.Api.Data.A1Registration", "SubscriptionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Segment");
+
+                    b.Navigation("Subscription");
+                });
+
+            modelBuilder.Entity("Pgn.Dms.Api.Data.A1UsagePeriod", b =>
+                {
+                    b.HasOne("Pgn.Dms.Api.Data.A1Registration", "A1Registration")
+                        .WithMany("Periods")
+                        .HasForeignKey("A1RegistrationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("A1Registration");
+                });
+
             modelBuilder.Entity("Pgn.Dms.Api.Data.ActivityLog", b =>
                 {
                     b.HasOne("Pgn.Dms.Api.Data.Subscription", "Subscription")
@@ -594,6 +1557,185 @@ namespace Pgn.Dms.Api.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Region");
+                });
+
+            modelBuilder.Entity("Pgn.Dms.Api.Data.BreakGlassGrant", b =>
+                {
+                    b.HasOne("Pgn.Dms.Api.Data.ApplicationUser", "GrantedBy")
+                        .WithMany()
+                        .HasForeignKey("GrantedById")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Pgn.Dms.Api.Data.ApplicationUser", "GrantedToUser")
+                        .WithMany()
+                        .HasForeignKey("GrantedToUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Pgn.Dms.Api.Data.Subscription", "Subscription")
+                        .WithMany()
+                        .HasForeignKey("SubscriptionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("GrantedBy");
+
+                    b.Navigation("GrantedToUser");
+
+                    b.Navigation("Subscription");
+                });
+
+            modelBuilder.Entity("Pgn.Dms.Api.Data.CompanyContact", b =>
+                {
+                    b.HasOne("Pgn.Dms.Api.Data.Subscription", "Subscription")
+                        .WithMany()
+                        .HasForeignKey("SubscriptionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Subscription");
+                });
+
+            modelBuilder.Entity("Pgn.Dms.Api.Data.NolEvaluation", b =>
+                {
+                    b.HasOne("Pgn.Dms.Api.Data.ApplicationUser", "EvaluatedBy")
+                        .WithMany()
+                        .HasForeignKey("EvaluatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Pgn.Dms.Api.Data.MasterDataEntry", "MeterSize")
+                        .WithMany()
+                        .HasForeignKey("MeterSizeId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Pgn.Dms.Api.Data.MasterDataEntry", "MrsSpec")
+                        .WithMany()
+                        .HasForeignKey("MrsSpecId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Pgn.Dms.Api.Data.Subscription", "Subscription")
+                        .WithOne()
+                        .HasForeignKey("Pgn.Dms.Api.Data.NolEvaluation", "SubscriptionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("EvaluatedBy");
+
+                    b.Navigation("MeterSize");
+
+                    b.Navigation("MrsSpec");
+
+                    b.Navigation("Subscription");
+                });
+
+            modelBuilder.Entity("Pgn.Dms.Api.Data.NolEvaluationScenario", b =>
+                {
+                    b.HasOne("Pgn.Dms.Api.Data.NolEvaluation", "NolEvaluation")
+                        .WithMany("Scenarios")
+                        .HasForeignKey("NolEvaluationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("NolEvaluation");
+                });
+
+            modelBuilder.Entity("Pgn.Dms.Api.Data.NolIssuance", b =>
+                {
+                    b.HasOne("Pgn.Dms.Api.Data.ApplicationUser", "SignedBy")
+                        .WithMany()
+                        .HasForeignKey("SignedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Pgn.Dms.Api.Data.Subscription", "Subscription")
+                        .WithOne()
+                        .HasForeignKey("Pgn.Dms.Api.Data.NolIssuance", "SubscriptionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("SignedBy");
+
+                    b.Navigation("Subscription");
+                });
+
+            modelBuilder.Entity("Pgn.Dms.Api.Data.NolIssuanceCondition", b =>
+                {
+                    b.HasOne("Pgn.Dms.Api.Data.NolIssuance", "NolIssuance")
+                        .WithMany("Conditions")
+                        .HasForeignKey("NolIssuanceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("NolIssuance");
+                });
+
+            modelBuilder.Entity("Pgn.Dms.Api.Data.NolIssuanceTerm", b =>
+                {
+                    b.HasOne("Pgn.Dms.Api.Data.NolIssuance", "NolIssuance")
+                        .WithMany("ApprovedTerms")
+                        .HasForeignKey("NolIssuanceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("NolIssuance");
+                });
+
+            modelBuilder.Entity("Pgn.Dms.Api.Data.NolRequest", b =>
+                {
+                    b.HasOne("Pgn.Dms.Api.Data.MasterDataEntry", "Segment")
+                        .WithMany()
+                        .HasForeignKey("SegmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Pgn.Dms.Api.Data.Subscription", "Subscription")
+                        .WithOne()
+                        .HasForeignKey("Pgn.Dms.Api.Data.NolRequest", "SubscriptionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Segment");
+
+                    b.Navigation("Subscription");
+                });
+
+            modelBuilder.Entity("Pgn.Dms.Api.Data.NolRequestPeriod", b =>
+                {
+                    b.HasOne("Pgn.Dms.Api.Data.NolRequest", "NolRequest")
+                        .WithMany("Periods")
+                        .HasForeignKey("NolRequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("NolRequest");
+                });
+
+            modelBuilder.Entity("Pgn.Dms.Api.Data.NolRequestReference", b =>
+                {
+                    b.HasOne("Pgn.Dms.Api.Data.NolRequest", "NolRequest")
+                        .WithMany("References")
+                        .HasForeignKey("NolRequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("NolRequest");
+                });
+
+            modelBuilder.Entity("Pgn.Dms.Api.Data.Plotting", b =>
+                {
+                    b.HasOne("Pgn.Dms.Api.Data.ApplicationUser", "SalesUser")
+                        .WithMany()
+                        .HasForeignKey("SalesUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Pgn.Dms.Api.Data.Subscription", "Subscription")
+                        .WithOne()
+                        .HasForeignKey("Pgn.Dms.Api.Data.Plotting", "SubscriptionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("SalesUser");
+
+                    b.Navigation("Subscription");
                 });
 
             modelBuilder.Entity("Pgn.Dms.Api.Data.ResumeEvaluasi", b =>
@@ -672,9 +1814,95 @@ namespace Pgn.Dms.Api.Data.Migrations
                     b.Navigation("CreatedBy");
                 });
 
+            modelBuilder.Entity("Pgn.Dms.Api.Data.Survey", b =>
+                {
+                    b.HasOne("Pgn.Dms.Api.Data.Subscription", "Subscription")
+                        .WithOne()
+                        .HasForeignKey("Pgn.Dms.Api.Data.Survey", "SubscriptionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Pgn.Dms.Api.Data.ApplicationUser", "SurveyorUser")
+                        .WithMany()
+                        .HasForeignKey("SurveyorUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Subscription");
+
+                    b.Navigation("SurveyorUser");
+                });
+
+            modelBuilder.Entity("Pgn.Dms.Api.Data.SurveyEquipment", b =>
+                {
+                    b.HasOne("Pgn.Dms.Api.Data.Survey", "Survey")
+                        .WithMany("Equipment")
+                        .HasForeignKey("SurveyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Survey");
+                });
+
+            modelBuilder.Entity("Pgn.Dms.Api.Data.SurveyMarket", b =>
+                {
+                    b.HasOne("Pgn.Dms.Api.Data.Survey", "Survey")
+                        .WithMany("Markets")
+                        .HasForeignKey("SurveyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Survey");
+                });
+
+            modelBuilder.Entity("Pgn.Dms.Api.Data.SurveyProduct", b =>
+                {
+                    b.HasOne("Pgn.Dms.Api.Data.Survey", "Survey")
+                        .WithMany("Products")
+                        .HasForeignKey("SurveyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Survey");
+                });
+
+            modelBuilder.Entity("Pgn.Dms.Api.Data.SurveyRawMaterial", b =>
+                {
+                    b.HasOne("Pgn.Dms.Api.Data.Survey", "Survey")
+                        .WithMany("RawMaterials")
+                        .HasForeignKey("SurveyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Survey");
+                });
+
+            modelBuilder.Entity("Pgn.Dms.Api.Data.A1Registration", b =>
+                {
+                    b.Navigation("Periods");
+                });
+
             modelBuilder.Entity("Pgn.Dms.Api.Data.Area", b =>
                 {
                     b.Navigation("Subscriptions");
+                });
+
+            modelBuilder.Entity("Pgn.Dms.Api.Data.NolEvaluation", b =>
+                {
+                    b.Navigation("Scenarios");
+                });
+
+            modelBuilder.Entity("Pgn.Dms.Api.Data.NolIssuance", b =>
+                {
+                    b.Navigation("ApprovedTerms");
+
+                    b.Navigation("Conditions");
+                });
+
+            modelBuilder.Entity("Pgn.Dms.Api.Data.NolRequest", b =>
+                {
+                    b.Navigation("Periods");
+
+                    b.Navigation("References");
                 });
 
             modelBuilder.Entity("Pgn.Dms.Api.Data.Region", b =>
@@ -691,6 +1919,17 @@ namespace Pgn.Dms.Api.Data.Migrations
                     b.Navigation("ReviewSteps");
 
                     b.Navigation("Submissions");
+                });
+
+            modelBuilder.Entity("Pgn.Dms.Api.Data.Survey", b =>
+                {
+                    b.Navigation("Equipment");
+
+                    b.Navigation("Markets");
+
+                    b.Navigation("Products");
+
+                    b.Navigation("RawMaterials");
                 });
 #pragma warning restore 612, 618
         }

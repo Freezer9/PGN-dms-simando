@@ -44,6 +44,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization();
 builder.Services.AddScoped<SubscriptionService>();
 builder.Services.AddScoped<WorkflowService>();
+builder.Services.AddScoped<StageService>();
 builder.Services.AddHostedService<IdentitySeeder>();
 
 builder.Services.AddCors(options =>

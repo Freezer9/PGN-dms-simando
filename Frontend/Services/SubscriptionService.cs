@@ -44,4 +44,11 @@ public class SubscriptionService(HttpClient http) : ISubscriptionService
 
     public async Task<List<AreaDto>> GetAreasByRegionAsync(int regionId)
         => (await GetAreasAsync()).Where(a => a.RegionId == regionId).ToList();
+
+    public async Task<bool> UpdateLocationAsync(int subscriptionId, double latitude, double longitude)
+    {
+        var response = await http.PatchAsJsonAsync($"api/subscriptions/{subscriptionId}/location",
+            new UpdateLocationRequest { Latitude = latitude, Longitude = longitude });
+        return response.IsSuccessStatusCode;
+    }
 }

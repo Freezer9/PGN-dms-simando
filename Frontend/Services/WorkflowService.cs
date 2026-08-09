@@ -5,10 +5,14 @@ namespace Pgn.Dms.Web.Services;
 
 public class WorkflowService(HttpClient http) : IWorkflowService
 {
-    public async Task<bool> AdvanceStatusAsync(int subscriptionId)
+    public async Task<AdvanceResult> AdvanceStatusAsync(int subscriptionId)
     {
         var response = await http.PostAsync($"api/subscriptions/{subscriptionId}/advance", null);
-        return response.IsSuccessStatusCode;
+        if (!response.IsSuccessStatusCode)
+            return new AdvanceResult { Ok = false, Reason = "Gagal menghubungi server." };
+
+        return await response.Content.ReadFromJsonAsync<AdvanceResult>()
+            ?? new AdvanceResult { Ok = false, Reason = "Respons tidak dikenali." };
     }
 
     public async Task AssignReviewersAsync(int subscriptionId, string[] reviewerIds)
@@ -31,6 +35,12 @@ public class WorkflowService(HttpClient http) : IWorkflowService
         response.EnsureSuccessStatusCode();
     }
 
+    /// <summary>An empty inbox and a forbidden one look the same to the caller — neither is an error.</summary>
     public async Task<List<SubscriptionDto>> GetPendingReviewAsync()
-        => await http.GetFromJsonAsync<List<SubscriptionDto>>("api/subscriptions/pending-review") ?? [];
+    {
+        var response = await http.GetAsync("api/subscriptions/pending-review");
+        return response.IsSuccessStatusCode
+            ? await response.Content.ReadFromJsonAsync<List<SubscriptionDto>>() ?? []
+            : [];
+    }
 }

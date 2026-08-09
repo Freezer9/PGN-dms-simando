@@ -5,8 +5,15 @@ namespace Pgn.Dms.Web.Services;
 
 public class UserService(HttpClient http) : IUserService
 {
+    /// <summary>Callers without the admin role get an empty list rather than an exception —
+    /// several pages use this only to populate an optional picker.</summary>
     public async Task<List<UserInfo>> GetUsersAsync()
-        => await http.GetFromJsonAsync<List<UserInfo>>("api/users") ?? [];
+    {
+        var response = await http.GetAsync("api/users");
+        return response.IsSuccessStatusCode
+            ? await response.Content.ReadFromJsonAsync<List<UserInfo>>() ?? []
+            : [];
+    }
 
     public async Task<(bool Success, string? Error)> CreateUserAsync(CreateUserRequest request)
     {

@@ -1,0 +1,49 @@
+@typeparam TItem
+@* Card-wrapped table with built-in loading and empty states.
+   HeaderTemplate supplies <th> cells; RowTemplate supplies <td> cells for one item. *@
+
+<div class="card">
+    <div class="card-content" style="padding: 0">
+        @if (Loading)
+        {
+            <EmptyState Title="Memuat..." />
+        }
+        else if (Items is null || !Items.Any())
+        {
+            @if (EmptyTemplate is not null)
+            {
+                @EmptyTemplate
+            }
+            else
+            {
+                <EmptyState Title="@EmptyTitle" Description="@EmptyDescription" Icon="@EmptyIcon" />
+            }
+        }
+        else
+        {
+            <table class="data-table">
+                <thead>
+                    <tr>@HeaderTemplate</tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Items)
+                    {
+                        <tr>@RowTemplate(item)</tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public IEnumerable<TItem>? Items { get; set; }
+    [Parameter, EditorRequired] public RenderFragment HeaderTemplate { get; set; } = default!;
+    [Parameter, EditorRequired] public RenderFragment<TItem> RowTemplate { get; set; } = default!;
+    [Parameter] public bool Loading { get; set; }
+    [Parameter] public string EmptyTitle { get; set; } = "Tidak ada data";
+    [Parameter] public string? EmptyDescription { get; set; }
+    [Parameter] public string? EmptyIcon { get; set; }
+    /// <summary>Replaces the default empty state entirely.</summary>
+    [Parameter] public RenderFragment? EmptyTemplate { get; set; }
+}

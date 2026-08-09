@@ -9,44 +9,27 @@
 
 <AppShell>
 <div class="space-y-4 page-content">
-    <div class="page-header">
-        <div>
-            <h1>Manajemen Pengguna</h1>
-            <p>@users.Count pengguna terdaftar.</p>
-        </div>
+    <PageHeader Title="Manajemen Pengguna" Subtitle="@($"{users.Count} pengguna terdaftar.")">
         <BbButton OnClick="@(() => showCreateDialog = true)">
             <LucideIcon Name="plus" Class="h-4 w-4" />
             Tambah Pengguna
         </BbButton>
-    </div>
+    </PageHeader>
 
-    <div class="card">
-        <div class="card-content" style="padding: 0">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Nama</th>
-                        <th>Email</th>
-                        <th>Role</th>
-                        <th>Area</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var user in users)
-                    {
-                        <tr>
-                            <td class="font-medium">@user.FullName</td>
-                            <td class="text-sm text-muted-foreground">@user.Email</td>
-                            <td>
-                                <BbBadge Variant="BadgeVariant.Secondary">@user.Role</BbBadge>
-                            </td>
-                            <td class="text-sm text-muted-foreground">@user.AreaName</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    </div>
+    <DataTable TItem="UserInfo" Items="users" EmptyTitle="Belum ada pengguna">
+        <HeaderTemplate>
+            <th>Nama</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Area</th>
+        </HeaderTemplate>
+        <RowTemplate Context="user">
+            <td class="font-medium">@user.FullName</td>
+            <td class="text-sm text-muted-foreground">@user.Email</td>
+            <td><BbBadge Variant="BadgeVariant.Secondary">@user.Role</BbBadge></td>
+            <td class="text-sm text-muted-foreground">@user.AreaName</td>
+        </RowTemplate>
+    </DataTable>
 </div>
 
 @if (showCreateDialog)

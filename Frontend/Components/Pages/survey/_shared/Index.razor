@@ -1,20 +1,111 @@
 @page "/companies/{CompanyId:int}/survey/read"
 @attribute [Authorize(Policy = SimandoPolicies.CanViewSubscriptions)]
 @rendermode InteractiveServer
+@inject ISubscriptionService Subscriptions
+@inject IStageService Stages
 
 <PageTitle>Survei KK0 - SIMANDO</PageTitle>
 
 <AppShell>
 <div class="space-y-4 page-content">
-    <div class="page-header">
-        <div>
-            <h1>Survei (KK0)</h1>
-            <p>Data survei lapangan (read-only).</p>
-        </div>
-    </div>
+    <PageHeader Title="Survei (KK0)" Subtitle="Tampilan hanya-baca hasil survei lapangan." />
+
+    @if (sub is null)
+    {
+        <EmptyState Title="Perusahaan tidak ditemukan" />
+    }
+    else if (survey is null)
+    {
+        <EmptyState Title="Survei belum diisi"
+                    Description="Sales Area belum mengisi formulir KK0 untuk perusahaan ini." />
+    }
+    else
+    {
+        <FormSection Title="@sub.CompanyName" Description="@sub.AreaName" Spaced="false">
+            <div class="detail-row"><span class="detail-label">Tanggal Survei</span><span class="detail-value">@Text(survey.TanggalSurvey?.ToString("d MMM yyyy"))</span></div>
+            <div class="detail-row"><span class="detail-label">Surveyor</span><span class="detail-value">@Text(survey.SurveyorName)</span></div>
+            <div class="detail-row"><span class="detail-label">Jumlah Karyawan</span><span class="detail-value">@Text(survey.JumlahKaryawan?.ToString())</span></div>
+            <div class="detail-row"><span class="detail-label">Shift / Jam / Hari</span><span class="detail-value">@Text(survey.JumlahShift?.ToString()) / @Text(survey.JamKerjaPerHari?.ToString()) / @Text(survey.HariPerMinggu?.ToString())</span></div>
+            <div class="detail-row"><span class="detail-label">Dokumen KK0</span><span class="detail-value">@(sub.Submissions.Any(s => s.Stage == SubscriptionStatus.Survey) ? "Tersedia" : "Belum ada")</span></div>
+        </FormSection>
+
+        <FormSection Title="Kebutuhan Energi">
+            <div class="detail-row"><span class="detail-label">Jenis</span><span class="detail-value">@Text(survey.KebutuhanEnergi)</span></div>
+            <div class="detail-row"><span class="detail-label">Kapasitas</span><span class="detail-value">@Text(survey.KapasitasNilai?.ToString()) @survey.KapasitasUnit</span></div>
+            <div class="detail-row"><span class="detail-label">Pemakaian</span><span class="detail-value">@Text(survey.PemakaianNilai?.ToString()) @survey.PemakaianUnit</span></div>
+            <div class="detail-row"><span class="detail-label">Jumlah Kebutuhan</span><span class="detail-value">@Text(survey.JumlahKebutuhanEnergi?.ToString())</span></div>
+            <div class="detail-row"><span class="detail-label">Bahan Bakar Eksisting</span><span class="detail-value">@Text(survey.BahanBakarEksisting)</span></div>
+            <div class="detail-row"><span class="detail-label">Pemasok</span><span class="detail-value">@Text(survey.NamaPemasok)</span></div>
+            <div class="detail-row"><span class="detail-label">Jarak Pipa Terdekat</span><span class="detail-value">@Text(survey.PipaTerdekatJarakM?.ToString()) m</span></div>
+            <div class="detail-row"><span class="detail-label">Willingness to Pay</span><span class="detail-value">@Text(survey.WillingnessToPayUsdMmbtu?.ToString()) USD/MMBtu</span></div>
+        </FormSection>
+
+        @if (survey.Products.Count > 0)
+        {
+            <FormSection Title="Produk">
+                <table class="data-table">
+                    <thead><tr><th>Nama</th><th>Kapasitas</th><th>Satuan</th></tr></thead>
+                    <tbody>
+                        @foreach (var row in survey.Products)
+                        {
+                            <tr><td>@row.Nama</td><td>@row.Kapasitas</td><td>@row.Unit</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </FormSection>
+        }
+
+        @if (survey.Equipment.Count > 0)
+        {
+            <FormSection Title="Peralatan">
+                <table class="data-table">
+                    <thead>
+                        <tr><th>Jenis</th><th>Kapasitas</th><th>Bahan Bakar</th><th>Konsumsi/Bulan</th><th>Konversi ke Gas</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in survey.Equipment)
+                        {
+                            <tr>
+                                <td>@row.Jenis</td>
+                                <td>@row.Kapasitas</td>
+                                <td>@row.BahanBakar</td>
+                                <td>@row.KonsumsiPerBulan</td>
+                                <td>@row.KonversiKeGas</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </FormSection>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(survey.DeskripsiProsesProduksi) || !string.IsNullOrWhiteSpace(survey.KeteranganLain))
+        {
+            <FormSection Title="Catatan">
+                @if (!string.IsNullOrWhiteSpace(survey.DeskripsiProsesProduksi))
+                {
+                    <div class="detail-row"><span class="detail-label">Proses Produksi</span><span class="detail-value">@survey.DeskripsiProsesProduksi</span></div>
+                }
+                @if (!string.IsNullOrWhiteSpace(survey.KeteranganLain))
+                {
+                    <div class="detail-row"><span class="detail-label">Keterangan Lain</span><span class="detail-value">@survey.KeteranganLain</span></div>
+                }
+            </FormSection>
+        }
+    }
 </div>
 </AppShell>
 
 @code {
     [Parameter] public int CompanyId { get; set; }
+
+    private SubscriptionDto? sub;
+    private SurveyDto? survey;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        sub = await Subscriptions.GetAsync(CompanyId);
+        if (sub is not null) survey = await Stages.GetSurveyAsync(CompanyId);
+    }
+
+    private static string Text(string? value) => string.IsNullOrWhiteSpace(value) ? "—" : value;
 }

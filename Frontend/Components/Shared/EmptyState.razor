@@ -1,0 +1,22 @@
+@* Placeholder shown when a list has no rows, or while one is loading. *@
+
+<div class="empty-state">
+    @if (!string.IsNullOrWhiteSpace(Icon))
+    {
+        <LucideIcon Name="@Icon" Class="h-10 w-10" style="margin: 0 auto 0.75rem; opacity: 0.4" />
+    }
+    <div class="empty-state-title">@Title</div>
+    @if (!string.IsNullOrWhiteSpace(Description))
+    {
+        <div class="empty-state-desc">@Description</div>
+    }
+    @ChildContent
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter] public string? Description { get; set; }
+    /// <summary>Lucide icon name, e.g. "inbox". Omitted by default.</summary>
+    [Parameter] public string? Icon { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

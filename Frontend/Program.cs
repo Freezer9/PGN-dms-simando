@@ -65,6 +65,14 @@ builder.Services.AddHttpClient<IActivityService, ActivityService>(c => c.BaseAdd
     .AddHttpMessageHandler<BearerTokenHandler>();
 builder.Services.AddHttpClient<IUserService, UserService>(c => c.BaseAddress = new Uri(apiBaseUrl))
     .AddHttpMessageHandler<BearerTokenHandler>();
+builder.Services.AddHttpClient<IStageService, StageService>(c => c.BaseAddress = new Uri(apiBaseUrl))
+    .AddHttpMessageHandler<BearerTokenHandler>();
+builder.Services.AddHttpClient<IIssuanceService, IssuanceService>(c => c.BaseAddress = new Uri(apiBaseUrl))
+    .AddHttpMessageHandler<BearerTokenHandler>();
+builder.Services.AddHttpClient<IMasterDataService, MasterDataService>(c => c.BaseAddress = new Uri(apiBaseUrl))
+    .AddHttpMessageHandler<BearerTokenHandler>();
+builder.Services.AddHttpClient<IBreakGlassService, BreakGlassService>(c => c.BaseAddress = new Uri(apiBaseUrl))
+    .AddHttpMessageHandler<BearerTokenHandler>();
 
 builder.Services.AddScoped<CommandPaletteService>();
 

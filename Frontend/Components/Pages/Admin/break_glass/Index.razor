@@ -1,16 +1,252 @@
 @page "/admin/break-glass"
-@attribute [Authorize(Policy = SimandoPolicies.CanAdminister)]
+@attribute [Authorize(Policy = SimandoPolicies.CanAccessBreakGlass)]
 @rendermode InteractiveServer
+@implements IDisposable
+@inject IBreakGlassService BreakGlass
+@inject ISubscriptionService Subscriptions
+@inject IUserService UserApi
+@inject ToastService Toasts
 
 <PageTitle>Akses Darurat - SIMANDO</PageTitle>
 
 <AppShell>
 <div class="space-y-4 page-content">
-    <div class="page-header">
-        <div>
-            <h1>Akses Darurat (Break-Glass)</h1>
-            <p>Permintaan akses darurat ke record — time-boxed 60 menit, audited.</p>
-        </div>
+    <PageHeader Title="Akses Darurat"
+                Subtitle="@($"{active.Count} akses aktif. Setiap pemberian berlaku {GrantMinutes} menit dan tercatat penuh di audit.")">
+        <AuthorizeView Roles="@SimandoRoles.SystemAdmin">
+            <BbButton OnClick="@OpenGrantDialog">
+                <LucideIcon Name="key" Class="h-4 w-4" />
+                Beri Akses
+            </BbButton>
+        </AuthorizeView>
+    </PageHeader>
+
+    <div class="alert alert-warning">
+        Akses darurat memberikan izin baca satu record di luar jalur normal. Alasan wajib diisi dan
+        seluruh pemberian diaudit.
     </div>
+
+    <FormSection Title="Akses Aktif" Spaced="false">
+        @if (loading)
+        {
+            <EmptyState Title="Memuat..." />
+        }
+        else if (active.Count == 0)
+        {
+            <EmptyState Icon="shield-check" Title="Tidak ada akses darurat aktif"
+                        Description="Semua akses sudah kedaluwarsa atau dicabut." />
+        }
+        else
+        {
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Perusahaan</th>
+                        <th>Diberikan kepada</th>
+                        <th>Oleh</th>
+                        <th>Alasan</th>
+                        <th>Sisa waktu</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var grant in active)
+                    {
+                        <tr>
+                            <td><a href="/companies/@grant.SubscriptionId" class="font-medium">@grant.CompanyName</a></td>
+                            <td class="text-sm">@grant.GrantedToName</td>
+                            <td class="text-sm text-muted-foreground">@grant.GrantedByName</td>
+                            <td class="text-sm text-muted-foreground">@grant.Reason</td>
+                            <td class="font-medium">@Remaining(grant)</td>
+                            <td>
+                                <AuthorizeView Roles="@SimandoRoles.SystemAdmin">
+                                    <button type="button" class="btn btn-sm btn-ghost"
+                                            @onclick="@(() => Revoke(grant))">Cabut</button>
+                                </AuthorizeView>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </FormSection>
+
+    <FormSection Title="Riwayat Akses">
+        @if (history.Count == 0)
+        {
+            <EmptyState Title="Belum ada riwayat" />
+        }
+        else
+        {
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Perusahaan</th>
+                        <th>Diberikan kepada</th>
+                        <th>Alasan</th>
+                        <th>Diberikan</th>
+                        <th>Berakhir</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var grant in history)
+                    {
+                        <tr>
+                            <td class="text-sm">@grant.CompanyName</td>
+                            <td class="text-sm">@grant.GrantedToName</td>
+                            <td class="text-sm text-muted-foreground">@grant.Reason</td>
+                            <td class="text-sm text-muted-foreground">@grant.GrantedAt.ToString("d MMM yyyy HH:mm")</td>
+                            <td class="text-sm text-muted-foreground">
+                                @(grant.RevokedAt is not null
+                                    ? $"Dicabut {grant.RevokedAt.Value:d MMM HH:mm}"
+                                    : $"Kedaluwarsa {grant.ExpiresAt:d MMM HH:mm}")
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </FormSection>
 </div>
+
+@if (showGrantDialog)
+{
+    <BbDialog Open="true" OnOpenChange="@(open => { if (!open) showGrantDialog = false; })">
+        <BbDialogContent Class="sm:max-w-md">
+            <BbDialogHeader><BbDialogTitle>Beri Akses Darurat</BbDialogTitle></BbDialogHeader>
+            <div class="space-y-4">
+                <div class="form-group">
+                    <label class="form-label">Perusahaan</label>
+                    <select class="form-control" @bind="form.SubscriptionId">
+                        <option value="0">Pilih perusahaan</option>
+                        @foreach (var company in companies)
+                        {
+                            <option value="@company.Id">@company.CompanyName</option>
+                        }
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Diberikan kepada</label>
+                    <select class="form-control" @bind="form.GrantedToUserId">
+                        <option value="">Pilih pengguna</option>
+                        @foreach (var user in users)
+                        {
+                            <option value="@user.Id">@user.FullName (@user.Role)</option>
+                        }
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Alasan (wajib)</label>
+                    <textarea class="form-control" rows="3" @bind="form.Reason"
+                              placeholder="Jelaskan mengapa akses darurat diperlukan..."></textarea>
+                </div>
+                <div class="alert alert-warning">
+                    Akses berlaku @GrantMinutes menit dan tercatat permanen di log audit.
+                </div>
+                <div class="flex gap-2 justify-end">
+                    <BbButton Variant="ButtonVariant.Outline" OnClick="@(() => showGrantDialog = false)">Batal</BbButton>
+                    <BbButton OnClick="@Grant" Disabled="@granting">
+                        @(granting ? "Memberikan..." : "Beri Akses")
+                    </BbButton>
+                </div>
+            </div>
+        </BbDialogContent>
+    </BbDialog>
+}
 </AppShell>
+
+@code {
+    private const int GrantMinutes = 60;
+
+    private List<BreakGlassGrantDto> grants = [];
+    private List<SubscriptionDto> companies = [];
+    private List<UserInfo> users = [];
+    private GrantBreakGlassRequest form = new();
+    private Timer? countdown;
+    private bool loading = true;
+    private bool granting;
+    private bool showGrantDialog;
+
+    private List<BreakGlassGrantDto> active => grants.Where(g => g.IsActive).ToList();
+    private List<BreakGlassGrantDto> history => grants.Where(g => !g.IsActive).ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+
+        // Re-render once a minute so the remaining-time column stays honest.
+        countdown = new Timer(_ => InvokeAsync(StateHasChanged), null,
+            TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
+    }
+
+    private async Task LoadAsync()
+    {
+        loading = true;
+        grants = await BreakGlass.GetAsync();
+        loading = false;
+    }
+
+    private async Task OpenGrantDialog()
+    {
+        form = new GrantBreakGlassRequest();
+        companies = await Subscriptions.GetAllAsync();
+        try { users = await UserApi.GetUsersAsync(); }
+        catch { users = []; }
+        showGrantDialog = true;
+    }
+
+    private async Task Grant()
+    {
+        if (form.SubscriptionId == 0 || string.IsNullOrWhiteSpace(form.GrantedToUserId))
+        {
+            Toasts.Error("Pilih perusahaan dan pengguna.");
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(form.Reason))
+        {
+            Toasts.Error("Alasan wajib diisi.");
+            return;
+        }
+
+        granting = true;
+        try
+        {
+            var (success, error) = await BreakGlass.GrantAsync(form);
+            if (!success)
+            {
+                Toasts.Error(string.IsNullOrWhiteSpace(error) ? "Gagal memberikan akses." : error);
+                return;
+            }
+
+            Toasts.Success($"Akses darurat diberikan selama {GrantMinutes} menit.");
+            showGrantDialog = false;
+            await LoadAsync();
+        }
+        finally { granting = false; }
+    }
+
+    private async Task Revoke(BreakGlassGrantDto grant)
+    {
+        if (await BreakGlass.RevokeAsync(grant.Id))
+        {
+            Toasts.Success($"Akses untuk {grant.GrantedToName} dicabut.");
+            await LoadAsync();
+        }
+        else
+        {
+            Toasts.Error("Gagal mencabut akses.");
+        }
+    }
+
+    private static string Remaining(BreakGlassGrantDto grant)
+    {
+        var left = grant.ExpiresAt - DateTime.UtcNow;
+        if (left <= TimeSpan.Zero) return "Kedaluwarsa";
+        return left.TotalMinutes >= 1
+            ? $"{(int)left.TotalMinutes} menit"
+            : $"{(int)left.TotalSeconds} detik";
+    }
+
+    public void Dispose() => countdown?.Dispose();
+}

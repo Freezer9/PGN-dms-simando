@@ -1,0 +1,23 @@
+@* One tile inside a .stats-grid. *@
+
+<div class="stat-tile">
+    @if (!string.IsNullOrWhiteSpace(Icon))
+    {
+        <div class="stat-icon"><LucideIcon Name="@Icon" Class="h-5 w-5" /></div>
+    }
+    <div>
+        <div class="stat-value" style="@ValueStyle">@Value</div>
+        <div class="stat-label">@Label</div>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Label { get; set; } = "";
+    [Parameter, EditorRequired] public string Value { get; set; } = "";
+    /// <summary>Lucide icon name, e.g. "inbox".</summary>
+    [Parameter] public string? Icon { get; set; }
+    /// <summary>Optional CSS colour for the value, e.g. "var(--destructive)" for an alert count.</summary>
+    [Parameter] public string? Accent { get; set; }
+
+    private string? ValueStyle => string.IsNullOrWhiteSpace(Accent) ? null : $"color: {Accent}";
+}

@@ -1,16 +1,44 @@
 @page "/reports/sales-funnel"
 @attribute [Authorize(Policy = SimandoPolicies.CanViewSubscriptions)]
 @rendermode InteractiveServer
+@inject ISubscriptionService Subscriptions
 
 <PageTitle>Corong Penjualan - SIMANDO</PageTitle>
 
 <AppShell>
 <div class="space-y-4 page-content">
-    <div class="page-header">
-        <div>
-            <h1>Corong Penjualan</h1>
-            <p>Distribusi perusahaan per tahap pipeline.</p>
-        </div>
+    <PageHeader Title="Corong Penjualan" Subtitle="Distribusi perusahaan per tahap pipeline." />
+
+    <div class="stats-grid">
+        @foreach (var s in Enum.GetValues<SubscriptionStatus>())
+        {
+            <StatTile Label="@SubscriptionStages.Label(s)"
+                      Value="@allSubscriptions.Count(x => x.Status == s).ToString()" />
+        }
+    </div>
+
+    <div style="margin-top: 1rem">
+        <DataTable TItem="SubscriptionStatus" Items="Enum.GetValues<SubscriptionStatus>()">
+            <HeaderTemplate>
+                <th>Tahap</th>
+                <th>Jumlah</th>
+                <th>%</th>
+            </HeaderTemplate>
+            <RowTemplate Context="s">
+                @{
+                    var count = allSubscriptions.Count(x => x.Status == s);
+                    var pct = allSubscriptions.Count > 0 ? (double)count / allSubscriptions.Count * 100 : 0;
+                }
+                <td><StatusBadge Status="@s" /></td>
+                <td class="font-medium">@count</td>
+                <td class="text-sm text-muted-foreground">@pct.ToString("F1")%</td>
+            </RowTemplate>
+        </DataTable>
     </div>
 </div>
 </AppShell>
+
+@code {
+    private List<SubscriptionDto> allSubscriptions = [];
+    protected override async Task OnInitializedAsync() { allSubscriptions = await Subscriptions.GetAllAsync(); }
+}

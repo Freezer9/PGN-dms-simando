@@ -23,7 +23,7 @@ public class SubscriptionService(ApplicationDbContext db)
             .Include(s => s.CreatedBy)
             .Include(s => s.Submissions).ThenInclude(r => r.UploadedBy)
             .Include(s => s.ReviewSteps).ThenInclude(r => r.Reviewer)
-            .Include(s => s.ResumeEvaluasi).ThenInclude(r => r.CreatedBy)
+            .Include(s => s.ResumeEvaluasi).ThenInclude(r => r!.CreatedBy)
             .Include(s => s.ActivityLogs)
             .FirstOrDefaultAsync(s => s.Id == id);
         return sub?.ToDto();
@@ -36,6 +36,8 @@ public class SubscriptionService(ApplicationDbContext db)
             CompanyName = req.CompanyName,
             Address = req.Address,
             AreaId = req.AreaId,
+            Latitude = req.Latitude,
+            Longitude = req.Longitude,
             CreatedById = userId,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -47,6 +49,27 @@ public class SubscriptionService(ApplicationDbContext db)
         await db.SaveChangesAsync();
 
         return (await GetAsync(sub.Id))!;
+    }
+
+    public async Task<bool> UpdateLocationAsync(int id, double latitude, double longitude, string actorName)
+    {
+        var sub = await db.Subscriptions.FindAsync(id);
+        if (sub is null) return false;
+
+        sub.Latitude = latitude;
+        sub.Longitude = longitude;
+        sub.UpdatedAt = DateTime.UtcNow;
+
+        db.ActivityLogs.Add(new ActivityLog
+        {
+            SubscriptionId = sub.Id,
+            ActorName = actorName,
+            Action = "Memperbarui titik peta",
+            Details = $"{latitude:F6}, {longitude:F6}",
+            At = DateTime.UtcNow
+        });
+        await db.SaveChangesAsync();
+        return true;
     }
 
     public async Task<SubmissionRecordDto> AddSubmissionAsync(int subscriptionId, string fileName, string filePath, string userId, string actorName)

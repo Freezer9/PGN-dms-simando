@@ -1,24 +1,142 @@
 @page "/directory/region"
 @attribute [Authorize(Policy = SimandoPolicies.CanViewRegion)]
 @rendermode InteractiveServer
+@inject ISubscriptionService Subscriptions
+@inject NavigationManager Navigation
+@inject ToastService Toasts
 
 <PageTitle>Direktori Region - SIMANDO</PageTitle>
 
 <AppShell>
 <div class="space-y-4 page-content">
-    <div class="page-header">
-        <div>
-            <h1>Direktori Region</h1>
-            <p>Daftar perusahaan seluruh area di region — create & edit.</p>
-        </div>
-        <BbButton OnClick="@(() => Navigation.NavigateTo("/directory/new"))">
+    <PageHeader Title="Direktori Region" Subtitle="@($"{filtered.Count} perusahaan seluruh area di region.")">
+        <BbButton OnClick="@(() => showCreateDialog = true)">
             <LucideIcon Name="plus" Class="h-4 w-4" />
             Tambah Perusahaan
         </BbButton>
-    </div>
+    </PageHeader>
+
+    <FilterBar @bind-SearchValue="searchQuery" Placeholder="Cari perusahaan...">
+        <select class="form-control" style="max-width: 12rem" @bind="filterStatus">
+            <option value="">Semua Status</option>
+            @foreach (var s in Enum.GetValues<SubscriptionStatus>())
+            {
+                <option value="@s">@SubscriptionStages.Label(s)</option>
+            }
+        </select>
+        <select class="form-control" style="max-width: 12rem" @bind="filterArea">
+            <option value="">Semua Area</option>
+            @foreach (var area in areas)
+            {
+                <option value="@area.Name">@area.Name</option>
+            }
+        </select>
+    </FilterBar>
+
+    <DataTable TItem="SubscriptionDto" Items="filtered" Loading="loading">
+        <HeaderTemplate>
+            <th>Perusahaan</th>
+            <th>Alamat</th>
+            <th>Area</th>
+            <th>Sales</th>
+            <th>Status</th>
+            <th>Update</th>
+            <th></th>
+        </HeaderTemplate>
+        <RowTemplate Context="sub">
+            <td><a href="/companies/@sub.Id" class="font-medium">@sub.CompanyName</a></td>
+            <td class="text-sm text-muted-foreground">@Truncate(sub.Address, 30)</td>
+            <td class="text-sm text-muted-foreground">@sub.AreaName</td>
+            <td class="text-sm text-muted-foreground">@sub.CreatedByName</td>
+            <td><StatusBadge Status="@sub.Status" /></td>
+            <td class="text-sm text-muted-foreground">@sub.UpdatedAt.ToString("d MMM yyyy")</td>
+            <td><a href="/companies/@sub.Id" class="btn btn-sm btn-outline">Buka</a></td>
+        </RowTemplate>
+    </DataTable>
 </div>
+
+@if (showCreateDialog)
+{
+    <BbDialog Open="true" OnOpenChange="@(open => showCreateDialog = open)">
+        <BbDialogContent Class="sm:max-w-md">
+            <BbDialogHeader>
+                <BbDialogTitle>Tambah Perusahaan Baru</BbDialogTitle>
+            </BbDialogHeader>
+            <div class="space-y-4">
+                <div class="form-group">
+                    <label class="form-label">Nama Perusahaan</label>
+                    <InputText class="form-control" @bind-Value="newCompany" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Alamat</label>
+                    <textarea class="form-control" @bind="newAddress" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Area</label>
+                    <select class="form-control" @bind="newAreaId">
+                        <option value="">Pilih Area</option>
+                        @foreach (var area in areas)
+                        {
+                            <option value="@area.Id">@area.Name (@area.RegionName)</option>
+                        }
+                    </select>
+                </div>
+                <div class="flex gap-2 justify-end">
+                    <BbButton Variant="ButtonVariant.Outline" OnClick="@(() => showCreateDialog = false)">Batal</BbButton>
+                    <BbButton OnClick="@CreateCompany">Simpan</BbButton>
+                </div>
+            </div>
+        </BbDialogContent>
+    </BbDialog>
+}
 </AppShell>
 
 @code {
-    [Inject] private NavigationManager Navigation { get; set; } = default!;
+    private List<SubscriptionDto> allSubscriptions = [];
+    private List<AreaDto> areas = [];
+    private bool loading = true;
+    private bool showCreateDialog;
+    private string searchQuery = "";
+    private string filterStatus = "";
+    private string filterArea = "";
+    private string newCompany = "";
+    private string newAddress = "";
+    private int? newAreaId;
+
+    private List<SubscriptionDto> filtered => allSubscriptions
+        .Where(s => string.IsNullOrWhiteSpace(searchQuery)
+            || s.CompanyName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
+        .Where(s => string.IsNullOrWhiteSpace(filterStatus) || s.Status.ToString() == filterStatus)
+        .Where(s => string.IsNullOrWhiteSpace(filterArea) || s.AreaName == filterArea)
+        .OrderByDescending(s => s.UpdatedAt)
+        .ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        areas = await Subscriptions.GetAreasAsync();
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        loading = true;
+        allSubscriptions = await Subscriptions.GetAllAsync();
+        loading = false;
+    }
+
+    private async Task CreateCompany()
+    {
+        if (string.IsNullOrWhiteSpace(newCompany) || newAreaId is null) return;
+        var result = await Subscriptions.CreateAsync(new CreateSubscriptionRequest
+        {
+            CompanyName = newCompany, Address = newAddress, AreaId = newAreaId.Value
+        });
+        Toasts.Success($"Perusahaan {newCompany} berhasil dibuat.");
+        showCreateDialog = false;
+        newCompany = ""; newAddress = ""; newAreaId = null;
+        Navigation.NavigateTo($"/companies/{result.Id}");
+    }
+
+    private static string Truncate(string value, int max) =>
+        value.Length <= max ? value : string.Concat(value.AsSpan(0, max), "...");
 }

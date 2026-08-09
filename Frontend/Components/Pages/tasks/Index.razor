@@ -1,0 +1,35 @@
+@page "/tasks"
+@attribute [Authorize(Policy = SimandoPolicies.CanApprove)]
+@rendermode InteractiveServer
+@inject NavigationManager Navigation
+
+@* Dispatcher: the sidebar links /tasks, but every inbox is role-specific. *@
+
+<PageTitle>Tugas Saya - SIMANDO</PageTitle>
+
+<AppShell>
+<div class="space-y-4 page-content">
+    <EmptyState Title="Membuka antrean Anda..." />
+</div>
+</AppShell>
+
+@code {
+    [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthState is null) return;
+
+        var user = (await AuthState).User;
+        var target = CurrentUser.PrimaryRole(user) switch
+        {
+            SimandoRoles.AreaHead => "/tasks/area-head",
+            SimandoRoles.AdminRegional => "/tasks/regional",
+            SimandoRoles.Reviewer => "/tasks/reviewer",
+            SimandoRoles.DivisionHead => "/tasks/division",
+            _ => "/tasks/history"
+        };
+
+        Navigation.NavigateTo(target, replace: true);
+    }
+}

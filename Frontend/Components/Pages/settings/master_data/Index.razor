@@ -1,16 +1,250 @@
 @page "/settings/master-data"
 @attribute [Authorize(Policy = SimandoPolicies.CanAdminister)]
 @rendermode InteractiveServer
+@inject IMasterDataService MasterData
+@inject ToastService Toasts
 
 <PageTitle>Data Referensi - SIMANDO</PageTitle>
 
 <AppShell>
 <div class="space-y-4 page-content">
-    <div class="page-header">
-        <div>
-            <h1>Data Referensi</h1>
-            <p>Negara, jenis industri, segmen, jenis bahan bakar, satuan, G-Size, spesifikasi MRS, dokumen acuan kerja.</p>
-        </div>
+    <PageHeader Title="Data Referensi"
+                Subtitle="@($"{entries.Count} entri pada kategori {CategoryLabel(activeCategory)}.")">
+        <BbButton OnClick="@OpenCreate">
+            <LucideIcon Name="plus" Class="h-4 w-4" />
+            Tambah Entri
+        </BbButton>
+    </PageHeader>
+
+    <div class="flex gap-2" style="flex-wrap: wrap; margin-bottom: 0.5rem">
+        @foreach (var category in Enum.GetValues<MasterCategory>())
+        {
+            <button type="button"
+                    class="btn btn-sm @(activeCategory == category ? "btn-primary" : "btn-outline")"
+                    @onclick="@(() => SelectCategory(category))">
+                @CategoryLabel(category)
+            </button>
+        }
     </div>
+
+    <DataTable TItem="MasterDataEntryDto" Items="entries" Loading="loading"
+               EmptyTitle="Belum ada entri"
+               EmptyDescription="Tambahkan entri pertama untuk kategori ini.">
+        <HeaderTemplate>
+            <th>Kode</th>
+            <th>Nama</th>
+            <th>Deskripsi</th>
+            <th>Urutan</th>
+            <th>Status</th>
+            <th></th>
+        </HeaderTemplate>
+        <RowTemplate Context="entry">
+            <td class="text-sm text-muted-foreground">@entry.Code</td>
+            <td class="font-medium">@entry.Name</td>
+            <td class="text-sm text-muted-foreground">@Summary(entry)</td>
+            <td class="text-sm text-muted-foreground">@entry.SortOrder</td>
+            <td>
+                <span class="badge @(entry.IsActive ? "badge-approved" : "badge-pending")">
+                    @(entry.IsActive ? "Aktif" : "Nonaktif")
+                </span>
+            </td>
+            <td>
+                <div class="flex gap-2">
+                    <button type="button" class="btn btn-sm btn-ghost" @onclick="@(() => OpenEdit(entry))">Ubah</button>
+                    <button type="button" class="btn btn-sm btn-ghost" @onclick="@(() => ToggleActive(entry))">
+                        @(entry.IsActive ? "Nonaktifkan" : "Aktifkan")
+                    </button>
+                    <button type="button" class="btn btn-sm btn-ghost" @onclick="@(() => Delete(entry))">Hapus</button>
+                </div>
+            </td>
+        </RowTemplate>
+    </DataTable>
 </div>
+
+@if (showDialog)
+{
+    <BbDialog Open="true" OnOpenChange="@(open => { if (!open) showDialog = false; })">
+        <BbDialogContent Class="sm:max-w-md">
+            <BbDialogHeader>
+                <BbDialogTitle>@(editingId is null ? "Tambah Entri" : "Ubah Entri")</BbDialogTitle>
+            </BbDialogHeader>
+            <div class="space-y-4">
+                <div class="form-group">
+                    <label class="form-label">Kategori</label>
+                    <select class="form-control" @bind="form.Category">
+                        @foreach (var category in Enum.GetValues<MasterCategory>())
+                        {
+                            <option value="@category">@CategoryLabel(category)</option>
+                        }
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Kode</label>
+                    <InputText class="form-control" @bind-Value="form.Code" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Nama (wajib)</label>
+                    <InputText class="form-control" @bind-Value="form.Name" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Deskripsi</label>
+                    <textarea class="form-control" rows="2" @bind="form.Description"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Atribut (JSON)</label>
+                    <textarea class="form-control" rows="3" @bind="form.AttributesJson"
+                              placeholder='{"nominalFlowM3h":6}'></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Urutan</label>
+                    <InputNumber class="form-control" @bind-Value="form.SortOrder" />
+                </div>
+                <label class="flex gap-2 items-center">
+                    <InputCheckbox @bind-Value="form.IsActive" />
+                    <span>Aktif</span>
+                </label>
+                <div class="flex gap-2 justify-end">
+                    <BbButton Variant="ButtonVariant.Outline" OnClick="@(() => showDialog = false)">Batal</BbButton>
+                    <BbButton OnClick="@Save" Disabled="@saving">
+                        @(saving ? "Menyimpan..." : "Simpan")
+                    </BbButton>
+                </div>
+            </div>
+        </BbDialogContent>
+    </BbDialog>
+}
 </AppShell>
+
+@code {
+    private MasterCategory activeCategory = MasterCategory.Segment;
+    private List<MasterDataEntryDto> entries = [];
+    private SaveMasterDataRequest form = new();
+    private int? editingId;
+    private bool loading = true;
+    private bool saving;
+    private bool showDialog;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        loading = true;
+        entries = await MasterData.GetAsync(activeCategory);
+        loading = false;
+    }
+
+    private async Task SelectCategory(MasterCategory category)
+    {
+        activeCategory = category;
+        await LoadAsync();
+    }
+
+    private void OpenCreate()
+    {
+        editingId = null;
+        form = new SaveMasterDataRequest
+        {
+            Category = activeCategory,
+            SortOrder = entries.Count,
+            IsActive = true
+        };
+        showDialog = true;
+    }
+
+    private void OpenEdit(MasterDataEntryDto entry)
+    {
+        editingId = entry.Id;
+        form = new SaveMasterDataRequest
+        {
+            Category = entry.Category,
+            Code = entry.Code,
+            Name = entry.Name,
+            Description = entry.Description,
+            AttributesJson = entry.AttributesJson,
+            SortOrder = entry.SortOrder,
+            IsActive = entry.IsActive
+        };
+        showDialog = true;
+    }
+
+    private async Task Save()
+    {
+        if (string.IsNullOrWhiteSpace(form.Name))
+        {
+            Toasts.Error("Nama wajib diisi.");
+            return;
+        }
+
+        saving = true;
+        try
+        {
+            var (success, error) = await MasterData.SaveAsync(editingId, form);
+            if (!success)
+            {
+                Toasts.Error(string.IsNullOrWhiteSpace(error) ? "Gagal menyimpan entri." : error);
+                return;
+            }
+
+            Toasts.Success($"Entri {form.Name} tersimpan.");
+            showDialog = false;
+            activeCategory = form.Category;
+            await LoadAsync();
+        }
+        finally { saving = false; }
+    }
+
+    private async Task ToggleActive(MasterDataEntryDto entry)
+    {
+        var (success, error) = await MasterData.SaveAsync(entry.Id, new SaveMasterDataRequest
+        {
+            Category = entry.Category,
+            Code = entry.Code,
+            Name = entry.Name,
+            Description = entry.Description,
+            AttributesJson = entry.AttributesJson,
+            SortOrder = entry.SortOrder,
+            IsActive = !entry.IsActive
+        });
+
+        if (success)
+        {
+            Toasts.Success($"Entri {entry.Name} {(entry.IsActive ? "dinonaktifkan" : "diaktifkan")}.");
+            await LoadAsync();
+        }
+        else
+        {
+            Toasts.Error(string.IsNullOrWhiteSpace(error) ? "Gagal memperbarui entri." : error);
+        }
+    }
+
+    private async Task Delete(MasterDataEntryDto entry)
+    {
+        if (await MasterData.DeleteAsync(entry.Id))
+        {
+            Toasts.Success($"Entri {entry.Name} dihapus.");
+            await LoadAsync();
+        }
+        else
+        {
+            // Entries referenced by A1 / NOL / evaluation rows are FK-restricted.
+            Toasts.Error("Gagal menghapus. Entri mungkin masih dipakai — nonaktifkan saja.");
+        }
+    }
+
+    private static string Summary(MasterDataEntryDto entry)
+        => !string.IsNullOrWhiteSpace(entry.Description) ? entry.Description : entry.AttributesJson;
+
+    private static string CategoryLabel(MasterCategory category) => category switch
+    {
+        MasterCategory.Segment => "Segmen",
+        MasterCategory.IndustryType => "Jenis Industri",
+        MasterCategory.Country => "Negara",
+        MasterCategory.FuelType => "Jenis Bahan Bakar",
+        MasterCategory.UnitOfMeasure => "Satuan",
+        MasterCategory.MeterSize => "G-Size / Meter",
+        MasterCategory.MrsSpec => "Spesifikasi MRS",
+        MasterCategory.ReferenceDocument => "Dokumen Acuan",
+        MasterCategory.ReasonCategory => "Kategori Alasan",
+        _ => category.ToString()
+    };
+}

@@ -1,20 +1,289 @@
 @page "/companies/{CompanyId:int}/issuance"
 @attribute [Authorize(Policy = SimandoPolicies.CanApprove)]
 @rendermode InteractiveServer
+@inject ISubscriptionService Subscriptions
+@inject IStageService Stages
+@inject IIssuanceService Issuance
+@inject ToastService Toasts
 
 <PageTitle>Penerbitan NOL/RL - SIMANDO</PageTitle>
 
 <AppShell>
 <div class="space-y-4 page-content">
-    <div class="page-header">
-        <div>
-            <h1>Penerbitan</h1>
-            <p>Terbitkan NOL atau RL — isi persetujuan, kontrak bersyarat, masa berlaku.</p>
-        </div>
-    </div>
+    <PageHeader Title="Penerbitan"
+                Subtitle="Terbitkan NOL atau RL — isi persetujuan, kontrak bersyarat, masa berlaku." />
+
+    @if (sub is null)
+    {
+        <EmptyState Title="Perusahaan tidak ditemukan" />
+    }
+    else if (issued is not null && issued.SignedAt is not null)
+    {
+        <FormSection Title="@sub.CompanyName" Description="@sub.AreaName" Spaced="false">
+            <div class="alert alert-success">
+                <strong>@(issued.Outcome == IssuanceOutcome.Nol ? "NOL" : "RL")</strong> telah diterbitkan pada
+                @issued.SignedAt.Value.ToString("d MMM yyyy HH:mm") oleh @issued.SignedByName.
+                Record terkunci permanen.
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Nomor Nota Dinas</span>
+                <span class="detail-value">@issued.NomorNotaDinas</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Masa Berlaku</span>
+                <span class="detail-value">
+                    @(issued.BerlakuSejak?.ToString("d MMM yyyy") ?? "—") &ndash;
+                    @(issued.BerlakuSampai?.ToString("d MMM yyyy") ?? "—")
+                </span>
+            </div>
+            @if (!string.IsNullOrWhiteSpace(issued.Catatan))
+            {
+                <div class="detail-row">
+                    <span class="detail-label">Catatan</span>
+                    <span class="detail-value">@issued.Catatan</span>
+                </div>
+            }
+        </FormSection>
+
+        @if (issued.ApprovedTerms.Count > 0)
+        {
+            <FormSection Title="Isi Persetujuan">
+                <table class="data-table">
+                    <thead>
+                        <tr><th>Mulai</th><th>Selesai</th><th>Rata-rata</th><th>Minimum</th><th>Maksimum</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var term in issued.ApprovedTerms)
+                        {
+                            <tr>
+                                <td>@(term.PeriodeMulai?.ToString("d MMM yyyy") ?? "—")</td>
+                                <td>@(term.PeriodeSelesai?.ToString("d MMM yyyy") ?? "—")</td>
+                                <td>@term.RataRata</td>
+                                <td>@term.Minimum</td>
+                                <td>@term.Maksimum</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </FormSection>
+        }
+
+        @if (issued.Conditions.Count > 0)
+        {
+            <FormSection Title="Kontrak Bersyarat">
+                <ol>
+                    @foreach (var condition in issued.Conditions)
+                    {
+                        <li>@condition.Isi</li>
+                    }
+                </ol>
+            </FormSection>
+        }
+    }
+    else
+    {
+        <FormSection Title="@sub.CompanyName" Description="@sub.AreaName" Spaced="false">
+            <div class="detail-row"><span class="detail-label">Sales</span><span class="detail-value">@sub.CreatedByName</span></div>
+            <div class="detail-row">
+                <span class="detail-label">Status saat ini</span>
+                <span class="detail-value"><StatusBadge Status="@sub.Status" /></span>
+            </div>
+        </FormSection>
+
+        <AuthorizeView Policy="@SimandoPolicies.CanIssueNOL">
+            <Authorized>
+                <FormSection Title="Keputusan Penerbitan">
+                    <div class="form-group">
+                        <label class="form-label">Hasil</label>
+                        <div class="flex gap-4">
+                            <label class="flex gap-2 items-center">
+                                <input type="radio" name="outcome" checked="@(form.Outcome == IssuanceOutcome.Nol)"
+                                       @onchange="@(() => form.Outcome = IssuanceOutcome.Nol)" />
+                                <span>Menyetujui — terbitkan NOL</span>
+                            </label>
+                            <label class="flex gap-2 items-center">
+                                <input type="radio" name="outcome" checked="@(form.Outcome == IssuanceOutcome.Rl)"
+                                       @onchange="@(() => form.Outcome = IssuanceOutcome.Rl)" />
+                                <span>Tidak menyetujui — terbitkan RL</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Nomor Nota Dinas</label>
+                            <InputText class="form-control" @bind-Value="form.NomorNotaDinas" />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Berlaku Sejak</label>
+                            <input type="date" class="form-control" value="@DateValue(form.BerlakuSejak)"
+                                   @onchange="@(e => form.BerlakuSejak = ParseDate(e.Value))" />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Berlaku Sampai</label>
+                            <input type="date" class="form-control" value="@DateValue(form.BerlakuSampai)"
+                                   @onchange="@(e => form.BerlakuSampai = ParseDate(e.Value))" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Catatan</label>
+                        <textarea class="form-control" rows="3" @bind="form.Catatan"></textarea>
+                    </div>
+                </FormSection>
+
+                <FormSection Title="Isi Persetujuan"
+                             Description="Boleh berbeda dari volume yang diminta — disimpan terpisah dari permohonan.">
+                    @if (requested is not null && form.ApprovedTerms.Count == 0 && requested.Periods.Count > 0)
+                    {
+                        <BbButton Variant="ButtonVariant.Outline" OnClick="@CopyRequestedTerms">
+                            Salin dari Permohonan
+                        </BbButton>
+                    }
+                    <RepeatingRows TItem="NolIssuanceTermDto" Items="form.ApprovedTerms"
+                                   ItemFactory="@(() => new NolIssuanceTermDto())"
+                                   AddLabel="Tambah Periode" EmptyDescription="Belum ada isi persetujuan.">
+                        <HeaderTemplate>
+                            <th>Mulai</th>
+                            <th>Selesai</th>
+                            <th>Rata-rata</th>
+                            <th>Minimum</th>
+                            <th>Maksimum</th>
+                        </HeaderTemplate>
+                        <RowTemplate Context="row">
+                            <td>
+                                <input type="date" class="form-control" value="@DateValue(row.PeriodeMulai)"
+                                       @onchange="@(e => row.PeriodeMulai = ParseDate(e.Value))" />
+                            </td>
+                            <td>
+                                <input type="date" class="form-control" value="@DateValue(row.PeriodeSelesai)"
+                                       @onchange="@(e => row.PeriodeSelesai = ParseDate(e.Value))" />
+                            </td>
+                            <td><InputNumber class="form-control" @bind-Value="row.RataRata" /></td>
+                            <td><InputNumber class="form-control" @bind-Value="row.Minimum" /></td>
+                            <td><InputNumber class="form-control" @bind-Value="row.Maksimum" /></td>
+                        </RowTemplate>
+                    </RepeatingRows>
+                </FormSection>
+
+                <FormSection Title="Kontrak Bersyarat">
+                    <RepeatingRows TItem="NolIssuanceConditionDto" Items="form.Conditions"
+                                   ItemFactory="@(() => new NolIssuanceConditionDto())"
+                                   AddLabel="Tambah Syarat" EmptyDescription="Belum ada kontrak bersyarat.">
+                        <HeaderTemplate>
+                            <th>Isi Syarat</th>
+                        </HeaderTemplate>
+                        <RowTemplate Context="row">
+                            <td><InputText class="form-control" @bind-Value="row.Isi" /></td>
+                        </RowTemplate>
+                    </RepeatingRows>
+                </FormSection>
+
+                <div class="alert alert-warning" style="margin-top: 1rem">
+                    Penerbitan bersifat <strong>irreversible</strong>. Setelah diterbitkan, record terkunci permanen
+                    dan hanya dapat diunduh.
+                </div>
+
+                <BbButton OnClick="@(() => showConfirm = true)" Disabled="@issuing">
+                    <LucideIcon Name="stamp" Class="h-4 w-4" />
+                    Terbitkan @(form.Outcome == IssuanceOutcome.Nol ? "NOL" : "RL")
+                </BbButton>
+            </Authorized>
+            <NotAuthorized>
+                <div class="alert alert-info">
+                    Hanya Division Head yang dapat menerbitkan NOL/RL. Halaman ini hanya-baca untuk Anda.
+                </div>
+            </NotAuthorized>
+        </AuthorizeView>
+    }
 </div>
+
+@if (showConfirm && sub is not null)
+{
+    <BbDialog Open="true" OnOpenChange="@(open => { if (!open) showConfirm = false; })">
+        <BbDialogContent Class="sm:max-w-md">
+            <BbDialogHeader>
+                <BbDialogTitle>Konfirmasi Penerbitan</BbDialogTitle>
+            </BbDialogHeader>
+            <div class="space-y-4">
+                <p>
+                    Anda akan menerbitkan
+                    <strong>@(form.Outcome == IssuanceOutcome.Nol ? "NOL (menyetujui)" : "RL (tidak menyetujui)")</strong>
+                    untuk <strong>@sub.CompanyName</strong>.
+                </p>
+                <div class="alert alert-warning">
+                    Tindakan ini tidak dapat dibatalkan dan mengunci record secara permanen.
+                </div>
+                <div class="flex gap-2 justify-end">
+                    <BbButton Variant="ButtonVariant.Outline" OnClick="@(() => showConfirm = false)">Batal</BbButton>
+                    <BbButton OnClick="@Issue" Disabled="@issuing">
+                        @(issuing ? "Menerbitkan..." : "Ya, Terbitkan")
+                    </BbButton>
+                </div>
+            </div>
+        </BbDialogContent>
+    </BbDialog>
+}
 </AppShell>
 
 @code {
     [Parameter] public int CompanyId { get; set; }
+
+    private SubscriptionDto? sub;
+    private NolIssuanceDto? issued;
+    private NolRequestDto? requested;
+    private IssueNolRequest form = new();
+    private bool issuing;
+    private bool showConfirm;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        sub = await Subscriptions.GetAsync(CompanyId);
+        if (sub is null) return;
+
+        issued = await Issuance.GetAsync(CompanyId);
+        requested = await Stages.GetNolRequestAsync(CompanyId);
+    }
+
+    private void CopyRequestedTerms()
+    {
+        if (requested is null) return;
+
+        form.ApprovedTerms = requested.Periods.Select(p => new NolIssuanceTermDto
+        {
+            PeriodeMulai = p.PeriodeMulai,
+            PeriodeSelesai = p.PeriodeSelesai,
+            RataRata = p.RataRata,
+            Minimum = p.Minimum,
+            Maksimum = p.Maksimum,
+            SortOrder = p.SortOrder
+        }).ToList();
+
+        Toasts.Success("Isi persetujuan disalin dari permohonan.");
+    }
+
+    private static string DateValue(DateTime? value) => value?.ToString("yyyy-MM-dd") ?? "";
+
+    private static DateTime? ParseDate(object? value)
+        => DateTime.TryParse(value?.ToString(), out var parsed) ? parsed : null;
+
+    private async Task Issue()
+    {
+        if (sub is null) return;
+        issuing = true;
+        try
+        {
+            var (success, error) = await Issuance.IssueAsync(sub.Id, form);
+            if (!success)
+            {
+                Toasts.Error(string.IsNullOrWhiteSpace(error) ? "Gagal menerbitkan." : error);
+                return;
+            }
+
+            var label = form.Outcome == IssuanceOutcome.Nol ? "NOL" : "RL";
+            Toasts.Success($"{label} berhasil diterbitkan untuk {sub.CompanyName}.");
+            showConfirm = false;
+            sub = await Subscriptions.GetAsync(CompanyId);
+            issued = await Issuance.GetAsync(CompanyId);
+        }
+        finally { issuing = false; }
+    }
 }

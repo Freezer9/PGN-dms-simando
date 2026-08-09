@@ -1,16 +1,41 @@
 @page "/reports/productivity"
 @attribute [Authorize(Policy = SimandoPolicies.CanApprove)]
 @rendermode InteractiveServer
+@inject ISubscriptionService Subscriptions
 
 <PageTitle>Produktivitas Survei - SIMANDO</PageTitle>
 
 <AppShell>
 <div class="space-y-4 page-content">
-    <div class="page-header">
-        <div>
-            <h1>Produktivitas Survei</h1>
-            <p>Kinerja survei per sales area — jumlah survei, waktu rata-rata.</p>
-        </div>
-    </div>
+    <PageHeader Title="Produktivitas Survei" Subtitle="Kinerja survei per sales area." />
+
+    <DataTable TItem="IGrouping<string, SubscriptionDto>" Items="bySales"
+               EmptyDescription="Belum ada data produktivitas.">
+        <HeaderTemplate>
+            <th>Sales</th>
+            <th>Total</th>
+            <th>Survey</th>
+            <th>A1</th>
+            <th>NOL</th>
+        </HeaderTemplate>
+        <RowTemplate Context="group">
+            <td class="font-medium">@group.Key</td>
+            <td>@group.Count()</td>
+            <td>@group.Count(s => SubscriptionStages.IsAtOrAfter(s.Status, SubscriptionStatus.Survey))</td>
+            <td>@group.Count(s => SubscriptionStages.IsAtOrAfter(s.Status, SubscriptionStatus.A1))</td>
+            <td>@group.Count(s => SubscriptionStages.IsAtOrAfter(s.Status, SubscriptionStatus.PermohonanNOL))</td>
+        </RowTemplate>
+    </DataTable>
 </div>
 </AppShell>
+
+@code {
+    private List<SubscriptionDto> allSubscriptions = [];
+
+    private List<IGrouping<string, SubscriptionDto>> bySales => allSubscriptions
+        .GroupBy(s => s.CreatedByName ?? "-")
+        .OrderByDescending(g => g.Count())
+        .ToList();
+
+    protected override async Task OnInitializedAsync() { allSubscriptions = await Subscriptions.GetAllAsync(); }
+}

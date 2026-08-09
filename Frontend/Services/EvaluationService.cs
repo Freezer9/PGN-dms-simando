@@ -17,4 +17,17 @@ public class EvaluationService(HttpClient http) : IEvaluationService
         response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync<ResumeEvaluasiDto>())!;
     }
+
+    public async Task<NolEvaluationDto?> GetDetailAsync(int subscriptionId)
+    {
+        var response = await http.GetAsync($"api/evaluation/{subscriptionId}/detail");
+        return response.IsSuccessStatusCode ? await response.Content.ReadFromJsonAsync<NolEvaluationDto>() : null;
+    }
+
+    public async Task<NolEvaluationDto> SaveDetailAsync(int subscriptionId, NolEvaluationDto detail)
+    {
+        var response = await http.PutAsJsonAsync($"api/evaluation/{subscriptionId}/detail", detail);
+        response.EnsureSuccessStatusCode();
+        return (await response.Content.ReadFromJsonAsync<NolEvaluationDto>())!;
+    }
 }
