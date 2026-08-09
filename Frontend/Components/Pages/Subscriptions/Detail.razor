@@ -142,9 +142,10 @@ else
                             <div class="card-content space-y-2">
                                 @foreach (var reviewer in reviewers)
                                 {
+                                    var reviewerId = reviewer.Id;
                                     <div class="form-check">
-                                        <InputCheckbox @bind="selectedReviewers[reviewer.Id]" id="@reviewer.Id" />
-                                        <label for="@reviewer.Id" class="form-label">@reviewer.FullName</label>
+                                        <InputCheckbox @bind-Value="selectedReviewers[reviewerId]" id="@reviewerId" />
+                                        <label for="@reviewerId" class="form-label">@reviewer.FullName</label>
                                     </div>
                                 }
                                 <BbButton Size="ButtonSize.Small" OnClick="@AssignReviewers">Simpan Reviewer</BbButton>
@@ -217,6 +218,7 @@ else
 
         var allUsers = await Users.GetUsersAsync();
         reviewers = allUsers.Where(u => u.Role is SimandoRoles.Reviewer or SimandoRoles.DivisionHead).ToList();
+        selectedReviewers = reviewers.ToDictionary(r => r.Id, r => false);
         await LoadAsync();
     }
 
