@@ -1,0 +1,16 @@
+@page "/admin/break-glass"
+@attribute [Authorize(Policy = SimandoPolicies.CanAdminister)]
+@rendermode InteractiveServer
+
+<PageTitle>Akses Darurat - SIMANDO</PageTitle>
+
+<AppShell>
+<div class="space-y-4 page-content">
+    <div class="page-header">
+        <div>
+            <h1>Akses Darurat (Break-Glass)</h1>
+            <p>Permintaan akses darurat ke record — time-boxed 60 menit, audited.</p>
+        </div>
+    </div>
+</div>
+</AppShell>

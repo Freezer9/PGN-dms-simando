@@ -1,0 +1,20 @@
+@page "/companies/{CompanyId:int}/issuance"
+@attribute [Authorize(Policy = SimandoPolicies.CanApprove)]
+@rendermode InteractiveServer
+
+<PageTitle>Penerbitan NOL/RL - SIMANDO</PageTitle>
+
+<AppShell>
+<div class="space-y-4 page-content">
+    <div class="page-header">
+        <div>
+            <h1>Penerbitan</h1>
+            <p>Terbitkan NOL atau RL — isi persetujuan, kontrak bersyarat, masa berlaku.</p>
+        </div>
+    </div>
+</div>
+</AppShell>
+
+@code {
+    [Parameter] public int CompanyId { get; set; }
+}

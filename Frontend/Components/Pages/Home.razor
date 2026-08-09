@@ -14,9 +14,9 @@
             <p>Sistem Manajemen Proses Berlangganan Gas</p>
         </div>
         <AuthorizeView Policy="@SimandoPolicies.CanCreateSubscription">
-            <BbButton OnClick="@(() => showCreateDialog = true)">
+            <BbButton OnClick="@(() => Navigation.NavigateTo("/directory/new"))">
                 <LucideIcon Name="plus" Class="h-4 w-4" />
-                Buat Berlangganan
+                Tambah Perusahaan
             </BbButton>
         </AuthorizeView>
     </div>
@@ -26,7 +26,7 @@
             <div class="stat-icon"><LucideIcon Name="file-text" Class="h-5 w-5" /></div>
             <div>
                 <div class="stat-value">@stats.Total</div>
-                <div class="stat-label">Total Berlangganan</div>
+                <div class="stat-label">Total Perusahaan</div>
             </div>
         </div>
         <div class="stat-tile">
@@ -55,8 +55,8 @@
     <div class="content-grid content-grid-3">
         <div class="card col-span-2">
             <div class="card-header">
-                <div class="card-title">Berlangganan Terbaru</div>
-                <div class="card-description">Data berlangganan yang baru diupdate.</div>
+                <div class="card-title">Perusahaan Terbaru</div>
+                <div class="card-description">Data perusahaan yang baru diupdate.</div>
             </div>
             <div class="card-content">
                 @if (recent.Count == 0)
@@ -81,7 +81,7 @@
                             {
                                 <tr>
                                     <td>
-                                        <a href="/subscriptions/@sub.Id" class="text-sm font-medium">@sub.CompanyName</a>
+                                        <a href="/companies/@sub.Id" class="text-sm font-medium">@sub.CompanyName</a>
                                     </td>
                                     <td class="text-sm text-muted-foreground">@sub.AreaName</td>
                                     <td><StatusBadge Status="@sub.Status" /></td>
@@ -116,56 +116,17 @@
         </div>
     </div>
 </div>
-
-@if (showCreateDialog)
-{
-    <BbDialog Open="true" OnOpenChange="@(open => showCreateDialog = open)">
-        <BbDialogContent Class="sm:max-w-md">
-            <BbDialogHeader>
-                <BbDialogTitle>Buat Berlangganan Baru</BbDialogTitle>
-            </BbDialogHeader>
-            <div class="space-y-4">
-                <div class="form-group">
-                    <label class="form-label">Nama Perusahaan</label>
-                    <InputText class="form-control" @bind-Value="newCompany" />
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Alamat</label>
-                    <InputText class="form-control" @bind-Value="newAddress" />
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Area</label>
-                    <select class="form-control" @bind="newAreaId">
-                        <option value="">Pilih Area</option>
-                        @foreach (var area in areas)
-                        {
-                            <option value="@area.Id">@area.Name</option>
-                        }
-                    </select>
-                </div>
-                <div class="flex gap-2 justify-end">
-                    <BbButton Variant="ButtonVariant.Outline" OnClick="@(() => showCreateDialog = false)">Batal</BbButton>
-                    <BbButton OnClick="@CreateSubscription">Simpan</BbButton>
-                </div>
-            </div>
-        </BbDialogContent>
-    </BbDialog>
-}
 </AppShell>
 
 @code {
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+
     private (int Total, int PendingReview, int Approved, int InProgress) stats;
     private List<SubscriptionDto> recent = [];
     private List<ActivityLogDto> activityLogs = [];
-    private List<AreaDto> areas = [];
-    private bool showCreateDialog;
-    private string newCompany = "";
-    private string newAddress = "";
-    private int? newAreaId;
 
     protected override async Task OnInitializedAsync()
     {
-        areas = (await Subscriptions.GetAreasAsync()).ToList();
         await LoadAsync();
     }
 
@@ -180,24 +141,6 @@
         );
         recent = all.Take(8).ToList();
         activityLogs = (await Activity.GetRecentAsync(8)).ToList();
-    }
-
-    private async Task CreateSubscription()
-    {
-        if (string.IsNullOrWhiteSpace(newCompany) || newAreaId is null) return;
-
-        await Subscriptions.CreateAsync(new CreateSubscriptionRequest
-        {
-            CompanyName = newCompany,
-            Address = newAddress,
-            AreaId = newAreaId.Value
-        });
-
-        showCreateDialog = false;
-        newCompany = "";
-        newAddress = "";
-        newAreaId = null;
-        await LoadAsync();
     }
 
     private static string Ago(DateTime at)

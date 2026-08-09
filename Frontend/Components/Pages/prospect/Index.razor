@@ -1,0 +1,20 @@
+@page "/companies/{CompanyId:int}/prospect"
+@attribute [Authorize(Policy = SimandoPolicies.CanViewSubscriptions)]
+@rendermode InteractiveServer
+
+<PageTitle>Prospek - SIMANDO</PageTitle>
+
+<AppShell>
+<div class="space-y-4 page-content">
+    <div class="page-header">
+        <div>
+            <h1>Prospek</h1>
+            <p>Kontak perusahaan (PIC) — nama dan jabatan wajib, media sosial opsional.</p>
+        </div>
+    </div>
+</div>
+</AppShell>
+
+@code {
+    [Parameter] public int CompanyId { get; set; }
+}

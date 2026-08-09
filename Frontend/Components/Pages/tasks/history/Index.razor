@@ -1,0 +1,16 @@
+@page "/tasks/history"
+@attribute [Authorize(Policy = SimandoPolicies.CanViewSubscriptions)]
+@rendermode InteractiveServer
+
+<PageTitle>Riwayat Tindakan - SIMANDO</PageTitle>
+
+<AppShell>
+<div class="space-y-4 page-content">
+    <div class="page-header">
+        <div>
+            <h1>Riwayat Tindakan</h1>
+            <p>Log tindakan persetujuan yang pernah Anda lakukan.</p>
+        </div>
+    </div>
+</div>
+</AppShell>

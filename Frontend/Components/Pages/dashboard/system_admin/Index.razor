@@ -1,0 +1,16 @@
+@page "/dashboard/admin"
+@attribute [Authorize(Policy = SimandoPolicies.CanAdminister)]
+@rendermode InteractiveServer
+
+<PageTitle>Dashboard Admin - SIMANDO</PageTitle>
+
+<AppShell>
+<div class="space-y-6 page-content">
+    <div class="page-header">
+        <div>
+            <h1>Master Data Health</h1>
+            <p>Status kelengkapan data referensi sistem.</p>
+        </div>
+    </div>
+</div>
+</AppShell>

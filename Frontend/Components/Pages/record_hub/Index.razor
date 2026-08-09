@@ -1,0 +1,20 @@
+@page "/companies/{CompanyId:int}"
+@attribute [Authorize(Policy = SimandoPolicies.CanViewSubscriptions)]
+@rendermode InteractiveServer
+
+<PageTitle>Record Hub - SIMANDO</PageTitle>
+
+<AppShell>
+<div class="space-y-4 page-content">
+    <div class="page-header">
+        <div>
+            <h1>Record Hub</h1>
+            <p>Ringkasan, plotting, prospek, survei, A1, NOL, evaluasi, penerbitan, dokumen.</p>
+        </div>
+    </div>
+</div>
+</AppShell>
+
+@code {
+    [Parameter] public int CompanyId { get; set; }
+}

@@ -1,0 +1,16 @@
+@page "/admin/stuck-steps"
+@attribute [Authorize(Policy = SimandoPolicies.CanAdminister)]
+@rendermode InteractiveServer
+
+<PageTitle>Langkah Tertahan - SIMANDO</PageTitle>
+
+<AppShell>
+<div class="space-y-4 page-content">
+    <div class="page-header">
+        <div>
+            <h1>Langkah Tertahan</h1>
+            <p>Reassign langkah persetujuan yang assignee-nya tidak aktif — semua region.</p>
+        </div>
+    </div>
+</div>
+</AppShell>

@@ -1,0 +1,16 @@
+@page "/settings/master-data"
+@attribute [Authorize(Policy = SimandoPolicies.CanAdminister)]
+@rendermode InteractiveServer
+
+<PageTitle>Data Referensi - SIMANDO</PageTitle>
+
+<AppShell>
+<div class="space-y-4 page-content">
+    <div class="page-header">
+        <div>
+            <h1>Data Referensi</h1>
+            <p>Negara, jenis industri, segmen, jenis bahan bakar, satuan, G-Size, spesifikasi MRS, dokumen acuan kerja.</p>
+        </div>
+    </div>
+</div>
+</AppShell>

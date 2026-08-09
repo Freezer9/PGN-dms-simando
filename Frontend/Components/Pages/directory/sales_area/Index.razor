@@ -1,0 +1,25 @@
+@page "/directory"
+@page "/directory/new"
+@attribute [Authorize(Policy = SimandoPolicies.CanCreateSubscription)]
+@rendermode InteractiveServer
+
+<PageTitle>Direktori - SIMANDO</PageTitle>
+
+<AppShell>
+<div class="space-y-4 page-content">
+    <div class="page-header">
+        <div>
+            <h1>Direktori</h1>
+            <p>Daftar perusahaan — buat dan kelola data perusahaan.</p>
+        </div>
+        <BbButton OnClick="@(() => Navigation.NavigateTo("/directory/new"))">
+            <LucideIcon Name="plus" Class="h-4 w-4" />
+            Tambah Perusahaan
+        </BbButton>
+    </div>
+</div>
+</AppShell>
+
+@code {
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+}

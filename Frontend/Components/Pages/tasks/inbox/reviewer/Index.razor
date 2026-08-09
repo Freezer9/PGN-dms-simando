@@ -1,0 +1,16 @@
+@page "/tasks/reviewer"
+@attribute [Authorize(Policy = SimandoPolicies.CanReview)]
+@rendermode InteractiveServer
+
+<PageTitle>Tugas Saya - Reviewer - SIMANDO</PageTitle>
+
+<AppShell>
+<div class="space-y-4 page-content">
+    <div class="page-header">
+        <div>
+            <h1>Tugas Saya</h1>
+            <p>Antrean review yang di-assign ke Anda.</p>
+        </div>
+    </div>
+</div>
+</AppShell>

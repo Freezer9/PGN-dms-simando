@@ -1,0 +1,20 @@
+@page "/companies/{CompanyId:int}/survey"
+@attribute [Authorize(Policy = SimandoPolicies.CanCreateSubscription)]
+@rendermode InteractiveServer
+
+<PageTitle>Survei KK0 - SIMANDO</PageTitle>
+
+<AppShell>
+<div class="space-y-4 page-content">
+    <div class="page-header">
+        <div>
+            <h1>Survei (KK0)</h1>
+            <p>Form survei lapangan — produk, bahan baku, peralatan, kebutuhan energi.</p>
+        </div>
+    </div>
+</div>
+</AppShell>
+
+@code {
+    [Parameter] public int CompanyId { get; set; }
+}

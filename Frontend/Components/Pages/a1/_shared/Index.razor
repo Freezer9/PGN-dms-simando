@@ -1,0 +1,20 @@
+@page "/companies/{CompanyId:int}/a1/read"
+@attribute [Authorize(Policy = SimandoPolicies.CanViewSubscriptions)]
+@rendermode InteractiveServer
+
+<PageTitle>Registrasi A1 - SIMANDO</PageTitle>
+
+<AppShell>
+<div class="space-y-4 page-content">
+    <div class="page-header">
+        <div>
+            <h1>Registrasi (A1)</h1>
+            <p>Data registrasi dan harga (read-only).</p>
+        </div>
+    </div>
+</div>
+</AppShell>
+
+@code {
+    [Parameter] public int CompanyId { get; set; }
+}

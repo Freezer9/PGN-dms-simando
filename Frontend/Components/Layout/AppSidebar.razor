@@ -22,28 +22,76 @@
                     <BbSidebarMenuItem>
                         <BbSidebarMenuButton Href="/" Match="NavLinkMatch.All" Tooltip="Dashboard">
                             <LucideIcon Name="layout-dashboard" />
-                            <span>Dashboard</span>
-                        </BbSidebarMenuButton>
-                    </BbSidebarMenuItem>
-                    <BbSidebarMenuItem>
-                        <BbSidebarMenuButton Href="/subscriptions" Tooltip="Daftar berlangganan">
-                            <LucideIcon Name="file-text" />
-                            <span>Berlangganan</span>
+                            <span>Beranda</span>
                         </BbSidebarMenuButton>
                     </BbSidebarMenuItem>
 
-                    <AuthorizeView Policy="@SimandoPolicies.CanReview">
+                    <AuthorizeView Policy="@SimandoPolicies.CanApprove">
                         <BbSidebarMenuItem>
-                            <BbSidebarMenuButton Href="/review" Tooltip="Antrian review">
-                                <LucideIcon Name="clipboard-check" />
-                                <span>Review</span>
+                            <BbSidebarMenuButton Href="/tasks" Tooltip="Tugas Saya">
+                                <LucideIcon Name="inbox" />
+                                <span>Tugas Saya</span>
+                            </BbSidebarMenuButton>
+                        </BbSidebarMenuItem>
+                    </AuthorizeView>
+
+                    <AuthorizeView Policy="@SimandoPolicies.CanManageTasksBlocked">
+                        <BbSidebarMenuItem>
+                            <BbSidebarMenuButton Href="/tasks/blocked" Tooltip="Tugas Tertahan">
+                                <LucideIcon Name="alert-triangle" />
+                                <span>Tugas Tertahan</span>
+                            </BbSidebarMenuButton>
+                        </BbSidebarMenuItem>
+                    </AuthorizeView>
+
+                    <AuthorizeView Policy="@SimandoPolicies.CanCreateSubscription">
+                        <BbSidebarMenuItem>
+                            <BbSidebarMenuButton Href="/directory" Tooltip="Direktori">
+                                <LucideIcon Name="building-2" />
+                                <span>Direktori</span>
+                            </BbSidebarMenuButton>
+                        </BbSidebarMenuItem>
+                    </AuthorizeView>
+
+                    <AuthorizeView Policy="@SimandoPolicies.CanViewSubscriptions">
+                        <BbSidebarMenuItem>
+                            <BbSidebarMenuButton Href="/directory/read" Tooltip="Direktori">
+                                <LucideIcon Name="building-2" />
+                                <span>Direktori</span>
+                            </BbSidebarMenuButton>
+                        </BbSidebarMenuItem>
+                    </AuthorizeView>
+
+                    <AuthorizeView Policy="@SimandoPolicies.CanCreateSubscription">
+                        <BbSidebarMenuItem>
+                            <BbSidebarMenuButton Href="/plotting" Tooltip="Plotting">
+                                <LucideIcon Name="map-pin" />
+                                <span>Plotting</span>
+                            </BbSidebarMenuButton>
+                        </BbSidebarMenuItem>
+                    </AuthorizeView>
+
+                    <AuthorizeView Policy="@SimandoPolicies.CanViewSubscriptions">
+                        <BbSidebarMenuItem>
+                            <BbSidebarMenuButton Href="/plotting/read" Tooltip="Plotting">
+                                <LucideIcon Name="map-pin" />
+                                <span>Plotting</span>
+                            </BbSidebarMenuButton>
+                        </BbSidebarMenuItem>
+                    </AuthorizeView>
+
+                    <AuthorizeView Policy="@SimandoPolicies.CanViewSubscriptions">
+                        <BbSidebarMenuItem>
+                            <BbSidebarMenuButton Href="/map" Tooltip="Peta">
+                                <LucideIcon Name="map" />
+                                <span>Peta</span>
                             </BbSidebarMenuButton>
                         </BbSidebarMenuItem>
                     </AuthorizeView>
 
                     <AuthorizeView Policy="@SimandoPolicies.CanAccessEvaluation">
                         <BbSidebarMenuItem>
-                            <BbSidebarMenuButton Href="/evaluation" Tooltip="Resume evaluasi">
+                            <BbSidebarMenuButton Href="/evaluation" Tooltip="Evaluasi">
                                 <LucideIcon Name="file-check" />
                                 <span>Evaluasi</span>
                             </BbSidebarMenuButton>
@@ -53,17 +101,99 @@
             </BbSidebarGroupContent>
         </BbSidebarGroup>
 
-        <AuthorizeView Policy="@SimandoPolicies.CanAdminister">
+        <AuthorizeView Policy="@SimandoPolicies.CanViewSubscriptions">
             <BbSidebarGroup>
-                <BbSidebarGroupLabel>Admin</BbSidebarGroupLabel>
+                <BbSidebarGroupLabel>Laporan</BbSidebarGroupLabel>
                 <BbSidebarGroupContent>
                     <BbSidebarMenu>
                         <BbSidebarMenuItem>
-                            <BbSidebarMenuButton Href="/admin/users" Tooltip="Manajemen pengguna">
+                            <BbSidebarMenuButton Href="/reports/sales-funnel" Tooltip="Corong Penjualan">
+                                <LucideIcon Name="funnel" />
+                                <span>Corong Penjualan</span>
+                            </BbSidebarMenuButton>
+                        </BbSidebarMenuItem>
+                        <BbSidebarMenuItem>
+                            <BbSidebarMenuButton Href="/reports/ageing" Tooltip="Penuaan">
+                                <LucideIcon Name="clock" />
+                                <span>Penuaan</span>
+                            </BbSidebarMenuButton>
+                        </BbSidebarMenuItem>
+                        <BbSidebarMenuItem>
+                            <BbSidebarMenuButton Href="/reports/potential" Tooltip="Potensi Kebutuhan">
+                                <LucideIcon Name="trending-up" />
+                                <span>Potensi Kebutuhan</span>
+                            </BbSidebarMenuButton>
+                        </BbSidebarMenuItem>
+                        <AuthorizeView Policy="@SimandoPolicies.CanApprove" Context="reportsApprover">
+                            <BbSidebarMenuItem>
+                                <BbSidebarMenuButton Href="/reports/productivity" Tooltip="Produktivitas Survei">
+                                    <LucideIcon Name="activity" />
+                                    <span>Produktivitas Survei</span>
+                                </BbSidebarMenuButton>
+                            </BbSidebarMenuItem>
+                            <BbSidebarMenuItem>
+                                <BbSidebarMenuButton Href="/reports/nol-results" Tooltip="Hasil NOL/RL">
+                                    <LucideIcon Name="file-badge" />
+                                    <span>Hasil NOL/RL</span>
+                                </BbSidebarMenuButton>
+                            </BbSidebarMenuItem>
+                        </AuthorizeView>
+                    </BbSidebarMenu>
+                </BbSidebarGroupContent>
+            </BbSidebarGroup>
+        </AuthorizeView>
+
+        <AuthorizeView Policy="@SimandoPolicies.CanAdminister">
+            <BbSidebarGroup>
+                <BbSidebarGroupLabel>Pengaturan</BbSidebarGroupLabel>
+                <BbSidebarGroupContent>
+                    <BbSidebarMenu>
+                        <BbSidebarMenuItem>
+                            <BbSidebarMenuButton Href="/settings/users" Tooltip="Manajemen Pengguna">
                                 <LucideIcon Name="shield-user" />
                                 <span>Pengguna</span>
                             </BbSidebarMenuButton>
                         </BbSidebarMenuItem>
+                        <AuthorizeView Policy="@SimandoPolicies.CanAdminister" Context="settingsOrg">
+                            <BbSidebarMenuItem>
+                                <BbSidebarMenuButton Href="/settings/organisation" Tooltip="Organisasi">
+                                    <LucideIcon Name="building" />
+                                    <span>Organisasi</span>
+                                </BbSidebarMenuButton>
+                            </BbSidebarMenuItem>
+                        </AuthorizeView>
+                        <AuthorizeView Policy="@SimandoPolicies.CanAdminister" Context="settingsMaster">
+                            <BbSidebarMenuItem>
+                                <BbSidebarMenuButton Href="/settings/master-data" Tooltip="Data Referensi">
+                                    <LucideIcon Name="database" />
+                                    <span>Data Referensi</span>
+                                </BbSidebarMenuButton>
+                            </BbSidebarMenuItem>
+                        </AuthorizeView>
+                    </BbSidebarMenu>
+                </BbSidebarGroupContent>
+            </BbSidebarGroup>
+        </AuthorizeView>
+
+        <AuthorizeView Policy="@SimandoPolicies.CanAccessBreakGlass">
+            <BbSidebarGroup>
+                <BbSidebarGroupLabel>Pemulihan</BbSidebarGroupLabel>
+                <BbSidebarGroupContent>
+                    <BbSidebarMenu>
+                        <BbSidebarMenuItem>
+                            <BbSidebarMenuButton Href="/admin/break-glass" Tooltip="Akses Darurat">
+                                <LucideIcon Name="shield-alert" />
+                                <span>Akses Darurat</span>
+                            </BbSidebarMenuButton>
+                        </BbSidebarMenuItem>
+                        <AuthorizeView Policy="@SimandoPolicies.CanAdminister" Context="stuckSteps">
+                            <BbSidebarMenuItem>
+                                <BbSidebarMenuButton Href="/admin/stuck-steps" Tooltip="Langkah Tertahan">
+                                    <LucideIcon Name="circle-pause" />
+                                    <span>Langkah Tertahan</span>
+                                </BbSidebarMenuButton>
+                            </BbSidebarMenuItem>
+                        </AuthorizeView>
                     </BbSidebarMenu>
                 </BbSidebarGroupContent>
             </BbSidebarGroup>

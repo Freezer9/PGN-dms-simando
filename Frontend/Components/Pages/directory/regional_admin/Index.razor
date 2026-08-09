@@ -1,0 +1,24 @@
+@page "/directory/region"
+@attribute [Authorize(Policy = SimandoPolicies.CanViewRegion)]
+@rendermode InteractiveServer
+
+<PageTitle>Direktori Region - SIMANDO</PageTitle>
+
+<AppShell>
+<div class="space-y-4 page-content">
+    <div class="page-header">
+        <div>
+            <h1>Direktori Region</h1>
+            <p>Daftar perusahaan seluruh area di region — create & edit.</p>
+        </div>
+        <BbButton OnClick="@(() => Navigation.NavigateTo("/directory/new"))">
+            <LucideIcon Name="plus" Class="h-4 w-4" />
+            Tambah Perusahaan
+        </BbButton>
+    </div>
+</div>
+</AppShell>
+
+@code {
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+}

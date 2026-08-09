@@ -1,0 +1,16 @@
+@page "/reports/sales-funnel"
+@attribute [Authorize(Policy = SimandoPolicies.CanViewSubscriptions)]
+@rendermode InteractiveServer
+
+<PageTitle>Corong Penjualan - SIMANDO</PageTitle>
+
+<AppShell>
+<div class="space-y-4 page-content">
+    <div class="page-header">
+        <div>
+            <h1>Corong Penjualan</h1>
+            <p>Distribusi perusahaan per tahap pipeline.</p>
+        </div>
+    </div>
+</div>
+</AppShell>

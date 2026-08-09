@@ -1,0 +1,16 @@
+@page "/tasks/area-head"
+@attribute [Authorize(Policy = SimandoPolicies.CanApprove)]
+@rendermode InteractiveServer
+
+<PageTitle>Tugas Saya - Area Head - SIMANDO</PageTitle>
+
+<AppShell>
+<div class="space-y-4 page-content">
+    <div class="page-header">
+        <div>
+            <h1>Tugas Saya</h1>
+            <p>Antrean permohonan NOL area Anda — setujui, revisi, atau tolak.</p>
+        </div>
+    </div>
+</div>
+</AppShell>

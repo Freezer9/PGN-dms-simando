@@ -1,0 +1,16 @@
+@page "/dashboard/area-head"
+@attribute [Authorize(Policy = SimandoPolicies.CanViewDashboard)]
+@rendermode InteractiveServer
+
+<PageTitle>Dashboard Area Head - SIMANDO</PageTitle>
+
+<AppShell>
+<div class="space-y-6 page-content">
+    <div class="page-header">
+        <div>
+            <h1>Dashboard Area Head</h1>
+            <p>Pending approval, kinerja persetujuan, dan aktivitas area.</p>
+        </div>
+    </div>
+</div>
+</AppShell>

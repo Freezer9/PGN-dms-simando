@@ -31,16 +31,23 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     });
 
 builder.Services.AddAuthorizationBuilder()
-    .AddPolicy(SimandoPolicies.CanCreateSubscription, policy => policy.RequireRole(SimandoRoles.SalesArea))
-    .AddPolicy(SimandoPolicies.CanReview, policy => policy.RequireRole(SimandoRoles.Reviewer))
-    .AddPolicy(SimandoPolicies.CanApprove, policy => policy.RequireRole(SimandoRoles.DivisionHead))
-    .AddPolicy(SimandoPolicies.CanAdminister, policy => policy.RequireRole(SimandoRoles.AdminRegional))
+    .AddPolicy(SimandoPolicies.CanViewDashboard, policy => policy.RequireRole(SimandoRoles.All))
+    .AddPolicy(SimandoPolicies.CanViewSubscriptions, policy => policy.RequireRole(SimandoRoles.Operational))
+    .AddPolicy(SimandoPolicies.CanCreateSubscription, policy => policy.RequireRole(
+        SimandoRoles.SalesArea, SimandoRoles.AdminRegional))
+    .AddPolicy(SimandoPolicies.CanReview, policy => policy.RequireRole(
+        SimandoRoles.AreaHead, SimandoRoles.AdminRegional, SimandoRoles.Reviewer))
+    .AddPolicy(SimandoPolicies.CanApprove, policy => policy.RequireRole(
+        SimandoRoles.AreaHead, SimandoRoles.AdminRegional, SimandoRoles.Reviewer, SimandoRoles.DivisionHead))
+    .AddPolicy(SimandoPolicies.CanAccessEvaluation, policy => policy.RequireRole(SimandoRoles.AdminRegional))
     .AddPolicy(SimandoPolicies.CanViewRegion, policy => policy.RequireRole(
         SimandoRoles.AdminRegional, SimandoRoles.Reviewer, SimandoRoles.DivisionHead))
-    .AddPolicy(SimandoPolicies.CanAccessEvaluation, policy => policy.RequireRole(
-        SimandoRoles.AdminRegional, SimandoRoles.AreaHead))
-    .AddPolicy(SimandoPolicies.CanViewDashboard, policy => policy.RequireRole(SimandoRoles.All))
-    .AddPolicy(SimandoPolicies.CanViewSubscriptions, policy => policy.RequireRole(SimandoRoles.All));
+    .AddPolicy(SimandoPolicies.CanAdminister, policy => policy.RequireRole(
+        SimandoRoles.AdminRegional, SimandoRoles.SystemAdmin))
+    .AddPolicy(SimandoPolicies.CanIssueNOL, policy => policy.RequireRole(SimandoRoles.DivisionHead))
+    .AddPolicy(SimandoPolicies.CanManageTasksBlocked, policy => policy.RequireRole(SimandoRoles.AdminRegional))
+    .AddPolicy(SimandoPolicies.CanAccessBreakGlass, policy => policy.RequireRole(
+        SimandoRoles.AdminRegional, SimandoRoles.DivisionHead, SimandoRoles.SystemAdmin));
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddTransient<BearerTokenHandler>();

@@ -1,0 +1,16 @@
+@page "/map"
+@attribute [Authorize(Policy = SimandoPolicies.CanViewSubscriptions)]
+@rendermode InteractiveServer
+
+<PageTitle>Peta - SIMANDO</PageTitle>
+
+<AppShell>
+<div class="space-y-4 page-content">
+    <div class="page-header">
+        <div>
+            <h1>Peta</h1>
+            <p>Sebaran titik perusahaan — scope dan edit ditentukan oleh role.</p>
+        </div>
+    </div>
+</div>
+</AppShell>

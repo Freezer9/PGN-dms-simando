@@ -1,0 +1,20 @@
+@page "/companies/{CompanyId:int}/nol-request"
+@attribute [Authorize(Policy = SimandoPolicies.CanCreateSubscription)]
+@rendermode InteractiveServer
+
+<PageTitle>Permohonan NOL - SIMANDO</PageTitle>
+
+<AppShell>
+<div class="space-y-4 page-content">
+    <div class="page-header">
+        <div>
+            <h1>Permohonan NOL</h1>
+            <p>Volume kontrak, Lampiran 17 evaluasi, dan pengajuan persetujuan.</p>
+        </div>
+    </div>
+</div>
+</AppShell>
+
+@code {
+    [Parameter] public int CompanyId { get; set; }
+}

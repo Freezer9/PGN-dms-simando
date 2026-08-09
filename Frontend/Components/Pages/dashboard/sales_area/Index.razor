@@ -1,0 +1,24 @@
+@page "/dashboard/sales"
+@attribute [Authorize(Policy = SimandoPolicies.CanViewDashboard)]
+@rendermode InteractiveServer
+
+<PageTitle>Dashboard Sales - SIMANDO</PageTitle>
+
+<AppShell>
+<div class="space-y-6 page-content">
+    <div class="page-header">
+        <div>
+            <h1>Dashboard Sales Area</h1>
+            <p>Perlu Tindakan Anda, Pipeline, dan aktivitas terbaru.</p>
+        </div>
+        <BbButton OnClick="@(() => Navigation.NavigateTo("/directory/new"))">
+            <LucideIcon Name="plus" Class="h-4 w-4" />
+            Tambah Perusahaan
+        </BbButton>
+    </div>
+</div>
+</AppShell>
+
+@code {
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+}

@@ -1,0 +1,16 @@
+@page "/settings/organisation"
+@attribute [Authorize(Policy = SimandoPolicies.CanAdminister)]
+@rendermode InteractiveServer
+
+<PageTitle>Organisasi - SIMANDO</PageTitle>
+
+<AppShell>
+<div class="space-y-4 page-content">
+    <div class="page-header">
+        <div>
+            <h1>Organisasi</h1>
+            <p>Kelola region SOR dan area — harus ada sebelum assignment pengguna.</p>
+        </div>
+    </div>
+</div>
+</AppShell>
