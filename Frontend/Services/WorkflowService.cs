@@ -22,6 +22,16 @@ public class WorkflowService(HttpClient http) : IWorkflowService
         response.EnsureSuccessStatusCode();
     }
 
+    public async Task<(bool Success, string? Error)> ReassignStepAsync(int subscriptionId, string reviewerId)
+    {
+        var response = await http.PostAsJsonAsync($"api/subscriptions/{subscriptionId}/reassign-step",
+            new ReassignStepRequest { ReviewerId = reviewerId });
+
+        return response.IsSuccessStatusCode
+            ? (true, null)
+            : (false, await response.Content.ReadAsStringAsync());
+    }
+
     public async Task<bool> SubmitReviewAsync(int subscriptionId, ReviewAction action, string comment)
     {
         var response = await http.PostAsJsonAsync($"api/subscriptions/{subscriptionId}/review",

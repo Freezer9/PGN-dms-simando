@@ -78,6 +78,14 @@ public class SubscriptionsController(SubscriptionService subs, WorkflowService w
         return Ok();
     }
 
+    [HttpPost("{id:int}/reassign-step")]
+    [Authorize(Roles = "RegionSales")]
+    public async Task<IActionResult> ReassignStep(int id, [FromBody] ReassignStepRequest req)
+    {
+        var (ok, reason) = await workflow.ReassignCurrentStepAsync(id, req.ReviewerId, UserName);
+        return ok ? Ok() : BadRequest(reason);
+    }
+
     // Every approver role has an inbox (Docs/14), not just the two that sit in ReviewSteps.
     [HttpGet("pending-review")]
     [Authorize(Roles = "AreaHead,RegionSales,Reviewer")]

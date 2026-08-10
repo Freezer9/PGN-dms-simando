@@ -18,6 +18,9 @@ public interface IWorkflowService
     /// <summary>On failure, <see cref="AdvanceResult.Reason"/> names the blocking gate.</summary>
     Task<AdvanceResult> AdvanceStatusAsync(int subscriptionId);
     Task AssignReviewersAsync(int subscriptionId, string[] reviewerIds);
+
+    /// <summary>Recovery path for a record stalled behind an unavailable reviewer.</summary>
+    Task<(bool Success, string? Error)> ReassignStepAsync(int subscriptionId, string reviewerId);
     Task<bool> SubmitReviewAsync(int subscriptionId, ReviewAction action, string comment);
     Task SignOffAsync(int subscriptionId);
     Task<List<SubscriptionDto>> GetPendingReviewAsync();

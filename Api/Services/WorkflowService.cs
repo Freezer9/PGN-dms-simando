@@ -128,6 +128,58 @@ public class WorkflowService(ApplicationDbContext db)
         await db.SaveChangesAsync();
     }
 
+    /// <summary>
+    /// Hands the currently-open review step to a different reviewer. This is the recovery path
+    /// for a record stalled behind someone who has left or is unavailable — AssignReviewersAsync
+    /// only rewrites ReviewerIds and cannot move a step that already exists.
+    /// Refuses once the record is closed, so history stays immutable.
+    /// </summary>
+    public async Task<(bool Ok, string? Reason)> ReassignCurrentStepAsync(
+        int subscriptionId, string newReviewerId, string actorName)
+    {
+        var sub = await db.Subscriptions.Include(s => s.ReviewSteps)
+            .FirstOrDefaultAsync(s => s.Id == subscriptionId);
+        if (sub is null) return (false, "Perusahaan tidak ditemukan.");
+        if (SubscriptionStages.IsTerminal(sub.Status)) return (false, "Record sudah final.");
+
+        var step = sub.ReviewSteps
+            .Where(r => r.Action is null)
+            .OrderBy(r => r.StepOrder)
+            .FirstOrDefault();
+        if (step is null) return (false, "Tidak ada langkah review yang terbuka.");
+        if (step.ReviewerId == newReviewerId) return (false, "Reviewer tujuan sama dengan saat ini.");
+
+        if (!await db.Users.AnyAsync(u => u.Id == newReviewerId))
+            return (false, "Reviewer tujuan tidak ditemukan.");
+
+        var previous = await db.Users
+            .Where(u => u.Id == step.ReviewerId)
+            .Select(u => u.FullName)
+            .FirstOrDefaultAsync() ?? "(tidak dikenal)";
+
+        step.ReviewerId = newReviewerId;
+        sub.CurrentReviewerIndex = step.StepOrder;
+        sub.ReviewerIds = string.Join(",", sub.ReviewSteps.OrderBy(r => r.StepOrder).Select(r => r.ReviewerId));
+        sub.UpdatedAt = DateTime.UtcNow;
+
+        var incoming = await db.Users
+            .Where(u => u.Id == newReviewerId)
+            .Select(u => u.FullName)
+            .FirstAsync();
+
+        db.ActivityLogs.Add(new ActivityLog
+        {
+            SubscriptionId = sub.Id,
+            ActorName = actorName,
+            Action = $"Reassign langkah {step.StepOrder}",
+            Details = $"{previous} → {incoming}",
+            At = DateTime.UtcNow
+        });
+
+        await db.SaveChangesAsync();
+        return (true, null);
+    }
+
     public async Task<bool> SubmitReviewAsync(int subscriptionId, string reviewerId, SubmitReviewRequest req, string actorName)
     {
         var sub = await db.Subscriptions.Include(s => s.ReviewSteps).FirstOrDefaultAsync(s => s.Id == subscriptionId);

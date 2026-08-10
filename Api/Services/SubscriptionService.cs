@@ -6,11 +6,18 @@ namespace Pgn.Dms.Api.Services;
 
 public class SubscriptionService(ApplicationDbContext db)
 {
+    /// <summary>
+    /// Submissions and ReviewSteps are included because the list pages depend on them:
+    /// the kelayakan gate checks uploaded KK0/A1, and the QA/QC and stuck-step views read
+    /// open review steps. Without them those pages silently render as empty or blocked.
+    /// </summary>
     public async Task<List<SubscriptionDto>> GetAllAsync()
     {
         return await db.Subscriptions
             .Include(s => s.Area).ThenInclude(a => a.Region)
             .Include(s => s.CreatedBy)
+            .Include(s => s.Submissions)
+            .Include(s => s.ReviewSteps).ThenInclude(r => r.Reviewer)
             .OrderByDescending(s => s.UpdatedAt)
             .Select(s => s.ToDto())
             .ToListAsync();

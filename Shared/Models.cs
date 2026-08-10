@@ -334,6 +334,12 @@ public class AssignReviewersRequest
     public string[] ReviewerIds { get; set; } = [];
 }
 
+/// <summary>Moves the open review step to another reviewer when the current one is unavailable.</summary>
+public class ReassignStepRequest
+{
+    public string ReviewerId { get; set; } = "";
+}
+
 // ── Stage 2: Plotting ───────────────────────────────────────────────────────
 
 public class PlottingDto

@@ -4,6 +4,7 @@
 @inject IUserService UserApi
 @inject ISubscriptionService Subscriptions
 @inject IMasterDataService MasterData
+@inject IWorkflowService Workflow
 @inject ToastService Toasts
 
 @* Configuration centre: users, roles and passwords, plus the reference catalogues the
@@ -109,7 +110,77 @@
             </RowTemplate>
         </DataTable>
     }
+    else if (activeTab == "stuck")
+    {
+        <div class="alert alert-info">
+            Langkah review yang terbuka lebih dari @StuckAfterDays hari. Reassign memindahkan
+            langkah ke reviewer lain dan tercatat di log aktivitas.
+        </div>
+
+        <DataTable TItem="SubscriptionDto" Items="stuckRecords" Loading="loading"
+                   EmptyIcon="check-circle" EmptyTitle="Tidak ada langkah tertahan"
+                   EmptyDescription="Semua langkah review berjalan normal.">
+            <HeaderTemplate>
+                <th>Perusahaan</th>
+                <th>Area</th>
+                <th>Langkah</th>
+                <th>Reviewer Saat Ini</th>
+                <th>Terbuka Selama</th>
+                <th></th>
+            </HeaderTemplate>
+            <RowTemplate Context="sub">
+                @{
+                    var step = OpenStep(sub);
+                    var idle = (DateTime.UtcNow - sub.UpdatedAt).Days;
+                }
+                <td><a href="/companies/@sub.Id" class="font-medium">@sub.CompanyName</a></td>
+                <td class="text-sm text-muted-foreground">@sub.AreaName</td>
+                <td class="text-sm text-muted-foreground">
+                    @(step is null ? "—" : $"Langkah {step.StepOrder}")
+                </td>
+                <td class="text-sm text-muted-foreground">@(step?.ReviewerName ?? "—")</td>
+                <td class="font-medium text-danger">@idle hari</td>
+                <td>
+                    <button type="button" class="btn btn-sm btn-outline"
+                            @onclick="@(() => OpenReassign(sub))">Reassign</button>
+                </td>
+            </RowTemplate>
+        </DataTable>
+    }
 </div>
+
+@if (reassigning is not null)
+{
+    <BbDialog Open="true" OnOpenChange="@(open => { if (!open) reassigning = null; })">
+        <BbDialogContent Class="sm:max-w-md">
+            <BbDialogHeader>
+                <BbDialogTitle>Reassign Langkah — @reassigning.CompanyName</BbDialogTitle>
+            </BbDialogHeader>
+            <div class="space-y-4">
+                <div class="detail-row">
+                    <span class="detail-label">Reviewer saat ini</span>
+                    <span class="detail-value">@(OpenStep(reassigning)?.ReviewerName ?? "—")</span>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Pindahkan ke</label>
+                    <select class="form-control" @bind="reassignTo">
+                        <option value="">Pilih reviewer</option>
+                        @foreach (var r in reviewers.Where(r => r.Id != OpenStep(reassigning)?.ReviewerId))
+                        {
+                            <option value="@r.Id">@r.FullName</option>
+                        }
+                    </select>
+                </div>
+                <div class="flex gap-2 justify-end">
+                    <BbButton Variant="ButtonVariant.Outline" OnClick="@(() => reassigning = null)">Batal</BbButton>
+                    <BbButton OnClick="@Reassign" Disabled="@(saving || string.IsNullOrWhiteSpace(reassignTo))">
+                        @(saving ? "Memindahkan..." : "Reassign")
+                    </BbButton>
+                </div>
+            </div>
+        </BbDialogContent>
+    </BbDialog>
+}
 
 @if (showUserDialog)
 {
@@ -210,14 +281,14 @@
     [
         ("users", "Pengguna & Role"),
         ("organisation", "Organisasi"),
-        ("reference", "Data Referensi")
+        ("reference", "Data Referensi"),
+        ("stuck", "Langkah Tertahan")
     ];
 
-    // Region Sales manages the operational roles below it, not other admins.
-    private readonly string[] assignableRoles =
-    [
-        SimandoRoles.SalesArea, SimandoRoles.AreaHead, SimandoRoles.Reviewer
-    ];
+    /// <summary>A step open this long is treated as stalled and surfaced for reassignment.</summary>
+    private const int StuckAfterDays = 7;
+
+    private readonly string[] assignableRoles = SimandoRoles.All;
 
     private string activeTab = "users";
     private MasterCategory activeCategory = MasterCategory.Segment;
@@ -226,6 +297,24 @@
     private List<RegionDto> regions = [];
     private List<AreaDto> areas = [];
     private List<MasterDataEntryDto> entries = [];
+    private List<SubscriptionDto> companies = [];
+
+    private SubscriptionDto? reassigning;
+    private string reassignTo = "";
+
+    private List<UserInfo> reviewers => users.Where(u => u.Role == SimandoRoles.Reviewer).ToList();
+
+    private static ReviewStepDto? OpenStep(SubscriptionDto sub) => sub.ReviewSteps
+        .Where(s => s.Action is null)
+        .OrderBy(s => s.StepOrder)
+        .FirstOrDefault();
+
+    private List<SubscriptionDto> stuckRecords => companies
+        .Where(c => !SubscriptionStages.IsTerminal(c.Status))
+        .Where(c => OpenStep(c) is not null)
+        .Where(c => (DateTime.UtcNow - c.UpdatedAt).Days >= StuckAfterDays)
+        .OrderBy(c => c.UpdatedAt)
+        .ToList();
 
     private CreateUserRequest newUser = new();
     private SaveMasterDataRequest entryForm = new();
@@ -243,7 +332,35 @@
         regions = await Subscriptions.GetRegionsAsync();
         areas = await Subscriptions.GetAreasAsync();
         entries = await MasterData.GetAsync(activeCategory);
+        companies = await Subscriptions.GetAllAsync();
         loading = false;
+    }
+
+    private void OpenReassign(SubscriptionDto sub)
+    {
+        reassigning = sub;
+        reassignTo = "";
+    }
+
+    private async Task Reassign()
+    {
+        if (reassigning is null || string.IsNullOrWhiteSpace(reassignTo)) return;
+
+        saving = true;
+        try
+        {
+            var (success, error) = await Workflow.ReassignStepAsync(reassigning.Id, reassignTo);
+            if (!success)
+            {
+                Toasts.Error(string.IsNullOrWhiteSpace(error) ? "Gagal reassign langkah." : error);
+                return;
+            }
+
+            Toasts.Success($"Langkah review {reassigning.CompanyName} dipindahkan.");
+            reassigning = null;
+            companies = await Subscriptions.GetAllAsync();
+        }
+        finally { saving = false; }
     }
 
     private async Task SelectCategory(MasterCategory category)
