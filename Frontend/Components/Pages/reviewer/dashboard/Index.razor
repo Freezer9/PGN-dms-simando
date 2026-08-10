@@ -1,0 +1,59 @@
+@page "/reviewer/dashboard"
+@attribute [Authorize(Policy = SimandoPolicies.IsReviewer)]
+@rendermode InteractiveServer
+@inject ISubscriptionService Subscriptions
+@inject IWorkflowService Workflow
+
+<PageTitle>Dashboard Reviewer - SIMANDO</PageTitle>
+
+<AppShell>
+<div class="space-y-6 page-content">
+    <PageHeader Title="Dashboard" Subtitle="Peta cakupan region dan ringkasan beban review Anda." />
+
+    <div class="stats-grid">
+        <StatTile Icon="inbox" Label="Menunggu Review" Value="@assigned.Count.ToString()"
+                  Accent="@(assigned.Count > 0 ? "var(--destructive)" : null)" />
+        <StatTile Icon="clock" Label="Antrean Terlama" Value="@oldestLabel" />
+        <StatTile Icon="building-2" Label="Total Region" Value="@companies.Count.ToString()" />
+        <StatTile Icon="check-circle" Label="Selesai di Region"
+                  Value="@companies.Count(c => SubscriptionStages.IsTerminal(c.Status)).ToString()" />
+    </div>
+
+    <FormSection Title="Peta Cakupan Region" Spaced="false">
+        <CompanyMap Companies="companies" Editable="false" Height="24rem" />
+    </FormSection>
+
+    <FormSection Title="Tugas Anda">
+        <DataTable TItem="SubscriptionDto" Items="assigned"
+                   EmptyIcon="check-circle" EmptyTitle="Tidak ada tugas"
+                   EmptyDescription="Semua dokumen yang ditugaskan sudah selesai.">
+            <HeaderTemplate>
+                <th>Perusahaan</th><th>Area</th><th>Status</th><th>Menunggu</th><th></th>
+            </HeaderTemplate>
+            <RowTemplate Context="sub">
+                @{ var waiting = (DateTime.UtcNow - sub.UpdatedAt).Days; }
+                <td><a href="/companies/@sub.Id" class="font-medium">@sub.CompanyName</a></td>
+                <td class="text-sm text-muted-foreground">@sub.AreaName</td>
+                <td><StatusBadge Status="@sub.Status" /></td>
+                <td class="font-medium @(waiting > 7 ? "text-danger" : "")">@waiting hari</td>
+                <td><a href="/reviewer/qa-qc/review" class="btn btn-sm btn-outline">Kerjakan</a></td>
+            </RowTemplate>
+        </DataTable>
+    </FormSection>
+</div>
+</AppShell>
+
+@code {
+    private List<SubscriptionDto> companies = [];
+    private List<SubscriptionDto> assigned = [];
+
+    private string oldestLabel => assigned.Count == 0
+        ? "—"
+        : $"{assigned.Max(a => (DateTime.UtcNow - a.UpdatedAt).Days)} hari";
+
+    protected override async Task OnInitializedAsync()
+    {
+        companies = await Subscriptions.GetAllAsync();
+        assigned = await Workflow.GetPendingReviewAsync();
+    }
+}

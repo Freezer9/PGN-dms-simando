@@ -144,10 +144,9 @@ public class WorkflowService(ApplicationDbContext db)
         {
             case ReviewAction.Setuju:
                 var next = sub.ReviewSteps.FirstOrDefault(r => r.StepOrder == sub.CurrentReviewerIndex + 1 && r.Action == null);
-                // Last approval hands over to the Division Head rather than closing the record:
-                // Disetujui/Ditolak are now set only by issuance, which decides NOL vs RL.
+                // The Reviewer is the final executor, so the last approval closes the record.
                 if (next is not null) sub.CurrentReviewerIndex++;
-                else sub.Status = SubscriptionStatus.Penerbitan;
+                else sub.Status = SubscriptionStatus.Disetujui;
                 break;
             case ReviewAction.Tolak:
                 sub.Status = SubscriptionStatus.Ditolak;

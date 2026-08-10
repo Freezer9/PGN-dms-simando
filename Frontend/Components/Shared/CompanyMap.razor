@@ -1,0 +1,134 @@
+@implements IAsyncDisposable
+@inject ISubscriptionService Subscriptions
+@inject IJSRuntime JS
+@inject ToastService Toasts
+
+@* Leaflet map of company pins. Embedded by every role dashboard; set Editable to allow
+   click-to-place, which only Sales Area and Region Sales get. *@
+
+<div @ref="mapElement" style="height: @Height; border-radius: var(--radius)"></div>
+
+@if (Editable && Placing is not null)
+{
+    <div class="alert alert-info" style="margin-top: 0.5rem">
+        Klik pada peta untuk menetapkan titik <strong>@Placing.CompanyName</strong>.
+        <button type="button" class="btn btn-sm btn-ghost" @onclick="CancelPlacing">Batal</button>
+    </div>
+}
+
+@code {
+    [Parameter] public List<SubscriptionDto> Companies { get; set; } = [];
+    [Parameter] public bool Editable { get; set; }
+    [Parameter] public string Height { get; set; } = "24rem";
+    /// <summary>Raised after a pin is saved, so the host can reload its own data.</summary>
+    [Parameter] public EventCallback OnPinMoved { get; set; }
+
+    /// <summary>The company awaiting a click, set by the host via <see cref="StartPlacing"/>.</summary>
+    public SubscriptionDto? Placing { get; private set; }
+
+    private ElementReference mapElement;
+    private IJSObjectReference? module;
+    private DotNetObjectReference<CompanyMap>? selfRef;
+    private bool ready;
+    private int renderedPinCount = -1;
+
+    private List<SubscriptionDto> WithCoords => Companies
+        .Where(c => c.Latitude.HasValue && c.Longitude.HasValue)
+        .ToList();
+
+    public void StartPlacing(SubscriptionDto company)
+    {
+        Placing = company;
+        StateHasChanged();
+    }
+
+    private void CancelPlacing()
+    {
+        Placing = null;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                module = await JS.InvokeAsync<IJSObjectReference>(
+                    "import", $"./{Assets["Components/Shared/CompanyMap.razor.js"]}");
+                selfRef = DotNetObjectReference.Create(this);
+                await module.InvokeVoidAsync("init", mapElement, Pins(), Editable, selfRef);
+                ready = true;
+                renderedPinCount = WithCoords.Count;
+            }
+            catch
+            {
+                Toasts.Error("Peta gagal dimuat.");
+            }
+            return;
+        }
+
+        // The host often loads its data after first render; push pins when the set changes.
+        if (ready && renderedPinCount != WithCoords.Count)
+        {
+            renderedPinCount = WithCoords.Count;
+            await module!.InvokeVoidAsync("setPins", mapElement, Pins());
+        }
+    }
+
+    private object[] Pins() => WithCoords
+        .Select(object (c) => new
+        {
+            latitude = c.Latitude,
+            longitude = c.Longitude,
+            label = c.CompanyName,
+            detail = c.AreaName,
+            url = $"/companies/{c.Id}"
+        })
+        .ToArray();
+
+    [JSInvokable]
+    public async Task OnMapClick(double latitude, double longitude)
+    {
+        if (Placing is null) return;
+
+        var target = Placing;
+        if (await Subscriptions.UpdateLocationAsync(target.Id, latitude, longitude))
+        {
+            Toasts.Success($"Titik {target.CompanyName} diperbarui.");
+            Placing = null;
+            await OnPinMoved.InvokeAsync();
+        }
+        else
+        {
+            Toasts.Error("Gagal memperbarui titik peta.");
+        }
+
+        StateHasChanged();
+    }
+
+    /// <summary>Re-pushes pins after the host reloads. Safe before the map is ready.</summary>
+    public async Task RefreshAsync()
+    {
+        if (module is null || !ready) return;
+        renderedPinCount = WithCoords.Count;
+        await module.InvokeVoidAsync("setPins", mapElement, Pins());
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (module is not null)
+        {
+            try
+            {
+                await module.InvokeVoidAsync("dispose", mapElement);
+                await module.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+                // Circuit already gone — nothing to clean up on the client.
+            }
+        }
+
+        selfRef?.Dispose();
+    }
+}

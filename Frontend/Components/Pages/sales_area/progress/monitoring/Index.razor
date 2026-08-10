@@ -1,0 +1,104 @@
+@page "/sales-area/progress/monitoring"
+@attribute [Authorize(Policy = SimandoPolicies.IsSalesArea)]
+@rendermode InteractiveServer
+@inject ISubscriptionService Subscriptions
+
+@* Tracks documents that have left Sales Area and are moving through the approval chain. *@
+
+<PageTitle>Monitoring - SIMANDO</PageTitle>
+
+<AppShell>
+<div class="space-y-4 page-content">
+    <PageHeader Title="Monitoring"
+                Subtitle="Lacak status dokumen yang sudah naik ke Area Head dan seterusnya." />
+
+    <div class="stats-grid">
+        <StatTile Icon="send" Label="Dalam Persetujuan" Value="@inChain.Count.ToString()" />
+        <StatTile Icon="check-circle" Label="Disetujui" Value="@approved.ToString()" />
+        <StatTile Icon="x-circle" Label="Ditolak" Value="@rejected.ToString()"
+                  Accent="@(rejected > 0 ? "var(--destructive)" : null)" />
+        <StatTile Icon="clock" Label="Terlama Menunggu" Value="@oldestLabel" />
+    </div>
+
+    <FilterBar @bind-SearchValue="searchQuery" Placeholder="Cari perusahaan...">
+        <select class="form-control" style="max-width: 12rem" @bind="filterStatus">
+            <option value="">Semua Status</option>
+            @foreach (var s in trackedStatuses)
+            {
+                <option value="@s">@SubscriptionStages.Label(s)</option>
+            }
+        </select>
+    </FilterBar>
+
+    <DataTable TItem="SubscriptionDto" Items="filtered" Loading="loading"
+               EmptyIcon="send" EmptyTitle="Belum ada dokumen yang diajukan"
+               EmptyDescription="Dokumen muncul di sini setelah diajukan untuk persetujuan.">
+        <HeaderTemplate>
+            <th>Perusahaan</th>
+            <th>Area</th>
+            <th>Posisi Saat Ini</th>
+            <th>Menunggu</th>
+            <th>Update Terakhir</th>
+            <th></th>
+        </HeaderTemplate>
+        <RowTemplate Context="sub">
+            @{ var waiting = (DateTime.UtcNow - sub.UpdatedAt).Days; }
+            <td><a href="/companies/@sub.Id" class="font-medium">@sub.CompanyName</a></td>
+            <td class="text-sm text-muted-foreground">@sub.AreaName</td>
+            <td><StatusBadge Status="@sub.Status" /></td>
+            <td class="font-medium @(waiting > 14 ? "text-danger" : "")">@waiting hari</td>
+            <td class="text-sm text-muted-foreground">@sub.UpdatedAt.ToString("d MMM yyyy")</td>
+            <td><a href="/companies/@sub.Id" class="btn btn-sm btn-outline">Lihat</a></td>
+        </RowTemplate>
+    </DataTable>
+</div>
+</AppShell>
+
+@code {
+    private List<SubscriptionDto> companies = [];
+    private string searchQuery = "";
+    private string filterStatus = "";
+    private bool loading = true;
+
+    private readonly SubscriptionStatus[] trackedStatuses =
+    [
+        SubscriptionStatus.PermohonanNOL,
+        SubscriptionStatus.Evaluasi,
+        SubscriptionStatus.Penerbitan,
+        SubscriptionStatus.Disetujui,
+        SubscriptionStatus.Ditolak
+    ];
+
+    private List<SubscriptionDto> inChain => companies
+        .Where(c => SubscriptionStages.IsAtOrAfter(c.Status, SubscriptionStatus.PermohonanNOL)
+            && !SubscriptionStages.IsTerminal(c.Status))
+        .ToList();
+
+    private int approved => companies.Count(c => c.Status == SubscriptionStatus.Disetujui);
+    private int rejected => companies.Count(c => c.Status == SubscriptionStatus.Ditolak);
+
+    private string oldestLabel
+    {
+        get
+        {
+            if (inChain.Count == 0) return "—";
+            var days = inChain.Max(c => (DateTime.UtcNow - c.UpdatedAt).Days);
+            return $"{days} hari";
+        }
+    }
+
+    private List<SubscriptionDto> filtered => companies
+        .Where(c => trackedStatuses.Contains(c.Status))
+        .Where(c => string.IsNullOrWhiteSpace(searchQuery)
+            || c.CompanyName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
+        .Where(c => string.IsNullOrWhiteSpace(filterStatus) || c.Status.ToString() == filterStatus)
+        .OrderBy(c => c.UpdatedAt)
+        .ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        loading = true;
+        companies = await Subscriptions.GetAllAsync();
+        loading = false;
+    }
+}

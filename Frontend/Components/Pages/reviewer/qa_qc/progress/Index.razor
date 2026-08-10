@@ -1,0 +1,74 @@
+@page "/reviewer/qa-qc/progress"
+@attribute [Authorize(Policy = SimandoPolicies.IsReviewer)]
+@rendermode InteractiveServer
+@inject IWorkflowService Workflow
+@inject IEvaluationService EvaluationSvc
+
+@* Draft state of the documents this reviewer is working through. *@
+
+<PageTitle>Progress - SIMANDO</PageTitle>
+
+<AppShell>
+<div class="space-y-4 page-content">
+    <PageHeader Title="Progress"
+                Subtitle="Status draft dokumen yang sedang dalam masa pengerjaan." />
+
+    <DataTable TItem="SubscriptionDto" Items="assigned" Loading="loading"
+               EmptyIcon="loader" EmptyTitle="Tidak ada draft berjalan"
+               EmptyDescription="Dokumen muncul di sini setelah ditugaskan ke Anda.">
+        <HeaderTemplate>
+            <th>Perusahaan</th>
+            <th>Resume Evaluasi</th>
+            <th>Kesimpulan</th>
+            <th>Status</th>
+            <th>Update Terakhir</th>
+            <th></th>
+        </HeaderTemplate>
+        <RowTemplate Context="sub">
+            @{ var detail = DetailFor(sub.Id); }
+            <td><a href="/companies/@sub.Id" class="font-medium">@sub.CompanyName</a></td>
+            <td>
+                <span class="badge @(HasResume(sub.Id) ? "badge-approved" : "badge-pending")">
+                    @(HasResume(sub.Id) ? "Terisi" : "Kosong")
+                </span>
+            </td>
+            <td class="text-sm text-muted-foreground">
+                @(string.IsNullOrWhiteSpace(detail?.Kesimpulan) ? "—" : Truncate(detail!.Kesimpulan, 48))
+            </td>
+            <td><StatusBadge Status="@sub.Status" /></td>
+            <td class="text-sm text-muted-foreground">@sub.UpdatedAt.ToString("d MMM yyyy")</td>
+            <td><a href="/reviewer/qa-qc/review" class="btn btn-sm btn-outline">Lanjutkan</a></td>
+        </RowTemplate>
+    </DataTable>
+</div>
+</AppShell>
+
+@code {
+    private List<SubscriptionDto> assigned = [];
+    private readonly Dictionary<int, NolEvaluationDto> details = [];
+    private readonly HashSet<int> withResume = [];
+    private bool loading = true;
+
+    private NolEvaluationDto? DetailFor(int id) => details.TryGetValue(id, out var d) ? d : null;
+    private bool HasResume(int id) => withResume.Contains(id);
+
+    protected override async Task OnInitializedAsync()
+    {
+        loading = true;
+        assigned = await Workflow.GetPendingReviewAsync();
+
+        foreach (var sub in assigned)
+        {
+            var detail = await EvaluationSvc.GetDetailAsync(sub.Id);
+            if (detail is not null) details[sub.Id] = detail;
+
+            var resume = await EvaluationSvc.GetAsync(sub.Id);
+            if (!string.IsNullOrWhiteSpace(resume?.Content)) withResume.Add(sub.Id);
+        }
+
+        loading = false;
+    }
+
+    private static string Truncate(string value, int max)
+        => value.Length <= max ? value : string.Concat(value.AsSpan(0, max), "...");
+}

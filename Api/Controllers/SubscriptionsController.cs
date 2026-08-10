@@ -51,12 +51,12 @@ public class SubscriptionsController(SubscriptionService subs, WorkflowService w
     }
 
     [HttpPost("{id:int}/advance")]
-    [Authorize(Roles = "SalesArea,AdminRegional")]
+    [Authorize(Roles = "SalesArea,RegionSales")]
     public async Task<ActionResult<AdvanceResult>> Advance(int id)
         => Ok(await workflow.AdvanceStatusAsync(id, UserName));
 
     [HttpPatch("{id:int}/location")]
-    [Authorize(Roles = "SalesArea,AdminRegional")]
+    [Authorize(Roles = "SalesArea,RegionSales")]
     public async Task<IActionResult> UpdateLocation(int id, [FromBody] UpdateLocationRequest req)
         => await subs.UpdateLocationAsync(id, req.Latitude, req.Longitude, UserName)
             ? Ok()
@@ -71,7 +71,7 @@ public class SubscriptionsController(SubscriptionService subs, WorkflowService w
     }
 
     [HttpPost("{id:int}/assign-reviewers")]
-    [Authorize(Roles = "AdminRegional")]
+    [Authorize(Roles = "RegionSales")]
     public async Task<IActionResult> AssignReviewers(int id, [FromBody] AssignReviewersRequest req)
     {
         await workflow.AssignReviewersAsync(id, req.ReviewerIds);
@@ -80,11 +80,11 @@ public class SubscriptionsController(SubscriptionService subs, WorkflowService w
 
     // Every approver role has an inbox (Docs/14), not just the two that sit in ReviewSteps.
     [HttpGet("pending-review")]
-    [Authorize(Roles = "AreaHead,AdminRegional,Reviewer,DivisionHead")]
+    [Authorize(Roles = "AreaHead,RegionSales,Reviewer")]
     public async Task<List<SubscriptionDto>> PendingReview() => await workflow.GetPendingReviewAsync(UserId);
 
     [HttpPost("{id:int}/review")]
-    [Authorize(Roles = "Reviewer,DivisionHead")]
+    [Authorize(Roles = "AreaHead,RegionSales,Reviewer")]
     public async Task<IActionResult> SubmitReview(int id, [FromBody] SubmitReviewRequest req)
     {
         var ok = await workflow.SubmitReviewAsync(id, UserId, req, UserName);
@@ -104,6 +104,6 @@ public class SubscriptionsController(SubscriptionService subs, WorkflowService w
     public async Task<List<ActivityLogDto>> SubscriptionActivity(int id) => await subs.GetSubscriptionActivityAsync(id);
 
     [HttpGet("users")]
-    [Authorize(Roles = "AdminRegional")]
+    [Authorize(Roles = "RegionSales")]
     public async Task<List<UserInfo>> Users() => await subs.GetUsersAsync();
 }

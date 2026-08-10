@@ -1,0 +1,174 @@
+@page "/sales-area/progress/plotting"
+@attribute [Authorize(Policy = SimandoPolicies.IsSalesArea)]
+@rendermode InteractiveServer
+@inject ISubscriptionService Subscriptions
+@inject IStageService Stages
+@inject IUserService UserApi
+@inject ToastService Toasts
+
+@* Stage 2: companies that have been plotted, with the three gate fields editable inline. *@
+
+<PageTitle>Plotting - SIMANDO</PageTitle>
+
+<AppShell>
+<div class="space-y-4 page-content">
+    <PageHeader Title="Plotting"
+                Subtitle="Tetapkan Plotting By, Posisi Pelanggan, dan Kawasan untuk membuka tahap Prospek." />
+
+    <div class="stats-grid">
+        <StatTile Icon="map-pin" Label="Total" Value="@companies.Count.ToString()" />
+        <StatTile Icon="check-circle" Label="Plotting Lengkap" Value="@completeCount.ToString()" />
+        <StatTile Icon="clock" Label="Belum Lengkap"
+                  Value="@((companies.Count - completeCount).ToString())" />
+    </div>
+
+    <FilterBar @bind-SearchValue="searchQuery" Placeholder="Cari perusahaan..." />
+
+    <DataTable TItem="SubscriptionDto" Items="filtered" Loading="loading"
+               EmptyDescription="Belum ada perusahaan untuk diplot.">
+        <HeaderTemplate>
+            <th>Perusahaan</th>
+            <th>Area</th>
+            <th>Plotting By</th>
+            <th>Posisi Pelanggan</th>
+            <th>Kawasan</th>
+            <th>Status</th>
+            <th></th>
+        </HeaderTemplate>
+        <RowTemplate Context="sub">
+            @{ var p = PlottingFor(sub.Id); }
+            <td><a href="/companies/@sub.Id" class="font-medium">@sub.CompanyName</a></td>
+            <td class="text-sm text-muted-foreground">@sub.AreaName</td>
+            <td class="text-sm text-muted-foreground">@(p?.SalesUserName ?? "—")</td>
+            <td class="text-sm text-muted-foreground">@Label(p?.PosisiPelanggan)</td>
+            <td class="text-sm text-muted-foreground">@Label(p?.Kawasan)</td>
+            <td><StatusBadge Status="@sub.Status" /></td>
+            <td>
+                <button type="button" class="btn btn-sm btn-outline" @onclick="@(() => OpenEditor(sub))">
+                    @(p is null || !p.IsComplete ? "Lengkapi" : "Ubah")
+                </button>
+            </td>
+        </RowTemplate>
+    </DataTable>
+</div>
+
+@if (editing is not null)
+{
+    <BbDialog Open="true" OnOpenChange="@(open => { if (!open) editing = null; })">
+        <BbDialogContent Class="sm:max-w-md">
+            <BbDialogHeader><BbDialogTitle>Plotting — @editing.CompanyName</BbDialogTitle></BbDialogHeader>
+            <div class="space-y-4">
+                <div class="form-group">
+                    <label class="form-label">Plotting By (sales)</label>
+                    <select class="form-control" @bind="form.SalesUserId">
+                        <option value="">Pilih sales</option>
+                        @foreach (var user in salesUsers)
+                        {
+                            <option value="@user.Id">@user.FullName</option>
+                        }
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Posisi Pelanggan</label>
+                    <select class="form-control" @bind="form.PosisiPelanggan">
+                        <option value="">Pilih posisi</option>
+                        <option value="@PosisiPelanggan.PengembanganJaringan">Pengembangan Jaringan</option>
+                        <option value="@PosisiPelanggan.JalurExisting">Jalur Existing</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Kawasan</label>
+                    <select class="form-control" @bind="form.Kawasan">
+                        <option value="">Pilih kawasan</option>
+                        <option value="@Kawasan.KawasanIndustri">Kawasan Industri</option>
+                        <option value="@Kawasan.NonKawasanIndustri">Non Kawasan Industri</option>
+                    </select>
+                </div>
+                <div class="flex gap-2 justify-end">
+                    <BbButton Variant="ButtonVariant.Outline" OnClick="@(() => editing = null)">Batal</BbButton>
+                    <BbButton OnClick="@Save" Disabled="@saving">
+                        @(saving ? "Menyimpan..." : "Simpan")
+                    </BbButton>
+                </div>
+            </div>
+        </BbDialogContent>
+    </BbDialog>
+}
+</AppShell>
+
+@code {
+    private List<SubscriptionDto> companies = [];
+    private List<UserInfo> salesUsers = [];
+    private readonly Dictionary<int, PlottingDto> plottings = [];
+    private string searchQuery = "";
+    private bool loading = true;
+    private bool saving;
+
+    private SubscriptionDto? editing;
+    private SavePlottingRequest form = new();
+
+    private List<SubscriptionDto> filtered => companies
+        .Where(c => string.IsNullOrWhiteSpace(searchQuery)
+            || c.CompanyName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
+        .OrderByDescending(c => c.UpdatedAt)
+        .ToList();
+
+    private int completeCount => plottings.Values.Count(p => p.IsComplete);
+
+    private PlottingDto? PlottingFor(int id) => plottings.TryGetValue(id, out var p) ? p : null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        loading = true;
+        companies = await Subscriptions.GetAllAsync();
+        salesUsers = (await UserApi.GetUsersAsync()).Where(u => u.Role == SimandoRoles.SalesArea).ToList();
+
+        foreach (var c in companies)
+        {
+            var plotting = await Stages.GetPlottingAsync(c.Id);
+            if (plotting is not null) plottings[c.Id] = plotting;
+        }
+
+        loading = false;
+    }
+
+    private void OpenEditor(SubscriptionDto sub)
+    {
+        editing = sub;
+        var existing = PlottingFor(sub.Id);
+        form = new SavePlottingRequest
+        {
+            SalesUserId = existing?.SalesUserId,
+            PosisiPelanggan = existing?.PosisiPelanggan,
+            Kawasan = existing?.Kawasan
+        };
+    }
+
+    private async Task Save()
+    {
+        if (editing is null) return;
+        saving = true;
+        try
+        {
+            plottings[editing.Id] = await Stages.SavePlottingAsync(editing.Id, form);
+            Toasts.Success($"Plotting {editing.CompanyName} tersimpan.");
+            editing = null;
+        }
+        catch { Toasts.Error("Gagal menyimpan plotting."); }
+        finally { saving = false; }
+    }
+
+    private static string Label(PosisiPelanggan? value) => value switch
+    {
+        PosisiPelanggan.PengembanganJaringan => "Pengembangan Jaringan",
+        PosisiPelanggan.JalurExisting => "Jalur Existing",
+        _ => "—"
+    };
+
+    private static string Label(Kawasan? value) => value switch
+    {
+        Kawasan.KawasanIndustri => "Kawasan Industri",
+        Kawasan.NonKawasanIndustri => "Non Kawasan Industri",
+        _ => "—"
+    };
+}

@@ -1,0 +1,97 @@
+@page "/sales-area/progress/a1"
+@attribute [Authorize(Policy = SimandoPolicies.IsSalesArea)]
+@rendermode InteractiveServer
+@inject ISubscriptionService Subscriptions
+@inject IStageService Stages
+
+@* Stage 5: A1 registration — form, generated document, and signed scan upload. *@
+
+<PageTitle>A1 - SIMANDO</PageTitle>
+
+<AppShell>
+<div class="space-y-4 page-content">
+    <PageHeader Title="A1"
+                Subtitle="Registrasi A1 — unduh dokumen, tanda tangan, lalu unggah kembali hasil scan." />
+
+    <div class="stats-grid">
+        <StatTile Icon="file-text" Label="Perlu A1" Value="@filtered.Count.ToString()" />
+        <StatTile Icon="edit" Label="Form Terisi" Value="@filledCount.ToString()" />
+        <StatTile Icon="file-check" Label="Scan Terunggah" Value="@signedCount.ToString()" />
+    </div>
+
+    <FilterBar @bind-SearchValue="searchQuery" Placeholder="Cari perusahaan..." />
+
+    <DataTable TItem="SubscriptionDto" Items="filtered" Loading="loading"
+               EmptyIcon="file-text" EmptyTitle="Belum ada registrasi A1"
+               EmptyDescription="Perusahaan muncul di sini setelah KK0 bertanda tangan terunggah.">
+        <HeaderTemplate>
+            <th>Perusahaan</th>
+            <th>Area</th>
+            <th>Skema Harga</th>
+            <th>Segment</th>
+            <th>Form A1</th>
+            <th>Scan Bertanda Tangan</th>
+            <th></th>
+        </HeaderTemplate>
+        <RowTemplate Context="sub">
+            @{ var a1 = A1For(sub.Id); }
+            <td><a href="/companies/@sub.Id" class="font-medium">@sub.CompanyName</a></td>
+            <td class="text-sm text-muted-foreground">@sub.AreaName</td>
+            <td class="text-sm text-muted-foreground">@(a1?.SkemaHarga?.ToString() ?? "—")</td>
+            <td class="text-sm text-muted-foreground">@(a1?.SegmentName ?? "—")</td>
+            <td>
+                <span class="badge @(a1 is null ? "badge-pending" : "badge-approved")">
+                    @(a1 is null ? "Belum diisi" : "Terisi")
+                </span>
+            </td>
+            <td>
+                <span class="badge @(HasSigned(sub) ? "badge-approved" : "badge-pending")">
+                    @(HasSigned(sub) ? "Terunggah" : "Belum")
+                </span>
+            </td>
+            <td>
+                <div class="flex gap-2">
+                    <a href="/companies/@sub.Id/a1" class="btn btn-sm btn-outline">Isi A1</a>
+                    <a href="/companies/@sub.Id" class="btn btn-sm btn-ghost">Unggah</a>
+                </div>
+            </td>
+        </RowTemplate>
+    </DataTable>
+</div>
+</AppShell>
+
+@code {
+    private List<SubscriptionDto> companies = [];
+    private readonly Dictionary<int, A1RegistrationDto> registrations = [];
+    private string searchQuery = "";
+    private bool loading = true;
+
+    private List<SubscriptionDto> filtered => companies
+        .Where(c => SubscriptionStages.IsAtOrAfter(c.Status, SubscriptionStatus.A1))
+        .Where(c => string.IsNullOrWhiteSpace(searchQuery)
+            || c.CompanyName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
+        .OrderByDescending(c => c.UpdatedAt)
+        .ToList();
+
+    private int filledCount => filtered.Count(c => registrations.ContainsKey(c.Id));
+    private int signedCount => filtered.Count(HasSigned);
+
+    private A1RegistrationDto? A1For(int id) => registrations.TryGetValue(id, out var a) ? a : null;
+
+    private static bool HasSigned(SubscriptionDto sub)
+        => sub.Submissions.Any(s => s.Stage == SubscriptionStatus.A1);
+
+    protected override async Task OnInitializedAsync()
+    {
+        loading = true;
+        companies = await Subscriptions.GetAllAsync();
+
+        foreach (var c in filtered)
+        {
+            var a1 = await Stages.GetA1Async(c.Id);
+            if (a1 is not null) registrations[c.Id] = a1;
+        }
+
+        loading = false;
+    }
+}

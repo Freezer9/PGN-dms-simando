@@ -1,0 +1,172 @@
+@page "/sales-area/progress/directory"
+@attribute [Authorize(Policy = SimandoPolicies.IsSalesArea)]
+@rendermode InteractiveServer
+@inject ISubscriptionService Subscriptions
+@inject NavigationManager Navigation
+@inject ToastService Toasts
+
+@* Stage 1: raw database table plus the initial entry form. *@
+
+<PageTitle>Directory - SIMANDO</PageTitle>
+
+<AppShell>
+<div class="space-y-4 page-content">
+    <PageHeader Title="Directory"
+                Subtitle="@($"{filtered.Count} perusahaan terdaftar — database mentah dan entri awal.")">
+        <BbButton OnClick="@(() => showCreateDialog = true)">
+            <LucideIcon Name="plus" Class="h-4 w-4" />
+            Tambah Perusahaan
+        </BbButton>
+    </PageHeader>
+
+    <FilterBar @bind-SearchValue="searchQuery" Placeholder="Cari perusahaan...">
+        <select class="form-control" style="max-width: 12rem" @bind="filterStatus">
+            <option value="">Semua Status</option>
+            @foreach (var s in Enum.GetValues<SubscriptionStatus>())
+            {
+                <option value="@s">@SubscriptionStages.Label(s)</option>
+            }
+        </select>
+    </FilterBar>
+
+    <DataTable TItem="SubscriptionDto" Items="filtered" Loading="loading"
+               EmptyDescription="Belum ada perusahaan yang terdaftar.">
+        <HeaderTemplate>
+            <th>Perusahaan</th>
+            <th>Alamat</th>
+            <th>Area</th>
+            <th>Koordinat</th>
+            <th>Status</th>
+            <th></th>
+        </HeaderTemplate>
+        <RowTemplate Context="sub">
+            <td><a href="/companies/@sub.Id" class="font-medium">@sub.CompanyName</a></td>
+            <td class="text-sm text-muted-foreground">@Truncate(sub.Address, 36)</td>
+            <td class="text-sm text-muted-foreground">@sub.AreaName</td>
+            <td class="text-sm text-muted-foreground">@Coord(sub.Latitude), @Coord(sub.Longitude)</td>
+            <td><StatusBadge Status="@sub.Status" /></td>
+            <td><a href="/companies/@sub.Id" class="btn btn-sm btn-outline">Buka</a></td>
+        </RowTemplate>
+    </DataTable>
+</div>
+
+@if (showCreateDialog)
+{
+    <BbDialog Open="true" OnOpenChange="@(open => showCreateDialog = open)">
+        <BbDialogContent Class="sm:max-w-md">
+            <BbDialogHeader><BbDialogTitle>Tambah Perusahaan Baru</BbDialogTitle></BbDialogHeader>
+            <div class="space-y-4">
+                <div class="form-group">
+                    <label class="form-label">Nama Perusahaan</label>
+                    <InputText class="form-control" @bind-Value="newCompany" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Alamat</label>
+                    <textarea class="form-control" @bind="newAddress" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Area</label>
+                    <select class="form-control" @bind="newAreaId">
+                        <option value="">Pilih Area</option>
+                        @foreach (var area in areas)
+                        {
+                            <option value="@area.Id">@area.Name (@area.RegionName)</option>
+                        }
+                    </select>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Latitude (wajib)</label>
+                        <InputNumber class="form-control" @bind-Value="newLatitude" placeholder="-6.914744" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Longitude (wajib)</label>
+                        <InputNumber class="form-control" @bind-Value="newLongitude" placeholder="107.609810" />
+                    </div>
+                </div>
+                <div class="flex gap-2 justify-end">
+                    <BbButton Variant="ButtonVariant.Outline" OnClick="@(() => showCreateDialog = false)">Batal</BbButton>
+                    <BbButton OnClick="@CreateCompany" Disabled="@creating">
+                        @(creating ? "Menyimpan..." : "Simpan")
+                    </BbButton>
+                </div>
+            </div>
+        </BbDialogContent>
+    </BbDialog>
+}
+</AppShell>
+
+@code {
+    private List<SubscriptionDto> allSubscriptions = [];
+    private List<AreaDto> areas = [];
+    private bool loading = true;
+    private bool creating;
+    private bool showCreateDialog;
+    private string searchQuery = "";
+    private string filterStatus = "";
+    private string newCompany = "";
+    private string newAddress = "";
+    private int? newAreaId;
+    private double? newLatitude;
+    private double? newLongitude;
+
+    private List<SubscriptionDto> filtered => allSubscriptions
+        .Where(s => string.IsNullOrWhiteSpace(searchQuery)
+            || s.CompanyName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)
+            || s.Address.Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
+        .Where(s => string.IsNullOrWhiteSpace(filterStatus) || s.Status.ToString() == filterStatus)
+        .OrderByDescending(s => s.UpdatedAt)
+        .ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        areas = await Subscriptions.GetAreasAsync();
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        loading = true;
+        allSubscriptions = await Subscriptions.GetAllAsync();
+        loading = false;
+    }
+
+    private async Task CreateCompany()
+    {
+        if (string.IsNullOrWhiteSpace(newCompany) || newAreaId is null) return;
+        if (newLatitude is null || newLongitude is null)
+        {
+            Toasts.Error("Titik peta (latitude dan longitude) wajib diisi.");
+            return;
+        }
+
+        creating = true;
+        try
+        {
+            var result = await Subscriptions.CreateAsync(new CreateSubscriptionRequest
+            {
+                CompanyName = newCompany,
+                Address = newAddress,
+                AreaId = newAreaId.Value,
+                Latitude = newLatitude,
+                Longitude = newLongitude
+            });
+            Toasts.Success($"Perusahaan {newCompany} berhasil dibuat.");
+            showCreateDialog = false;
+            newCompany = ""; newAddress = ""; newAreaId = null;
+            newLatitude = null; newLongitude = null;
+            Navigation.NavigateTo($"/companies/{result.Id}");
+        }
+        catch
+        {
+            Toasts.Error("Gagal membuat perusahaan.");
+        }
+        finally { creating = false; }
+    }
+
+    private static string Coord(double? value)
+        => value?.ToString("F4", CultureInfo.InvariantCulture) ?? "—";
+
+    private static string Truncate(string value, int max)
+        => value.Length <= max ? value : string.Concat(value.AsSpan(0, max), "...");
+}

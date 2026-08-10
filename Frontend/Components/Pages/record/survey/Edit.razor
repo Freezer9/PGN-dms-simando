@@ -1,0 +1,362 @@
+@page "/companies/{CompanyId:int}/survey"
+@attribute [Authorize(Policy = SimandoPolicies.CanEditRecord)]
+@rendermode InteractiveServer
+@inject ISubscriptionService Subscriptions
+@inject IStageService Stages
+@inject IMasterDataService MasterData
+@inject ToastService Toasts
+
+<PageTitle>Survei KK0 - SIMANDO</PageTitle>
+
+<AppShell>
+<div class="space-y-4 page-content">
+    <PageHeader Title="Survei (KK0)"
+                Subtitle="Transkrip formulir survei lapangan — produk, bahan baku, peralatan, kebutuhan energi.">
+        <BbButton OnClick="@Save" Disabled="@saving">
+            @(saving ? "Menyimpan..." : "Simpan Survei")
+        </BbButton>
+    </PageHeader>
+
+    @if (sub is null)
+    {
+        <EmptyState Title="Perusahaan tidak ditemukan" />
+    }
+    else
+    {
+        <FormSection Title="@sub.CompanyName" Description="@sub.AreaName" Spaced="false">
+            <div class="detail-row">
+                <span class="detail-label">Dokumen KK0 bertanda tangan</span>
+                <span class="detail-value">
+                    @(sub.Submissions.Any(s => s.Stage == SubscriptionStatus.Survey) ? "Terunggah" : "Belum")
+                </span>
+            </div>
+            <div class="alert alert-info">
+                Gerbang tahap A1: dokumen KK0 yang sudah ditandatangani harus terunggah.
+            </div>
+        </FormSection>
+
+        <FormSection Title="Identitas & Operasi">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">Tanggal Survei</label>
+                    <input type="date" class="form-control" value="@DateValue(survey.TanggalSurvey)"
+                           @onchange="@(e => survey.TanggalSurvey = ParseDate(e.Value))" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Jumlah Karyawan</label>
+                    <InputNumber class="form-control" @bind-Value="survey.JumlahKaryawan" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Jumlah Shift (1–3)</label>
+                    <InputNumber class="form-control" @bind-Value="survey.JumlahShift" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Jam Kerja / Hari</label>
+                    <InputNumber class="form-control" @bind-Value="survey.JamKerjaPerHari" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Hari / Minggu</label>
+                    <InputNumber class="form-control" @bind-Value="survey.HariPerMinggu" />
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Deskripsi Proses Produksi</label>
+                <textarea class="form-control" rows="4" @bind="survey.DeskripsiProsesProduksi"></textarea>
+            </div>
+        </FormSection>
+
+        <FormSection Title="Kebutuhan Energi">
+            <div class="form-group">
+                <label class="form-label">Jenis kebutuhan energi</label>
+                <div class="flex gap-4" style="flex-wrap: wrap">
+                    @foreach (var kind in EnergyKinds)
+                    {
+                        <label class="flex gap-2 items-center">
+                            <input type="checkbox" checked="@HasEnergy(kind)"
+                                   @onchange="@(e => ToggleEnergy(kind, (bool)(e.Value ?? false)))" />
+                            <span>@kind</span>
+                        </label>
+                    }
+                </div>
+            </div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">Kapasitas</label>
+                    <InputNumber class="form-control" @bind-Value="survey.KapasitasNilai" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Satuan Kapasitas</label>
+                    <select class="form-control" @bind="survey.KapasitasUnit">
+                        <option value="">Pilih satuan</option>
+                        @foreach (var unit in units)
+                        {
+                            <option value="@unit.Name">@unit.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Pemakaian</label>
+                    <InputNumber class="form-control" @bind-Value="survey.PemakaianNilai" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Satuan Pemakaian</label>
+                    <select class="form-control" @bind="survey.PemakaianUnit">
+                        <option value="">Pilih satuan</option>
+                        @foreach (var unit in units)
+                        {
+                            <option value="@unit.Name">@unit.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Jumlah Kebutuhan Energi</label>
+                    <InputNumber class="form-control" @bind-Value="survey.JumlahKebutuhanEnergi" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Kapasitas Listrik</label>
+                    <InputNumber class="form-control" @bind-Value="survey.KapasitasListrik" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Pemakaian Listrik</label>
+                    <InputNumber class="form-control" @bind-Value="survey.PemakaianListrik" />
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Rencana Pemanfaatan Gas</label>
+                <textarea class="form-control" rows="3" @bind="survey.RencanaPemanfaatanGas"></textarea>
+            </div>
+        </FormSection>
+
+        <FormSection Title="Bahan Bakar Eksisting & Pipa Terdekat">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">Bahan Bakar Eksisting</label>
+                    <select class="form-control" @bind="survey.BahanBakarEksisting">
+                        <option value="">Pilih bahan bakar</option>
+                        @foreach (var fuel in fuelTypes)
+                        {
+                            <option value="@fuel.Name">@fuel.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Nama Pemasok</label>
+                    <InputText class="form-control" @bind-Value="survey.NamaPemasok" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Jarak Pipa Terdekat (m) — wajib</label>
+                    <InputNumber class="form-control" @bind-Value="survey.PipaTerdekatJarakM" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Diameter Pipa Terdekat</label>
+                    <InputNumber class="form-control" @bind-Value="survey.PipaTerdekatDiameter" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Tekanan Pipa Terdekat</label>
+                    <InputNumber class="form-control" @bind-Value="survey.PipaTerdekatTekanan" />
+                </div>
+            </div>
+        </FormSection>
+
+        <FormSection Title="Produk">
+            <RepeatingRows TItem="SurveyProductDto" Items="survey.Products"
+                           ItemFactory="@(() => new SurveyProductDto())"
+                           AddLabel="Tambah Produk" EmptyDescription="Belum ada produk.">
+                <HeaderTemplate>
+                    <th>Nama Produk</th>
+                    <th>Kapasitas</th>
+                    <th>Satuan</th>
+                </HeaderTemplate>
+                <RowTemplate Context="row">
+                    <td><InputText class="form-control" @bind-Value="row.Nama" /></td>
+                    <td><InputNumber class="form-control" @bind-Value="row.Kapasitas" /></td>
+                    <td><InputText class="form-control" @bind-Value="row.Unit" /></td>
+                </RowTemplate>
+            </RepeatingRows>
+        </FormSection>
+
+        <FormSection Title="Bahan Baku">
+            <RepeatingRows TItem="SurveyRawMaterialDto" Items="survey.RawMaterials"
+                           ItemFactory="@(() => new SurveyRawMaterialDto())"
+                           AddLabel="Tambah Bahan Baku" EmptyDescription="Belum ada bahan baku.">
+                <HeaderTemplate>
+                    <th>Nama</th>
+                    <th>Impor</th>
+                    <th>Negara Asal</th>
+                </HeaderTemplate>
+                <RowTemplate Context="row">
+                    <td><InputText class="form-control" @bind-Value="row.Nama" /></td>
+                    <td><InputCheckbox @bind-Value="row.IsImpor" /></td>
+                    <td>
+                        <select class="form-control" @bind="row.NegaraAsal">
+                            <option value="">—</option>
+                            @foreach (var country in countries)
+                            {
+                                <option value="@country.Name">@country.Name</option>
+                            }
+                        </select>
+                    </td>
+                </RowTemplate>
+            </RepeatingRows>
+        </FormSection>
+
+        <FormSection Title="Orientasi Pasar">
+            <RepeatingRows TItem="SurveyMarketDto" Items="survey.Markets"
+                           ItemFactory="@(() => new SurveyMarketDto())"
+                           AddLabel="Tambah Pasar" EmptyDescription="Belum ada data pasar.">
+                <HeaderTemplate>
+                    <th>Pasar</th>
+                    <th>Ekspor</th>
+                    <th>Persentase (%)</th>
+                </HeaderTemplate>
+                <RowTemplate Context="row">
+                    <td><InputText class="form-control" @bind-Value="row.Nama" /></td>
+                    <td><InputCheckbox @bind-Value="row.IsEkspor" /></td>
+                    <td><InputNumber class="form-control" @bind-Value="row.PersentasePct" /></td>
+                </RowTemplate>
+            </RepeatingRows>
+        </FormSection>
+
+        <FormSection Title="Peralatan"
+                     Description="Konversi ke gas diisi manual oleh surveyor, bukan hasil perhitungan sistem.">
+            <RepeatingRows TItem="SurveyEquipmentDto" Items="survey.Equipment"
+                           ItemFactory="@(() => new SurveyEquipmentDto())"
+                           AddLabel="Tambah Peralatan" EmptyDescription="Belum ada peralatan.">
+                <HeaderTemplate>
+                    <th>Jenis</th>
+                    <th>Kapasitas</th>
+                    <th>Jam/Hari</th>
+                    <th>Hari/Minggu</th>
+                    <th>Bahan Bakar</th>
+                    <th>Harga BB</th>
+                    <th>Konsumsi/Bulan</th>
+                    <th>Konversi ke Gas</th>
+                </HeaderTemplate>
+                <RowTemplate Context="row">
+                    <td><InputText class="form-control" @bind-Value="row.Jenis" /></td>
+                    <td><InputNumber class="form-control" @bind-Value="row.Kapasitas" /></td>
+                    <td><InputNumber class="form-control" @bind-Value="row.JamPerHari" /></td>
+                    <td><InputNumber class="form-control" @bind-Value="row.HariPerMinggu" /></td>
+                    <td>
+                        <select class="form-control" @bind="row.BahanBakar">
+                            <option value="">—</option>
+                            @foreach (var fuel in fuelTypes)
+                            {
+                                <option value="@fuel.Name">@fuel.Name</option>
+                            }
+                        </select>
+                    </td>
+                    <td><InputNumber class="form-control" @bind-Value="row.HargaBahanBakar" /></td>
+                    <td><InputNumber class="form-control" @bind-Value="row.KonsumsiPerBulan" /></td>
+                    <td><InputNumber class="form-control" @bind-Value="row.KonversiKeGas" /></td>
+                </RowTemplate>
+            </RepeatingRows>
+        </FormSection>
+
+        <FormSection Title="Beban Puncak & Lainnya">
+            <div class="form-grid">
+                @* Bound manually: @bind on type="time" infers TimeOnly, but these are stored as strings. *@
+                <div class="form-group">
+                    <label class="form-label">Beban Puncak 1 — Mulai</label>
+                    <input type="time" class="form-control" value="@survey.BebanPuncak1Mulai"
+                           @onchange="@(e => survey.BebanPuncak1Mulai = e.Value?.ToString() ?? "")" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Beban Puncak 1 — Selesai</label>
+                    <input type="time" class="form-control" value="@survey.BebanPuncak1Selesai"
+                           @onchange="@(e => survey.BebanPuncak1Selesai = e.Value?.ToString() ?? "")" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Beban Puncak 2 — Mulai</label>
+                    <input type="time" class="form-control" value="@survey.BebanPuncak2Mulai"
+                           @onchange="@(e => survey.BebanPuncak2Mulai = e.Value?.ToString() ?? "")" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Beban Puncak 2 — Selesai</label>
+                    <input type="time" class="form-control" value="@survey.BebanPuncak2Selesai"
+                           @onchange="@(e => survey.BebanPuncak2Selesai = e.Value?.ToString() ?? "")" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Min. Efisiensi Diharapkan (%)</label>
+                    <InputNumber class="form-control" @bind-Value="survey.MinEfisiensiDiharapkanPct" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Willingness to Pay (USD/MMBtu)</label>
+                    <InputNumber class="form-control" @bind-Value="survey.WillingnessToPayUsdMmbtu" />
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Keterangan Lain</label>
+                <textarea class="form-control" rows="3" @bind="survey.KeteranganLain"></textarea>
+            </div>
+        </FormSection>
+
+        <div class="flex gap-2" style="margin-top: 1rem">
+            <BbButton OnClick="@Save" Disabled="@saving">
+                @(saving ? "Menyimpan..." : "Simpan Survei")
+            </BbButton>
+            <a href="/companies/@CompanyId" class="btn btn-outline">Kembali ke Record</a>
+        </div>
+    }
+</div>
+</AppShell>
+
+@code {
+    [Parameter] public int CompanyId { get; set; }
+
+    private static readonly string[] EnergyKinds = ["listrik", "steam", "panas", "dingin", "lainnya"];
+
+    private SubscriptionDto? sub;
+    private SurveyDto survey = new();
+    private List<MasterDataEntryDto> units = [];
+    private List<MasterDataEntryDto> fuelTypes = [];
+    private List<MasterDataEntryDto> countries = [];
+    private bool saving;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        sub = await Subscriptions.GetAsync(CompanyId);
+        if (sub is null) return;
+
+        survey = await Stages.GetSurveyAsync(CompanyId) ?? new SurveyDto { SubscriptionId = CompanyId };
+        units = await MasterData.GetAsync(MasterCategory.UnitOfMeasure);
+        fuelTypes = await MasterData.GetAsync(MasterCategory.FuelType);
+        countries = await MasterData.GetAsync(MasterCategory.Country);
+    }
+
+    // KebutuhanEnergi is a CSV of the fixed set above — see Docs/data-model.md.
+    private bool HasEnergy(string kind) => survey.KebutuhanEnergi
+        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+        .Contains(kind);
+
+    private void ToggleEnergy(string kind, bool selected)
+    {
+        var set = survey.KebutuhanEnergi
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .ToHashSet();
+
+        if (selected) set.Add(kind); else set.Remove(kind);
+        survey.KebutuhanEnergi = string.Join(",", EnergyKinds.Where(set.Contains));
+    }
+
+    private static string DateValue(DateTime? value) => value?.ToString("yyyy-MM-dd") ?? "";
+
+    private static DateTime? ParseDate(object? value)
+        => DateTime.TryParse(value?.ToString(), out var parsed) ? parsed : null;
+
+    private async Task Save()
+    {
+        if (sub is null) return;
+        saving = true;
+        try
+        {
+            survey = await Stages.SaveSurveyAsync(CompanyId, survey);
+            Toasts.Success("Survei KK0 tersimpan.");
+        }
+        catch
+        {
+            Toasts.Error("Gagal menyimpan survei.");
+        }
+        finally { saving = false; }
+    }
+}

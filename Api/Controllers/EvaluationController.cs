@@ -18,7 +18,7 @@ public class EvaluationController(WorkflowService workflow, StageService stages)
     private string UserName => User.FindFirst(ClaimTypes.Name)?.Value ?? "";
 
     [HttpGet("{subscriptionId:int}")]
-    [Authorize(Roles = "AdminRegional,AreaHead")]
+    [Authorize(Roles = "RegionSales,AreaHead")]
     public async Task<ActionResult<ResumeEvaluasiDto>> Get(int subscriptionId)
     {
         var resume = await workflow.GetResumeAsync(subscriptionId);
@@ -26,7 +26,7 @@ public class EvaluationController(WorkflowService workflow, StageService stages)
     }
 
     [HttpPost("{subscriptionId:int}")]
-    [Authorize(Roles = "AdminRegional")]
+    [Authorize(Roles = "RegionSales")]
     public async Task<ActionResult<ResumeEvaluasiDto>> Save(int subscriptionId, [FromBody] SaveResumeRequest req)
     {
         var resume = await workflow.SaveResumeAsync(subscriptionId, req.Content, UserId, UserName);
@@ -39,14 +39,14 @@ public class EvaluationController(WorkflowService workflow, StageService stages)
         => await stages.GetEvaluationAsync(subscriptionId) is { } dto ? Ok(dto) : NotFound();
 
     [HttpPut("{subscriptionId:int}/detail")]
-    [Authorize(Roles = "AdminRegional")]
+    [Authorize(Roles = "RegionSales")]
     public async Task<ActionResult<NolEvaluationDto>> SaveDetail(int subscriptionId, [FromBody] NolEvaluationDto req)
         => Ok(await stages.SaveEvaluationAsync(subscriptionId, req, UserId, UserName));
 }
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "AdminRegional,SystemAdmin")]
+[Authorize(Roles = "RegionSales")]
 public class UsersController(UserManager<ApplicationUser> userManager, ApplicationDbContext db) : ControllerBase
 {
     [HttpGet]

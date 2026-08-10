@@ -61,23 +61,6 @@ public class StageService(HttpClient http) : IStageService
     }
 }
 
-public class IssuanceService(HttpClient http) : IIssuanceService
-{
-    public async Task<NolIssuanceDto?> GetAsync(int subscriptionId)
-    {
-        var response = await http.GetAsync($"api/issuance/{subscriptionId}");
-        return response.IsSuccessStatusCode ? await response.Content.ReadFromJsonAsync<NolIssuanceDto>() : null;
-    }
-
-    public async Task<(bool Success, string? Error)> IssueAsync(int subscriptionId, IssueNolRequest request)
-    {
-        var response = await http.PostAsJsonAsync($"api/issuance/{subscriptionId}", request);
-        return response.IsSuccessStatusCode
-            ? (true, null)
-            : (false, await response.Content.ReadAsStringAsync());
-    }
-}
-
 public class MasterDataService(HttpClient http) : IMasterDataService
 {
     public async Task<List<MasterDataEntryDto>> GetAsync(MasterCategory? category = null)
@@ -104,22 +87,3 @@ public class MasterDataService(HttpClient http) : IMasterDataService
     }
 }
 
-public class BreakGlassService(HttpClient http) : IBreakGlassService
-{
-    public async Task<List<BreakGlassGrantDto>> GetAsync()
-        => await http.GetFromJsonAsync<List<BreakGlassGrantDto>>("api/breakglass") ?? [];
-
-    public async Task<(bool Success, string? Error)> GrantAsync(GrantBreakGlassRequest request)
-    {
-        var response = await http.PostAsJsonAsync("api/breakglass", request);
-        return response.IsSuccessStatusCode
-            ? (true, null)
-            : (false, await response.Content.ReadAsStringAsync());
-    }
-
-    public async Task<bool> RevokeAsync(int grantId)
-    {
-        var response = await http.PostAsync($"api/breakglass/{grantId}/revoke", null);
-        return response.IsSuccessStatusCode;
-    }
-}

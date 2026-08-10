@@ -1,0 +1,117 @@
+@page "/region-sales/progress/monitoring"
+@attribute [Authorize(Policy = SimandoPolicies.IsRegionSales)]
+@rendermode InteractiveServer
+@inject ISubscriptionService Subscriptions
+@inject IActivityService Activity
+
+@* Whole-region document traffic, including records stalled or rejected anywhere in the chain. *@
+
+<PageTitle>Monitoring - SIMANDO</PageTitle>
+
+<AppShell>
+<div class="space-y-4 page-content">
+    <PageHeader Title="Monitoring" Subtitle="Pantau lalu lintas dokumen secara keseluruhan." />
+
+    <div class="stats-grid">
+        <StatTile Icon="file-text" Label="Total Region" Value="@companies.Count.ToString()" />
+        <StatTile Icon="edit" Label="Berjalan" Value="@active.ToString()" />
+        <StatTile Icon="alert-triangle" Label="Tertahan / Ditolak" Value="@blocked.ToString()"
+                  Accent="@(blocked > 0 ? "var(--destructive)" : null)" />
+        <StatTile Icon="clock" Label="Diam >21 Hari" Value="@stale.ToString()"
+                  Accent="@(stale > 0 ? "var(--destructive)" : null)" />
+    </div>
+
+    <FilterBar @bind-SearchValue="searchQuery" Placeholder="Cari perusahaan...">
+        <select class="form-control" style="max-width: 12rem" @bind="filterArea">
+            <option value="">Semua Area</option>
+            @foreach (var area in areas)
+            {
+                <option value="@area.Name">@area.Name</option>
+            }
+        </select>
+        <select class="form-control" style="max-width: 12rem" @bind="filterStatus">
+            <option value="">Semua Status</option>
+            @foreach (var s in Enum.GetValues<SubscriptionStatus>())
+            {
+                <option value="@s">@SubscriptionStages.Label(s)</option>
+            }
+        </select>
+    </FilterBar>
+
+    <DataTable TItem="SubscriptionDto" Items="filtered" Loading="loading"
+               EmptyDescription="Belum ada data di region ini.">
+        <HeaderTemplate>
+            <th>Perusahaan</th>
+            <th>Area</th>
+            <th>Sales</th>
+            <th>Tahap</th>
+            <th>Diam Selama</th>
+            <th></th>
+        </HeaderTemplate>
+        <RowTemplate Context="sub">
+            @{ var idle = (DateTime.UtcNow - sub.UpdatedAt).Days; }
+            <td><a href="/companies/@sub.Id" class="font-medium">@sub.CompanyName</a></td>
+            <td class="text-sm text-muted-foreground">@sub.AreaName</td>
+            <td class="text-sm text-muted-foreground">@sub.CreatedByName</td>
+            <td><StatusBadge Status="@sub.Status" /></td>
+            <td class="font-medium @(idle > 21 ? "text-danger" : "")">@idle hari</td>
+            <td><a href="/companies/@sub.Id" class="btn btn-sm btn-outline">Lihat</a></td>
+        </RowTemplate>
+    </DataTable>
+
+    <FormSection Title="Aktivitas Region Terbaru">
+        @if (activity.Count == 0)
+        {
+            <EmptyState Title="Belum ada aktivitas" />
+        }
+        else
+        {
+            <div class="timeline">
+                @foreach (var entry in activity)
+                {
+                    <div class="timeline-item">
+                        <div class="timeline-item-title">@entry.ActorName @entry.Action</div>
+                        <div class="timeline-item-time">@entry.At.ToString("d MMM yyyy HH:mm")</div>
+                        @if (!string.IsNullOrEmpty(entry.Details))
+                        {
+                            <div class="timeline-item-desc">@entry.Details</div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    </FormSection>
+</div>
+</AppShell>
+
+@code {
+    private List<SubscriptionDto> companies = [];
+    private List<AreaDto> areas = [];
+    private List<ActivityLogDto> activity = [];
+    private string searchQuery = "";
+    private string filterArea = "";
+    private string filterStatus = "";
+    private bool loading = true;
+
+    private int active => companies.Count(c => !SubscriptionStages.IsTerminal(c.Status));
+    private int blocked => companies.Count(c => c.Status == SubscriptionStatus.Ditolak);
+    private int stale => companies.Count(c =>
+        !SubscriptionStages.IsTerminal(c.Status) && (DateTime.UtcNow - c.UpdatedAt).Days > 21);
+
+    private List<SubscriptionDto> filtered => companies
+        .Where(c => string.IsNullOrWhiteSpace(searchQuery)
+            || c.CompanyName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
+        .Where(c => string.IsNullOrWhiteSpace(filterArea) || c.AreaName == filterArea)
+        .Where(c => string.IsNullOrWhiteSpace(filterStatus) || c.Status.ToString() == filterStatus)
+        .OrderBy(c => c.UpdatedAt)
+        .ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        loading = true;
+        areas = await Subscriptions.GetAreasAsync();
+        companies = await Subscriptions.GetAllAsync();
+        activity = await Activity.GetRecentAsync(20);
+        loading = false;
+    }
+}

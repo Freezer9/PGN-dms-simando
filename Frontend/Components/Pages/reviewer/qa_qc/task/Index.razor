@@ -1,0 +1,68 @@
+@page "/reviewer/qa-qc/task"
+@attribute [Authorize(Policy = SimandoPolicies.IsReviewer)]
+@rendermode InteractiveServer
+@inject IWorkflowService Workflow
+
+@* Every document assigned to this reviewer account, including steps already decided. *@
+
+<PageTitle>Task - SIMANDO</PageTitle>
+
+<AppShell>
+<div class="space-y-4 page-content">
+    <PageHeader Title="Task"
+                Subtitle="Daftar dokumen yang di-assign ke akun Anda." />
+
+    <div class="stats-grid">
+        <StatTile Icon="list-checks" Label="Total Ditugaskan" Value="@assigned.Count.ToString()" />
+        <StatTile Icon="clock" Label="Belum Dikerjakan" Value="@assigned.Count.ToString()" />
+    </div>
+
+    <FilterBar @bind-SearchValue="searchQuery" Placeholder="Cari perusahaan..." />
+
+    <DataTable TItem="SubscriptionDto" Items="filtered" Loading="loading"
+               EmptyIcon="list-checks" EmptyTitle="Tidak ada tugas"
+               EmptyDescription="Region Sales belum menugaskan dokumen ke Anda.">
+        <HeaderTemplate>
+            <th>Perusahaan</th>
+            <th>Area</th>
+            <th>Langkah Anda</th>
+            <th>Status</th>
+            <th>Menunggu</th>
+            <th></th>
+        </HeaderTemplate>
+        <RowTemplate Context="sub">
+            @{
+                var waiting = (DateTime.UtcNow - sub.UpdatedAt).Days;
+                var step = sub.ReviewSteps.FirstOrDefault(s => s.Action is null);
+            }
+            <td><a href="/companies/@sub.Id" class="font-medium">@sub.CompanyName</a></td>
+            <td class="text-sm text-muted-foreground">@sub.AreaName</td>
+            <td class="text-sm text-muted-foreground">
+                @(step is null ? "—" : $"Langkah {step.StepOrder}")
+            </td>
+            <td><StatusBadge Status="@sub.Status" /></td>
+            <td class="font-medium @(waiting > 7 ? "text-danger" : "")">@waiting hari</td>
+            <td><a href="/reviewer/qa-qc/review" class="btn btn-sm btn-outline">Kerjakan</a></td>
+        </RowTemplate>
+    </DataTable>
+</div>
+</AppShell>
+
+@code {
+    private List<SubscriptionDto> assigned = [];
+    private string searchQuery = "";
+    private bool loading = true;
+
+    private List<SubscriptionDto> filtered => assigned
+        .Where(a => string.IsNullOrWhiteSpace(searchQuery)
+            || a.CompanyName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
+        .OrderBy(a => a.UpdatedAt)
+        .ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        loading = true;
+        assigned = await Workflow.GetPendingReviewAsync();
+        loading = false;
+    }
+}

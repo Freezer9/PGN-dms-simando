@@ -32,9 +32,8 @@ public class IdentitySeeder(IServiceProvider services, ILogger<IdentitySeeder> l
         {
             ("sales@pgn.id", "Budi Santoso", SimandoRoles.SalesArea),
             ("areahead@pgn.id", "Ahmad Hidayat", SimandoRoles.AreaHead),
-            ("admin@pgn.id", "Siti Rahayu", SimandoRoles.AdminRegional),
+            ("regionsales@pgn.id", "Siti Rahayu", SimandoRoles.RegionSales),
             ("reviewer@pgn.id", "Dewi Lestari", SimandoRoles.Reviewer),
-            ("division@pgn.id", "Eko Prasetyo", SimandoRoles.DivisionHead),
         };
 
         var createdUsers = new Dictionary<string, ApplicationUser>();
@@ -211,7 +210,7 @@ public class IdentitySeeder(IServiceProvider services, ILogger<IdentitySeeder> l
 
         var salesUser = users.GetValueOrDefault("sales@pgn.id");
         var reviewerUser = users.GetValueOrDefault("reviewer@pgn.id");
-        var divisionUser = users.GetValueOrDefault("division@pgn.id");
+        var regionSalesUser = users.GetValueOrDefault("regionsales@pgn.id");
         if (salesUser is null || areas.Count == 0) return;
 
         var dummyData = new (string Company, string Address, int AreaIdx, SubscriptionStatus Status, bool SignedOff, int DaysAgo)[]
@@ -265,12 +264,11 @@ public class IdentitySeeder(IServiceProvider services, ILogger<IdentitySeeder> l
             if (SubscriptionStages.IsAtOrAfter(status, SubscriptionStatus.A1))
                 db.SubmissionRecords.Add(new SubmissionRecord { SubscriptionId = sub.Id, Stage = SubscriptionStatus.A1, FileName = "lampiran-A1.pdf", FilePath = "/uploads/dummy-a1.pdf", UploadedById = salesUser.Id, UploadedAt = DateTime.UtcNow.AddDays(-daysAgo + 5) });
 
-            if (SubscriptionStages.IsAtOrAfter(status, SubscriptionStatus.PermohonanNOL) && reviewerUser is not null && divisionUser is not null)
+            if (SubscriptionStages.IsAtOrAfter(status, SubscriptionStatus.PermohonanNOL) && reviewerUser is not null)
             {
-                sub.ReviewerIds = $"{reviewerUser.Id},{divisionUser.Id}";
-                sub.CurrentReviewerIndex = status == SubscriptionStatus.Disetujui ? 3 : 1;
+                sub.ReviewerIds = reviewerUser.Id;
+                sub.CurrentReviewerIndex = status == SubscriptionStatus.Disetujui ? 2 : 1;
                 db.ReviewSteps.Add(new ReviewStep { SubscriptionId = sub.Id, ReviewerId = reviewerUser.Id, StepOrder = 1, Action = status == SubscriptionStatus.Disetujui ? ReviewAction.Setuju : null, Comment = status == SubscriptionStatus.Disetujui ? "Dokumen lengkap." : "", ReviewedAt = status == SubscriptionStatus.Disetujui ? DateTime.UtcNow.AddDays(-3) : null });
-                db.ReviewSteps.Add(new ReviewStep { SubscriptionId = sub.Id, ReviewerId = divisionUser.Id, StepOrder = 2, Action = status == SubscriptionStatus.Disetujui ? ReviewAction.Setuju : null, Comment = status == SubscriptionStatus.Disetujui ? "Disetujui." : "", ReviewedAt = status == SubscriptionStatus.Disetujui ? DateTime.UtcNow.AddDays(-2) : null });
             }
 
             if (status == SubscriptionStatus.Ditolak && reviewerUser is not null)
@@ -278,7 +276,7 @@ public class IdentitySeeder(IServiceProvider services, ILogger<IdentitySeeder> l
 
             if (status == SubscriptionStatus.Disetujui)
             {
-                db.ActivityLogs.Add(new ActivityLog { SubscriptionId = sub.Id, ActorName = divisionUser?.FullName ?? "Division Head", Action = "Disetujui", At = DateTime.UtcNow.AddDays(-2) });
+                db.ActivityLogs.Add(new ActivityLog { SubscriptionId = sub.Id, ActorName = regionSalesUser?.FullName ?? "Region Sales", Action = "Disetujui", At = DateTime.UtcNow.AddDays(-2) });
                 db.ResumeEvaluasi.Add(new ResumeEvaluasi { SubscriptionId = sub.Id, Content = $"Resume evaluasi untuk {company}:\n\n1. Kelayakan teknis: Memenuhi\n2. Kelayakan finansial: Positif\n3. Rekomendasi: Disetujui", CreatedById = salesUser.Id, CreatedAt = DateTime.UtcNow.AddDays(-1), UpdatedAt = DateTime.UtcNow.AddDays(-1) });
             }
 

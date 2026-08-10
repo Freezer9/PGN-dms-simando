@@ -1,0 +1,113 @@
+@page "/sales-area/dashboard"
+@attribute [Authorize(Policy = SimandoPolicies.IsSalesArea)]
+@rendermode InteractiveServer
+@inject ISubscriptionService Subscriptions
+@inject IActivityService Activity
+@inject NavigationManager Navigation
+
+<PageTitle>Dashboard Sales Area - SIMANDO</PageTitle>
+
+<AppShell>
+<div class="space-y-6 page-content">
+    <PageHeader Title="Dashboard"
+                Subtitle="Sebaran titik Directory sampai Pelanggan, dan ringkasan pipeline Anda.">
+        <BbButton OnClick="@(() => Navigation.NavigateTo("/sales-area/progress/directory"))">
+            <LucideIcon Name="plus" Class="h-4 w-4" />
+            Tambah Perusahaan
+        </BbButton>
+    </PageHeader>
+
+    <div class="stats-grid">
+        <StatTile Icon="file-text" Label="Total Perusahaan" Value="@companies.Count.ToString()" />
+        <StatTile Icon="edit" Label="Dalam Proses" Value="@inProgress.ToString()" />
+        <StatTile Icon="send" Label="Sudah Diajukan" Value="@submitted.ToString()" />
+        <StatTile Icon="alert-triangle" Label="Perlu Tindakan" Value="@needsAction.ToString()"
+                  Accent="@(needsAction > 0 ? "var(--destructive)" : null)" />
+    </div>
+
+    <FormSection Title="Peta Sebaran" Description="Titik perusahaan dari tahap Directory sampai Pelanggan." Spaced="false">
+        <CompanyMap @ref="map" Companies="companies" Editable="true" Height="26rem"
+                    OnPinMoved="ReloadAsync" />
+    </FormSection>
+
+    <div class="content-grid content-grid-3">
+        <div class="col-span-2">
+            <FormSection Title="Ringkasan per Tahap">
+                <DataTable TItem="SubscriptionStatus" Items="occupiedStages"
+                           EmptyTitle="Belum ada perusahaan">
+                    <HeaderTemplate>
+                        <th>Tahap</th>
+                        <th>Jumlah</th>
+                        <th></th>
+                    </HeaderTemplate>
+                    <RowTemplate Context="stage">
+                        <td><StatusBadge Status="@stage" /></td>
+                        <td class="font-medium">@companies.Count(c => c.Status == stage)</td>
+                        <td>
+                            @if (StageLink(stage) is { } href)
+                            {
+                                <a href="@href" class="btn btn-sm btn-outline">Buka</a>
+                            }
+                        </td>
+                    </RowTemplate>
+                </DataTable>
+            </FormSection>
+        </div>
+        <FormSection Title="Aktivitas Terbaru">
+            @if (activity.Count == 0)
+            {
+                <EmptyState Title="Belum ada aktivitas" />
+            }
+            else
+            {
+                <div class="timeline">
+                    @foreach (var entry in activity)
+                    {
+                        <div class="timeline-item">
+                            <div class="timeline-item-title">@entry.ActorName @entry.Action</div>
+                            <div class="timeline-item-time">@entry.At.ToString("d MMM yyyy HH:mm")</div>
+                        </div>
+                    }
+                </div>
+            }
+        </FormSection>
+    </div>
+</div>
+</AppShell>
+
+@code {
+    private List<SubscriptionDto> companies = [];
+    private List<ActivityLogDto> activity = [];
+    private CompanyMap? map;
+
+    private int inProgress => companies.Count(c =>
+        SubscriptionStages.IsBefore(c.Status, SubscriptionStatus.PermohonanNOL));
+    private int submitted => companies.Count(c =>
+        SubscriptionStages.IsAtOrAfter(c.Status, SubscriptionStatus.PermohonanNOL)
+        && !SubscriptionStages.IsTerminal(c.Status));
+    private int needsAction => companies.Count(c => c.Status == SubscriptionStatus.Ditolak);
+
+    private List<SubscriptionStatus> occupiedStages => SubscriptionStages.Order
+        .Concat([SubscriptionStatus.Disetujui, SubscriptionStatus.Ditolak])
+        .Where(s => companies.Any(c => c.Status == s))
+        .ToList();
+
+    private static string? StageLink(SubscriptionStatus stage) => stage switch
+    {
+        SubscriptionStatus.Directory => "/sales-area/progress/directory",
+        SubscriptionStatus.Plotting => "/sales-area/progress/plotting",
+        SubscriptionStatus.Prospect => "/sales-area/progress/prospect",
+        SubscriptionStatus.Survey => "/sales-area/progress/survey",
+        SubscriptionStatus.A1 => "/sales-area/progress/a1",
+        _ => "/sales-area/progress/monitoring"
+    };
+
+    protected override async Task OnInitializedAsync() => await ReloadAsync();
+
+    private async Task ReloadAsync()
+    {
+        companies = await Subscriptions.GetAllAsync();
+        activity = await Activity.GetRecentAsync(8);
+        if (map is not null) await map.RefreshAsync();
+    }
+}

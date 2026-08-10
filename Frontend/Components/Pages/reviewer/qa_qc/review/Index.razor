@@ -1,0 +1,175 @@
+@page "/reviewer/qa-qc/review"
+@page "/reviewer/qa-qc/review/{CompanyId:int}"
+@attribute [Authorize(Policy = SimandoPolicies.IsReviewer)]
+@rendermode InteractiveServer
+@inject IWorkflowService Workflow
+@inject IEvaluationService EvaluationSvc
+@inject ToastService Toasts
+
+@* Main execution desk: pick a document, edit the resume, then approve, revise or reject. *@
+
+<PageTitle>Review - SIMANDO</PageTitle>
+
+<AppShell>
+<div class="space-y-4 page-content">
+    <PageHeader Title="Review"
+                Subtitle="Meja eksekusi — edit resume, lalu Persetujuan NOL / Revisi / Reject." />
+
+    @if (loading)
+    {
+        <EmptyState Title="Memuat..." />
+    }
+    else if (assigned.Count == 0)
+    {
+        <EmptyState Icon="check-circle" Title="Tidak ada dokumen untuk direview"
+                    Description="Semua dokumen yang ditugaskan sudah selesai." />
+    }
+    else
+    {
+        <div class="content-grid content-grid-3">
+            <FormSection Title="Antrean" Spaced="false">
+                @foreach (var sub in assigned)
+                {
+                    <button type="button"
+                            class="btn btn-sm @(selected?.Id == sub.Id ? "btn-primary" : "btn-outline")"
+                            style="width: 100%; justify-content: flex-start; margin-bottom: 0.25rem"
+                            @onclick="@(() => SelectAsync(sub))">
+                        @sub.CompanyName
+                    </button>
+                }
+            </FormSection>
+
+            <div class="col-span-2">
+                @if (selected is null)
+                {
+                    <EmptyState Title="Pilih dokumen" Description="Pilih perusahaan dari antrean di kiri." />
+                }
+                else
+                {
+                    <FormSection Title="@selected.CompanyName"
+                                 Description="@($"{selected.AreaName} · {selected.CreatedByName}")"
+                                 Spaced="false">
+                        <div class="detail-row">
+                            <span class="detail-label">Status</span>
+                            <span class="detail-value"><StatusBadge Status="@selected.Status" /></span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Dokumen</span>
+                            <span class="detail-value">@selected.Submissions.Count berkas terunggah</span>
+                        </div>
+                        <div class="flex gap-2">
+                            <a href="/companies/@selected.Id" class="btn btn-sm btn-outline">Buka Record Lengkap</a>
+                            <a href="/companies/@selected.Id/evaluation/read" class="btn btn-sm btn-ghost">
+                                Lihat Evaluasi
+                            </a>
+                        </div>
+                    </FormSection>
+
+                    <FormSection Title="Resume Evaluasi"
+                                 Description="Naskah yang menjadi isi dokumen Resume Evaluasi.">
+                        <textarea class="form-control" rows="12" @bind="resumeContent"
+                                  placeholder="Tulis atau sunting resume evaluasi..."></textarea>
+                        <BbButton Variant="ButtonVariant.Outline" OnClick="@SaveResume" Disabled="@saving">
+                            @(saving ? "Menyimpan..." : "Simpan Draft")
+                        </BbButton>
+                    </FormSection>
+
+                    <FormSection Title="Keputusan">
+                        <div class="form-group">
+                            <label class="form-label">Komentar (wajib untuk Revisi dan Reject)</label>
+                            <textarea class="form-control" rows="4" @bind="comment"
+                                      placeholder="Jelaskan alasan keputusan..."></textarea>
+                        </div>
+                        <div class="review-actions">
+                            <BbButton OnClick="@(() => Decide(ReviewAction.Setuju))" Disabled="@deciding">
+                                <LucideIcon Name="check" Class="h-4 w-4" /> Persetujuan NOL
+                            </BbButton>
+                            <BbButton Variant="ButtonVariant.Outline"
+                                      OnClick="@(() => Decide(ReviewAction.Revisi))" Disabled="@deciding">
+                                <LucideIcon Name="edit" Class="h-4 w-4" /> Revisi
+                            </BbButton>
+                            <BbButton Variant="ButtonVariant.Destructive"
+                                      OnClick="@(() => Decide(ReviewAction.Tolak))" Disabled="@deciding">
+                                <LucideIcon Name="x" Class="h-4 w-4" /> Reject
+                            </BbButton>
+                        </div>
+                    </FormSection>
+                }
+            </div>
+        </div>
+    }
+</div>
+</AppShell>
+
+@code {
+    [Parameter] public int? CompanyId { get; set; }
+
+    private List<SubscriptionDto> assigned = [];
+    private SubscriptionDto? selected;
+    private string resumeContent = "";
+    private string comment = "";
+    private bool loading = true;
+    private bool saving;
+    private bool deciding;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        loading = true;
+        assigned = await Workflow.GetPendingReviewAsync();
+
+        var target = CompanyId is int id
+            ? assigned.FirstOrDefault(a => a.Id == id)
+            : assigned.FirstOrDefault();
+
+        if (target is not null) await SelectAsync(target);
+        loading = false;
+    }
+
+    private async Task SelectAsync(SubscriptionDto sub)
+    {
+        selected = sub;
+        comment = "";
+        resumeContent = (await EvaluationSvc.GetAsync(sub.Id))?.Content ?? "";
+    }
+
+    private async Task SaveResume()
+    {
+        if (selected is null) return;
+        saving = true;
+        try
+        {
+            await EvaluationSvc.SaveAsync(selected.Id, resumeContent);
+            Toasts.Success("Draft resume tersimpan.");
+        }
+        catch { Toasts.Error("Gagal menyimpan draft."); }
+        finally { saving = false; }
+    }
+
+    private async Task Decide(ReviewAction action)
+    {
+        if (selected is null) return;
+
+        if (action is ReviewAction.Revisi or ReviewAction.Tolak && string.IsNullOrWhiteSpace(comment))
+        {
+            Toasts.Error("Komentar wajib diisi untuk Revisi dan Reject.");
+            return;
+        }
+
+        deciding = true;
+        try
+        {
+            if (await Workflow.SubmitReviewAsync(selected.Id, action, comment))
+            {
+                Toasts.Success($"{action} tersimpan untuk {selected.CompanyName}.");
+                selected = null;
+                CompanyId = null;
+                await OnParametersSetAsync();
+            }
+            else
+            {
+                Toasts.Error("Gagal menyimpan keputusan. Pastikan langkah review ini milik Anda.");
+            }
+        }
+        finally { deciding = false; }
+    }
+}

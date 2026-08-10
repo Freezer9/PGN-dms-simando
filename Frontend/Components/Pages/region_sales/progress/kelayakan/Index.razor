@@ -1,0 +1,128 @@
+@page "/region-sales/progress/kelayakan"
+@attribute [Authorize(Policy = SimandoPolicies.IsRegionSales)]
+@rendermode InteractiveServer
+@inject ISubscriptionService Subscriptions
+@inject IStageService Stages
+@inject IWorkflowService Workflow
+@inject ToastService Toasts
+
+@* Screening gate: documents are checked here before they are released to Reviewers.
+   Passing screening advances the record to Evaluasi, which is what QA/QC Inbox reads. *@
+
+<PageTitle>Kelayakan - SIMANDO</PageTitle>
+
+<AppShell>
+<div class="space-y-4 page-content">
+    <PageHeader Title="Kelayakan"
+                Subtitle="Gerbang awal screening sebelum dokumen dilempar ke Reviewer." />
+
+    <div class="stats-grid">
+        <StatTile Icon="filter" Label="Antre Screening" Value="@queue.Count.ToString()" />
+        <StatTile Icon="check-circle" Label="Berkas Lengkap" Value="@completeCount.ToString()" />
+        <StatTile Icon="alert-triangle" Label="Berkas Kurang"
+                  Value="@((queue.Count - completeCount).ToString())"
+                  Accent="@(queue.Count - completeCount > 0 ? "var(--destructive)" : null)" />
+    </div>
+
+    <FilterBar @bind-SearchValue="searchQuery" Placeholder="Cari perusahaan..." />
+
+    <DataTable TItem="SubscriptionDto" Items="filtered" Loading="loading"
+               EmptyIcon="filter" EmptyTitle="Tidak ada dokumen untuk di-screening"
+               EmptyDescription="Dokumen muncul setelah Area Head menyetujui permohonan.">
+        <HeaderTemplate>
+            <th>Perusahaan</th>
+            <th>Area</th>
+            <th>KK0</th>
+            <th>A1</th>
+            <th>Capex Pre GR3</th>
+            <th>Menunggu</th>
+            <th></th>
+        </HeaderTemplate>
+        <RowTemplate Context="sub">
+            @{
+                var nol = NolFor(sub.Id);
+                var waiting = (DateTime.UtcNow - sub.UpdatedAt).Days;
+            }
+            <td><a href="/companies/@sub.Id" class="font-medium">@sub.CompanyName</a></td>
+            <td class="text-sm text-muted-foreground">@sub.AreaName</td>
+            <td>@Mark(HasDoc(sub, SubscriptionStatus.Survey))</td>
+            <td>@Mark(HasDoc(sub, SubscriptionStatus.A1))</td>
+            <td>@Mark(nol?.CapexPreGr3 is not null)</td>
+            <td class="font-medium @(waiting > 7 ? "text-danger" : "")">@waiting hari</td>
+            <td>
+                <div class="flex gap-2">
+                    <a href="/companies/@sub.Id" class="btn btn-sm btn-ghost">Detail</a>
+                    <button type="button" class="btn btn-sm btn-outline"
+                            disabled="@(!IsComplete(sub))"
+                            @onclick="@(() => Pass(sub))">
+                        Loloskan
+                    </button>
+                </div>
+            </td>
+        </RowTemplate>
+    </DataTable>
+</div>
+</AppShell>
+
+@code {
+    private List<SubscriptionDto> companies = [];
+    private readonly Dictionary<int, NolRequestDto> nolRequests = [];
+    private string searchQuery = "";
+    private bool loading = true;
+
+    private List<SubscriptionDto> queue => companies
+        .Where(c => c.Status == SubscriptionStatus.PermohonanNOL)
+        .ToList();
+
+    private List<SubscriptionDto> filtered => queue
+        .Where(c => string.IsNullOrWhiteSpace(searchQuery)
+            || c.CompanyName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
+        .OrderBy(c => c.UpdatedAt)
+        .ToList();
+
+    private int completeCount => queue.Count(IsComplete);
+
+    private NolRequestDto? NolFor(int id) => nolRequests.TryGetValue(id, out var n) ? n : null;
+
+    private static bool HasDoc(SubscriptionDto sub, SubscriptionStatus stage)
+        => sub.Submissions.Any(s => s.Stage == stage);
+
+    private bool IsComplete(SubscriptionDto sub)
+        => HasDoc(sub, SubscriptionStatus.Survey)
+        && HasDoc(sub, SubscriptionStatus.A1)
+        && NolFor(sub.Id)?.CapexPreGr3 is not null;
+
+    private static MarkupString Mark(bool ok) => new(ok
+        ? "<span class=\"badge badge-approved\">OK</span>"
+        : "<span class=\"badge badge-rejected\">Kurang</span>");
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        loading = true;
+        companies = await Subscriptions.GetAllAsync();
+
+        foreach (var c in queue)
+        {
+            var nol = await Stages.GetNolRequestAsync(c.Id);
+            if (nol is not null) nolRequests[c.Id] = nol;
+        }
+
+        loading = false;
+    }
+
+    private async Task Pass(SubscriptionDto sub)
+    {
+        var result = await Workflow.AdvanceStatusAsync(sub.Id);
+        if (result.Ok)
+        {
+            Toasts.Success($"{sub.CompanyName} lolos kelayakan dan masuk antrean Reviewer.");
+            await LoadAsync();
+        }
+        else
+        {
+            Toasts.Error(result.Reason ?? "Gagal meloloskan dokumen.");
+        }
+    }
+}

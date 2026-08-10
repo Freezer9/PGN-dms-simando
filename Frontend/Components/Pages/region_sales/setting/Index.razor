@@ -1,0 +1,365 @@
+@page "/region-sales/setting"
+@attribute [Authorize(Policy = SimandoPolicies.IsRegionSales)]
+@rendermode InteractiveServer
+@inject IUserService UserApi
+@inject ISubscriptionService Subscriptions
+@inject IMasterDataService MasterData
+@inject ToastService Toasts
+
+@* Configuration centre: users, roles and passwords, plus the reference catalogues the
+   stage forms read from. *@
+
+<PageTitle>Setting - SIMANDO</PageTitle>
+
+<AppShell>
+<div class="space-y-4 page-content">
+    <PageHeader Title="Setting" Subtitle="Manajemen pengguna, role, password, dan data referensi.">
+        @if (activeTab == "users")
+        {
+            <BbButton OnClick="@(() => showUserDialog = true)">
+                <LucideIcon Name="plus" Class="h-4 w-4" />
+                Tambah Pengguna
+            </BbButton>
+        }
+        else if (activeTab == "reference")
+        {
+            <BbButton OnClick="@OpenCreateEntry">
+                <LucideIcon Name="plus" Class="h-4 w-4" />
+                Tambah Entri
+            </BbButton>
+        }
+    </PageHeader>
+
+    <div style="display: flex; gap: 0.25rem; border-bottom: 1px solid var(--border); margin-bottom: 1rem; overflow-x: auto">
+        @foreach (var tab in tabs)
+        {
+            <button type="button"
+                    class="btn btn-ghost btn-sm @(activeTab == tab.Key ? "btn-primary" : "")"
+                    style="border-radius: 0; border-bottom: 2px solid @(activeTab == tab.Key ? "var(--primary)" : "transparent")"
+                    @onclick="@(() => activeTab = tab.Key)">
+                @tab.Label
+            </button>
+        }
+    </div>
+
+    @if (activeTab == "users")
+    {
+        <DataTable TItem="UserInfo" Items="users" Loading="loading" EmptyTitle="Belum ada pengguna">
+            <HeaderTemplate>
+                <th>Nama</th><th>Email</th><th>Role</th><th>Area</th>
+            </HeaderTemplate>
+            <RowTemplate Context="user">
+                <td class="font-medium">@user.FullName</td>
+                <td class="text-sm text-muted-foreground">@user.Email</td>
+                <td><BbBadge Variant="BadgeVariant.Secondary">@user.Role</BbBadge></td>
+                <td class="text-sm text-muted-foreground">@user.AreaName</td>
+            </RowTemplate>
+        </DataTable>
+    }
+    else if (activeTab == "organisation")
+    {
+        <DataTable TItem="RegionDto" Items="regions" Loading="loading"
+                   EmptyTitle="Belum ada data organisasi">
+            <HeaderTemplate><th>Region</th><th>Area</th><th>Jumlah Area</th></HeaderTemplate>
+            <RowTemplate Context="region">
+                <td class="font-medium">@region.Name</td>
+                <td class="text-sm text-muted-foreground">
+                    @string.Join(", ", region.Areas.Select(a => a.Name))
+                </td>
+                <td>@region.Areas.Count</td>
+            </RowTemplate>
+        </DataTable>
+    }
+    else if (activeTab == "reference")
+    {
+        <div class="flex gap-2" style="flex-wrap: wrap; margin-bottom: 0.5rem">
+            @foreach (var category in Enum.GetValues<MasterCategory>())
+            {
+                <button type="button"
+                        class="btn btn-sm @(activeCategory == category ? "btn-primary" : "btn-outline")"
+                        @onclick="@(() => SelectCategory(category))">
+                    @CategoryLabel(category)
+                </button>
+            }
+        </div>
+
+        <DataTable TItem="MasterDataEntryDto" Items="entries" Loading="loading"
+                   EmptyTitle="Belum ada entri"
+                   EmptyDescription="Tambahkan entri pertama untuk kategori ini.">
+            <HeaderTemplate>
+                <th>Kode</th><th>Nama</th><th>Urutan</th><th>Status</th><th></th>
+            </HeaderTemplate>
+            <RowTemplate Context="entry">
+                <td class="text-sm text-muted-foreground">@entry.Code</td>
+                <td class="font-medium">@entry.Name</td>
+                <td class="text-sm text-muted-foreground">@entry.SortOrder</td>
+                <td>
+                    <span class="badge @(entry.IsActive ? "badge-approved" : "badge-pending")">
+                        @(entry.IsActive ? "Aktif" : "Nonaktif")
+                    </span>
+                </td>
+                <td>
+                    <div class="flex gap-2">
+                        <button type="button" class="btn btn-sm btn-ghost"
+                                @onclick="@(() => OpenEditEntry(entry))">Ubah</button>
+                        <button type="button" class="btn btn-sm btn-ghost"
+                                @onclick="@(() => DeleteEntry(entry))">Hapus</button>
+                    </div>
+                </td>
+            </RowTemplate>
+        </DataTable>
+    }
+</div>
+
+@if (showUserDialog)
+{
+    <BbDialog Open="true" OnOpenChange="@(open => showUserDialog = open)">
+        <BbDialogContent Class="sm:max-w-md">
+            <BbDialogHeader><BbDialogTitle>Tambah Pengguna</BbDialogTitle></BbDialogHeader>
+            <div class="space-y-4">
+                <div class="form-group">
+                    <label class="form-label">Nama Lengkap</label>
+                    <InputText class="form-control" @bind-Value="newUser.FullName" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <InputText class="form-control" @bind-Value="newUser.Email" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <InputText type="password" class="form-control" @bind-Value="newUser.Password" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Role</label>
+                    <select class="form-control" @bind="newUser.Role">
+                        <option value="">Pilih role</option>
+                        @foreach (var role in assignableRoles)
+                        {
+                            <option value="@role">@role</option>
+                        }
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Area</label>
+                    <select class="form-control" @bind="newUser.AreaId">
+                        <option value="">Tanpa area</option>
+                        @foreach (var area in areas)
+                        {
+                            <option value="@area.Id">@area.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="flex gap-2 justify-end">
+                    <BbButton Variant="ButtonVariant.Outline" OnClick="@(() => showUserDialog = false)">Batal</BbButton>
+                    <BbButton OnClick="@CreateUser" Disabled="@saving">
+                        @(saving ? "Menyimpan..." : "Simpan")
+                    </BbButton>
+                </div>
+            </div>
+        </BbDialogContent>
+    </BbDialog>
+}
+
+@if (showEntryDialog)
+{
+    <BbDialog Open="true" OnOpenChange="@(open => showEntryDialog = open)">
+        <BbDialogContent Class="sm:max-w-md">
+            <BbDialogHeader>
+                <BbDialogTitle>@(editingEntryId is null ? "Tambah Entri" : "Ubah Entri")</BbDialogTitle>
+            </BbDialogHeader>
+            <div class="space-y-4">
+                <div class="form-group">
+                    <label class="form-label">Kategori</label>
+                    <select class="form-control" @bind="entryForm.Category">
+                        @foreach (var category in Enum.GetValues<MasterCategory>())
+                        {
+                            <option value="@category">@CategoryLabel(category)</option>
+                        }
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Kode</label>
+                    <InputText class="form-control" @bind-Value="entryForm.Code" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Nama (wajib)</label>
+                    <InputText class="form-control" @bind-Value="entryForm.Name" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Urutan</label>
+                    <InputNumber class="form-control" @bind-Value="entryForm.SortOrder" />
+                </div>
+                <label class="flex gap-2 items-center">
+                    <InputCheckbox @bind-Value="entryForm.IsActive" />
+                    <span>Aktif</span>
+                </label>
+                <div class="flex gap-2 justify-end">
+                    <BbButton Variant="ButtonVariant.Outline" OnClick="@(() => showEntryDialog = false)">Batal</BbButton>
+                    <BbButton OnClick="@SaveEntry" Disabled="@saving">
+                        @(saving ? "Menyimpan..." : "Simpan")
+                    </BbButton>
+                </div>
+            </div>
+        </BbDialogContent>
+    </BbDialog>
+}
+</AppShell>
+
+@code {
+    private readonly (string Key, string Label)[] tabs =
+    [
+        ("users", "Pengguna & Role"),
+        ("organisation", "Organisasi"),
+        ("reference", "Data Referensi")
+    ];
+
+    // Region Sales manages the operational roles below it, not other admins.
+    private readonly string[] assignableRoles =
+    [
+        SimandoRoles.SalesArea, SimandoRoles.AreaHead, SimandoRoles.Reviewer
+    ];
+
+    private string activeTab = "users";
+    private MasterCategory activeCategory = MasterCategory.Segment;
+
+    private List<UserInfo> users = [];
+    private List<RegionDto> regions = [];
+    private List<AreaDto> areas = [];
+    private List<MasterDataEntryDto> entries = [];
+
+    private CreateUserRequest newUser = new();
+    private SaveMasterDataRequest entryForm = new();
+    private int? editingEntryId;
+
+    private bool loading = true;
+    private bool saving;
+    private bool showUserDialog;
+    private bool showEntryDialog;
+
+    protected override async Task OnInitializedAsync()
+    {
+        loading = true;
+        users = await UserApi.GetUsersAsync();
+        regions = await Subscriptions.GetRegionsAsync();
+        areas = await Subscriptions.GetAreasAsync();
+        entries = await MasterData.GetAsync(activeCategory);
+        loading = false;
+    }
+
+    private async Task SelectCategory(MasterCategory category)
+    {
+        activeCategory = category;
+        entries = await MasterData.GetAsync(category);
+    }
+
+    private async Task CreateUser()
+    {
+        if (string.IsNullOrWhiteSpace(newUser.FullName)
+            || string.IsNullOrWhiteSpace(newUser.Email)
+            || string.IsNullOrWhiteSpace(newUser.Password)
+            || string.IsNullOrWhiteSpace(newUser.Role))
+        {
+            Toasts.Error("Nama, email, password, dan role wajib diisi.");
+            return;
+        }
+
+        saving = true;
+        try
+        {
+            var (success, error) = await UserApi.CreateUserAsync(newUser);
+            if (!success)
+            {
+                Toasts.Error(string.IsNullOrWhiteSpace(error) ? "Gagal membuat pengguna." : error);
+                return;
+            }
+
+            Toasts.Success($"Pengguna {newUser.FullName} dibuat.");
+            showUserDialog = false;
+            newUser = new CreateUserRequest();
+            users = await UserApi.GetUsersAsync();
+        }
+        finally { saving = false; }
+    }
+
+    private void OpenCreateEntry()
+    {
+        editingEntryId = null;
+        entryForm = new SaveMasterDataRequest
+        {
+            Category = activeCategory,
+            SortOrder = entries.Count,
+            IsActive = true
+        };
+        showEntryDialog = true;
+    }
+
+    private void OpenEditEntry(MasterDataEntryDto entry)
+    {
+        editingEntryId = entry.Id;
+        entryForm = new SaveMasterDataRequest
+        {
+            Category = entry.Category,
+            Code = entry.Code,
+            Name = entry.Name,
+            Description = entry.Description,
+            AttributesJson = entry.AttributesJson,
+            SortOrder = entry.SortOrder,
+            IsActive = entry.IsActive
+        };
+        showEntryDialog = true;
+    }
+
+    private async Task SaveEntry()
+    {
+        if (string.IsNullOrWhiteSpace(entryForm.Name))
+        {
+            Toasts.Error("Nama wajib diisi.");
+            return;
+        }
+
+        saving = true;
+        try
+        {
+            var (success, error) = await MasterData.SaveAsync(editingEntryId, entryForm);
+            if (!success)
+            {
+                Toasts.Error(string.IsNullOrWhiteSpace(error) ? "Gagal menyimpan entri." : error);
+                return;
+            }
+
+            Toasts.Success($"Entri {entryForm.Name} tersimpan.");
+            showEntryDialog = false;
+            activeCategory = entryForm.Category;
+            entries = await MasterData.GetAsync(activeCategory);
+        }
+        finally { saving = false; }
+    }
+
+    private async Task DeleteEntry(MasterDataEntryDto entry)
+    {
+        if (await MasterData.DeleteAsync(entry.Id))
+        {
+            Toasts.Success($"Entri {entry.Name} dihapus.");
+            entries = await MasterData.GetAsync(activeCategory);
+        }
+        else
+        {
+            // Entries referenced by A1 / NOL / evaluation rows are FK-restricted.
+            Toasts.Error("Gagal menghapus. Entri mungkin masih dipakai — nonaktifkan saja.");
+        }
+    }
+
+    private static string CategoryLabel(MasterCategory category) => category switch
+    {
+        MasterCategory.Segment => "Segmen",
+        MasterCategory.IndustryType => "Jenis Industri",
+        MasterCategory.Country => "Negara",
+        MasterCategory.FuelType => "Jenis Bahan Bakar",
+        MasterCategory.UnitOfMeasure => "Satuan",
+        MasterCategory.MeterSize => "G-Size / Meter",
+        MasterCategory.MrsSpec => "Spesifikasi MRS",
+        MasterCategory.ReferenceDocument => "Dokumen Acuan",
+        MasterCategory.ReasonCategory => "Kategori Alasan",
+        _ => category.ToString()
+    };
+}

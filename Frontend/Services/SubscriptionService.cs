@@ -8,8 +8,6 @@ public class SubscriptionService(HttpClient http) : ISubscriptionService
     public async Task<List<SubscriptionDto>> GetAllAsync()
         => await http.GetFromJsonAsync<List<SubscriptionDto>>("api/subscriptions") ?? [];
 
-    public async Task<List<SubscriptionDto>> GetByAreaAsync(int areaId)
-        => (await GetAllAsync()).Where(s => s.AreaId == areaId).ToList();
 
     public async Task<SubscriptionDto?> GetAsync(int id)
     {
@@ -42,8 +40,6 @@ public class SubscriptionService(HttpClient http) : ISubscriptionService
     public async Task<List<AreaDto>> GetAreasAsync()
         => await http.GetFromJsonAsync<List<AreaDto>>("api/subscriptions/areas") ?? [];
 
-    public async Task<List<AreaDto>> GetAreasByRegionAsync(int regionId)
-        => (await GetAreasAsync()).Where(a => a.RegionId == regionId).ToList();
 
     public async Task<bool> UpdateLocationAsync(int subscriptionId, double latitude, double longitude)
     {

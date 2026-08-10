@@ -38,23 +38,18 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     });
 
 builder.Services.AddAuthorizationBuilder()
-    .AddPolicy(SimandoPolicies.CanViewDashboard, policy => policy.RequireRole(SimandoRoles.All))
-    .AddPolicy(SimandoPolicies.CanViewSubscriptions, policy => policy.RequireRole(SimandoRoles.Operational))
-    .AddPolicy(SimandoPolicies.CanCreateSubscription, policy => policy.RequireRole(
-        SimandoRoles.SalesArea, SimandoRoles.AdminRegional))
-    .AddPolicy(SimandoPolicies.CanReview, policy => policy.RequireRole(
-        SimandoRoles.AreaHead, SimandoRoles.AdminRegional, SimandoRoles.Reviewer))
+    .AddPolicy(SimandoPolicies.IsSalesArea, policy => policy.RequireRole(SimandoRoles.SalesArea))
+    .AddPolicy(SimandoPolicies.IsAreaHead, policy => policy.RequireRole(SimandoRoles.AreaHead))
+    .AddPolicy(SimandoPolicies.IsRegionSales, policy => policy.RequireRole(SimandoRoles.RegionSales))
+    .AddPolicy(SimandoPolicies.IsReviewer, policy => policy.RequireRole(SimandoRoles.Reviewer))
+    .AddPolicy(SimandoPolicies.CanViewSubscriptions, policy => policy.RequireRole(SimandoRoles.All))
+    .AddPolicy(SimandoPolicies.CanEditRecord, policy => policy.RequireRole(
+        SimandoRoles.SalesArea, SimandoRoles.RegionSales))
+    .AddPolicy(SimandoPolicies.CanAccessEvaluation, policy => policy.RequireRole(SimandoRoles.RegionSales))
+    .AddPolicy(SimandoPolicies.CanAccessQaQc, policy => policy.RequireRole(
+        SimandoRoles.RegionSales, SimandoRoles.Reviewer))
     .AddPolicy(SimandoPolicies.CanApprove, policy => policy.RequireRole(
-        SimandoRoles.AreaHead, SimandoRoles.AdminRegional, SimandoRoles.Reviewer, SimandoRoles.DivisionHead))
-    .AddPolicy(SimandoPolicies.CanAccessEvaluation, policy => policy.RequireRole(SimandoRoles.AdminRegional))
-    .AddPolicy(SimandoPolicies.CanViewRegion, policy => policy.RequireRole(
-        SimandoRoles.AdminRegional, SimandoRoles.Reviewer, SimandoRoles.DivisionHead))
-    .AddPolicy(SimandoPolicies.CanAdminister, policy => policy.RequireRole(
-        SimandoRoles.AdminRegional, SimandoRoles.SystemAdmin))
-    .AddPolicy(SimandoPolicies.CanIssueNOL, policy => policy.RequireRole(SimandoRoles.DivisionHead))
-    .AddPolicy(SimandoPolicies.CanManageTasksBlocked, policy => policy.RequireRole(SimandoRoles.AdminRegional))
-    .AddPolicy(SimandoPolicies.CanAccessBreakGlass, policy => policy.RequireRole(
-        SimandoRoles.AdminRegional, SimandoRoles.DivisionHead, SimandoRoles.SystemAdmin));
+        SimandoRoles.AreaHead, SimandoRoles.RegionSales, SimandoRoles.Reviewer));
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddTransient<BearerTokenHandler>();
@@ -74,11 +69,7 @@ builder.Services.AddHttpClient<IUserService, UserService>(c => c.BaseAddress = n
     .AddHttpMessageHandler<BearerTokenHandler>();
 builder.Services.AddHttpClient<IStageService, StageService>(c => c.BaseAddress = new Uri(apiBaseUrl))
     .AddHttpMessageHandler<BearerTokenHandler>();
-builder.Services.AddHttpClient<IIssuanceService, IssuanceService>(c => c.BaseAddress = new Uri(apiBaseUrl))
-    .AddHttpMessageHandler<BearerTokenHandler>();
 builder.Services.AddHttpClient<IMasterDataService, MasterDataService>(c => c.BaseAddress = new Uri(apiBaseUrl))
-    .AddHttpMessageHandler<BearerTokenHandler>();
-builder.Services.AddHttpClient<IBreakGlassService, BreakGlassService>(c => c.BaseAddress = new Uri(apiBaseUrl))
     .AddHttpMessageHandler<BearerTokenHandler>();
 
 builder.Services.AddScoped<CommandPaletteService>();

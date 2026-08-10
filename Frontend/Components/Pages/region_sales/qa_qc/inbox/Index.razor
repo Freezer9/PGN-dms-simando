@@ -1,0 +1,63 @@
+@page "/region-sales/qa-qc/inbox"
+@attribute [Authorize(Policy = SimandoPolicies.IsRegionSales)]
+@rendermode InteractiveServer
+@inject ISubscriptionService Subscriptions
+
+@* Documents that cleared kelayakan but have no reviewer assigned yet. *@
+
+<PageTitle>QA/QC Inbox - SIMANDO</PageTitle>
+
+<AppShell>
+<div class="space-y-4 page-content">
+    <PageHeader Title="Inbox"
+                Subtitle="@($"{unassigned.Count} dokumen sudah lolos kelayakan dan menunggu penugasan.")" />
+
+    <FilterBar @bind-SearchValue="searchQuery" Placeholder="Cari perusahaan..." />
+
+    <DataTable TItem="SubscriptionDto" Items="filtered" Loading="loading"
+               EmptyIcon="inbox" EmptyTitle="Kotak masuk kosong"
+               EmptyDescription="Semua dokumen yang lolos kelayakan sudah ditugaskan.">
+        <HeaderTemplate>
+            <th>Perusahaan</th>
+            <th>Area</th>
+            <th>Sales</th>
+            <th>Status</th>
+            <th>Masuk Sejak</th>
+            <th></th>
+        </HeaderTemplate>
+        <RowTemplate Context="sub">
+            @{ var waiting = (DateTime.UtcNow - sub.UpdatedAt).Days; }
+            <td><a href="/companies/@sub.Id" class="font-medium">@sub.CompanyName</a></td>
+            <td class="text-sm text-muted-foreground">@sub.AreaName</td>
+            <td class="text-sm text-muted-foreground">@sub.CreatedByName</td>
+            <td><StatusBadge Status="@sub.Status" /></td>
+            <td class="font-medium @(waiting > 3 ? "text-danger" : "")">@waiting hari</td>
+            <td><a href="/region-sales/qa-qc/task" class="btn btn-sm btn-outline">Tugaskan</a></td>
+        </RowTemplate>
+    </DataTable>
+</div>
+</AppShell>
+
+@code {
+    private List<SubscriptionDto> companies = [];
+    private string searchQuery = "";
+    private bool loading = true;
+
+    private List<SubscriptionDto> unassigned => companies
+        .Where(c => c.Status == SubscriptionStatus.Evaluasi
+            && string.IsNullOrWhiteSpace(c.ReviewerIds))
+        .ToList();
+
+    private List<SubscriptionDto> filtered => unassigned
+        .Where(c => string.IsNullOrWhiteSpace(searchQuery)
+            || c.CompanyName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
+        .OrderBy(c => c.UpdatedAt)
+        .ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        loading = true;
+        companies = await Subscriptions.GetAllAsync();
+        loading = false;
+    }
+}

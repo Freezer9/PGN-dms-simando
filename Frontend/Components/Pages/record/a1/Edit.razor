@@ -1,0 +1,283 @@
+@page "/companies/{CompanyId:int}/a1"
+@attribute [Authorize(Policy = SimandoPolicies.CanEditRecord)]
+@rendermode InteractiveServer
+@inject ISubscriptionService Subscriptions
+@inject IStageService Stages
+@inject IMasterDataService MasterData
+@inject IWorkflowService Workflow
+@inject ToastService Toasts
+
+<PageTitle>Registrasi A1 - SIMANDO</PageTitle>
+
+<AppShell>
+<div class="space-y-4 page-content">
+    <PageHeader Title="Registrasi A1"
+                Subtitle="Data registrasi dan harga — seluruh nilai diketik manual sesuai formulir A1.">
+        <BbButton OnClick="@Save" Disabled="@saving">
+            @(saving ? "Menyimpan..." : "Simpan A1")
+        </BbButton>
+    </PageHeader>
+
+    @if (sub is null)
+    {
+        <EmptyState Title="Perusahaan tidak ditemukan" />
+    }
+    else
+    {
+        <FormSection Title="@sub.CompanyName" Description="@sub.AreaName" Spaced="false">
+            <div class="detail-row">
+                <span class="detail-label">Dokumen A1 bertanda tangan</span>
+                <span class="detail-value">
+                    @(sub.Submissions.Any(s => s.Stage == SubscriptionStatus.A1) ? "Terunggah" : "Belum")
+                </span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Bukti Kelayakan</span>
+                <span class="detail-value">@(sub.SignedOff ? "Ditandatangani" : "Belum")</span>
+            </div>
+
+            @* Gate 5→6 requires this flag; nothing else in the app sets it. *@
+            @if (!sub.SignedOff)
+            {
+                <div class="alert alert-info">
+                    Bukti Kelayakan belum ditandatangani. Tanda tangan diperlukan sebelum record
+                    dapat lanjut ke Permohonan NOL.
+                </div>
+                <BbButton Variant="ButtonVariant.Outline" OnClick="@SignOff" Disabled="@signing">
+                    <LucideIcon Name="pen-line" Class="h-4 w-4" />
+                    @(signing ? "Menandatangani..." : "Tandatangani Bukti Kelayakan")
+                </BbButton>
+            }
+
+            @if (a1.SkemaHarga == SkemaHarga.SiGas && !a1.MomSigasTersedia)
+            {
+                <div class="alert alert-warning">
+                    Skema SiGas dipilih — MOM SiGas wajib tersedia sebelum lanjut ke Permohonan NOL.
+                </div>
+            }
+        </FormSection>
+
+        <FormSection Title="Registrasi">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">Tanggal Registrasi</label>
+                    <input type="date" class="form-control" value="@DateValue(a1.TanggalRegistrasi)"
+                           @onchange="@(e => a1.TanggalRegistrasi = ParseDate(e.Value))" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Nama Penanggung Jawab</label>
+                    <InputText class="form-control" @bind-Value="a1.NamaPenanggungJawab" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Jabatan Penanggung Jawab</label>
+                    <InputText class="form-control" @bind-Value="a1.JabatanPenanggungJawab" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Bulan Dimulai</label>
+                    <InputText class="form-control" @bind-Value="a1.BulanDimulai" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Status Bangunan</label>
+                    <select class="form-control" @bind="a1.StatusBangunan">
+                        <option value="">Pilih status</option>
+                        <option value="@StatusBangunan.DalamRencana">Dalam Rencana</option>
+                        <option value="@StatusBangunan.DalamPembangunan">Dalam Pembangunan</option>
+                        <option value="@StatusBangunan.Eksisting">Eksisting</option>
+                        <option value="@StatusBangunan.ProsesEkspansi">Proses Ekspansi</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Sektor</label>
+                    <select class="form-control" @bind="a1.Sektor">
+                        <option value="">Pilih sektor</option>
+                        <option value="@Sektor.Komersial">Komersial</option>
+                        <option value="@Sektor.Industri">Industri</option>
+                        <option value="@Sektor.Transportasi">Transportasi</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Produksi Utama</label>
+                    <InputText class="form-control" @bind-Value="a1.ProduksiUtama" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Metode Tanda Tangan</label>
+                    <select class="form-control" @bind="a1.SignatureMethod">
+                        <option value="">Pilih metode</option>
+                        <option value="@SignatureMethod.Wet">Basah (wet)</option>
+                        <option value="@SignatureMethod.Digital">Digital</option>
+                    </select>
+                </div>
+            </div>
+        </FormSection>
+
+        <FormSection Title="Kontrak & Harga">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">Basis Kontrak</label>
+                    <select class="form-control" @bind="a1.BasisKontrak">
+                        <option value="">Pilih basis</option>
+                        <option value="@BasisKontrak.Harian">Harian</option>
+                        <option value="@BasisKontrak.Bulanan">Bulanan</option>
+                        <option value="@BasisKontrak.Tahunan">Tahunan</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Skema Harga</label>
+                    <select class="form-control" @bind="a1.SkemaHarga">
+                        <option value="">Pilih skema</option>
+                        <option value="@SkemaHarga.Reguler">Reguler</option>
+                        <option value="@SkemaHarga.SiGas">SiGas</option>
+                        <option value="@SkemaHarga.Bersyarat">Bersyarat</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Segment</label>
+                    <select class="form-control" @bind="a1.SegmentId">
+                        <option value="">Pilih segment</option>
+                        @foreach (var segment in segments)
+                        {
+                            <option value="@segment.Id">@segment.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Kode Harga</label>
+                    <InputText class="form-control" @bind-Value="a1.KodeHarga" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Harga</label>
+                    <InputNumber class="form-control" @bind-Value="a1.HargaNilai" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Mata Uang</label>
+                    <select class="form-control" @bind="a1.HargaCurrency">
+                        <option value="">Pilih</option>
+                        <option value="@MoneyCurrency.Usd">USD</option>
+                        <option value="@MoneyCurrency.Idr">IDR</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Satuan Harga</label>
+                    <select class="form-control" @bind="a1.HargaUnit">
+                        <option value="">Pilih</option>
+                        <option value="@VolumeUnit.MMBtu">MMBtu</option>
+                        <option value="@VolumeUnit.M3">m³</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Capex Awal</label>
+                    <InputNumber class="form-control" @bind-Value="a1.CapexAwal" />
+                </div>
+            </div>
+            <label class="flex gap-2 items-center">
+                <InputCheckbox @bind-Value="a1.MomSigasTersedia" />
+                <span>MOM SiGas tersedia</span>
+            </label>
+        </FormSection>
+
+        <FormSection Title="Peralatan Gas">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">Jenis Peralatan Gas</label>
+                    <InputText class="form-control" @bind-Value="a1.JenisPeralatanGas" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Tekanan Operasi (barg)</label>
+                    <InputNumber class="form-control" @bind-Value="a1.TekananOperasiBarg" />
+                </div>
+            </div>
+        </FormSection>
+
+        <FormSection Title="Periode Pemakaian">
+            <RepeatingRows TItem="A1UsagePeriodDto" Items="a1.Periods"
+                           ItemFactory="@(() => new A1UsagePeriodDto())"
+                           AddLabel="Tambah Periode" EmptyDescription="Belum ada periode pemakaian.">
+                <HeaderTemplate>
+                    <th>Mulai</th>
+                    <th>Selesai</th>
+                    <th>Rata-rata</th>
+                    <th>Minimum</th>
+                    <th>Maksimum</th>
+                </HeaderTemplate>
+                <RowTemplate Context="row">
+                    <td>
+                        <input type="date" class="form-control" value="@DateValue(row.PeriodeMulai)"
+                               @onchange="@(e => row.PeriodeMulai = ParseDate(e.Value))" />
+                    </td>
+                    <td>
+                        <input type="date" class="form-control" value="@DateValue(row.PeriodeSelesai)"
+                               @onchange="@(e => row.PeriodeSelesai = ParseDate(e.Value))" />
+                    </td>
+                    <td><InputNumber class="form-control" @bind-Value="row.RataRata" /></td>
+                    <td><InputNumber class="form-control" @bind-Value="row.Minimum" /></td>
+                    <td><InputNumber class="form-control" @bind-Value="row.Maksimum" /></td>
+                </RowTemplate>
+            </RepeatingRows>
+        </FormSection>
+
+        <div class="flex gap-2" style="margin-top: 1rem">
+            <BbButton OnClick="@Save" Disabled="@saving">
+                @(saving ? "Menyimpan..." : "Simpan A1")
+            </BbButton>
+            <a href="/companies/@CompanyId" class="btn btn-outline">Kembali ke Record</a>
+        </div>
+    }
+</div>
+</AppShell>
+
+@code {
+    [Parameter] public int CompanyId { get; set; }
+
+    private SubscriptionDto? sub;
+    private A1RegistrationDto a1 = new();
+    private List<MasterDataEntryDto> segments = [];
+    private bool saving;
+    private bool signing;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        sub = await Subscriptions.GetAsync(CompanyId);
+        if (sub is null) return;
+
+        a1 = await Stages.GetA1Async(CompanyId) ?? new A1RegistrationDto { SubscriptionId = CompanyId };
+        segments = await MasterData.GetAsync(MasterCategory.Segment);
+    }
+
+    private static string DateValue(DateTime? value) => value?.ToString("yyyy-MM-dd") ?? "";
+
+    private static DateTime? ParseDate(object? value)
+        => DateTime.TryParse(value?.ToString(), out var parsed) ? parsed : null;
+
+    private async Task SignOff()
+    {
+        if (sub is null) return;
+        signing = true;
+        try
+        {
+            await Workflow.SignOffAsync(sub.Id);
+            Toasts.Success("Bukti Kelayakan ditandatangani.");
+            sub = await Subscriptions.GetAsync(CompanyId);
+        }
+        catch
+        {
+            Toasts.Error("Gagal menandatangani Bukti Kelayakan.");
+        }
+        finally { signing = false; }
+    }
+
+    private async Task Save()
+    {
+        if (sub is null) return;
+        saving = true;
+        try
+        {
+            a1 = await Stages.SaveA1Async(CompanyId, a1);
+            Toasts.Success("Registrasi A1 tersimpan.");
+        }
+        catch
+        {
+            Toasts.Error("Gagal menyimpan registrasi A1.");
+        }
+        finally { saving = false; }
+    }
+}

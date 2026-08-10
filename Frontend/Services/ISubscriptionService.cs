@@ -5,13 +5,11 @@ namespace Pgn.Dms.Web.Services;
 public interface ISubscriptionService
 {
     Task<List<SubscriptionDto>> GetAllAsync();
-    Task<List<SubscriptionDto>> GetByAreaAsync(int areaId);
     Task<SubscriptionDto?> GetAsync(int id);
     Task<SubscriptionDto> CreateAsync(CreateSubscriptionRequest request);
     Task<SubmissionRecordDto> UploadAsync(int subscriptionId, Stream fileStream, string fileName, string contentType);
     Task<List<RegionDto>> GetRegionsAsync();
     Task<List<AreaDto>> GetAreasAsync();
-    Task<List<AreaDto>> GetAreasByRegionAsync(int regionId);
     Task<bool> UpdateLocationAsync(int subscriptionId, double latitude, double longitude);
 }
 
@@ -59,12 +57,6 @@ public interface IStageService
     Task<NolRequestDto> SaveNolRequestAsync(int subscriptionId, NolRequestDto request);
 }
 
-public interface IIssuanceService
-{
-    Task<NolIssuanceDto?> GetAsync(int subscriptionId);
-    Task<(bool Success, string? Error)> IssueAsync(int subscriptionId, IssueNolRequest request);
-}
-
 public interface IMasterDataService
 {
     Task<List<MasterDataEntryDto>> GetAsync(MasterCategory? category = null);
@@ -72,12 +64,6 @@ public interface IMasterDataService
     Task<bool> DeleteAsync(int id);
 }
 
-public interface IBreakGlassService
-{
-    Task<List<BreakGlassGrantDto>> GetAsync();
-    Task<(bool Success, string? Error)> GrantAsync(GrantBreakGlassRequest request);
-    Task<bool> RevokeAsync(int grantId);
-}
 
 public interface IUserService
 {
