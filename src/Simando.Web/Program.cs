@@ -1,6 +1,8 @@
 using BlazorBlueprint.Components;
 using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.EntityFrameworkCore;
 using Simando.Infrastructure;
+using Simando.Infrastructure.Persistence;
 using Simando.Web;
 using Simando.Web.Cli;
 using Simando.Web.Components;
@@ -39,6 +41,13 @@ builder.Services.AddBlazorBlueprintComponents();
 builder.Services.AddScoped<ToastService, CompactToastService>();
 
 var app = builder.Build();
+
+await using (var scope = app.Services.CreateAsyncScope())
+{
+    var dbFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<SimandoDbContext>>();
+    await using var db = await dbFactory.CreateDbContextAsync();
+    await db.Database.MigrateAsync();
+}
 
 if (!app.Environment.IsDevelopment())
 {

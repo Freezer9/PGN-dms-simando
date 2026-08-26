@@ -1,9 +1,11 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Simando.Domain.Security;
 using Simando.Infrastructure;
 using Simando.Infrastructure.Identity;
+using Simando.Infrastructure.Persistence;
 
 namespace Simando.Web.Cli;
 
@@ -56,6 +58,10 @@ public static class SeedAdminCommand
         await using var provider = services.BuildServiceProvider();
 #pragma warning restore ASP0000
         await using var scope = provider.CreateAsyncScope();
+
+        var dbFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<SimandoDbContext>>();
+        await using var db = await dbFactory.CreateDbContextAsync();
+        await db.Database.MigrateAsync();
 
         var seeder = scope.ServiceProvider.GetRequiredService<AdminSeeder>();
         var result = await seeder.SeedAsync(username, password, fullName, email);
