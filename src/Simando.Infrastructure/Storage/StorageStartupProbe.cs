@@ -12,6 +12,11 @@ public sealed class StorageStartupProbe(IAttachmentStore store) : IHostedService
 {
     public async Task StartAsync(CancellationToken ct)
     {
+        if (store is S3AttachmentStore s3Store)
+        {
+            await s3Store.EnsureBucketExistsAsync(ct);
+        }
+
         var blob = new StoredBlobRef(store.Provider, $"__healthcheck/{Guid.NewGuid()}");
 
         await store.PutAsync(

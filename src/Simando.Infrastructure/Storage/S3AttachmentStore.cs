@@ -41,20 +41,56 @@ public sealed class S3AttachmentStore : IAttachmentStore, IDisposable
 
     public StorageProvider Provider => StorageProvider.S3;
 
+    public async Task EnsureBucketExistsAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            await _client.PutBucketAsync(_bucket, ct);
+        }
+        catch (AmazonS3Exception ex) when (ex.ErrorCode is "BucketAlreadyOwnedByYou" or "BucketAlreadyExists" || ex.StatusCode is HttpStatusCode.Conflict or HttpStatusCode.OK)
+        {
+            // Bucket already exists.
+        }
+    }
+
     public async Task<StoredBlob> PutAsync(BlobWriteRequest request, Stream content, CancellationToken ct)
     {
-        var response = await _client.PutObjectAsync(
-            new PutObjectRequest
-            {
-                BucketName = _bucket,
-                Key = request.Key,
-                InputStream = content,
-                ContentType = request.ContentType,
-                AutoCloseStream = false,
-            },
-            ct);
+        try
+        {
+            var response = await _client.PutObjectAsync(
+                new PutObjectRequest
+                {
+                    BucketName = _bucket,
+                    Key = request.Key,
+                    InputStream = content,
+                    ContentType = request.ContentType,
+                    AutoCloseStream = false,
+                },
+                ct);
 
-        return new StoredBlob(StorageProvider.S3, request.Key, response.ETag, content.Length);
+            return new StoredBlob(StorageProvider.S3, request.Key, response.ETag, content.Length);
+        }
+        catch (AmazonS3Exception ex) when (ex.ErrorCode is "NoSuchBucket" || ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            await EnsureBucketExistsAsync(ct);
+            if (content.CanSeek)
+            {
+                content.Position = 0;
+            }
+
+            var response = await _client.PutObjectAsync(
+                new PutObjectRequest
+                {
+                    BucketName = _bucket,
+                    Key = request.Key,
+                    InputStream = content,
+                    ContentType = request.ContentType,
+                    AutoCloseStream = false,
+                },
+                ct);
+
+            return new StoredBlob(StorageProvider.S3, request.Key, response.ETag, content.Length);
+        }
     }
 
     public async Task<Stream> OpenReadAsync(StoredBlobRef blob, CancellationToken ct)
