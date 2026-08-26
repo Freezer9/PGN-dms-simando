@@ -30,7 +30,9 @@ services:
       # unprefixed mapping is reachable on every interface regardless of the
       # host firewall.
       - "127.0.0.1:8080:8080"
-    networks: [caddy]
+    networks:
+      - simando-internal
+      - caddy
     read_only: true
     tmpfs:
       - /tmp:rw,noexec,nosuid,size=256m
@@ -52,7 +54,8 @@ services:
       PGDATA: /var/lib/postgresql/18/main
     volumes:
       - postgres-data:/var/lib/postgresql
-    networks: [caddy]
+    networks:
+      - simando-internal
     cap_add: [CHOWN, DAC_READ_SEARCH, FOWNER, SETGID, SETUID]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U simando -d simando"]
@@ -76,7 +79,8 @@ services:
       RUSTFS_CONSOLE_ENABLE: "true"
     volumes:
       - rustfs-data:/data
-    networks: [caddy]
+    networks:
+      - simando-internal
     read_only: true
     tmpfs:
       - /logs:rw,noexec,nosuid,size=64m
@@ -88,6 +92,8 @@ services:
       retries: 5
 
 networks:
+  simando-internal:
+    driver: bridge
   caddy:
     external: true
 
