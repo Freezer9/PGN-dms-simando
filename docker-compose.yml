@@ -1,41 +1,93 @@
+# Full stack: the app plus its dependencies, reachable by service name.
+# Only the app publishes a port. For IDE-based work use docker-compose.dev.yml.
+
+name: simando
+
+x-hardened: &hardened
+  security_opt:
+    - no-new-privileges:true
+  cap_drop: [ALL]
+  restart: unless-stopped
+
 services:
-  api:
-    container_name: pgn-dms-simando-api
+  app:
+    <<: *hardened
     build:
       context: .
-      dockerfile: Api/Dockerfile
-    expose:
-      - "8080"
-    networks:
-      - caddy
+      dockerfile: src/Simando.Web/Dockerfile
     environment:
-      - Jwt__Key=${JWT_KEY}
-      - Jwt__Issuer=${JWT_ISSUER:-simando}
-      - Jwt__Audience=${JWT_AUDIENCE:-simando}
-    volumes:
-      - api_data:/app/Data
-      - api_uploads:/app/wwwroot/uploads
-    restart: unless-stopped
-
-  frontend:
-    container_name: pgn-dms-simando-frontend
-    build:
-      context: .
-      dockerfile: Frontend/Dockerfile
-    expose:
-      - "8080"
-    networks:
-      - caddy
-    environment:
-      - Api__BaseUrl=http://pgn-dms-simando-api:8080
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__Postgres: "Host=postgres;Port=5432;Database=simando;Username=simando;Password=simando"
+      Storage__Type: S3
+      Storage__S3__ServiceUrl: "http://rustfs:9000"
+      Storage__S3__Bucket: simando
+      Storage__S3__AccessKey: simando-dev
+      Storage__S3__SecretKey: simando-dev-secret
+      Storage__S3__ForcePathStyle: "true"
+    ports:
+      # 127.0.0.1, not 0.0.0.0 — Docker writes its own iptables rules, so an
+      # unprefixed mapping is reachable on every interface regardless of the
+      # host firewall.
+      - "127.0.0.1:8080:8080"
+    networks: [simando]
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=256m
     depends_on:
-      - api
-    restart: unless-stopped
+      postgres:
+        condition: service_healthy
+      rustfs:
+        condition: service_healthy
 
-volumes:
-  api_data:
-  api_uploads:
+  postgres:
+    <<: *hardened
+    image: postgis/postgis:18-3.6-alpine
+    environment:
+      POSTGRES_DB: simando
+      POSTGRES_USER: simando
+      POSTGRES_PASSWORD: simando
+      POSTGRES_INITDB_ARGS: "--data-checksums"
+      PGDATA: /var/lib/postgresql/18/main
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    networks: [simando]
+    cap_add: [CHOWN, DAC_READ_SEARCH, FOWNER, SETGID, SETUID]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U simando -d simando"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ⚠️ Pre-1.0 — pin the exact beta, never `latest`.
+  # ⚠️ Path-style addressing only; the S3 client must set ForcePathStyle = true
+  #    or it resolves bucket.rustfs and fails to connect.
+  rustfs:
+    <<: *hardened
+    image: rustfs/rustfs:1.0.0-beta.12
+    environment:
+      # _FILE variants exist for both keys — use those against /run/secrets in
+      # any deployed environment.
+      RUSTFS_ACCESS_KEY: simando-dev
+      RUSTFS_SECRET_KEY: simando-dev-secret
+      RUSTFS_VOLUMES: /data
+      RUSTFS_CONSOLE_ENABLE: "true"
+    volumes:
+      - rustfs-data:/data
+    networks: [simando]
+    read_only: true
+    tmpfs:
+      - /logs:rw,noexec,nosuid,size=64m
+      - /tmp:rw,noexec,nosuid,size=64m
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 networks:
-  caddy:
-    external: true
+  simando:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  rustfs-data:

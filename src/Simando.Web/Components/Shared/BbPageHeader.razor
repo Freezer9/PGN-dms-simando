@@ -1,0 +1,40 @@
+@namespace Simando.Web.Components.Shared
+
+<div class="@($"flex flex-col sm:flex-row sm:items-center justify-between gap-4 {(ShowBorder ? "border-b pb-4 mb-6" : "mb-6")} {Class}")">
+    <div class="space-y-1">
+        <div class="flex items-center gap-2.5 flex-wrap">
+            <h1 class="text-xl font-semibold tracking-tight text-foreground">@Title</h1>
+            @if (!string.IsNullOrEmpty(BadgeText))
+            {
+                <BbBadge Variant="@BadgeVariant">@BadgeText</BbBadge>
+            }
+        </div>
+        @if (!string.IsNullOrEmpty(Subtitle))
+        {
+            <p class="text-sm text-muted-foreground">@Subtitle</p>
+        }
+        else if (SubtitleTemplate is not null)
+        {
+            @SubtitleTemplate
+        }
+    </div>
+    @if (Actions is not null || MetaContent is not null)
+    {
+        <div class="flex items-center gap-2 shrink-0">
+            @MetaContent
+            @Actions
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+    [Parameter] public string? Subtitle { get; set; }
+    [Parameter] public RenderFragment? SubtitleTemplate { get; set; }
+    [Parameter] public string? BadgeText { get; set; }
+    [Parameter] public BadgeVariant BadgeVariant { get; set; } = BadgeVariant.Default;
+    [Parameter] public RenderFragment? Actions { get; set; }
+    [Parameter] public RenderFragment? MetaContent { get; set; }
+    [Parameter] public bool ShowBorder { get; set; } = true;
+    [Parameter] public string Class { get; set; } = string.Empty;
+}

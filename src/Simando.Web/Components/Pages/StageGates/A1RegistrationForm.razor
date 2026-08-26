@@ -1,0 +1,456 @@
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Components.Forms
+@using Simando.Application.Attachments
+@using Simando.Application.Common
+@using Simando.Application.Directory
+@using Simando.Application.MasterData
+@using Simando.Application.Registration
+@using Simando.Domain.Attachments
+@using Simando.Domain.MasterData
+@using Simando.Domain.Registration
+@using Simando.Domain.Security
+@inject ICompanyService CompanyService
+@inject IAttachmentService AttachmentService
+@inject IEntityService<Segment> SegmentService
+@inject ToastService ToastService
+
+@if (_detail is null && _loading)
+{
+    <p class="text-sm text-muted-foreground">Memuat A1 Registrasi…</p>
+}
+else
+{
+    <div class="space-y-4">
+        @if (_error is not null)
+        {
+            <BbAlert Variant="AlertVariant.Danger">
+                <BbAlertDescription>@_error</BbAlertDescription>
+            </BbAlert>
+        }
+
+        <EditForm Model="_form" OnValidSubmit="SaveAsync" OnInvalidSubmit="HandleInvalidSubmit">
+            <DataAnnotationsValidator />
+            <BbCard>
+                <BbCardHeader>
+                    <BbCardTitle>Registrasi Pelanggan (Form A1)</BbCardTitle>
+                </BbCardHeader>
+                <BbCardContent Class="space-y-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <BbFormFieldInput TValue="string" @bind-Value="_form.NamaPenanggungJawab" Label="Nama Penanggung Jawab *" Disabled="@(!CanEdit)" />
+                        <BbFormFieldInput TValue="string" @bind-Value="_form.Jabatan" Label="Jabatan *" Disabled="@(!CanEdit)" />
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <BbFormFieldSelect TValue="BasisKontrak?" @bind-Value="_form.BasisKontrak" Label="Basis Kontrak *" Placeholder="Pilih basis" Options="_basisKontrakOptions" Disabled="@(!CanEdit)" />
+                        <BbFormFieldSelect TValue="SkemaHarga?" @bind-Value="_form.SkemaHarga" Label="Skema Harga *" Placeholder="Pilih skema" Options="_skemaHargaOptions" Disabled="@(!CanEdit)" />
+                        <BbFormFieldSelect TValue="Guid?" @bind-Value="_form.SegmentId" Label="Segment *" Placeholder="Pilih segment" Options="_segmentOptions" Disabled="@(!CanEdit)" />
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                        <BbFormFieldInput TValue="string" @bind-Value="_form.KodeHarga" Label="Kode Harga" Disabled="@(!CanEdit)" />
+                        <BbFormFieldInput TValue="decimal?" @bind-Value="_form.HargaNilai" Label="Harga Nilai" Type="InputType.Number" Disabled="@(!CanEdit)" />
+                        <BbFormFieldSelect TValue="HargaCurrency?" @bind-Value="_form.HargaCurrency" Label="Mata Uang" Placeholder="Pilih currency" Options="_currencyOptions" Disabled="@(!CanEdit)" />
+                        <BbFormFieldSelect TValue="HargaUnit?" @bind-Value="_form.HargaUnit" Label="Satuan Harga" Placeholder="Pilih unit" Options="_unitOptions" Disabled="@(!CanEdit)" />
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <BbFormFieldSelect TValue="StatusBangunan?" @bind-Value="_form.StatusBangunan" Label="Status Bangunan" Placeholder="Pilih status" Options="_statusBangunanOptions" Disabled="@(!CanEdit)" />
+                        <BbFormFieldSelect TValue="Sektor?" @bind-Value="_form.Sektor" Label="Sektor" Placeholder="Pilih sektor" Options="_sektorOptions" Disabled="@(!CanEdit)" />
+                        <BbFormFieldInput TValue="string" @bind-Value="_form.ProduksiUtama" Label="Produksi Utama" Disabled="@(!CanEdit)" />
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <BbFormFieldInput TValue="string" @bind-Value="_form.JenisPeralatanGas" Label="Jenis Peralatan Gas" Disabled="@(!CanEdit)" />
+                        <BbFormFieldInput TValue="decimal?" @bind-Value="_form.TekananOperasiBarg" Label="Tekanan Operasi (barg)" Type="InputType.Number" Disabled="@(!CanEdit)" />
+                    </div>
+
+                    @if (_form.SkemaHarga == SkemaHarga.Sigas)
+                    {
+                        <div class="pt-2">
+                            <BbFormFieldCheckbox @bind-Checked="_form.MomSigasTersedia" Label="MOM SiGas tersedia" Disabled="@(!CanEdit)" />
+                        </div>
+                    }
+
+                    <!-- Dokumen Pendukung A1 & Syarat Permohonan NOL Gate -->
+                    <div class="pt-4 border-t space-y-3">
+                        <div class="flex items-center gap-2">
+                            <LucideIcon Name="shield-check" Class="size-4 text-primary" />
+                            <h4 class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Dokumen Pendukung A1 &amp; Syarat Gate Permohonan NOL</h4>
+                        </div>
+
+                        <!-- 1. Dokumen A1 Ber-TTD -->
+                        <div class="p-3 rounded-lg border bg-muted/20 space-y-2">
+                            <div class="flex items-center justify-between gap-2">
+                                <div class="flex items-center gap-2">
+                                    <LucideIcon Name="file-text" Class="size-4 text-primary shrink-0" />
+                                    <div>
+                                        <span class="text-xs font-semibold text-foreground">Form A1 Registrasi Ber-TTD *</span>
+                                        <p class="text-[11px] text-muted-foreground">Berkas A1 Registrasi (Lampiran 11) yang sudah ditandatangani.</p>
+                                    </div>
+                                </div>
+                                @if (_a1Attachment is not null)
+                                {
+                                    <BbBadge Variant="BadgeVariant.Default" Class="text-xs px-2 py-0.5 bg-emerald-600">
+                                        <LucideIcon Name="circle-check" Class="size-3 mr-1 inline" /> Terunggah
+                                    </BbBadge>
+                                }
+                                else
+                                {
+                                    <BbBadge Variant="BadgeVariant.Outline" Class="text-xs px-2 py-0.5 text-amber-600 border-amber-500/40">
+                                        Wajib
+                                    </BbBadge>
+                                }
+                            </div>
+                            @if (_a1Attachment is not null)
+                            {
+                                <div class="text-xs text-muted-foreground flex items-center justify-between pt-1">
+                                    <span>@_a1Attachment.Filename (@(_a1Attachment.SizeBytes / 1024) KB)</span>
+                                    <a href="/api/attachments/@_a1Attachment.Id/download" target="_blank" class="text-primary hover:underline font-medium">Unduh</a>
+                                </div>
+                            }
+                            @if (CanEdit)
+                            {
+                                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-1">
+                                    <InputFile OnChange="@(e => OnDocFileSelected(e, AttachmentKind.A1))" class="block w-full text-xs text-foreground file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-primary file:text-primary-foreground" />
+                                    <BbButton Size="ButtonSize.Small" OnClick="@(() => UploadDocAsync(AttachmentKind.A1))" Disabled="@(_selectedA1File is null || _uploadingDoc)" Class="shrink-0">
+                                        <LucideIcon Name="upload" Class="size-3 mr-1" /> Unggah A1
+                                    </BbButton>
+                                </div>
+                            }
+                        </div>
+
+                        <!-- 2. Bukti Kelayakan -->
+                        <div class="p-3 rounded-lg border bg-muted/20 space-y-2">
+                            <div class="flex items-center justify-between gap-2">
+                                <div class="flex items-center gap-2">
+                                    <LucideIcon Name="shield-check" Class="size-4 text-primary shrink-0" />
+                                    <div>
+                                        <span class="text-xs font-semibold text-foreground">Dokumen Bukti Kelayakan *</span>
+                                        <p class="text-[11px] text-muted-foreground">Berkas bukti kelayakan pelanggan.</p>
+                                    </div>
+                                </div>
+                                @if (_buktiKelayakanAttachment is not null)
+                                {
+                                    <BbBadge Variant="BadgeVariant.Default" Class="text-xs px-2 py-0.5 bg-emerald-600">
+                                        <LucideIcon Name="circle-check" Class="size-3 mr-1 inline" /> Terunggah
+                                    </BbBadge>
+                                }
+                                else
+                                {
+                                    <BbBadge Variant="BadgeVariant.Outline" Class="text-xs px-2 py-0.5 text-amber-600 border-amber-500/40">
+                                        Wajib
+                                    </BbBadge>
+                                }
+                            </div>
+                            @if (_buktiKelayakanAttachment is not null)
+                            {
+                                <div class="text-xs text-muted-foreground flex items-center justify-between pt-1">
+                                    <span>@_buktiKelayakanAttachment.Filename (@(_buktiKelayakanAttachment.SizeBytes / 1024) KB)</span>
+                                    <a href="/api/attachments/@_buktiKelayakanAttachment.Id/download" target="_blank" class="text-primary hover:underline font-medium">Unduh</a>
+                                </div>
+                            }
+                            @if (CanEdit)
+                            {
+                                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-1">
+                                    <InputFile OnChange="@(e => OnDocFileSelected(e, AttachmentKind.BuktiKelayakan))" class="block w-full text-xs text-foreground file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-primary file:text-primary-foreground" />
+                                    <BbButton Size="ButtonSize.Small" OnClick="@(() => UploadDocAsync(AttachmentKind.BuktiKelayakan))" Disabled="@(_selectedBuktiKelayakanFile is null || _uploadingDoc)" Class="shrink-0">
+                                        <LucideIcon Name="upload" Class="size-3 mr-1" /> Unggah Bukti
+                                    </BbButton>
+                                </div>
+                            }
+                        </div>
+
+                        <!-- 3. MOM SiGas (Required if SkemaHarga == SiGas) -->
+                        @if (_form.SkemaHarga == SkemaHarga.Sigas)
+                        {
+                            <div class="p-3 rounded-lg border bg-amber-500/10 border-amber-500/30 space-y-2">
+                                <div class="flex items-center justify-between gap-2">
+                                    <div class="flex items-center gap-2">
+                                        <LucideIcon Name="file-badge" Class="size-4 text-amber-600 shrink-0" />
+                                        <div>
+                                            <span class="text-xs font-semibold text-foreground">Dokumen MOM SiGas (Wajib untuk Skema SiGas) *</span>
+                                            <p class="text-[11px] text-muted-foreground">Berkas Minute of Meeting SiGas.</p>
+                                        </div>
+                                    </div>
+                                    @if (_momSigasAttachment is not null)
+                                    {
+                                        <BbBadge Variant="BadgeVariant.Default" Class="text-xs px-2 py-0.5 bg-emerald-600">
+                                            <LucideIcon Name="circle-check" Class="size-3 mr-1 inline" /> Terunggah
+                                        </BbBadge>
+                                    }
+                                    else
+                                    {
+                                        <BbBadge Variant="BadgeVariant.Outline" Class="text-xs px-2 py-0.5 text-amber-600 border-amber-500/40">
+                                            Wajib (SiGas)
+                                        </BbBadge>
+                                    }
+                                </div>
+                                @if (_momSigasAttachment is not null)
+                                {
+                                    <div class="text-xs text-muted-foreground flex items-center justify-between pt-1">
+                                        <span>@_momSigasAttachment.Filename (@(_momSigasAttachment.SizeBytes / 1024) KB)</span>
+                                        <a href="/api/attachments/@_momSigasAttachment.Id/download" target="_blank" class="text-primary hover:underline font-medium">Unduh</a>
+                                    </div>
+                                }
+                                @if (CanEdit)
+                                {
+                                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-1">
+                                        <InputFile OnChange="@(e => OnDocFileSelected(e, AttachmentKind.MomSigas))" class="block w-full text-xs text-foreground file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-primary file:text-primary-foreground" />
+                                        <BbButton Size="ButtonSize.Small" OnClick="@(() => UploadDocAsync(AttachmentKind.MomSigas))" Disabled="@(_selectedMomSigasFile is null || _uploadingDoc)" Class="shrink-0">
+                                            <LucideIcon Name="upload" Class="size-3 mr-1" /> Unggah MOM SiGas
+                                        </BbButton>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+
+                    @if (CanEdit)
+                    {
+                        <div class="flex justify-end pt-4">
+                            <BbButton Type="ButtonType.Submit" Disabled="@_saving">@(_saving ? "Menyimpan…" : "Simpan Form A1")</BbButton>
+                        </div>
+                    }
+                </BbCardContent>
+            </BbCard>
+        </EditForm>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public Guid CompanyId { get; set; }
+    [Parameter] public bool CanEdit { get; set; }
+    [Parameter] public Guid ActorUserId { get; set; }
+    [Parameter] public EffectivePermissions Actor { get; set; } = null!;
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    private sealed class FormModel
+    {
+        [Required(ErrorMessage = "Nama Penanggung Jawab wajib diisi")]
+        public string? NamaPenanggungJawab { get; set; }
+
+        [Required(ErrorMessage = "Jabatan Penanggung Jawab wajib diisi")]
+        public string? Jabatan { get; set; }
+
+        [Required(ErrorMessage = "Basis Kontrak wajib dipilih")]
+        public BasisKontrak? BasisKontrak { get; set; }
+
+        [Required(ErrorMessage = "Skema Harga wajib dipilih")]
+        public SkemaHarga? SkemaHarga { get; set; }
+
+        [Required(ErrorMessage = "Segment wajib dipilih")]
+        public Guid? SegmentId { get; set; }
+
+        public string? KodeHarga { get; set; }
+        public decimal? HargaNilai { get; set; }
+        public HargaCurrency? HargaCurrency { get; set; }
+        public HargaUnit? HargaUnit { get; set; }
+        public bool MomSigasTersedia { get; set; }
+        public StatusBangunan? StatusBangunan { get; set; }
+        public Sektor? Sektor { get; set; }
+        public string? ProduksiUtama { get; set; }
+        public string? JenisPeralatanGas { get; set; }
+        public decimal? TekananOperasiBarg { get; set; }
+    }
+
+    private bool _loading = true;
+    private bool _saving;
+    private string? _error;
+    private A1RegistrationDetail? _detail;
+    private FormModel _form = new();
+
+    private List<SelectOption<BasisKontrak?>> _basisKontrakOptions =
+    [
+        new(BasisKontrak.Harian, "Harian"),
+        new(BasisKontrak.Bulanan, "Bulanan"),
+        new(BasisKontrak.Tahunan, "Tahunan"),
+    ];
+
+    private List<SelectOption<SkemaHarga?>> _skemaHargaOptions =
+    [
+        new(SkemaHarga.Reguler, "Reguler"),
+        new(SkemaHarga.Sigas, "SiGas"),
+        new(SkemaHarga.Bersyarat, "Bersyarat"),
+    ];
+
+    private List<SelectOption<HargaCurrency?>> _currencyOptions =
+    [
+        new(HargaCurrency.USD, "USD"),
+        new(HargaCurrency.IDR, "IDR"),
+    ];
+
+    private List<SelectOption<HargaUnit?>> _unitOptions =
+    [
+        new(HargaUnit.MMBtu, "MMBtu"),
+        new(HargaUnit.M3, "m3"),
+    ];
+
+    private List<SelectOption<StatusBangunan?>> _statusBangunanOptions =
+    [
+        new(StatusBangunan.DalamRencana, "Dalam Rencana"),
+        new(StatusBangunan.DalamPembangunan, "Dalam Pembangunan"),
+        new(StatusBangunan.Eksisting, "Eksisting"),
+        new(StatusBangunan.ProsesEkspansi, "Proses Ekspansi"),
+    ];
+
+    private List<SelectOption<Sektor?>> _sektorOptions =
+    [
+        new(Sektor.Komersial, "Komersial"),
+        new(Sektor.Industri, "Industri"),
+        new(Sektor.Transportasi, "Transportasi"),
+    ];
+
+    private List<SelectOption<Guid?>> _segmentOptions = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        var segments = await SegmentService.GetAllAsync();
+        _segmentOptions = segments.Select(s => new SelectOption<Guid?>((Guid?)s.Id, s.Name)).ToList();
+
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        _loading = true;
+        _detail = await CompanyService.GetA1RegistrationAsync(CompanyId);
+        if (_detail is not null)
+        {
+            _form.NamaPenanggungJawab = _detail.NamaPenanggungJawab;
+            _form.Jabatan = _detail.Jabatan;
+            _form.BasisKontrak = _detail.BasisKontrak;
+            _form.SkemaHarga = _detail.SkemaHarga;
+            _form.SegmentId = _detail.SegmentId;
+            _form.KodeHarga = _detail.KodeHarga;
+            _form.HargaNilai = _detail.HargaNilai;
+            _form.HargaCurrency = _detail.HargaCurrency;
+            _form.HargaUnit = _detail.HargaUnit;
+            _form.MomSigasTersedia = _detail.MomSigasTersedia;
+            _form.StatusBangunan = _detail.StatusBangunan;
+            _form.Sektor = _detail.Sektor;
+            _form.ProduksiUtama = _detail.ProduksiUtama;
+            _form.JenisPeralatanGas = _detail.JenisPeralatanGas;
+            _form.TekananOperasiBarg = _detail.TekananOperasiBarg;
+        }
+
+        var attachments = await AttachmentService.GetCompanyAttachmentsAsync(CompanyId);
+        _a1Attachment = attachments.FirstOrDefault(a => a.Kind == AttachmentKind.A1 || a.Kind == AttachmentKind.Kk0);
+        _buktiKelayakanAttachment = attachments.FirstOrDefault(a => a.Kind == AttachmentKind.BuktiKelayakan);
+        _momSigasAttachment = attachments.FirstOrDefault(a => a.Kind == AttachmentKind.MomSigas);
+
+        _loading = false;
+    }
+
+    private AttachmentDetail? _a1Attachment;
+    private AttachmentDetail? _buktiKelayakanAttachment;
+    private AttachmentDetail? _momSigasAttachment;
+
+    private IBrowserFile? _selectedA1File;
+    private IBrowserFile? _selectedBuktiKelayakanFile;
+    private IBrowserFile? _selectedMomSigasFile;
+    private bool _uploadingDoc;
+
+    private void OnDocFileSelected(InputFileChangeEventArgs e, AttachmentKind kind)
+    {
+        if (kind == AttachmentKind.A1) _selectedA1File = e.File;
+        else if (kind == AttachmentKind.BuktiKelayakan) _selectedBuktiKelayakanFile = e.File;
+        else if (kind == AttachmentKind.MomSigas) _selectedMomSigasFile = e.File;
+    }
+
+    private async Task UploadDocAsync(AttachmentKind kind)
+    {
+        var file = kind == AttachmentKind.A1 ? _selectedA1File
+            : kind == AttachmentKind.BuktiKelayakan ? _selectedBuktiKelayakanFile
+            : _selectedMomSigasFile;
+
+        if (file is null) return;
+        _uploadingDoc = true;
+        _error = null;
+
+        try
+        {
+            await using var stream = file.OpenReadStream(maxAllowedSize: 25 * 1024 * 1024);
+            var req = new UploadAttachmentRequest(
+                kind,
+                file.Name,
+                file.ContentType ?? "application/octet-stream",
+                file.Size,
+                null,
+                stream);
+
+            var result = await AttachmentService.UploadAttachmentAsync(CompanyId, req, ActorUserId);
+            if (result.Succeeded)
+            {
+                if (kind == AttachmentKind.A1) _selectedA1File = null;
+                else if (kind == AttachmentKind.BuktiKelayakan) _selectedBuktiKelayakanFile = null;
+                else if (kind == AttachmentKind.MomSigas) _selectedMomSigasFile = null;
+
+                await LoadDataAsync();
+                ToastService.Success("Dokumen berhasil diunggah.", "Tersimpan");
+            }
+            else
+            {
+                _error = result.Error;
+                ToastService.Error(result.Error ?? "Gagal mengunggah dokumen.", "Gagal");
+            }
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+            ToastService.Error($"Gagal mengunggah berkas: {ex.Message}", "Gagal");
+        }
+        finally
+        {
+            _uploadingDoc = false;
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        _saving = true;
+        _error = null;
+
+        var req = new SaveA1RegistrationRequest(
+            _detail?.TanggalRegistrasi ?? DateOnly.FromDateTime(DateTime.Today),
+            _form.NamaPenanggungJawab,
+            _form.Jabatan,
+            _detail?.BulanDimulai,
+            _form.BasisKontrak,
+            _form.SkemaHarga,
+            _form.SegmentId,
+            _form.KodeHarga,
+            _form.HargaNilai,
+            _form.HargaCurrency,
+            _form.HargaUnit,
+            _detail?.CapexAwal,
+            _form.MomSigasTersedia,
+            _form.StatusBangunan,
+            _form.Sektor,
+            _form.ProduksiUtama,
+            _form.JenisPeralatanGas,
+            _form.TekananOperasiBarg,
+            _detail?.SignedDocumentId,
+            _detail?.SignatureMethod,
+            _detail?.UsagePeriods ?? []);
+
+        var result = await CompanyService.SaveA1RegistrationAsync(CompanyId, req, ActorUserId, Actor);
+        if (result.Succeeded)
+        {
+            await LoadDataAsync();
+            ToastService.Success("Data A1 Registrasi berhasil disimpan.", "Tersimpan");
+            if (OnSaved.HasDelegate)
+            {
+                await OnSaved.InvokeAsync();
+            }
+        }
+        else
+        {
+            _error = result.Error;
+            ToastService.Error(result.Error ?? "Gagal menyimpan Form A1.", "Gagal");
+        }
+
+        _saving = false;
+    }
+
+    private void HandleInvalidSubmit() => ToastService.Error("Mohon lengkapi semua kolom yang wajib diisi.", "Validasi Gagal");
+}

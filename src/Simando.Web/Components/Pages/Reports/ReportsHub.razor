@@ -1,0 +1,102 @@
+@page "/reports"
+@inherits AdminPageBase
+@using Simando.Domain.Security
+
+<PageTitle>Pusat Laporan & Analitik - DMS Simando</PageTitle>
+
+@if (Authorized)
+{
+    <BbPageHeader Title="Pusat Laporan & Analitik" Subtitle="Kumpulan laporan analitik kinerja sales, alur konversi penjualan, estimasi kebutuhan gas, dan pemantauan SLA berkas." />
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- 1. Umur Berkas & SLA (Ageing) -->
+        <a href="/reports/ageing" class="group block h-full">
+            <BbCard Class="h-full hover:border-primary hover:shadow-sm transition-all bg-card">
+                <BbCardHeader>
+                    <div class="flex items-center justify-between">
+                        <div class="p-2 rounded-lg bg-sky-50 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300">
+                            <LucideIcon Name="timer" Class="size-5" />
+                        </div>
+                        <span class="inline-flex items-center gap-1 text-xs text-muted-foreground group-hover:text-primary transition-colors">Lihat Laporan <LucideIcon Name="arrow-right" Class="size-3.5" /></span>
+                    </div>
+                    <BbCardTitle Class="mt-3 text-base font-semibold group-hover:text-primary transition-colors">Umur Berkas &amp; SLA (Ageing)</BbCardTitle>
+                    <BbCardDescription Class="text-xs">Pemantauan durasi waktu tunggu berkas aktif di setiap langkah persetujuan.</BbCardDescription>
+                </BbCardHeader>
+            </BbCard>
+        </a>
+
+        <!-- 2. Funnel & Konversi Sales -->
+        <a href="/reports/funnel" class="group block h-full">
+            <BbCard Class="h-full hover:border-primary hover:shadow-sm transition-all bg-card">
+                <BbCardHeader>
+                    <div class="flex items-center justify-between">
+                        <div class="p-2 rounded-lg bg-emerald-50 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+                            <LucideIcon Name="filter" Class="size-5" />
+                        </div>
+                        <span class="inline-flex items-center gap-1 text-xs text-muted-foreground group-hover:text-primary transition-colors">Lihat Laporan <LucideIcon Name="arrow-right" Class="size-3.5" /></span>
+                    </div>
+                    <BbCardTitle Class="mt-3 text-base font-semibold group-hover:text-primary transition-colors">Funnel &amp; Konversi Sales</BbCardTitle>
+                    <BbCardDescription Class="text-xs">Analisis tingkat konversi dan akumulasi berkas dari direktori awal hingga penerbitan.</BbCardDescription>
+                </BbCardHeader>
+            </BbCard>
+        </a>
+
+        <!-- 3. Potensi Kebutuhan Gas (Gas Demand) -->
+        <a href="/reports/gas-demand" class="group block h-full">
+            <BbCard Class="h-full hover:border-primary hover:shadow-sm transition-all bg-card">
+                <BbCardHeader>
+                    <div class="flex items-center justify-between">
+                        <div class="p-2 rounded-lg bg-amber-50 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
+                            <LucideIcon Name="flame" Class="size-5" />
+                        </div>
+                        <span class="inline-flex items-center gap-1 text-xs text-muted-foreground group-hover:text-primary transition-colors">Lihat Laporan <LucideIcon Name="arrow-right" Class="size-3.5" /></span>
+                    </div>
+                    <BbCardTitle Class="mt-3 text-base font-semibold group-hover:text-primary transition-colors">Potensi Kebutuhan Gas (Gas Demand)</BbCardTitle>
+                    <BbCardDescription Class="text-xs">Proyeksi total volume kebutuhan gas per tahap pipeline, wilayah, dan sektor industri.</BbCardDescription>
+                </BbCardHeader>
+            </BbCard>
+        </a>
+
+        <!-- 4. Produktivitas Survei KK0 -->
+        <a href="/reports/survey-productivity" class="group block h-full">
+            <BbCard Class="h-full hover:border-primary hover:shadow-sm transition-all bg-card">
+                <BbCardHeader>
+                    <div class="flex items-center justify-between">
+                        <div class="p-2 rounded-lg bg-indigo-50 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300">
+                            <LucideIcon Name="clipboard-check" Class="size-5" />
+                        </div>
+                        <span class="inline-flex items-center gap-1 text-xs text-muted-foreground group-hover:text-primary transition-colors">Lihat Laporan <LucideIcon Name="arrow-right" Class="size-3.5" /></span>
+                    </div>
+                    <BbCardTitle Class="mt-3 text-base font-semibold group-hover:text-primary transition-colors">Produktivitas Survei KK0</BbCardTitle>
+                    <BbCardDescription Class="text-xs">Metrik produktivitas dan penyelesaian survei KK0 per Petugas Sales.</BbCardDescription>
+                </BbCardHeader>
+            </BbCard>
+        </a>
+
+        <!-- 5. Hasil Persetujuan NOL / RL -->
+        <a href="/reports/nol-outcomes" class="group block h-full">
+            <BbCard Class="h-full hover:border-primary hover:shadow-sm transition-all bg-card">
+                <BbCardHeader>
+                    <div class="flex items-center justify-between">
+                        <div class="p-2 rounded-lg bg-purple-50 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300">
+                            <LucideIcon Name="file-check" Class="size-5" />
+                        </div>
+                        <span class="inline-flex items-center gap-1 text-xs text-muted-foreground group-hover:text-primary transition-colors">Lihat Laporan <LucideIcon Name="arrow-right" Class="size-3.5" /></span>
+                    </div>
+                    <BbCardTitle Class="mt-3 text-base font-semibold group-hover:text-primary transition-colors">Hasil Persetujuan NOL / RL</BbCardTitle>
+                    <BbCardDescription Class="text-xs">Statistik rasio persetujuan NOL vs penolakan (RL) beserta syarat dan alasannya.</BbCardDescription>
+                </BbCardHeader>
+            </BbCard>
+        </a>
+    </div>
+}
+
+@code {
+    protected override Capability[] RequiredCapabilities => [Capability.ViewDashboardFunnel];
+
+    protected override BreadcrumbItem[] Breadcrumbs =>
+    [
+        new("Beranda", "/"),
+        new("Laporan", null),
+    ];
+}

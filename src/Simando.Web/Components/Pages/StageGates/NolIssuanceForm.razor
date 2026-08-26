@@ -1,0 +1,176 @@
+@using System.ComponentModel.DataAnnotations
+@using Simando.Application.Common
+@using Simando.Application.Directory
+@using Simando.Application.Nol
+@using Simando.Domain.Nol
+@using Simando.Domain.Security
+@inject ICompanyService CompanyService
+@inject ToastService ToastService
+
+@if (_detail is null && _loading)
+{
+    <p class="text-sm text-muted-foreground">Memuat Penerbitan NOL/RL…</p>
+}
+else
+{
+    <div class="space-y-4">
+        @if (_error is not null)
+        {
+            <BbAlert Variant="AlertVariant.Danger">
+                <BbAlertDescription>@_error</BbAlertDescription>
+            </BbAlert>
+        }
+
+        <EditForm Model="_form" OnValidSubmit="SaveAsync" OnInvalidSubmit="HandleInvalidSubmit">
+            <DataAnnotationsValidator />
+            <BbCard>
+                <BbCardHeader>
+                    <BbCardTitle>Penerbitan Surat (Lampiran 16)</BbCardTitle>
+                </BbCardHeader>
+                <BbCardContent Class="space-y-6">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <BbFormFieldSelect TValue="NolOutcome" @bind-Value="_form.Outcome" Label="Hasil Keputusan *" Options="_outcomeOptions" Disabled="@(!CanEdit)" />
+                        <BbFormFieldInput TValue="string" @bind-Value="_form.NomorNotaDinas" Label="Nomor Nota Dinas Penerbitan *" Disabled="@(!CanEdit)" />
+                    </div>
+
+                    @if (_form.Outcome == NolOutcome.Nol)
+                    {
+                        <div class="space-y-4 pt-2">
+                            <h3 class="text-sm font-semibold">Masa Berlaku Surat</h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <BbFormFieldInput TValue="string" @bind-Value="_syaratInput" Label="Tambah Syarat Kontrak" Placeholder="Ketik syarat lalu tekan Tambah" Disabled="@(!CanEdit)" />
+                                <div class="flex items-end">
+                                    <BbButton Type="ButtonType.Button" Variant="ButtonVariant.Outline" OnClick="AddSyarat" Disabled="@(string.IsNullOrWhiteSpace(_syaratInput) || !CanEdit)">Tambah Syarat</BbButton>
+                                </div>
+                            </div>
+
+                            @if (_kontrakBersyarat.Count > 0)
+                            {
+                                <div class="space-y-2">
+                                    <p class="text-sm font-medium">Daftar Syarat Kontrak:</p>
+                                    <ul class="list-disc pl-5 space-y-1 text-sm">
+                                        @for (var i = 0; i < _kontrakBersyarat.Count; i++)
+                                        {
+                                            var idx = i;
+                                            <li class="flex items-center justify-between">
+                                                <span>@_kontrakBersyarat[idx]</span>
+                                                @if (CanEdit)
+                                                {
+                                                    <button type="button" class="text-xs text-destructive hover:underline ml-2" @onclick="@(() => RemoveSyarat(idx))">Hapus</button>
+                                                }
+                                            </li>
+                                        }
+                                    </ul>
+                                </div>
+                            }
+                        </div>
+                    }
+
+                    @if (CanEdit)
+                    {
+                        <div class="flex justify-end pt-4">
+                            <BbButton Type="ButtonType.Submit" Disabled="@_saving">@(_saving ? "Menyimpan…" : "Simpan Keputusan Penerbitan")</BbButton>
+                        </div>
+                    }
+                </BbCardContent>
+            </BbCard>
+        </EditForm>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public Guid CompanyId { get; set; }
+    [Parameter] public bool CanEdit { get; set; }
+    [Parameter] public Guid ActorUserId { get; set; }
+    [Parameter] public EffectivePermissions Actor { get; set; } = null!;
+
+    private sealed class FormModel
+    {
+        [Required(ErrorMessage = "Hasil Keputusan wajib dipilih")]
+        public NolOutcome Outcome { get; set; } = NolOutcome.Nol;
+
+        [Required(ErrorMessage = "Nomor Nota Dinas Penerbitan wajib diisi")]
+        public string? NomorNotaDinas { get; set; }
+    }
+
+    private bool _loading = true;
+    private bool _saving;
+    private string? _error;
+    private NolIssuanceDetail? _detail;
+    private FormModel _form = new();
+
+    private string? _syaratInput;
+    private List<string> _kontrakBersyarat = [];
+
+    private List<SelectOption<NolOutcome>> _outcomeOptions =
+    [
+        new(NolOutcome.Nol, "NOL (No Objection Letter) : Disetujui"),
+        new(NolOutcome.Rl, "RL (Refusal Letter) : Ditolak"),
+    ];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        _loading = true;
+        _detail = await CompanyService.GetNolIssuanceAsync(CompanyId);
+        if (_detail is not null)
+        {
+            _form.Outcome = _detail.Outcome;
+            _form.NomorNotaDinas = _detail.NomorNotaDinas;
+            _kontrakBersyarat = _detail.KontrakBersyarat.ToList();
+        }
+        _loading = false;
+    }
+
+    private void AddSyarat()
+    {
+        if (!string.IsNullOrWhiteSpace(_syaratInput))
+        {
+            _kontrakBersyarat.Add(_syaratInput.Trim());
+            _syaratInput = null;
+        }
+    }
+
+    private void RemoveSyarat(int index)
+    {
+        if (index >= 0 && index < _kontrakBersyarat.Count)
+        {
+            _kontrakBersyarat.RemoveAt(index);
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        _saving = true;
+        _error = null;
+
+        var req = new SaveNolIssuanceRequest(
+            _form.Outcome,
+            _form.NomorNotaDinas,
+            _kontrakBersyarat,
+            _detail?.BerlakuSejak,
+            _detail?.BerlakuSampai,
+            _detail?.DocumentId,
+            _detail?.ApprovedTerms ?? []);
+
+        var result = await CompanyService.SaveNolIssuanceAsync(CompanyId, req, ActorUserId, Actor);
+        if (result.Succeeded)
+        {
+            await LoadDataAsync();
+            ToastService.Success("Penerbitan Surat NOL/RL berhasil disimpan.", "Tersimpan");
+        }
+        else
+        {
+            _error = result.Error;
+            ToastService.Error(result.Error ?? "Gagal menyimpan Penerbitan Surat NOL/RL.", "Gagal");
+        }
+
+        _saving = false;
+    }
+
+    private void HandleInvalidSubmit() => ToastService.Error("Mohon lengkapi semua kolom yang wajib diisi.", "Validasi Gagal");
+}

@@ -1,0 +1,65 @@
+CELL COMMENTS — 1. Worksheet Sistem Sales Tools (1).xlsx
+Author: Rizal Yuniarto, 2026-08-03
+============================================================
+
+--- Entry Apps ---
+      C3 : Data bisa di filter : Lokasi / Jenis Produksi
+     D72 : Entry :
+    F110 : Sesuai Data base
+     F48 : Tuliskan produk utama
+     F49 : Tuliskan produk utama
+     F50 : Tuliskan produk utama
+     F51 : Tuliskan produk utama
+     F54 : Tuliskan produk utama
+     F55 : Tuliskan produk utama
+     F56 : Tuliskan produk utama
+     F57 : Tuliskan produk utama
+     F60 : Tulis angka
+     F72 : Memilih Unit
+     F95 : Sesuai Data base
+    G102 : Date
+     G87 : Date
+     H83 : Bisa terisi dari data Regristrasi Onlile / Input dari registrasi Manual
+    I120 : Drop down
+     I49 : Drop list : Impor/Lokal
+     I50 : Drop list : Impor/Lokal
+     I51 : Drop list : Impor/Lokal
+     I54 : Drop list : Impor/Lokal
+     I55 : Drop list : Impor/Lokal
+     I56 : Drop list : Impor/Lokal
+     I57 : Drop list : Impor/Lokal
+     J48 : Drop down Negara
+     J49 : Drop down Negara
+     J50 : Drop down Negara
+     J51 : Drop down Negara
+     J60 : Drop down (1, 2, 3)
+     K66 : Dropdown : TR/PK/Kw
+    L108 : Dropdown : / Bronze 1 / Bronze 2 / Bronze 3 / Silver / Gold / Platinum
+     L72 : Pilih Unit : Ton/Liter/Kwh
+     L93 : Dropdown : / Bronze 1 / Bronze 2 / Bronze 3 / Silver / Gold / Platinum
+     L94 : Drop down List, jika tidak ada bisa Input baru
+     M48 : Drop down (%) atau (Ton/KL/m2) per Bulan
+     M49 : Drop down (%) atau (Ton/KL/m2) per Bulan
+     M50 : Drop down (%) atau (Ton/KL/m2) per Bulan
+     M51 : Drop down (%) atau (Ton/KL/m2) per Bulan
+     M54 : Drop down (%) atau (Ton/KL/m2) per Bulan
+     M55 : Drop down (%) atau (Ton/KL/m2) per Bulan
+     M56 : Drop down (%) atau (Ton/KL/m2) per Bulan
+     M57 : Drop down (%) atau (Ton/KL/m2) per Bulan
+     M66 : Tuliskan
+     M72 : Otomatis
+     M73 : Otomatis
+
+--- Directory Industry ---
+      E3 : All Provinsi
+      F3 : Ada pilihan : Semua
+      G3 : Ada Pilihan : Semua
+      I3 : Ada Pilihan : Semua
+
+--- Data Plotting ---
+      F3 : All Provinsi
+      G3 : Ada pilihan : Semua
+      H3 : Ada Pilihan : Semua
+      J3 : Ada Pilihan : Semua
+
+54 comments

@@ -1,0 +1,11 @@
+FORMULAS — 1. Worksheet Sistem Sales Tools (1).xlsx
+============================================================
+Data Plotting!D31  =60/64*D30
+Data Plotting!F31  =D31*1000*30
+Data Plotting!A32  =D30*C31
+Data Plotting!F32  =D32*1000*30
+Data Plotting!F33  =F31/F32
+KK0!K61  =I61*6000/9000
+KK0!K62  =I62*9000/9000
+KK0!K63  =I63*9000/9000
+KK0!K67  =SUM(K61:K66)

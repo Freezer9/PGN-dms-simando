@@ -1,0 +1,114 @@
+@page "/reports/gas-demand"
+@inherits AdminPageBase
+@using Simando.Application.Reports
+@using Simando.Domain.Security
+@inject IReportsService ReportsService
+
+<PageTitle>Potensi Kebutuhan Energi - DMS Simando</PageTitle>
+
+@if (Authorized)
+{
+    <div class="space-y-6">
+        <BbPageHeader Title="Laporan Potensi Kebutuhan Energi (Gas Demand)" Subtitle="Akumulasi estimasi volume kebutuhan gas per tahap, region, dan industri.">
+            <Actions>
+                <a href="/reports/export/gas-demand" download target="_blank" class="inline-flex items-center justify-center rounded-md text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4">
+                    <LucideIcon Name="download" Class="mr-2 h-4 w-4" />
+                    Ekspor Excel (.xlsx)
+                </a>
+            </Actions>
+        </BbPageHeader>
+
+        @if (_data is null)
+        {
+            <p class="text-sm text-muted-foreground">Memuat laporan potensi kebutuhan energi…</p>
+        }
+        else
+        {
+            <BbCard Class="border-blue-200 bg-blue-50/10">
+                <BbCardHeader>
+                    <BbCardTitle>Grand Total Kebutuhan Energi Pipeline</BbCardTitle>
+                </BbCardHeader>
+                <BbCardContent>
+                    <div class="text-3xl font-bold text-foreground">@_data.GrandTotalDemandMMBtu.ToString("N2") <span class="text-base font-normal text-muted-foreground">MMBtu/Bulan</span></div>
+                </BbCardContent>
+            </BbCard>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- By Stage -->
+                <BbCard>
+                    <BbCardHeader>
+                        <BbCardTitle>Kebutuhan Gas per Tahap</BbCardTitle>
+                    </BbCardHeader>
+                    <BbCardContent>
+                        <div class="space-y-2 text-xs divide-y">
+                            @foreach (var item in _data.ByStage)
+                            {
+                                <div class="pt-2 flex justify-between items-center">
+                                    <span>Tahap @item.Stage : @item.StageName (@item.RecordCount record):</span>
+                                    <span class="font-bold text-foreground">@item.TotalDemandMMBtu.ToString("N2") MMBtu</span>
+                                </div>
+                            }
+                        </div>
+                    </BbCardContent>
+                </BbCard>
+
+                <!-- By Region -->
+                <BbCard>
+                    <BbCardHeader>
+                        <BbCardTitle>Kebutuhan Gas per Region</BbCardTitle>
+                    </BbCardHeader>
+                    <BbCardContent>
+                        <div class="space-y-2 text-xs divide-y">
+                            @foreach (var item in _data.ByRegion)
+                            {
+                                <div class="pt-2 flex justify-between items-center">
+                                    <span>@item.RegionName (@item.RecordCount record):</span>
+                                    <span class="font-bold text-foreground">@item.TotalDemandMMBtu.ToString("N2") MMBtu</span>
+                                </div>
+                            }
+                        </div>
+                    </BbCardContent>
+                </BbCard>
+            </div>
+
+            <!-- By Industry -->
+            <BbCard>
+                <BbCardHeader>
+                    <BbCardTitle>Kebutuhan Gas per Sektor Industri</BbCardTitle>
+                </BbCardHeader>
+                <BbCardContent>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
+                        @foreach (var item in _data.ByIndustry)
+                        {
+                            <div class="p-3 border rounded-md bg-muted/20 flex flex-col justify-between">
+                                <div class="font-semibold text-foreground">@item.IndustryTypeName</div>
+                                <div class="mt-2 flex justify-between items-baseline">
+                                    <span class="text-muted-foreground text-[11px]">@item.RecordCount calon pelanggan</span>
+                                    <span class="font-bold text-primary">@item.TotalDemandMMBtu.ToString("N2") MMBtu</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </BbCardContent>
+            </BbCard>
+        }
+    </div>
+}
+
+@code {
+    private GasDemandReportDto? _data;
+
+    protected override Capability[] RequiredCapabilities => [Capability.ViewDashboardFunnel];
+
+    protected override BreadcrumbItem[] Breadcrumbs =>
+    [
+        new("Beranda", "/"),
+        new("Laporan", "/reports"),
+        new("Potensi Kebutuhan Energi", null),
+    ];
+
+    protected override async Task OnAuthorizedInitializedAsync()
+    {
+        _data = await ReportsService.GetGasDemandAsync(CurrentUser.Permissions);
+    }
+}

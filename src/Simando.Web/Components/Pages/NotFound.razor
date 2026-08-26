@@ -1,0 +1,17 @@
+@page "/not-found"
+@layout MainLayout
+
+<PageTitle>Halaman Tidak Ditemukan - DMS Simando</PageTitle>
+
+<div class="flex items-center justify-center p-4 min-h-[60vh]">
+    <BbEmpty Title="Halaman Tidak Ditemukan"
+             Description="Maaf, halaman atau sumber daya yang Anda cari tidak ada atau telah dipindahkan."
+             Size="EmptySize.Default">
+        <Icon>
+            <LucideIcon Name="file-x" Class="h-10 w-10 text-muted-foreground" />
+        </Icon>
+        <ChildContent>
+            <BbButton Href="/" Class="mt-4">Kembali ke Beranda</BbButton>
+        </ChildContent>
+    </BbEmpty>
+</div>

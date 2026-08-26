@@ -1,0 +1,242 @@
+@page "/tasks"
+@inherits AdminPageBase
+@using Simando.Application.Tasks
+@using Simando.Application.Workflow
+@using Simando.Domain.Audit
+@using Simando.Domain.Security
+@inject ITasksService Service
+
+<PageTitle>Tugas Saya - DMS Simando</PageTitle>
+
+@if (Authorized)
+{
+    <BbPageHeader Title="Tugas Saya" Subtitle="Tahapan persetujuan yang menunggu tindakan atau verifikasi Anda." />
+
+    <BbCard>
+        <BbCardContent Class="pt-6">
+            <BbTabs DefaultValue="menunggu">
+                <BbTabsList>
+                    <BbTabsTrigger Value="menunggu" Class="gap-1.5 font-semibold">
+                        <LucideIcon Name="zap" Class="size-4 text-amber-500" /> Perlu Tindakan Saya (@_myTasks.Count)
+                    </BbTabsTrigger>
+                    <BbTabsTrigger Value="region" Class="gap-1.5">
+                        <LucideIcon Name="hourglass" Class="size-4 text-blue-500" /> Dalam Proses di Region (@_regionTasks.Count)
+                    </BbTabsTrigger>
+                    <BbTabsTrigger Value="riwayat" Class="gap-1.5">
+                        <LucideIcon Name="check-circle-2" Class="size-4 text-emerald-500" /> Riwayat Persetujuan
+                    </BbTabsTrigger>
+                </BbTabsList>
+
+                <BbTabsContent Value="menunggu">
+                    @RenderFilters()
+                    <BbDataTable TData="TaskListItem" Data="FilteredMyTasks" InitialPageSize="25" AriaLabel="Menunggu tindakan saya">
+                        <Columns>
+                            @RenderTaskColumns()
+                        </Columns>
+                        <EmptyTemplate>
+                            <BbEmpty Title="Tidak ada tugas menunggu" Description="Semua langkah yang menjadi giliran Anda sudah ditindaklanjuti." />
+                        </EmptyTemplate>
+                    </BbDataTable>
+                </BbTabsContent>
+
+                <BbTabsContent Value="riwayat">
+                    <BbDataTable TData="TaskHistoryItem" Data="_history" InitialPageSize="25" AriaLabel="Riwayat tindakan saya">
+                        <Columns>
+                            <BbDataTableColumn TData="TaskHistoryItem" TValue="string" Header="Perusahaan" Width="30%">
+                                <CellTemplate Context="h">
+                                    <div class="flex flex-col">
+                                        <span class="font-medium">@h.NamaPerusahaan</span>
+                                        <span class="text-xs text-muted-foreground">@h.Nomor</span>
+                                    </div>
+                                </CellTemplate>
+                            </BbDataTableColumn>
+                            <BbDataTableColumn TData="TaskHistoryItem" TValue="string" Header="Tindakan" Width="140px">
+                                <CellTemplate Context="h">@ActionLabel(h.Action)</CellTemplate>
+                            </BbDataTableColumn>
+                            <BbDataTableColumn TData="TaskHistoryItem" TValue="DateTimeOffset" Header="Tanggal" Property="@(h => h.ActedAt)" Sortable="true" Width="140px" />
+                            <BbDataTableColumn TData="TaskHistoryItem" TValue="string" Header="Catatan">
+                                <CellTemplate Context="h">
+                                    @if (string.IsNullOrWhiteSpace(h.Comment))
+                                    {
+                                        <span class="text-muted-foreground">-</span>
+                                    }
+                                    else
+                                    {
+                                        @h.Comment
+                                    }
+                                </CellTemplate>
+                            </BbDataTableColumn>
+                        </Columns>
+                        <EmptyTemplate>
+                            <BbEmpty Title="Belum ada riwayat" Description="Tindakan yang Anda ambil akan muncul di sini." />
+                        </EmptyTemplate>
+                    </BbDataTable>
+                </BbTabsContent>
+
+                <BbTabsContent Value="region">
+                    @RenderFilters()
+                    <BbDataTable TData="TaskListItem" Data="FilteredRegionTasks" InitialPageSize="25" AriaLabel="Semua berkas aktif di wilayah saya">
+                        <Columns>
+                            @RenderTaskColumns()
+                        </Columns>
+                        <EmptyTemplate>
+                            <BbEmpty Title="Tidak ada berkas aktif" Description="Tidak ada berkas yang sedang berjalan di wilayah Anda." />
+                        </EmptyTemplate>
+                    </BbDataTable>
+                </BbTabsContent>
+            </BbTabs>
+        </BbCardContent>
+    </BbCard>
+}
+
+@code {
+    private enum SortMode
+    {
+        WaitingOldestFirst,
+        NameAscending,
+    }
+
+    private List<TaskListItem> _myTasks = [];
+    private List<TaskListItem> _regionTasks = [];
+    private List<TaskHistoryItem> _history = [];
+
+    private string _stepFilter = "";
+    private string _areaFilter = "";
+    private SortMode _sortMode = SortMode.WaitingOldestFirst;
+
+    protected override Capability[] RequiredCapabilities => [Capability.ActOnApprovalStep];
+
+    protected override BreadcrumbItem[] Breadcrumbs =>
+    [
+        new("Beranda", "/"),
+        new("Tugas Saya", null),
+    ];
+
+    protected override async Task OnAuthorizedInitializedAsync()
+    {
+        _myTasks = (await Service.GetMyTasksAsync(CurrentUser.UserId, CurrentUser.Permissions, CurrentUser.Roles)).ToList();
+        _regionTasks = (await Service.GetRegionTasksAsync(CurrentUser.Permissions)).ToList();
+        _history = (await Service.GetHistoryAsync(CurrentUser.UserId)).ToList();
+    }
+
+    private List<WorkflowStepKind> StepOptions =>
+        _myTasks.Concat(_regionTasks).Select(t => t.StepKind).Distinct().ToList();
+
+    private List<string> AreaOptions =>
+        _myTasks.Concat(_regionTasks).Select(t => t.AreaName).Distinct().OrderBy(a => a).ToList();
+
+    private List<TaskListItem> FilteredMyTasks => Sort(Filter(_myTasks)).ToList();
+
+    private List<TaskListItem> FilteredRegionTasks => Sort(Filter(_regionTasks)).ToList();
+
+    private IEnumerable<TaskListItem> Filter(IEnumerable<TaskListItem> items) => items
+        .Where(t => string.IsNullOrEmpty(_stepFilter) || t.StepKind.ToString() == _stepFilter)
+        .Where(t => string.IsNullOrEmpty(_areaFilter) || t.AreaName == _areaFilter);
+
+    private IEnumerable<TaskListItem> Sort(IEnumerable<TaskListItem> items) => _sortMode switch
+    {
+        SortMode.NameAscending => items.OrderBy(t => t.NamaPerusahaan),
+        _ => items.OrderBy(t => t.WaitingSince),
+    };
+
+    private void OnStepFilterChanged(string value) => _stepFilter = value;
+
+    private void OnAreaFilterChanged(string value) => _areaFilter = value;
+
+    private void OnSortChanged(string value) =>
+        _sortMode = value == nameof(SortMode.NameAscending) ? SortMode.NameAscending : SortMode.WaitingOldestFirst;
+
+    private static string WaitingLabel(DateTimeOffset waitingSince) => WorkflowLabels.WaitingLabel(waitingSince);
+
+    private static string StepKindLabel(WorkflowStepKind kind) => WorkflowLabels.StepKindLabel(kind);
+
+    private static string ActionLabel(StatusEventAction action) => WorkflowLabels.ActionLabel(action);
+
+    private IEnumerable<SelectOption<string>> StepFilterOptions =>
+        StepOptions.Select(s => new SelectOption<string>(s.ToString(), StepKindLabel(s)))
+            .Prepend(new SelectOption<string>("", "Tahap: Semua"));
+
+    private IEnumerable<SelectOption<string>> AreaFilterOptions =>
+        AreaOptions.Select(a => new SelectOption<string>(a, a))
+            .Prepend(new SelectOption<string>("", "Area: Semua"));
+
+    private IEnumerable<SelectOption<string>> SortModeOptions => new List<SelectOption<string>>
+    {
+        new(nameof(SortMode.WaitingOldestFirst), "Urutkan: Terlama menunggu"),
+        new(nameof(SortMode.NameAscending), "Urutkan: Nama Perusahaan (A-Z)")
+    };
+
+    private RenderFragment RenderFilters() => @<div class="flex flex-wrap gap-2 mb-3">
+        <BbCombobox TValue="string"
+                    Value="@_stepFilter"
+                    ValueChanged="OnStepFilterChanged"
+                    Options="StepFilterOptions"
+                    Placeholder="Tahap: Semua"
+                    SearchPlaceholder="Cari tahap..."
+                    EmptyMessage="Tidak ditemukan"
+                    Class="w-44 h-8 text-xs" />
+        <BbCombobox TValue="string"
+                    Value="@_areaFilter"
+                    ValueChanged="OnAreaFilterChanged"
+                    Options="AreaFilterOptions"
+                    Placeholder="Area: Semua"
+                    SearchPlaceholder="Cari area..."
+                    EmptyMessage="Tidak ditemukan"
+                    Class="w-44 h-8 text-xs" />
+        <BbCombobox TValue="string"
+                    Value="@(_sortMode.ToString())"
+                    ValueChanged="OnSortChanged"
+                    Options="SortModeOptions"
+                    Placeholder="Urutkan"
+                    SearchPlaceholder="Cari urutan..."
+                    EmptyMessage="Tidak ditemukan"
+                    Class="w-48 h-8 text-xs" />
+    </div>;
+
+    private RenderFragment RenderTaskColumns() => @<text>
+        <BbDataTableColumn TData="TaskListItem" TValue="string" Header="Perusahaan">
+            <CellTemplate Context="t">
+                <div class="flex flex-col">
+                    <span class="font-medium text-foreground">@t.NamaPerusahaan</span>
+                    <span class="text-xs text-muted-foreground">@t.Nomor · @t.IndustryTypeName</span>
+                </div>
+            </CellTemplate>
+        </BbDataTableColumn>
+        <BbDataTableColumn TData="TaskListItem" TValue="string" Header="Tahap" Width="140px" HeaderClass="whitespace-nowrap" CellClass="whitespace-nowrap">
+            <CellTemplate Context="t">@StepKindLabel(t.StepKind)</CellTemplate>
+        </BbDataTableColumn>
+        <BbDataTableColumn TData="TaskListItem" TValue="string" Header="Area" Property="@(t => t.AreaName)" Sortable="true" Width="140px" HeaderClass="whitespace-nowrap" CellClass="whitespace-nowrap" />
+        <BbDataTableColumn TData="TaskListItem" TValue="string" Header="Diajukan Oleh" Property="@(t => t.SubmittedByName)" Sortable="true" Width="140px" HeaderClass="whitespace-nowrap" CellClass="whitespace-nowrap" />
+        <BbDataTableColumn TData="TaskListItem" TValue="string" Header="Durasi SLA" Width="130px" HeaderClass="whitespace-nowrap" CellClass="whitespace-nowrap">
+            <CellTemplate Context="t">
+                @{
+                    var days = (int)(DateTimeOffset.UtcNow - t.WaitingSince).TotalDays;
+                    var badgeStyle = days switch
+                    {
+                        > 7 => "bg-rose-50 text-rose-700 border-rose-200 animate-pulse dark:bg-rose-900/40 dark:text-rose-300",
+                        >= 3 => "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/40 dark:text-amber-300",
+                        _ => "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300"
+                    };
+                }
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded border text-[11px] font-semibold @badgeStyle">
+                    <LucideIcon Name="clock" Class="size-3 shrink-0" />
+                    @WaitingLabel(t.WaitingSince)
+                </span>
+            </CellTemplate>
+        </BbDataTableColumn>
+        <BbDataTableColumn TData="TaskListItem" TValue="string" Header="Aksi" Width="1px" HeaderClass="w-px whitespace-nowrap text-center" CellClass="w-px whitespace-nowrap text-center">
+            <CellTemplate Context="t">
+                <div class="flex items-center justify-center">
+                    <BbTooltip>
+                        <BbTooltipTrigger>
+                            <BbButton Href="@($"/companies/{t.CompanyId}")" Variant="ButtonVariant.Outline" Size="ButtonSize.IconSmall" AriaLabel="Tinjau">
+                                <LucideIcon Name="eye" Class="size-4" />
+                            </BbButton>
+                        </BbTooltipTrigger>
+                        <BbTooltipContent>Tinjau</BbTooltipContent>
+                    </BbTooltip>
+                </div>
+            </CellTemplate>
+        </BbDataTableColumn>
+    </text>;
+}

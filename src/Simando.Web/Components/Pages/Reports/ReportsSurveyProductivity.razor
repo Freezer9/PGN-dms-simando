@@ -1,0 +1,84 @@
+@page "/reports/survey-productivity"
+@inherits AdminPageBase
+@using Simando.Application.Reports
+@using Simando.Domain.Security
+@inject IReportsService ReportsService
+
+<PageTitle>Produktivitas Survei - DMS Simando</PageTitle>
+
+@if (Authorized)
+{
+    <div class="space-y-6">
+        <BbPageHeader Title="Laporan Produktivitas Survei (KK0)" Subtitle="Jumlah penyelesaian survei KK0 per Sales Representative.">
+            <Actions>
+                <a href="/reports/export/survey-productivity" download target="_blank" class="inline-flex items-center justify-center rounded-md text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4">
+                    <LucideIcon Name="download" Class="mr-2 h-4 w-4" />
+                    Ekspor Excel (.xlsx)
+                </a>
+            </Actions>
+        </BbPageHeader>
+
+        @if (_data is null)
+        {
+            <p class="text-sm text-muted-foreground">Memuat laporan produktivitas survei…</p>
+        }
+        else
+        {
+            <BbCard>
+                <BbCardHeader>
+                    <BbCardTitle>Total Dokumen KK0 Terorganisasi</BbCardTitle>
+                </BbCardHeader>
+                <BbCardContent>
+                    <div class="text-3xl font-bold text-foreground">@_data.TotalSurveysCompleted <span class="text-base font-normal text-muted-foreground">Survei KK0 Selesai</span></div>
+                </BbCardContent>
+            </BbCard>
+
+            <BbCard>
+                <BbCardHeader>
+                    <BbCardTitle>Rincian Kinerja Petugas Sales</BbCardTitle>
+                </BbCardHeader>
+                <BbCardContent>
+                    <BbDataTable TData="SurveyProductivityRow" Data="_data.Rows" InitialPageSize="25" AriaLabel="Rincian kinerja petugas sales">
+                        <Columns>
+                            <BbDataTableColumn TData="SurveyProductivityRow" TValue="string" Header="Sales Representative" Property="@(r => r.SalesRepName)" Sortable="true" Width="30%" />
+                            <BbDataTableColumn TData="SurveyProductivityRow" TValue="string" Header="Sales Area" Property="@(r => r.AreaName)" Sortable="true" Width="20%" />
+                            <BbDataTableColumn TData="SurveyProductivityRow" TValue="string" Header="Periode" Width="120px">
+                                <CellTemplate Context="row">@row.Month/@row.Year</CellTemplate>
+                            </BbDataTableColumn>
+                            <BbDataTableColumn TData="SurveyProductivityRow" TValue="int" Header="KK0 Selesai" Property="@(r => r.SurveysCompletedCount)" Sortable="true" Width="140px" />
+                            <BbDataTableColumn TData="SurveyProductivityRow" TValue="double" Header="Rata-Rata Waktu" Property="@(r => r.AvgDaysPerSurvey)" Sortable="true" Width="160px">
+                                <CellTemplate Context="row">
+                                    <span class="inline-flex items-center gap-1 text-xs text-muted-foreground font-medium">
+                                        <LucideIcon Name="clock" Class="h-3.5 w-3.5" />
+                                        @row.AvgDaysPerSurvey.ToString("F1") hari
+                                    </span>
+                                </CellTemplate>
+                            </BbDataTableColumn>
+                        </Columns>
+                        <EmptyTemplate>
+                            <BbEmpty Title="Belum ada data produktivitas" Description="Belum ada data survei KK0 yang selesai pada periode ini." />
+                        </EmptyTemplate>
+                    </BbDataTable>
+                </BbCardContent>
+            </BbCard>
+        }
+    </div>
+}
+
+@code {
+    private SurveyProductivityReportDto? _data;
+
+    protected override Capability[] RequiredCapabilities => [Capability.ViewDashboardFunnel];
+
+    protected override BreadcrumbItem[] Breadcrumbs =>
+    [
+        new("Beranda", "/"),
+        new("Laporan", "/reports"),
+        new("Produktivitas Survei", null),
+    ];
+
+    protected override async Task OnAuthorizedInitializedAsync()
+    {
+        _data = await ReportsService.GetSurveyProductivityAsync(CurrentUser.Permissions);
+    }
+}

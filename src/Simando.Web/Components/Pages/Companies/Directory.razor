@@ -1,0 +1,400 @@
+@page "/directory"
+@inherits AdminPageBase
+@using Simando.Application.Common
+@using Simando.Application.Directory
+@using Simando.Application.Geography
+@using Simando.Domain.MasterData
+@using Simando.Domain.Security
+@using Simando.Domain.Workflow
+@inject ICompanyService Service
+@inject IGeographyService GeographyService
+@inject IEntityService<IndustryType> IndustryTypeService
+@inject DialogService DialogService
+
+<PageTitle>Direktori Industri - DMS Simando</PageTitle>
+
+@if (Authorized)
+{
+    <BbPageHeader Title="Direktori Industri" Subtitle="@($"Database perusahaan & calon pelanggan PGN ({_totalCount} perusahaan ditemukan).")">
+        <Actions>
+            <div class="flex items-center rounded-md border p-0.5 bg-muted text-muted-foreground">
+                <BbButton Variant="ButtonVariant.Ghost" Size="ButtonSize.Small" Class="h-7 px-2.5 bg-background text-foreground shadow-sm">
+                    <LucideIcon Name="table" Class="size-3.5 mr-1" /> Tabel
+                </BbButton>
+                <BbButton Variant="ButtonVariant.Ghost" Size="ButtonSize.Small" Class="h-7 px-2.5 text-muted-foreground hover:text-foreground" Href="/map">
+                    <LucideIcon Name="map" Class="size-3.5 mr-1" /> Peta
+                </BbButton>
+            </div>
+            @if (CurrentUser.HasCapability(Capability.CreateCompany))
+            {
+                <BbButton Href="/directory/new" Size="ButtonSize.Small"><LucideIcon Name="plus" Class="size-4 mr-1" /> Tambah</BbButton>
+            }
+        </Actions>
+    </BbPageHeader>
+
+    <BbCard>
+        <BbCardContent Class="pt-6">
+            <div class="flex flex-col gap-3 mb-4">
+                <div class="flex flex-wrap items-center gap-2">
+                    <div class="relative flex-1 min-w-[220px] max-w-md">
+                        <LucideIcon Name="search" Class="size-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none z-10" />
+                        <BbInput Type="InputType.Text"
+                                 Value="@_searchTerm"
+                                 ValueChanged="OnSearchTermChanged"
+                                 UpdateTiming="UpdateTiming.Debounced"
+                                 DebounceInterval="300"
+                                 Placeholder="Cari nama perusahaan atau nomor..."
+                                 Class="h-8 text-xs pl-8 w-full" />
+                    </div>
+
+                    @if (HasActiveFilters)
+                    {
+                        <BbButton Variant="ButtonVariant.Ghost" Size="ButtonSize.Small" OnClick="ResetFiltersAsync" Class="h-8 text-xs text-muted-foreground hover:text-foreground">
+                            <LucideIcon Name="x" Class="size-3.5 mr-1" /> Reset Filter
+                        </BbButton>
+                    }
+                </div>
+
+                <div class="flex flex-wrap gap-2">
+                    <BbCombobox TValue="string"
+                                Value="@_provinceId"
+                                ValueChanged="OnProvinceChanged"
+                                Options="ProvinceOptions"
+                                Placeholder="Provinsi: Semua"
+                                SearchPlaceholder="Cari provinsi..."
+                                EmptyMessage="Tidak ditemukan"
+                                Class="w-44 h-8 text-xs" />
+
+                    <BbCombobox TValue="string"
+                                Value="@_regencyId"
+                                ValueChanged="OnRegencyChanged"
+                                Options="RegencyOptions"
+                                Disabled="@(_provinceId == "")"
+                                Placeholder="Kota/Kab: Semua"
+                                SearchPlaceholder="Cari kota/kab..."
+                                EmptyMessage="Tidak ditemukan"
+                                Class="w-44 h-8 text-xs" />
+
+                    <BbCombobox TValue="string"
+                                Value="@_districtId"
+                                ValueChanged="OnDistrictChanged"
+                                Options="DistrictOptions"
+                                Disabled="@(_regencyId == "")"
+                                Placeholder="Kecamatan: Semua"
+                                SearchPlaceholder="Cari kecamatan..."
+                                EmptyMessage="Tidak ditemukan"
+                                Class="w-44 h-8 text-xs" />
+
+                    <BbCombobox TValue="string"
+                                Value="@_villageId"
+                                ValueChanged="OnVillageChanged"
+                                Options="VillageOptions"
+                                Disabled="@(_districtId == "")"
+                                Placeholder="Kel/Desa: Semua"
+                                SearchPlaceholder="Cari kel/desa..."
+                                EmptyMessage="Tidak ditemukan"
+                                Class="w-44 h-8 text-xs" />
+
+                    <BbCombobox TValue="string"
+                                Value="@_industryTypeId"
+                                ValueChanged="OnIndustryTypeChanged"
+                                Options="IndustryTypeOptions"
+                                Placeholder="Jenis Produksi: Semua"
+                                SearchPlaceholder="Cari jenis produksi..."
+                                EmptyMessage="Tidak ditemukan"
+                                Class="w-44 h-8 text-xs" />
+
+                    <BbCombobox TValue="string"
+                                Value="@_stage"
+                                ValueChanged="OnStageChanged"
+                                Options="StageOptions"
+                                Placeholder="Tahap: Semua"
+                                SearchPlaceholder="Cari tahap..."
+                                EmptyMessage="Tidak ditemukan"
+                                Class="w-48 h-8 text-xs" />
+                </div>
+            </div>
+
+            <BbDataTable TData="CompanyListItem" Data="_rows" InitialPageSize="25" ShowToolbar="false" AriaLabel="Direktori perusahaan">
+                <Columns>
+                    <BbDataTableColumn TData="CompanyListItem" TValue="string" Header="Perusahaan">
+                        <CellTemplate Context="c">
+                            <div class="flex flex-col">
+                                <a href="/companies/@c.Id" class="font-medium text-foreground hover:underline">@c.NamaPerusahaan</a>
+                                <span class="text-xs text-muted-foreground">@c.IndustryTypeName · <span class="font-mono text-[11px]" title="Nomor Registrasi: @c.Nomor">@c.Nomor</span></span>
+                            </div>
+                        </CellTemplate>
+                    </BbDataTableColumn>
+                    <BbDataTableColumn TData="CompanyListItem" TValue="string" Header="Lokasi" Property="@(c => c.LocationLabel)" Sortable="true" Width="200px" HeaderClass="whitespace-nowrap" CellClass="whitespace-nowrap" />
+                    <BbDataTableColumn TData="CompanyListItem" TValue="string" Header="Tahap Workflow" Width="160px" HeaderClass="whitespace-nowrap" CellClass="whitespace-nowrap">
+                        <CellTemplate Context="c">
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border" style="@CompanyLabels.StageBadgeStyle(c.CurrentStage)">
+                                <span class="h-1.5 w-1.5 rounded-full shrink-0" style="background-color: @CompanyLabels.StageDotColor(c.CurrentStage);"></span>
+                                @CompanyLabels.FormattedStageLabel(c.CurrentStage)
+                            </span>
+                        </CellTemplate>
+                    </BbDataTableColumn>
+                    <BbDataTableColumn TData="CompanyListItem" TValue="string" Header="Aksi" Width="1px" HeaderClass="w-px whitespace-nowrap text-center" CellClass="w-px whitespace-nowrap text-center">
+                        <CellTemplate Context="c">
+                            <div class="flex items-center justify-center gap-1">
+                                <BbTooltip>
+                                    <BbTooltipTrigger>
+                                        <BbButton Variant="ButtonVariant.Outline" Size="ButtonSize.IconSmall" Href="@($"/companies/{c.Id}")" AriaLabel="Buka">
+                                            <LucideIcon Name="eye" Class="size-4" />
+                                        </BbButton>
+                                    </BbTooltipTrigger>
+                                    <BbTooltipContent>Buka</BbTooltipContent>
+                                </BbTooltip>
+                                <BbTooltip>
+                                    <BbTooltipTrigger>
+                                        <BbButton Variant="ButtonVariant.Outline" Size="ButtonSize.IconSmall" Href="@($"/companies/{c.Id}/plotting")" AriaLabel="Plotting">
+                                            <LucideIcon Name="map-pin" Class="size-4" />
+                                        </BbButton>
+                                    </BbTooltipTrigger>
+                                    <BbTooltipContent>Plotting</BbTooltipContent>
+                                </BbTooltip>
+                                @if (c.Status == RecordStatus.Draft && CurrentUser.HasCapability(Capability.SoftDeleteCompany))
+                                {
+                                    <BbTooltip>
+                                        <BbTooltipTrigger>
+                                            <BbButton Variant="ButtonVariant.Outline" Size="ButtonSize.IconSmall" OnClick="@(() => DeleteAsync(c))" AriaLabel="Hapus" Class="text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/30">
+                                                <LucideIcon Name="trash-2" Class="size-4" />
+                                            </BbButton>
+                                        </BbTooltipTrigger>
+                                        <BbTooltipContent>Hapus</BbTooltipContent>
+                                    </BbTooltip>
+                                }
+                            </div>
+                        </CellTemplate>
+                    </BbDataTableColumn>
+                </Columns>
+                <EmptyTemplate>
+                    <BbEmpty Title="Tidak ada perusahaan" Description="Belum ada perusahaan yang cocok dengan filter ini." />
+                </EmptyTemplate>
+            </BbDataTable>
+
+            @if (TotalPages > 1)
+            {
+                <div class="flex items-center justify-between mt-4 px-2 text-xs text-muted-foreground">
+                    <div>
+                        Menampilkan @((_currentPage - 1) * _pageSize + 1) – @Math.Min(_currentPage * _pageSize, _totalCount) dari @_totalCount perusahaan
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <BbButton Variant="ButtonVariant.Outline" Size="ButtonSize.Small" Disabled="@(_currentPage <= 1)" OnClick="PrevPageAsync">
+                            Sebelumnya
+                        </BbButton>
+                        <span>Halaman @_currentPage dari @TotalPages</span>
+                        <BbButton Variant="ButtonVariant.Outline" Size="ButtonSize.Small" Disabled="@(_currentPage >= TotalPages)" OnClick="NextPageAsync">
+                            Selanjutnya
+                        </BbButton>
+                    </div>
+                </div>
+            }
+        </BbCardContent>
+    </BbCard>
+}
+
+@code {
+    [SupplyParameterFromQuery(Name = "stage")]
+    public string? QueryStage { get; set; }
+
+    private List<CompanyListItem> _rows = [];
+    private List<GeographyOption> _provinces = [];
+    private List<GeographyOption> _regencies = [];
+    private List<GeographyOption> _districts = [];
+    private List<GeographyOption> _villages = [];
+    private List<IndustryType> _industryTypes = [];
+
+    private string _provinceId = "";
+    private string _regencyId = "";
+    private string _districtId = "";
+    private string _villageId = "";
+    private string _industryTypeId = "";
+    private string _stage = "";
+    private string _searchTerm = "";
+
+    private bool HasActiveFilters => !string.IsNullOrEmpty(_provinceId) ||
+                                      !string.IsNullOrEmpty(_regencyId) ||
+                                      !string.IsNullOrEmpty(_districtId) ||
+                                      !string.IsNullOrEmpty(_villageId) ||
+                                      !string.IsNullOrEmpty(_industryTypeId) ||
+                                      !string.IsNullOrEmpty(_stage) ||
+                                      !string.IsNullOrWhiteSpace(_searchTerm);
+
+    protected override Capability[] RequiredCapabilities => [Capability.ViewCompanyRecords];
+
+    protected override BreadcrumbItem[] Breadcrumbs =>
+    [
+        new("Beranda", "/"),
+        new("Direktori Industri", null),
+    ];
+
+    protected override async Task OnAuthorizedInitializedAsync()
+    {
+        _provinces = (await GeographyService.GetProvincesAsync()).ToList();
+        _industryTypes = (await IndustryTypeService.GetAllAsync()).ToList();
+        if (!string.IsNullOrEmpty(QueryStage))
+        {
+            _stage = QueryStage;
+        }
+        await ReloadAsync();
+    }
+
+    private int _currentPage = 1;
+    private int _pageSize = 25;
+    private int _totalCount = 0;
+    private int TotalPages => (int)Math.Ceiling((double)_totalCount / _pageSize);
+
+    private IEnumerable<SelectOption<string>> ProvinceOptions =>
+        _provinces.Select(p => new SelectOption<string>(p.Id.ToString(), p.Name))
+            .Prepend(new SelectOption<string>("", "Provinsi: Semua"));
+
+    private IEnumerable<SelectOption<string>> RegencyOptions =>
+        _regencies.Select(r => new SelectOption<string>(r.Id.ToString(), r.Name))
+            .Prepend(new SelectOption<string>("", "Kota/Kab: Semua"));
+
+    private IEnumerable<SelectOption<string>> DistrictOptions =>
+        _districts.Select(d => new SelectOption<string>(d.Id.ToString(), d.Name))
+            .Prepend(new SelectOption<string>("", "Kecamatan: Semua"));
+
+    private IEnumerable<SelectOption<string>> VillageOptions =>
+        _villages.Select(v => new SelectOption<string>(v.Id.ToString(), v.Name))
+            .Prepend(new SelectOption<string>("", "Kel/Desa: Semua"));
+
+    private IEnumerable<SelectOption<string>> IndustryTypeOptions =>
+        _industryTypes.Select(t => new SelectOption<string>(t.Id.ToString(), t.Name))
+            .Prepend(new SelectOption<string>("", "Jenis Produksi: Semua"));
+
+    private IEnumerable<SelectOption<string>> StageOptions =>
+        Enumerable.Range(1, 8)
+            .Select(s => new SelectOption<string>(s.ToString(), CompanyLabels.FormattedStageLabel((byte)s)))
+            .Prepend(new SelectOption<string>("", "Tahap: Semua"));
+
+    private async Task ReloadAsync()
+    {
+        var filter = new CompanyListFilter(
+            ParseGuid(_provinceId), ParseGuid(_regencyId), ParseGuid(_districtId), ParseGuid(_villageId),
+            ParseGuid(_industryTypeId), byte.TryParse(_stage, out var s) ? s : null,
+            SearchTerm: string.IsNullOrWhiteSpace(_searchTerm) ? null : _searchTerm,
+            Page: _currentPage,
+            PageSize: _pageSize);
+
+        var paged = await Service.GetPagedListAsync(filter);
+        _rows = paged.Items.ToList();
+        _totalCount = paged.TotalCount;
+    }
+
+    private async Task NextPageAsync()
+    {
+        if (_currentPage < TotalPages)
+        {
+            _currentPage++;
+            await ReloadAsync();
+        }
+    }
+
+    private async Task PrevPageAsync()
+    {
+        if (_currentPage > 1)
+        {
+            _currentPage--;
+            await ReloadAsync();
+        }
+    }
+
+    private async Task OnSearchTermChanged(string value)
+    {
+        _searchTerm = value;
+        _currentPage = 1;
+        await ReloadAsync();
+    }
+
+    private async Task OnProvinceChanged(string value)
+    {
+        _provinceId = value;
+        _regencyId = _districtId = _villageId = "";
+        _regencies = value == "" ? [] : (await GeographyService.GetRegenciesAsync(Guid.Parse(value))).ToList();
+        _districts = [];
+        _villages = [];
+        _currentPage = 1;
+        await ReloadAsync();
+    }
+
+    private async Task OnRegencyChanged(string value)
+    {
+        _regencyId = value;
+        _districtId = _villageId = "";
+        _districts = value == "" ? [] : (await GeographyService.GetDistrictsAsync(Guid.Parse(value))).ToList();
+        _villages = [];
+        _currentPage = 1;
+        await ReloadAsync();
+    }
+
+    private async Task OnDistrictChanged(string value)
+    {
+        _districtId = value;
+        _villageId = "";
+        _villages = value == "" ? [] : (await GeographyService.GetVillagesAsync(Guid.Parse(value))).ToList();
+        _currentPage = 1;
+        await ReloadAsync();
+    }
+
+    private async Task OnVillageChanged(string value)
+    {
+        _villageId = value;
+        _currentPage = 1;
+        await ReloadAsync();
+    }
+
+    private async Task OnIndustryTypeChanged(string value)
+    {
+        _industryTypeId = value;
+        _currentPage = 1;
+        await ReloadAsync();
+    }
+
+    private async Task OnStageChanged(string value)
+    {
+        _stage = value;
+        _currentPage = 1;
+        await ReloadAsync();
+    }
+
+    private async Task ResetFiltersAsync()
+    {
+        _provinceId = _regencyId = _districtId = _villageId = _industryTypeId = _stage = _searchTerm = "";
+        _regencies = _districts = _villages = [];
+        _currentPage = 1;
+        await ReloadAsync();
+    }
+
+    private async Task DeleteAsync(CompanyListItem company)
+    {
+        var confirm = await DialogService.ConfirmAsync(
+            "Hapus perusahaan?",
+            $"\"{company.NamaPerusahaan}\" akan dihapus. Tindakan ini hanya tersedia selama berkas masih Draf.");
+        if (confirm.Cancelled)
+        {
+            return;
+        }
+
+        var result = await Service.SoftDeleteAsync(company.Id, CurrentUser.UserId);
+        if (!result.Succeeded)
+        {
+            await DialogService.AlertAsync("Tidak dapat menghapus", result.Error!);
+            return;
+        }
+
+        await ReloadAsync();
+    }
+
+    private static BadgeVariant GetStageBadgeVariant(byte stage) => stage switch
+    {
+        1 => BadgeVariant.Secondary,
+        2 => BadgeVariant.Outline,
+        3 => BadgeVariant.Default,
+        _ => BadgeVariant.Outline,
+    };
+
+    private static Guid? ParseGuid(string value) => value == "" ? null : Guid.Parse(value);
+}

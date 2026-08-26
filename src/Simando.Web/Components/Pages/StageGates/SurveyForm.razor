@@ -1,0 +1,1370 @@
+@using BlazorBlueprint.Primitives.Table
+@using BlazorBlueprint.Icons.Lucide
+@using Microsoft.AspNetCore.Components.Forms
+@using Simando.Application.Attachments
+@using Simando.Application.Common
+@using Simando.Application.Directory
+@using Simando.Application.MasterData
+@using Simando.Application.Security
+@using Simando.Domain.Attachments
+@using Simando.Domain.MasterData
+@using Simando.Domain.Registration
+@using Simando.Domain.Security
+@using Simando.Domain.Survey
+@inject ICompanyService CompanyService
+@inject IAttachmentService AttachmentService
+@inject IUnitLookupService UnitLookupService
+@inject IEntityService<Country> CountryService
+@inject IEntityService<FuelType> FuelTypeService
+@inject ToastService ToastService
+
+@if (_detail is null)
+{
+    <p class="text-sm text-muted-foreground">Memuat…</p>
+}
+else
+{
+    <div class="grid grid-cols-1 lg:grid-cols-[180px_1fr] gap-6">
+        <nav class="hidden lg:flex flex-col gap-1 text-sm sticky top-20 self-start">
+            @foreach (var navItem in Sections)
+            {
+                <a href="@($"/companies/{CompanyId}/survei#survei-{navItem.Id}")" class="px-2 py-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground">@navItem.Title</a>
+            }
+        </nav>
+
+        <div class="space-y-4 min-w-0">
+            @if (_headerError is not null)
+            {
+                <BbAlert Variant="AlertVariant.Danger">
+                    <BbAlertDescription>@_headerError</BbAlertDescription>
+                </BbAlert>
+            }
+
+            <!-- Floating Live Energy Demand Summary Bar (Proposal 03) -->
+            <div class="sticky top-16 z-20 p-3.5 rounded-lg border border-primary/30 bg-background/95 backdrop-blur-sm shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div class="flex items-center gap-3">
+                    <div class="p-2 rounded-md bg-amber-50 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 shrink-0">
+                        <LucideIcon Name="flame" Class="size-5" />
+                    </div>
+                    <div>
+                        <div class="text-[11px] text-muted-foreground font-semibold uppercase tracking-wide">Total Kebutuhan Energi (MMBTU/Bulan)</div>
+                        <div class="text-lg font-bold text-foreground">
+                            @TotalJumlahKebutuhanEnergi.ToString("N2") <span class="text-xs font-semibold text-primary">MMBTU</span>
+                            <span class="text-xs font-normal text-muted-foreground ml-2">(@_equipment.Count Unit Peralatan)</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4 text-xs border-t sm:border-t-0 sm:border-l pt-2 sm:pt-0 sm:pl-4 border-border shrink-0">
+                    <div>
+                        <span class="text-muted-foreground block text-[11px]">Jarak Pipa:</span>
+                        <span class="font-semibold text-foreground">@(_pipaTerdekatJarakM.HasValue ? $"{_pipaTerdekatJarakM:N0} m" : "-")</span>
+                    </div>
+                    <div>
+                        <span class="text-muted-foreground block text-[11px]">Diameter:</span>
+                        <span class="font-semibold text-foreground">@(_pipaTerdekatDiameter.HasValue ? $"{_pipaTerdekatDiameter} in" : "-")</span>
+                    </div>
+                    <div>
+                        <span class="text-muted-foreground block text-[11px]">Tekanan:</span>
+                        <span class="font-semibold text-foreground">@(_pipaTerdekatTekanan.HasValue ? $"{_pipaTerdekatTekanan} barg" : "-")</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dokumen KK0 Ber-TTD (Signed KK0) Card -->
+            <BbCard Class="border-emerald-500/30 bg-emerald-50/20 dark:bg-emerald-950/10">
+                <BbCardHeader Class="pb-2">
+                    <div class="flex items-center justify-between gap-2 flex-wrap">
+                        <div class="flex items-center gap-2">
+                            <div class="p-1.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300">
+                                <LucideIcon Name="file-check-2" Class="size-4" />
+                            </div>
+                            <div>
+                                <BbCardTitle Class="text-sm font-semibold">Dokumen KK0 Ber-TTD (Signed KK0)</BbCardTitle>
+                                <p class="text-xs text-muted-foreground">Unggah berkas KK0 yang telah ditandatangani untuk pemenuhan syarat registrasi Form A1.</p>
+                            </div>
+                        </div>
+                        @if (_kk0Attachment is not null)
+                        {
+                            <BbBadge Variant="BadgeVariant.Default" Class="text-xs px-2 py-0.5 bg-emerald-600 hover:bg-emerald-700">
+                                <LucideIcon Name="circle-check" Class="size-3 mr-1 inline" /> Terunggah (v@_kk0Attachment.Version)
+                            </BbBadge>
+                        }
+                        else
+                        {
+                            <BbBadge Variant="BadgeVariant.Outline" Class="text-xs px-2 py-0.5 text-amber-600 border-amber-500/40">
+                                Belum Ada Berkas
+                            </BbBadge>
+                        }
+                    </div>
+                </BbCardHeader>
+                <BbCardContent Class="space-y-3">
+                    @if (_kk0Attachment is not null)
+                    {
+                        <div class="flex items-center justify-between p-2.5 rounded border bg-background text-xs">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <LucideIcon Name="file-text" Class="size-4 text-emerald-600 shrink-0" />
+                                <span class="font-medium truncate">@_kk0Attachment.Filename</span>
+                                <span class="text-muted-foreground text-[11px]">(@(_kk0Attachment.SizeBytes / 1024) KB)</span>
+                                <span class="text-muted-foreground text-[11px]">· @_kk0Attachment.UploadedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
+                            </div>
+                            <a href="/api/attachments/@_kk0Attachment.Id/download" target="_blank" class="text-primary hover:underline text-xs font-semibold shrink-0">
+                                Unduh
+                            </a>
+                        </div>
+                    }
+
+                    @if (CanEdit)
+                    {
+                        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-1">
+                            <div class="flex-1 min-w-0">
+                                <InputFile OnChange="OnKk0FileSelected" class="block w-full text-xs text-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90" />
+                            </div>
+                            <div class="w-44 shrink-0">
+                                <BbFormFieldSelect TValue="SignatureMethod?" @bind-Value="_kk0SigMethod" Placeholder="Metode TTD" Options="_sigMethodOptions" Class="text-xs" />
+                            </div>
+                            <BbButton Size="ButtonSize.Small" OnClick="UploadKk0Async" Disabled="@(_selectedKk0File is null || _uploadingKk0)" Class="shrink-0">
+                                <LucideIcon Name="upload" Class="size-3.5 mr-1" />
+                                @(_uploadingKk0 ? "Mengunggah…" : "Unggah KK0")
+                            </BbButton>
+                        </div>
+                        @if (_kk0UploadError is not null)
+                        {
+                            <p class="text-xs text-destructive mt-1">@_kk0UploadError</p>
+                        }
+                    }
+                </BbCardContent>
+            </BbCard>
+
+            <div id="survei-operasional" class="scroll-mt-40">
+            <BbCard>
+                <BbCardHeader><BbCardTitle>Operasional</BbCardTitle></BbCardHeader>
+                <BbCardContent>
+                    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                        <BbFormFieldInput TValue="int?" @bind-Value="_jumlahKaryawan" Label="Jumlah Karyawan" Type="InputType.Number" Disabled="@(!CanEdit)" />
+                        <BbFormFieldInput TValue="short?" @bind-Value="_jumlahShift" Label="Jumlah Shift (1–3)" Type="InputType.Number" Disabled="@(!CanEdit)" />
+                        <BbFormFieldInput TValue="decimal?" @bind-Value="_jamKerjaPerHari" Label="Jam Kerja / Hari" Type="InputType.Number" Disabled="@(!CanEdit)" />
+                        <BbFormFieldInput TValue="short?" @bind-Value="_hariPerMinggu" Label="Hari / Minggu" Type="InputType.Number" Disabled="@(!CanEdit)" />
+                    </div>
+                    <div class="mt-4 border-t pt-3 space-y-2">
+                        <span class="text-xs font-semibold text-muted-foreground uppercase">Beban Puncak (Peak Load Windows)</span>
+                        <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                            <BbFormFieldInput TValue="TimeOnly?" @bind-Value="_bebanPuncak1Mulai" Label="Window 1 Mulai" Type="InputType.Time" Disabled="@(!CanEdit)" Class="w-full" InputClass="w-full" />
+                            <BbFormFieldInput TValue="TimeOnly?" @bind-Value="_bebanPuncak1Selesai" Label="Window 1 Selesai" Type="InputType.Time" Disabled="@(!CanEdit)" Class="w-full" InputClass="w-full" />
+                            <BbFormFieldInput TValue="TimeOnly?" @bind-Value="_bebanPuncak2Mulai" Label="Window 2 Mulai" Type="InputType.Time" Disabled="@(!CanEdit)" Class="w-full" InputClass="w-full" />
+                            <BbFormFieldInput TValue="TimeOnly?" @bind-Value="_bebanPuncak2Selesai" Label="Window 2 Selesai" Type="InputType.Time" Disabled="@(!CanEdit)" Class="w-full" InputClass="w-full" />
+                        </div>
+                    </div>
+                </BbCardContent>
+            </BbCard>
+            </div>
+
+            <div id="survei-produk" class="scroll-mt-40">
+            <BbCard>
+                <BbCardHeader><BbCardTitle>Produk Utama</BbCardTitle></BbCardHeader>
+                <BbCardContent>
+                    @RenderProductTable()
+                </BbCardContent>
+            </BbCard>
+            </div>
+
+            <div id="survei-bahan-baku" class="scroll-mt-40">
+            <BbCard>
+                <BbCardHeader><BbCardTitle>Bahan Baku</BbCardTitle></BbCardHeader>
+                <BbCardContent>
+                    @RenderRawMaterialTable()
+                </BbCardContent>
+            </BbCard>
+            </div>
+
+            <div id="survei-pasar" class="scroll-mt-40">
+            <BbCard>
+                <BbCardHeader><BbCardTitle>Orientasi Pasar</BbCardTitle></BbCardHeader>
+                <BbCardContent>
+                    @RenderMarketTable()
+                </BbCardContent>
+            </BbCard>
+            </div>
+
+            <div id="survei-energi" class="scroll-mt-40">
+            <BbCard>
+                <BbCardHeader><BbCardTitle>Kebutuhan Energi</BbCardTitle></BbCardHeader>
+                <BbCardContent class="space-y-4">
+                    <BbFormFieldCheckboxGroup TValue="KebutuhanEnergiJenis" @bind-Values="_kebutuhanEnergiSelected" Label="Jenis kebutuhan energi" Disabled="@(!CanEdit)">
+                        @foreach (var jenis in Enum.GetValues<KebutuhanEnergiJenis>())
+                        {
+                            <BbCheckboxGroupItem TValue="KebutuhanEnergiJenis" Value="jenis" Label="@SurveyLabels.KebutuhanEnergiLabel(jenis)" />
+                        }
+                    </BbFormFieldCheckboxGroup>
+                    @if (_kebutuhanEnergiSelected.Contains(KebutuhanEnergiJenis.Lainnya))
+                    {
+                        <BbFormFieldInput TValue="string" @bind-Value="_kebutuhanEnergiLainnya" Label="Jenis Lainnya" Disabled="@(!CanEdit)" />
+                    }
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <BbFormFieldInput TValue="decimal?" @bind-Value="_kapasitasNilai" Label="Kapasitas" Type="InputType.Number" Disabled="@(!CanEdit)" Class="w-full" InputClass="w-full" />
+                        <BbFormFieldSelect TValue="Guid?" @bind-Value="_kapasitasUnitId" Label="Satuan Kapasitas" Placeholder="Pilih satuan" Options="_capacityUnits" Disabled="@(!CanEdit)" Class="w-full" InputClass="w-full" />
+                        <BbFormFieldInput TValue="decimal?" @bind-Value="_pemakaianNilai" Label="Pemakaian" Type="InputType.Number" Disabled="@(!CanEdit)" Class="w-full" InputClass="w-full" />
+                        <BbFormFieldSelect TValue="Guid?" @bind-Value="_pemakaianUnitId" Label="Satuan Pemakaian" Placeholder="Pilih satuan" Options="_energyUsageUnits" Disabled="@(!CanEdit)" Class="w-full" InputClass="w-full" />
+                    </div>
+                </BbCardContent>
+            </BbCard>
+            </div>
+
+            <div id="survei-peralatan" class="scroll-mt-40">
+            <BbCard>
+                <BbCardHeader>
+                    <BbCardTitle>Perincian Bahan Bakar yang Dipakai Saat Ini</BbCardTitle>
+                </BbCardHeader>
+                <BbCardContent>
+                    @RenderEquipmentTable()
+                </BbCardContent>
+            </BbCard>
+            </div>
+
+            <div id="survei-pipa" class="scroll-mt-40">
+            <BbCard>
+                <BbCardHeader><BbCardTitle>Pipa Gas Terdekat</BbCardTitle></BbCardHeader>
+                <BbCardContent>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <BbFormFieldInput TValue="decimal?" @bind-Value="_pipaTerdekatJarakM" Label="Jarak (meter)" Type="InputType.Number" Disabled="@(!CanEdit)" />
+                        <BbFormFieldInput TValue="decimal?" @bind-Value="_pipaTerdekatDiameter" Label="Diameter (inch)" Type="InputType.Number" Disabled="@(!CanEdit)" />
+                        <BbFormFieldInput TValue="decimal?" @bind-Value="_pipaTerdekatTekanan" Label="Tekanan (barg)" Type="InputType.Number" Disabled="@(!CanEdit)" />
+                    </div>
+                </BbCardContent>
+            </BbCard>
+            </div>
+
+            <div id="survei-bahan-bakar" class="scroll-mt-40">
+            <BbCard>
+                <BbCardHeader><BbCardTitle>Bahan Bakar Eksisting &amp; Listrik</BbCardTitle></BbCardHeader>
+                <BbCardContent class="space-y-4">
+                    <BbFormFieldCheckboxGroup TValue="BahanBakarEksisting" @bind-Values="_bahanBakarSelected" Label="Bahan Bakar Eksisting" Disabled="@(!CanEdit)">
+                        @foreach (var bahanBakar in Enum.GetValues<BahanBakarEksisting>())
+                        {
+                            <BbCheckboxGroupItem TValue="BahanBakarEksisting" Value="bahanBakar" Label="@SurveyLabels.BahanBakarLabel(bahanBakar)" />
+                        }
+                    </BbFormFieldCheckboxGroup>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <BbFormFieldInput TValue="string" @bind-Value="_namaPemasok" Label="Nama Pemasok" Disabled="@(!CanEdit)" />
+                        <BbFormFieldInput TValue="decimal?" @bind-Value="_kapasitasListrikKw" Label="Kapasitas Listrik (kW)" Type="InputType.Number" Disabled="@(!CanEdit)" />
+                        <BbFormFieldInput TValue="decimal?" @bind-Value="_pemakaianListrikKwh" Label="Pemakaian Listrik (kWh)" Type="InputType.Number" Disabled="@(!CanEdit)" />
+                    </div>
+                </BbCardContent>
+            </BbCard>
+            </div>
+
+            <div id="survei-rencana" class="scroll-mt-40">
+            <BbCard>
+                <BbCardHeader><BbCardTitle>Rencana Pemanfaatan Gas &amp; Lainnya</BbCardTitle></BbCardHeader>
+                <BbCardContent class="space-y-4">
+                    <BbFormFieldCheckboxGroup TValue="RencanaPemanfaatanGas" @bind-Values="_rencanaSelected" Label="Rencana Pemanfaatan Gas" Disabled="@(!CanEdit)">
+                        @foreach (var rencana in Enum.GetValues<RencanaPemanfaatanGas>())
+                        {
+                            <BbCheckboxGroupItem TValue="RencanaPemanfaatanGas" Value="rencana" Label="@SurveyLabels.RencanaPemanfaatanGasLabel(rencana)" />
+                        }
+                    </BbFormFieldCheckboxGroup>
+                    <BbFormFieldTextarea @bind-Value="_deskripsiProsesProduksi" Label="Deskripsi Proses Produksi" Disabled="@(!CanEdit)" />
+                    <BbFormFieldInput TValue="decimal?" @bind-Value="_minEfisiensiDiharapkanPct" Label="Minimum Efisiensi yang Diharapkan (%)" Type="InputType.Number" Disabled="@(!CanEdit)" />
+                    <BbFormFieldTextarea @bind-Value="_keteranganLain" Label="Keterangan Lain" Disabled="@(!CanEdit)" />
+                </BbCardContent>
+            </BbCard>
+            </div>
+
+            <div id="survei-surveyor" class="scroll-mt-40">
+            <BbCard>
+                <BbCardHeader>
+                    <BbCardTitle>Informasi Surveyor &amp; Evaluasi</BbCardTitle>
+                </BbCardHeader>
+                <BbCardContent>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <BbFormFieldDatePicker @bind-Value="_tanggalSurvey" Label="Tanggal Survei *" Disabled="@(!CanEdit)" Class="w-full" InputClass="w-full" />
+                        <BbFormFieldCombobox TValue="Guid?"
+                                             @bind-Value="_surveyorUserId"
+                                             Label="Surveyor *"
+                                             Required="true"
+                                             Options="Surveyors"
+                                             Disabled="@(!CanEdit)"
+                                             Placeholder="Pilih surveyor"
+                                             SearchPlaceholder="Cari surveyor..."
+                                             EmptyMessage="Tidak ada surveyor"
+                                             MatchTriggerWidth
+                                             Class="w-full"
+                                             InputClass="w-full text-xs" />
+                        <BbFormFieldInput TValue="decimal?" @bind-Value="_willingnessToPayUsdMmbtu" Label="Willingness To Pay (USD/MMBtu)" Type="InputType.Number" Disabled="@(!CanEdit)" Class="w-full" InputClass="w-full" />
+                    </div>
+                </BbCardContent>
+            </BbCard>
+            </div>
+
+            @if (CanEdit)
+            {
+                <div class="flex justify-end pt-2">
+                    <BbButton OnClick="SaveHeaderAsync" Size="ButtonSize.Default">Simpan Data Survei</BbButton>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private static readonly (string Id, string Title)[] Sections =
+    [
+        ("operasional", "Operasional"),
+        ("produk", "Produk Utama"),
+        ("bahan-baku", "Bahan Baku"),
+        ("pasar", "Orientasi Pasar"),
+        ("energi", "Kebutuhan Energi"),
+        ("peralatan", "Peralatan"),
+        ("pipa", "Pipa Terdekat"),
+        ("bahan-bakar", "Bahan Bakar"),
+        ("rencana", "Rencana & Lainnya"),
+        ("surveyor", "Surveyor"),
+    ];
+
+    [Parameter, EditorRequired]
+    public Guid CompanyId { get; set; }
+
+    [Parameter]
+    public bool CanEdit { get; set; }
+
+    [Parameter, EditorRequired]
+    public Guid ActorUserId { get; set; }
+
+    [Parameter, EditorRequired]
+    public EffectivePermissions Actor { get; set; }
+
+    // Passed down rather than fetched here — IUserService holds a directly
+    // injected (not IDbContextFactory-backed) SimandoDbContext, shared for
+    // the whole circuit; CompanyHub already fetches this list in its own
+    // LoadAsync, and a second concurrent call from this component corrupts
+    // that shared context (ObjectDisposedException / command-in-progress).
+    [Parameter]
+    public IReadOnlyList<SelectOption<Guid?>> Surveyors { get; set; } = [];
+
+    [Parameter]
+    public EventCallback OnSaved { get; set; }
+
+    private SurveyDetail? _detail;
+    private string? _headerError;
+
+    private int? _jumlahKaryawan;
+    private short? _jumlahShift;
+    private decimal? _jamKerjaPerHari;
+    private short? _hariPerMinggu;
+    private TimeOnly? _bebanPuncak1Mulai;
+    private TimeOnly? _bebanPuncak1Selesai;
+    private TimeOnly? _bebanPuncak2Mulai;
+    private TimeOnly? _bebanPuncak2Selesai;
+    private IReadOnlyCollection<KebutuhanEnergiJenis> _kebutuhanEnergiSelected = [];
+    private string? _kebutuhanEnergiLainnya;
+    private decimal? _kapasitasNilai;
+    private Guid? _kapasitasUnitId;
+    private decimal? _pemakaianNilai;
+    private Guid? _pemakaianUnitId;
+    private decimal? _pipaTerdekatJarakM;
+    private decimal? _pipaTerdekatDiameter;
+    private decimal? _pipaTerdekatTekanan;
+    private IReadOnlyCollection<BahanBakarEksisting> _bahanBakarSelected = [];
+    private string? _namaPemasok;
+    private decimal? _kapasitasListrikKw;
+    private decimal? _pemakaianListrikKwh;
+    private IReadOnlyCollection<RencanaPemanfaatanGas> _rencanaSelected = [];
+    private string? _deskripsiProsesProduksi;
+    private decimal? _minEfisiensiDiharapkanPct;
+    private string? _keteranganLain;
+    private DateTime? _tanggalSurvey;
+    private Guid? _surveyorUserId;
+    private decimal? _willingnessToPayUsdMmbtu;
+
+    private List<SelectOption<Guid?>> _capacityUnits = [];
+    private List<SelectOption<Guid?>> _energyUsageUnits = [];
+    private List<SelectOption<Guid?>> _rawMaterialUnits = [];
+    private List<SelectOption<Guid?>> _fuelConsumptionUnits = [];
+    private List<SelectOption<Guid?>> _countries = [];
+    private List<SelectOption<Guid?>> _fuelTypes = [];
+
+    private bool _productDialogOpen;
+    private bool _rawMaterialDialogOpen;
+    private bool _marketDialogOpen;
+    private bool _equipmentDialogOpen;
+
+    private sealed class ProductFormModel
+    {
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Nama produk wajib diisi.")]
+        public string Produk { get; set; } = "";
+        public decimal? Kapasitas { get; set; }
+        public decimal? HargaProduk { get; set; }
+        public string? Catatan { get; set; }
+    }
+
+    private sealed class RawMaterialFormModel
+    {
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Nama bahan baku wajib diisi.")]
+        public string? Bahan { get; set; }
+        public Asal? Asal { get; set; }
+        public Guid? CountryId { get; set; }
+        public decimal? Volume { get; set; }
+        public Guid? SatuanUnitId { get; set; }
+    }
+
+    private sealed class MarketFormModel
+    {
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Nama produk / bahan wajib diisi.")]
+        public string? Bahan { get; set; }
+        public Asal? Asal { get; set; }
+        public Guid? CountryId { get; set; }
+        public decimal? Volume { get; set; }
+        public Guid? SatuanUnitId { get; set; }
+    }
+
+    private sealed class EquipmentFormModel
+    {
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Jenis peralatan wajib diisi.")]
+        public string JenisPeralatan { get; set; } = "";
+        public decimal? Kapasitas { get; set; }
+        public Guid? KapasitasUnitId { get; set; }
+        public decimal? JamPerHari { get; set; }
+        public short? HariPerMinggu { get; set; }
+        public Guid? FuelTypeId { get; set; }
+        public decimal? HargaBahanBakar { get; set; }
+        public decimal? KonsumsiPerBulan { get; set; }
+        public Guid? KonsumsiUnitId { get; set; }
+        public decimal KonversiKeGas { get; set; }
+    }
+
+    private List<SurveyProductDetail> _products = [];
+    private Guid? _editingProductId;
+    private ProductFormModel _productForm = new();
+    private string? _productError;
+
+    private List<SurveyRawMaterialDetail> _rawMaterials = [];
+    private Guid? _editingRawMaterialId;
+    private RawMaterialFormModel _rawMaterialForm = new();
+    private string? _rawMaterialError;
+
+    private List<SurveyMarketDetail> _markets = [];
+    private Guid? _editingMarketId;
+    private MarketFormModel _marketForm = new();
+    private string? _marketError;
+
+    private List<SurveyEquipmentDetail> _equipment = [];
+    private Guid? _editingEquipmentId;
+    private EquipmentFormModel _equipmentForm = new();
+    private string? _equipmentError;
+
+    private AttachmentDetail? _kk0Attachment;
+    private IBrowserFile? _selectedKk0File;
+    private SignatureMethod? _kk0SigMethod;
+    private bool _uploadingKk0;
+    private string? _kk0UploadError;
+
+    private List<SelectOption<SignatureMethod?>> _sigMethodOptions =
+    [
+        new(SignatureMethod.Wet, "Tanda Tangan Basah"),
+        new(SignatureMethod.Digital, "Tanda Tangan Digital"),
+    ];
+
+    private void OnKk0FileSelected(InputFileChangeEventArgs e)
+    {
+        _selectedKk0File = e.File;
+        _kk0UploadError = null;
+    }
+
+    private async Task UploadKk0Async()
+    {
+        if (_selectedKk0File is null) return;
+        _uploadingKk0 = true;
+        _kk0UploadError = null;
+
+        try
+        {
+            await using var stream = _selectedKk0File.OpenReadStream(maxAllowedSize: 25 * 1024 * 1024);
+            var req = new UploadAttachmentRequest(
+                AttachmentKind.Kk0,
+                _selectedKk0File.Name,
+                _selectedKk0File.ContentType ?? "application/octet-stream",
+                _selectedKk0File.Size,
+                _kk0SigMethod,
+                stream);
+
+            var result = await AttachmentService.UploadAttachmentAsync(CompanyId, req, ActorUserId);
+            if (result.Succeeded)
+            {
+                _selectedKk0File = null;
+                await LoadAsync();
+                ToastService.Success("Dokumen KK0 Ber-TTD berhasil diunggah.", "Tersimpan");
+            }
+            else
+            {
+                _kk0UploadError = result.Error;
+                ToastService.Error(result.Error ?? "Gagal mengunggah berkas KK0.", "Gagal");
+            }
+        }
+        catch (Exception ex)
+        {
+            _kk0UploadError = ex.Message;
+            ToastService.Error($"Gagal mengunggah berkas: {ex.Message}", "Gagal");
+        }
+        finally
+        {
+            _uploadingKk0 = false;
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+
+        if (CanEdit)
+        {
+            _capacityUnits = ToOptions(await UnitLookupService.GetUnitsAsync(UnitSet.Capacity));
+            _energyUsageUnits = ToOptions(await UnitLookupService.GetUnitsAsync(UnitSet.EnergyUsage));
+            _rawMaterialUnits = ToOptions(await UnitLookupService.GetUnitsAsync(UnitSet.RawMaterial));
+            _fuelConsumptionUnits = ToOptions(await UnitLookupService.GetUnitsAsync(UnitSet.FuelConsumption));
+            _countries = (await CountryService.GetAllAsync()).Select(c => new SelectOption<Guid?>(c.Id, c.Name)).ToList();
+            _fuelTypes = (await FuelTypeService.GetAllAsync()).Select(f => new SelectOption<Guid?>(f.Id, f.Name)).ToList();
+        }
+    }
+
+    private static List<SelectOption<Guid?>> ToOptions(IReadOnlyList<UnitOption> units) =>
+        units.Select(u => new SelectOption<Guid?>(u.Id, u.Name)).ToList();
+
+    private async Task LoadAsync()
+    {
+        _detail = await CompanyService.GetSurveyAsync(CompanyId);
+
+        _jumlahKaryawan = _detail.JumlahKaryawan;
+        _jumlahShift = _detail.JumlahShift;
+        _jamKerjaPerHari = _detail.JamKerjaPerHari;
+        _hariPerMinggu = _detail.HariPerMinggu;
+        _bebanPuncak1Mulai = _detail.BebanPuncak1Mulai;
+        _bebanPuncak1Selesai = _detail.BebanPuncak1Selesai;
+        _bebanPuncak2Mulai = _detail.BebanPuncak2Mulai;
+        _bebanPuncak2Selesai = _detail.BebanPuncak2Selesai;
+        _kebutuhanEnergiLainnya = _detail.KebutuhanEnergiLainnya;
+        _kapasitasNilai = _detail.KapasitasNilai;
+        _kapasitasUnitId = _detail.KapasitasUnitId;
+        _pemakaianNilai = _detail.PemakaianNilai;
+        _pemakaianUnitId = _detail.PemakaianUnitId;
+        _pipaTerdekatJarakM = _detail.PipaTerdekatJarakM;
+        _pipaTerdekatDiameter = _detail.PipaTerdekatDiameter;
+        _pipaTerdekatTekanan = _detail.PipaTerdekatTekanan;
+        _namaPemasok = _detail.NamaPemasok;
+        _kapasitasListrikKw = _detail.KapasitasListrikKw;
+        _pemakaianListrikKwh = _detail.PemakaianListrikKwh;
+        _deskripsiProsesProduksi = _detail.DeskripsiProsesProduksi;
+        _minEfisiensiDiharapkanPct = _detail.MinEfisiensiDiharapkanPct;
+        _keteranganLain = _detail.KeteranganLain;
+        _tanggalSurvey = _detail.TanggalSurvey?.ToDateTime(TimeOnly.MinValue);
+        _surveyorUserId = _detail.SurveyorUserId;
+        _willingnessToPayUsdMmbtu = _detail.WillingnessToPayUsdMmbtu;
+
+        _kebutuhanEnergiSelected = Enum.GetValues<KebutuhanEnergiJenis>()
+            .Where(f => _detail.KebutuhanEnergi?.HasFlag(f) == true).ToList();
+        _bahanBakarSelected = Enum.GetValues<BahanBakarEksisting>()
+            .Where(f => _detail.BahanBakarEksisting?.HasFlag(f) == true).ToList();
+        _rencanaSelected = Enum.GetValues<RencanaPemanfaatanGas>()
+            .Where(f => _detail.RencanaPemanfaatanGas?.HasFlag(f) == true).ToList();
+
+        _products = _detail.Products.ToList();
+        _rawMaterials = _detail.RawMaterials.ToList();
+        _markets = _detail.Markets.ToList();
+        _equipment = _detail.Equipment.ToList();
+
+        var attachments = await AttachmentService.GetCompanyAttachmentsAsync(CompanyId);
+        _kk0Attachment = attachments.FirstOrDefault(a => a.Kind == AttachmentKind.Kk0 || a.Kind == AttachmentKind.A1);
+
+        _editingProductId = _editingRawMaterialId = _editingMarketId = _editingEquipmentId = null;
+    }
+
+    private decimal TotalJumlahKebutuhanEnergi => _equipment.Sum(e => e.KonversiKeGas);
+
+    private static KebutuhanEnergiJenis? CombineFlags(IReadOnlyCollection<KebutuhanEnergiJenis> selected) =>
+        selected.Count == 0 ? null : selected.Aggregate((a, b) => a | b);
+
+    private static BahanBakarEksisting? CombineFlags(IReadOnlyCollection<BahanBakarEksisting> selected) =>
+        selected.Count == 0 ? null : selected.Aggregate((a, b) => a | b);
+
+    private static RencanaPemanfaatanGas? CombineFlags(IReadOnlyCollection<RencanaPemanfaatanGas> selected) =>
+        selected.Count == 0 ? null : selected.Aggregate((a, b) => a | b);
+
+    private async Task SaveHeaderAsync()
+    {
+        _headerError = null;
+
+        if (_tanggalSurvey is null)
+        {
+            _headerError = "Tanggal Survei wajib diisi.";
+            ToastService.Error(_headerError, "Validasi Gagal");
+            return;
+        }
+
+        if (_surveyorUserId is null)
+        {
+            _headerError = "Surveyor wajib dipilih.";
+            ToastService.Error(_headerError, "Validasi Gagal");
+            return;
+        }
+
+        var headerRequest = new SaveSurveyRequest(
+            _tanggalSurvey is { } dt ? DateOnly.FromDateTime(dt) : null,
+            _surveyorUserId,
+            _jumlahKaryawan,
+            _jumlahShift,
+            _jamKerjaPerHari,
+            _hariPerMinggu,
+            _bebanPuncak1Mulai,
+            _bebanPuncak1Selesai,
+            _bebanPuncak2Mulai,
+            _bebanPuncak2Selesai,
+            CombineFlags(_kebutuhanEnergiSelected),
+            _kebutuhanEnergiLainnya,
+            _kapasitasNilai,
+            _kapasitasUnitId,
+            _pemakaianNilai,
+            _pemakaianUnitId,
+            _pipaTerdekatJarakM,
+            _pipaTerdekatDiameter,
+            _pipaTerdekatTekanan,
+            CombineFlags(_bahanBakarSelected),
+            _namaPemasok,
+            _kapasitasListrikKw,
+            _pemakaianListrikKwh,
+            CombineFlags(_rencanaSelected),
+            _deskripsiProsesProduksi,
+            _minEfisiensiDiharapkanPct,
+            _willingnessToPayUsdMmbtu,
+            _keteranganLain);
+
+        var productRequests = _products.Select(p => new SaveSurveyProductRequest(p.Produk, p.Kapasitas, p.HargaProduk, p.Catatan)).ToList();
+        var rawMaterialRequests = _rawMaterials.Select(r => new SaveSurveyRawMaterialRequest(r.Bahan, r.Asal, r.CountryId, r.Volume, r.SatuanUnitId)).ToList();
+        var marketRequests = _markets.Select(m => new SaveSurveyMarketRequest(m.Bahan, m.Asal, m.CountryId, m.Volume, m.SatuanUnitId)).ToList();
+        var equipmentRequests = _equipment.Select(e => new SaveSurveyEquipmentRequest(
+            e.JenisPeralatan, e.Kapasitas, e.KapasitasUnitId, e.JamPerHari, e.HariPerMinggu,
+            e.FuelTypeId, e.HargaBahanBakar, e.KonsumsiPerBulan, e.KonsumsiUnitId, e.KonversiKeGas)).ToList();
+
+        var result = await CompanyService.SaveSurveyFullAsync(
+            CompanyId, headerRequest, productRequests, rawMaterialRequests, marketRequests, equipmentRequests, ActorUserId, Actor);
+
+        if (!result.Succeeded)
+        {
+            _headerError = result.Error;
+            ToastService.Error(result.Error ?? "Gagal menyimpan formulir survei.", "Gagal");
+            return;
+        }
+
+        await LoadAsync();
+        ToastService.Success("Formulir survei berhasil disimpan. Tahap berlanjut ke A1.", "Tersimpan");
+        if (OnSaved.HasDelegate)
+        {
+            await OnSaved.InvokeAsync();
+        }
+    }
+
+    private RenderFragment RenderProductTable() => @<div class="space-y-2">
+        <div class="overflow-x-auto min-w-0 border rounded-lg shadow-2xs">
+        <BbTable Data="_products" Class="w-full min-w-[600px]">
+            <BbTableHeader>
+                <BbTableRow TData="SurveyProductDetail">
+                    <BbTableHeaderCell TData="SurveyProductDetail" Class="w-1/4 min-w-[150px] text-left">Produk</BbTableHeaderCell>
+                    <BbTableHeaderCell TData="SurveyProductDetail" Class="w-1/5 min-w-[120px] text-right">Kapasitas</BbTableHeaderCell>
+                    <BbTableHeaderCell TData="SurveyProductDetail" Class="w-1/5 min-w-[120px] text-right">Harga Produk</BbTableHeaderCell>
+                    <BbTableHeaderCell TData="SurveyProductDetail" Class="w-1/4 min-w-[150px] text-left">Catatan</BbTableHeaderCell>
+                    @if (CanEdit)
+                    {
+                        <BbTableHeaderCell TData="SurveyProductDetail" Class="w-px whitespace-nowrap text-center">Aksi</BbTableHeaderCell>
+                    }
+                </BbTableRow>
+            </BbTableHeader>
+            <BbTableBody>
+                @if (_products.Count == 0)
+                {
+                    <BbTableRow TData="SurveyProductDetail">
+                        <BbTableCell Class="text-center text-muted-foreground italic text-sm py-4" ColSpan="@(CanEdit ? 5 : 4)">
+                            Belum ada data produk utama.
+                        </BbTableCell>
+                    </BbTableRow>
+                }
+                @foreach (var row in _products)
+                {
+                    <BbTableRow TData="SurveyProductDetail" Item="row">
+                        <BbTableCell Class="text-left font-medium">@row.Produk</BbTableCell>
+                        <BbTableCell Class="text-right">@(row.Kapasitas?.ToString("N0") ?? "-")</BbTableCell>
+                        <BbTableCell Class="text-right">@(row.HargaProduk?.ToString("N0") ?? "-")</BbTableCell>
+                        <BbTableCell Class="text-left text-muted-foreground">@(row.Catatan ?? "-")</BbTableCell>
+                        @if (CanEdit)
+                        {
+                            <BbTableCell Class="text-center">
+                                <div class="flex items-center justify-center gap-1">
+                                    <BbTooltip>
+                                        <BbTooltipTrigger>
+                                            <BbButton Variant="ButtonVariant.Outline" Size="ButtonSize.IconSmall" OnClick="@(() => StartEditProduct(row))" AriaLabel="Ubah">
+                                                <LucideIcon Name="pencil" Class="size-3.5" />
+                                            </BbButton>
+                                        </BbTooltipTrigger>
+                                        <BbTooltipContent>Ubah</BbTooltipContent>
+                                    </BbTooltip>
+                                    <BbTooltip>
+                                        <BbTooltipTrigger>
+                                            <BbButton Variant="ButtonVariant.Outline" Size="ButtonSize.IconSmall" OnClick="@(() => DeleteProductAsync(row.Id))" AriaLabel="Hapus" Class="text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/30">
+                                                <LucideIcon Name="trash-2" Class="size-3.5" />
+                                            </BbButton>
+                                        </BbTooltipTrigger>
+                                        <BbTooltipContent>Hapus</BbTooltipContent>
+                                    </BbTooltip>
+                                </div>
+                            </BbTableCell>
+                        }
+                    </BbTableRow>
+                }
+            </BbTableBody>
+        </BbTable>
+        </div>
+        @if (CanEdit)
+        {
+            <BbButton Variant="ButtonVariant.Outline" Size="ButtonSize.Small" Disabled="@(_products.Count >= 4)" OnClick="StartAddProduct">
+                <LucideIcon Name="plus" Class="size-4 mr-1" /> Tambah Produk
+            </BbButton>
+        }
+
+        <BbDialog @bind-Open="_productDialogOpen">
+            <BbDialogContent>
+                <EditForm Model="_productForm" OnValidSubmit="SaveProductRowAsync" OnInvalidSubmit="HandleInvalidSubmit">
+                    <DataAnnotationsValidator />
+                    <BbDialogHeader>
+                        <BbDialogTitle>@(_editingProductId is null ? "Tambah Produk Utama" : "Ubah Produk Utama")</BbDialogTitle>
+                    </BbDialogHeader>
+                    <div class="py-4 space-y-3">
+                        <BbFormFieldInput TValue="string" @bind-Value="_productForm.Produk" Label="Nama Produk *" Placeholder="Masukkan nama produk" />
+                        <BbFormFieldInput TValue="decimal?" @bind-Value="_productForm.Kapasitas" Label="Kapasitas" Type="InputType.Number" />
+                        <BbFormFieldInput TValue="decimal?" @bind-Value="_productForm.HargaProduk" Label="Harga Produk" Type="InputType.Number" />
+                        <BbFormFieldInput TValue="string" @bind-Value="_productForm.Catatan" Label="Catatan" />
+                        @if (_productError is not null)
+                        {
+                            <BbAlert Variant="AlertVariant.Danger">
+                                <BbAlertDescription>@_productError</BbAlertDescription>
+                            </BbAlert>
+                        }
+                    </div>
+                    <BbDialogFooter>
+                        <BbButton Variant="ButtonVariant.Outline" Type="ButtonType.Button" OnClick="CancelProductEdit">Batal</BbButton>
+                        <BbButton Type="ButtonType.Submit">Terapkan</BbButton>
+                    </BbDialogFooter>
+                </EditForm>
+            </BbDialogContent>
+        </BbDialog>
+    </div>;
+
+    private void StartAddProduct()
+    {
+        _editingProductId = null;
+        _productForm = new ProductFormModel();
+        _productError = null;
+        _productDialogOpen = true;
+    }
+
+    private void StartEditProduct(SurveyProductDetail row)
+    {
+        _editingProductId = row.Id;
+        _productForm = new ProductFormModel
+        {
+            Produk = row.Produk,
+            Kapasitas = row.Kapasitas,
+            HargaProduk = row.HargaProduk,
+            Catatan = row.Catatan,
+        };
+        _productError = null;
+        _productDialogOpen = true;
+    }
+
+    private void CancelProductEdit()
+    {
+        _editingProductId = null;
+        _productError = null;
+        _productDialogOpen = false;
+    }
+
+    private void SaveProductRowAsync()
+    {
+        _productError = null;
+
+        if (_editingProductId is { } id)
+        {
+            var idx = _products.FindIndex(p => p.Id == id);
+            if (idx >= 0)
+            {
+                _products[idx] = new SurveyProductDetail(id, _productForm.Produk, _productForm.Kapasitas, _productForm.HargaProduk, _productForm.Catatan, (short)idx);
+            }
+        }
+        else
+        {
+            _products.Add(new SurveyProductDetail(Guid.NewGuid(), _productForm.Produk, _productForm.Kapasitas, _productForm.HargaProduk, _productForm.Catatan, (short)_products.Count));
+        }
+
+        _productDialogOpen = false;
+    }
+
+    private void DeleteProductAsync(Guid id)
+    {
+        _products.RemoveAll(p => p.Id == id);
+    }
+
+    private RenderFragment RenderRawMaterialTable() => @<div class="space-y-2">
+        <div class="overflow-x-auto min-w-0 border rounded-lg shadow-2xs">
+        <BbTable Data="_rawMaterials" Class="w-full min-w-[640px]">
+            <BbTableHeader>
+                <BbTableRow TData="SurveyRawMaterialDetail">
+                    <BbTableHeaderCell TData="SurveyRawMaterialDetail" Class="w-1/4 min-w-[150px] text-left">Bahan</BbTableHeaderCell>
+                    <BbTableHeaderCell TData="SurveyRawMaterialDetail" Class="w-1/6 min-w-[110px] text-left">Asal</BbTableHeaderCell>
+                    <BbTableHeaderCell TData="SurveyRawMaterialDetail" Class="w-1/5 min-w-[130px] text-left">Negara</BbTableHeaderCell>
+                    <BbTableHeaderCell TData="SurveyRawMaterialDetail" Class="w-1/6 min-w-[110px] text-right">Volume</BbTableHeaderCell>
+                    <BbTableHeaderCell TData="SurveyRawMaterialDetail" Class="w-1/6 min-w-[120px] text-left">Satuan</BbTableHeaderCell>
+                    @if (CanEdit)
+                    {
+                        <BbTableHeaderCell TData="SurveyRawMaterialDetail" Class="w-px whitespace-nowrap text-center">Aksi</BbTableHeaderCell>
+                    }
+                </BbTableRow>
+            </BbTableHeader>
+            <BbTableBody>
+                @if (_rawMaterials.Count == 0)
+                {
+                    <BbTableRow TData="SurveyRawMaterialDetail">
+                        <BbTableCell Class="text-center text-muted-foreground italic text-sm py-4" ColSpan="@(CanEdit ? 6 : 5)">
+                            Belum ada data bahan baku.
+                        </BbTableCell>
+                    </BbTableRow>
+                }
+                @foreach (var row in _rawMaterials)
+                {
+                    <BbTableRow TData="SurveyRawMaterialDetail" Item="row">
+                        <BbTableCell Class="text-left font-medium">@(row.Bahan ?? "-")</BbTableCell>
+                        <BbTableCell Class="text-left">@(row.Asal is { } asal ? SurveyLabels.AsalLabel(asal) : "-")</BbTableCell>
+                        <BbTableCell Class="text-left">@(_countries.FirstOrDefault(c => c.Value == row.CountryId)?.Text ?? "-")</BbTableCell>
+                        <BbTableCell Class="text-right font-mono">@(row.Volume?.ToString("N2") ?? "-")</BbTableCell>
+                        <BbTableCell Class="text-left">@(_rawMaterialUnits.FirstOrDefault(u => u.Value == row.SatuanUnitId)?.Text ?? "-")</BbTableCell>
+                        @if (CanEdit)
+                        {
+                            <BbTableCell Class="text-center">
+                                <div class="flex items-center justify-center gap-1">
+                                    <BbTooltip>
+                                        <BbTooltipTrigger>
+                                            <BbButton Variant="ButtonVariant.Outline" Size="ButtonSize.IconSmall" OnClick="@(() => StartEditRawMaterial(row))" AriaLabel="Ubah">
+                                                <LucideIcon Name="pencil" Class="size-3.5" />
+                                            </BbButton>
+                                        </BbTooltipTrigger>
+                                        <BbTooltipContent>Ubah</BbTooltipContent>
+                                    </BbTooltip>
+                                    <BbTooltip>
+                                        <BbTooltipTrigger>
+                                            <BbButton Variant="ButtonVariant.Outline" Size="ButtonSize.IconSmall" OnClick="@(() => DeleteRawMaterialAsync(row.Id))" AriaLabel="Hapus" Class="text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/30">
+                                                <LucideIcon Name="trash-2" Class="size-3.5" />
+                                            </BbButton>
+                                        </BbTooltipTrigger>
+                                        <BbTooltipContent>Hapus</BbTooltipContent>
+                                    </BbTooltip>
+                                </div>
+                            </BbTableCell>
+                        }
+                    </BbTableRow>
+                }
+            </BbTableBody>
+        </BbTable>
+        </div>
+        @if (CanEdit)
+        {
+            <BbButton Variant="ButtonVariant.Outline" Size="ButtonSize.Small" Disabled="@(_rawMaterials.Count >= 4)" OnClick="StartAddRawMaterial">
+                <LucideIcon Name="plus" Class="size-4 mr-1" /> Tambah Bahan Baku
+            </BbButton>
+        }
+
+        <BbDialog @bind-Open="_rawMaterialDialogOpen">
+            <BbDialogContent>
+                <EditForm Model="_rawMaterialForm" OnValidSubmit="SaveRawMaterialRowAsync" OnInvalidSubmit="HandleInvalidSubmit">
+                    <DataAnnotationsValidator />
+                    <BbDialogHeader>
+                        <BbDialogTitle>@(_editingRawMaterialId is null ? "Tambah Bahan Baku" : "Ubah Bahan Baku")</BbDialogTitle>
+                    </BbDialogHeader>
+                    <div class="py-4 space-y-3">
+                        <BbFormFieldInput TValue="string" @bind-Value="_rawMaterialForm.Bahan" Label="Nama Bahan *" Placeholder="Masukkan nama bahan baku" />
+                        <BbFormFieldSelect TValue="Asal?" @bind-Value="_rawMaterialForm.Asal" Label="Asal" Placeholder="Pilih asal">
+                            <BbSelectItem Value="@((Asal?)Asal.Lokal)" Text="Lokal" />
+                            <BbSelectItem Value="@((Asal?)Asal.Impor)" Text="Impor" />
+                        </BbFormFieldSelect>
+                        <BbFormFieldCombobox TValue="Guid?"
+                                             @bind-Value="_rawMaterialForm.CountryId"
+                                             Label="Negara Asal"
+                                             Options="_countries"
+                                             Placeholder="Pilih negara"
+                                             SearchPlaceholder="Cari negara..."
+                                             EmptyMessage="Tidak ditemukan"
+                                             MatchTriggerWidth
+                                             Class="w-full"
+                                             InputClass="w-full text-xs" />
+                        <div class="grid grid-cols-2 gap-4">
+                            <BbFormFieldInput TValue="decimal?" @bind-Value="_rawMaterialForm.Volume" Label="Volume" Type="InputType.Number" Class="w-full" InputClass="w-full" />
+                            <BbFormFieldCombobox TValue="Guid?"
+                                                 @bind-Value="_rawMaterialForm.SatuanUnitId"
+                                                 Label="Satuan"
+                                                 Options="_rawMaterialUnits"
+                                                 Placeholder="Pilih satuan"
+                                                 SearchPlaceholder="Cari satuan..."
+                                                 EmptyMessage="Tidak ditemukan"
+                                                 MatchTriggerWidth
+                                                 Class="w-full"
+                                                 InputClass="w-full text-xs" />
+                        </div>
+                        @if (_rawMaterialError is not null)
+                        {
+                            <BbAlert Variant="AlertVariant.Danger">
+                                <BbAlertDescription>@_rawMaterialError</BbAlertDescription>
+                            </BbAlert>
+                        }
+                    </div>
+                    <BbDialogFooter>
+                        <BbButton Variant="ButtonVariant.Outline" Type="ButtonType.Button" OnClick="CancelRawMaterialEdit">Batal</BbButton>
+                        <BbButton Type="ButtonType.Submit">Terapkan</BbButton>
+                    </BbDialogFooter>
+                </EditForm>
+            </BbDialogContent>
+        </BbDialog>
+    </div>;
+
+    private void StartAddRawMaterial()
+    {
+        _editingRawMaterialId = null;
+        _rawMaterialForm = new RawMaterialFormModel();
+        _rawMaterialError = null;
+        _rawMaterialDialogOpen = true;
+    }
+
+    private void StartEditRawMaterial(SurveyRawMaterialDetail row)
+    {
+        _editingRawMaterialId = row.Id;
+        _rawMaterialForm = new RawMaterialFormModel
+        {
+            Bahan = row.Bahan,
+            Asal = row.Asal,
+            CountryId = row.CountryId,
+            Volume = row.Volume,
+            SatuanUnitId = row.SatuanUnitId,
+        };
+        _rawMaterialError = null;
+        _rawMaterialDialogOpen = true;
+    }
+
+    private void CancelRawMaterialEdit()
+    {
+        _editingRawMaterialId = null;
+        _rawMaterialError = null;
+        _rawMaterialDialogOpen = false;
+    }
+
+    private void SaveRawMaterialRowAsync()
+    {
+        _rawMaterialError = null;
+
+        if (_editingRawMaterialId is { } id)
+        {
+            var idx = _rawMaterials.FindIndex(r => r.Id == id);
+            if (idx >= 0)
+            {
+                _rawMaterials[idx] = new SurveyRawMaterialDetail(id, _rawMaterialForm.Bahan, _rawMaterialForm.Asal, _rawMaterialForm.CountryId, _rawMaterialForm.Volume, _rawMaterialForm.SatuanUnitId, (short)idx);
+            }
+        }
+        else
+        {
+            _rawMaterials.Add(new SurveyRawMaterialDetail(Guid.NewGuid(), _rawMaterialForm.Bahan, _rawMaterialForm.Asal, _rawMaterialForm.CountryId, _rawMaterialForm.Volume, _rawMaterialForm.SatuanUnitId, (short)_rawMaterials.Count));
+        }
+
+        _rawMaterialDialogOpen = false;
+    }
+
+    private void DeleteRawMaterialAsync(Guid id)
+    {
+        _rawMaterials.RemoveAll(r => r.Id == id);
+    }
+
+    private RenderFragment RenderMarketTable() => @<div class="space-y-2">
+        <div class="overflow-x-auto min-w-0 border rounded-lg shadow-2xs">
+        <BbTable Data="_markets" Class="w-full min-w-[640px]">
+            <BbTableHeader>
+                <BbTableRow TData="SurveyMarketDetail">
+                    <BbTableHeaderCell TData="SurveyMarketDetail" Class="w-1/4 min-w-[150px] text-left">Bahan</BbTableHeaderCell>
+                    <BbTableHeaderCell TData="SurveyMarketDetail" Class="w-1/6 min-w-[110px] text-left">Asal</BbTableHeaderCell>
+                    <BbTableHeaderCell TData="SurveyMarketDetail" Class="w-1/5 min-w-[130px] text-left">Negara Tujuan</BbTableHeaderCell>
+                    <BbTableHeaderCell TData="SurveyMarketDetail" Class="w-1/6 min-w-[110px] text-right">Volume</BbTableHeaderCell>
+                    <BbTableHeaderCell TData="SurveyMarketDetail" Class="w-1/6 min-w-[120px] text-left">Satuan</BbTableHeaderCell>
+                    @if (CanEdit)
+                    {
+                        <BbTableHeaderCell TData="SurveyMarketDetail" Class="w-px whitespace-nowrap text-center">Aksi</BbTableHeaderCell>
+                    }
+                </BbTableRow>
+            </BbTableHeader>
+            <BbTableBody>
+                @if (_markets.Count == 0)
+                {
+                    <BbTableRow TData="SurveyMarketDetail">
+                        <BbTableCell Class="text-center text-muted-foreground italic text-sm py-4" ColSpan="@(CanEdit ? 6 : 5)">
+                            Belum ada data orientasi pasar.
+                        </BbTableCell>
+                    </BbTableRow>
+                }
+                @foreach (var row in _markets)
+                {
+                    <BbTableRow TData="SurveyMarketDetail" Item="row">
+                        <BbTableCell Class="text-left font-medium">@(row.Bahan ?? "-")</BbTableCell>
+                        <BbTableCell Class="text-left">@(row.Asal is { } asal ? SurveyLabels.AsalLabel(asal) : "-")</BbTableCell>
+                        <BbTableCell Class="text-left">@(_countries.FirstOrDefault(c => c.Value == row.CountryId)?.Text ?? "-")</BbTableCell>
+                        <BbTableCell Class="text-right font-mono">@(row.Volume?.ToString("N2") ?? "-")</BbTableCell>
+                        <BbTableCell Class="text-left">@(_rawMaterialUnits.FirstOrDefault(u => u.Value == row.SatuanUnitId)?.Text ?? "-")</BbTableCell>
+                        @if (CanEdit)
+                        {
+                            <BbTableCell Class="text-center">
+                                <div class="flex items-center justify-center gap-1">
+                                    <BbTooltip>
+                                        <BbTooltipTrigger>
+                                            <BbButton Variant="ButtonVariant.Outline" Size="ButtonSize.IconSmall" OnClick="@(() => StartEditMarket(row))" AriaLabel="Ubah">
+                                                <LucideIcon Name="pencil" Class="size-3.5" />
+                                            </BbButton>
+                                        </BbTooltipTrigger>
+                                        <BbTooltipContent>Ubah</BbTooltipContent>
+                                    </BbTooltip>
+                                    <BbTooltip>
+                                        <BbTooltipTrigger>
+                                            <BbButton Variant="ButtonVariant.Outline" Size="ButtonSize.IconSmall" OnClick="@(() => DeleteMarketAsync(row.Id))" AriaLabel="Hapus" Class="text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/30">
+                                                <LucideIcon Name="trash-2" Class="size-3.5" />
+                                            </BbButton>
+                                        </BbTooltipTrigger>
+                                        <BbTooltipContent>Hapus</BbTooltipContent>
+                                    </BbTooltip>
+                                </div>
+                            </BbTableCell>
+                        }
+                    </BbTableRow>
+                }
+            </BbTableBody>
+        </BbTable>
+        </div>
+        @if (CanEdit)
+        {
+            <BbButton Variant="ButtonVariant.Outline" Size="ButtonSize.Small" Disabled="@(_markets.Count >= 4)" OnClick="StartAddMarket">
+                <LucideIcon Name="plus" Class="size-4 mr-1" /> Tambah Pasar
+            </BbButton>
+        }
+
+        <BbDialog @bind-Open="_marketDialogOpen">
+            <BbDialogContent>
+                <EditForm Model="_marketForm" OnValidSubmit="SaveMarketRowAsync" OnInvalidSubmit="HandleInvalidSubmit">
+                    <DataAnnotationsValidator />
+                    <BbDialogHeader>
+                        <BbDialogTitle>@(_editingMarketId is null ? "Tambah Orientasi Pasar" : "Ubah Orientasi Pasar")</BbDialogTitle>
+                    </BbDialogHeader>
+                    <div class="py-4 space-y-3">
+                        <BbFormFieldInput TValue="string" @bind-Value="_marketForm.Bahan" Label="Nama Produk / Bahan *" Placeholder="Masukkan nama bahan" />
+                        <BbFormFieldSelect TValue="Asal?" @bind-Value="_marketForm.Asal" Label="Pasar" Placeholder="Pilih pasar">
+                            <BbSelectItem Value="@((Asal?)Asal.Lokal)" Text="Lokal" />
+                            <BbSelectItem Value="@((Asal?)Asal.Impor)" Text="Ekspor" />
+                        </BbFormFieldSelect>
+                        <BbFormFieldCombobox TValue="Guid?"
+                                             @bind-Value="_marketForm.CountryId"
+                                             Label="Negara Tujuan"
+                                             Options="_countries"
+                                             Placeholder="Pilih negara"
+                                             SearchPlaceholder="Cari negara..."
+                                             EmptyMessage="Tidak ditemukan"
+                                             MatchTriggerWidth
+                                             Class="w-full"
+                                             InputClass="w-full text-xs" />
+                        <div class="grid grid-cols-2 gap-4">
+                            <BbFormFieldInput TValue="decimal?" @bind-Value="_marketForm.Volume" Label="Volume" Type="InputType.Number" Class="w-full" InputClass="w-full" />
+                            <BbFormFieldCombobox TValue="Guid?"
+                                                 @bind-Value="_marketForm.SatuanUnitId"
+                                                 Label="Satuan"
+                                                 Options="_rawMaterialUnits"
+                                                 Placeholder="Pilih satuan"
+                                                 SearchPlaceholder="Cari satuan..."
+                                                 EmptyMessage="Tidak ditemukan"
+                                                 MatchTriggerWidth
+                                                 Class="w-full"
+                                                 InputClass="w-full text-xs" />
+                        </div>
+                        @if (_marketError is not null)
+                        {
+                            <BbAlert Variant="AlertVariant.Danger">
+                                <BbAlertDescription>@_marketError</BbAlertDescription>
+                            </BbAlert>
+                        }
+                    </div>
+                    <BbDialogFooter>
+                        <BbButton Variant="ButtonVariant.Outline" Type="ButtonType.Button" OnClick="CancelMarketEdit">Batal</BbButton>
+                        <BbButton Type="ButtonType.Submit">Terapkan</BbButton>
+                    </BbDialogFooter>
+                </EditForm>
+            </BbDialogContent>
+        </BbDialog>
+    </div>;
+
+    private void StartAddMarket()
+    {
+        _editingMarketId = null;
+        _marketForm = new MarketFormModel();
+        _marketError = null;
+        _marketDialogOpen = true;
+    }
+
+    private void StartEditMarket(SurveyMarketDetail row)
+    {
+        _editingMarketId = row.Id;
+        _marketForm = new MarketFormModel
+        {
+            Bahan = row.Bahan,
+            Asal = row.Asal,
+            CountryId = row.CountryId,
+            Volume = row.Volume,
+            SatuanUnitId = row.SatuanUnitId,
+        };
+        _marketError = null;
+        _marketDialogOpen = true;
+    }
+
+    private void CancelMarketEdit()
+    {
+        _editingMarketId = null;
+        _marketError = null;
+        _marketDialogOpen = false;
+    }
+
+    private void SaveMarketRowAsync()
+    {
+        _marketError = null;
+
+        if (_editingMarketId is { } id)
+        {
+            var idx = _markets.FindIndex(m => m.Id == id);
+            if (idx >= 0)
+            {
+                _markets[idx] = new SurveyMarketDetail(id, _marketForm.Bahan, _marketForm.Asal, _marketForm.CountryId, _marketForm.Volume, _marketForm.SatuanUnitId, (short)idx);
+            }
+        }
+        else
+        {
+            _markets.Add(new SurveyMarketDetail(Guid.NewGuid(), _marketForm.Bahan, _marketForm.Asal, _marketForm.CountryId, _marketForm.Volume, _marketForm.SatuanUnitId, (short)_markets.Count));
+        }
+
+        _marketDialogOpen = false;
+    }
+
+    private void DeleteMarketAsync(Guid id)
+    {
+        _markets.RemoveAll(m => m.Id == id);
+    }
+
+    private RenderFragment RenderEquipmentTable() => @<div class="space-y-2">
+        <div class="overflow-x-auto min-w-0 border rounded-lg shadow-2xs">
+        <BbTable Data="_equipment" Class="w-full min-w-[850px]">
+            <BbTableHeader>
+                <BbTableRow TData="SurveyEquipmentDetail">
+                    <BbTableHeaderCell TData="SurveyEquipmentDetail" Class="w-1/4 min-w-[180px] text-left">Jenis Peralatan</BbTableHeaderCell>
+                    <BbTableHeaderCell TData="SurveyEquipmentDetail" Class="w-1/6 min-w-[170px] text-right">Kapasitas</BbTableHeaderCell>
+                    <BbTableHeaderCell TData="SurveyEquipmentDetail" Class="w-1/6 min-w-[150px] text-center">Pola Operasi</BbTableHeaderCell>
+                    <BbTableHeaderCell TData="SurveyEquipmentDetail" Class="w-1/6 min-w-[140px] text-left">Bahan Bakar</BbTableHeaderCell>
+                    <BbTableHeaderCell TData="SurveyEquipmentDetail" Class="w-1/6 min-w-[170px] text-right">Konsumsi/Bulan</BbTableHeaderCell>
+                    <BbTableHeaderCell TData="SurveyEquipmentDetail" Class="w-1/6 min-w-[120px] text-right">Konversi ke Gas</BbTableHeaderCell>
+                    @if (CanEdit)
+                    {
+                        <BbTableHeaderCell TData="SurveyEquipmentDetail" Class="w-px whitespace-nowrap text-center">Aksi</BbTableHeaderCell>
+                    }
+                </BbTableRow>
+            </BbTableHeader>
+            <BbTableBody>
+                @if (_equipment.Count == 0)
+                {
+                    <BbTableRow TData="SurveyEquipmentDetail">
+                        <BbTableCell Class="text-center text-muted-foreground italic text-sm py-4" ColSpan="@(CanEdit ? 7 : 6)">
+                            Belum ada data perincian peralatan.
+                        </BbTableCell>
+                    </BbTableRow>
+                }
+                @foreach (var row in _equipment)
+                {
+                    <BbTableRow TData="SurveyEquipmentDetail" Item="row">
+                        <BbTableCell Class="text-left font-medium">@row.JenisPeralatan</BbTableCell>
+                        <BbTableCell Class="text-right">@(row.Kapasitas?.ToString("N2") ?? "-") @(_capacityUnits.FirstOrDefault(u => u.Value == row.KapasitasUnitId)?.Text)</BbTableCell>
+                        <BbTableCell Class="text-center">@(row.JamPerHari?.ToString("N0") ?? "-") jam × @(row.HariPerMinggu?.ToString() ?? "-") hari</BbTableCell>
+                        <BbTableCell Class="text-left">@(_fuelTypes.FirstOrDefault(f => f.Value == row.FuelTypeId)?.Text ?? "-")</BbTableCell>
+                        <BbTableCell Class="text-right">@(row.KonsumsiPerBulan?.ToString("N0") ?? "-") @(_fuelConsumptionUnits.FirstOrDefault(u => u.Value == row.KonsumsiUnitId)?.Text)</BbTableCell>
+                        <BbTableCell Class="text-right font-mono font-semibold">
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300 text-xs">
+                                @row.KonversiKeGas.ToString("N2") MMBTU
+                            </span>
+                        </BbTableCell>
+                        @if (CanEdit)
+                        {
+                            <BbTableCell Class="text-center">
+                                <div class="flex items-center justify-center gap-1">
+                                    <BbTooltip>
+                                        <BbTooltipTrigger>
+                                            <BbButton Variant="ButtonVariant.Outline" Size="ButtonSize.IconSmall" OnClick="@(() => StartEditEquipment(row))" AriaLabel="Ubah">
+                                                <LucideIcon Name="pencil" Class="size-3.5" />
+                                            </BbButton>
+                                        </BbTooltipTrigger>
+                                        <BbTooltipContent>Ubah</BbTooltipContent>
+                                    </BbTooltip>
+                                    <BbTooltip>
+                                        <BbTooltipTrigger>
+                                            <BbButton Variant="ButtonVariant.Outline" Size="ButtonSize.IconSmall" OnClick="@(() => DeleteEquipmentAsync(row.Id))" AriaLabel="Hapus" Class="text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/30">
+                                                <LucideIcon Name="trash-2" Class="size-3.5" />
+                                            </BbButton>
+                                        </BbTooltipTrigger>
+                                        <BbTooltipContent>Hapus</BbTooltipContent>
+                                    </BbTooltip>
+                                </div>
+                            </BbTableCell>
+                        }
+                    </BbTableRow>
+                }
+            </BbTableBody>
+        </BbTable>
+        </div>
+        @if (CanEdit)
+        {
+            <BbButton Variant="ButtonVariant.Outline" Size="ButtonSize.Small" OnClick="StartAddEquipment">
+                <LucideIcon Name="plus" Class="size-4 mr-1" /> Tambah Peralatan
+            </BbButton>
+        }
+
+        <BbDialog @bind-Open="_equipmentDialogOpen">
+            <BbDialogContent Class="max-w-lg">
+                <EditForm Model="_equipmentForm" OnValidSubmit="SaveEquipmentRowAsync" OnInvalidSubmit="HandleInvalidSubmit">
+                    <DataAnnotationsValidator />
+                    <BbDialogHeader>
+                        <BbDialogTitle>@(_editingEquipmentId is null ? "Tambah Peralatan" : "Ubah Peralatan")</BbDialogTitle>
+                    </BbDialogHeader>
+                    <div class="py-4 space-y-3">
+                        <BbFormFieldInput TValue="string" @bind-Value="_equipmentForm.JenisPeralatan" Label="Jenis Peralatan *" Placeholder="Contoh: Boiler, Burner, Kiln" />
+                        <div class="grid grid-cols-2 gap-4">
+                            <BbFormFieldInput TValue="decimal?" @bind-Value="_equipmentForm.Kapasitas" Label="Kapasitas" Type="InputType.Number" Class="w-full" InputClass="w-full" />
+                            <BbFormFieldCombobox TValue="Guid?"
+                                                 @bind-Value="_equipmentForm.KapasitasUnitId"
+                                                 Label="Satuan Kapasitas"
+                                                 Options="_capacityUnits"
+                                                 Placeholder="Pilih satuan"
+                                                 SearchPlaceholder="Cari satuan..."
+                                                 EmptyMessage="Tidak ditemukan"
+                                                 MatchTriggerWidth
+                                                 Class="w-full"
+                                                 InputClass="w-full text-xs" />
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <BbFormFieldInput TValue="decimal?" @bind-Value="_equipmentForm.JamPerHari" Label="Jam Kerja / Hari" Type="InputType.Number" Placeholder="Jam" Class="w-full" InputClass="w-full" />
+                            <BbFormFieldInput TValue="short?" @bind-Value="_equipmentForm.HariPerMinggu" Label="Hari Kerja / Minggu" Type="InputType.Number" Placeholder="Hari" Class="w-full" InputClass="w-full" />
+                        </div>
+                        <BbFormFieldCombobox TValue="Guid?"
+                                             @bind-Value="_equipmentForm.FuelTypeId"
+                                             Label="Jenis Bahan Bakar"
+                                             Options="_fuelTypes"
+                                             Placeholder="Pilih jenis bahan bakar"
+                                             SearchPlaceholder="Cari bahan bakar..."
+                                             EmptyMessage="Tidak ditemukan"
+                                             MatchTriggerWidth
+                                             Class="w-full"
+                                             InputClass="w-full text-xs" />
+                        <div class="grid grid-cols-2 gap-4">
+                            <BbFormFieldInput TValue="decimal?" @bind-Value="_equipmentForm.KonsumsiPerBulan" Label="Konsumsi / Bulan" Type="InputType.Number" Class="w-full" InputClass="w-full" />
+                            <BbFormFieldCombobox TValue="Guid?"
+                                                 @bind-Value="_equipmentForm.KonsumsiUnitId"
+                                                 Label="Satuan Konsumsi"
+                                                 Options="_fuelConsumptionUnits"
+                                                 Placeholder="Pilih satuan"
+                                                 SearchPlaceholder="Cari satuan..."
+                                                 EmptyMessage="Tidak ditemukan"
+                                                 MatchTriggerWidth
+                                                 Class="w-full"
+                                                 InputClass="w-full text-xs" />
+                        </div>
+                        <BbFormFieldInput TValue="decimal" @bind-Value="_equipmentForm.KonversiKeGas" Label="Konversi ke Gas (MMBTU)" Type="InputType.Number" />
+                        @if (_equipmentError is not null)
+                        {
+                            <BbAlert Variant="AlertVariant.Danger">
+                                <BbAlertDescription>@_equipmentError</BbAlertDescription>
+                            </BbAlert>
+                        }
+                    </div>
+                    <BbDialogFooter>
+                        <BbButton Variant="ButtonVariant.Outline" Type="ButtonType.Button" OnClick="CancelEquipmentEdit">Batal</BbButton>
+                        <BbButton Type="ButtonType.Submit">Terapkan</BbButton>
+                    </BbDialogFooter>
+                </EditForm>
+            </BbDialogContent>
+        </BbDialog>
+    </div>;
+
+    private void StartAddEquipment()
+    {
+        _editingEquipmentId = null;
+        _equipmentForm = new EquipmentFormModel();
+        _equipmentError = null;
+        _equipmentDialogOpen = true;
+    }
+
+    private void StartEditEquipment(SurveyEquipmentDetail row)
+    {
+        _editingEquipmentId = row.Id;
+        _equipmentForm = new EquipmentFormModel
+        {
+            JenisPeralatan = row.JenisPeralatan,
+            Kapasitas = row.Kapasitas,
+            KapasitasUnitId = row.KapasitasUnitId,
+            JamPerHari = row.JamPerHari,
+            HariPerMinggu = row.HariPerMinggu,
+            FuelTypeId = row.FuelTypeId,
+            HargaBahanBakar = row.HargaBahanBakar,
+            KonsumsiPerBulan = row.KonsumsiPerBulan,
+            KonsumsiUnitId = row.KonsumsiUnitId,
+            KonversiKeGas = row.KonversiKeGas,
+        };
+        _equipmentError = null;
+        _equipmentDialogOpen = true;
+    }
+
+    private void CancelEquipmentEdit()
+    {
+        _editingEquipmentId = null;
+        _equipmentError = null;
+        _equipmentDialogOpen = false;
+    }
+
+    private void SaveEquipmentRowAsync()
+    {
+        _equipmentError = null;
+
+        if (_editingEquipmentId is { } id)
+        {
+            var idx = _equipment.FindIndex(e => e.Id == id);
+            if (idx >= 0)
+            {
+                _equipment[idx] = new SurveyEquipmentDetail(
+                    id, _equipmentForm.JenisPeralatan, _equipmentForm.Kapasitas, _equipmentForm.KapasitasUnitId,
+                    _equipmentForm.JamPerHari, _equipmentForm.HariPerMinggu, _equipmentForm.FuelTypeId,
+                    _equipmentForm.HargaBahanBakar, _equipmentForm.KonsumsiPerBulan, _equipmentForm.KonsumsiUnitId,
+                    _equipmentForm.KonversiKeGas, (short)idx);
+            }
+        }
+        else
+        {
+            _equipment.Add(new SurveyEquipmentDetail(
+                Guid.NewGuid(), _equipmentForm.JenisPeralatan, _equipmentForm.Kapasitas, _equipmentForm.KapasitasUnitId,
+                _equipmentForm.JamPerHari, _equipmentForm.HariPerMinggu, _equipmentForm.FuelTypeId,
+                _equipmentForm.HargaBahanBakar, _equipmentForm.KonsumsiPerBulan, _equipmentForm.KonsumsiUnitId,
+                _equipmentForm.KonversiKeGas, (short)_equipment.Count));
+        }
+
+        _equipmentDialogOpen = false;
+    }
+
+    private void DeleteEquipmentAsync(Guid id)
+    {
+        _equipment.RemoveAll(e => e.Id == id);
+    }
+
+    private void HandleInvalidSubmit() => ToastService.Error("Mohon lengkapi semua kolom yang wajib diisi.", "Validasi Gagal");
+}

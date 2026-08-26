@@ -1,0 +1,73 @@
+@page "/reports/ageing"
+@inherits AdminPageBase
+@using Simando.Application.Reports
+@using Simando.Application.Workflow
+@using Simando.Domain.Security
+@inject IReportsService Service
+
+<PageTitle>Umur Berkas &amp; SLA - DMS Simando</PageTitle>
+
+@if (Authorized)
+{
+    <BbPageHeader Title="Laporan Umur Berkas & SLA (Ageing)" Subtitle="Pemantauan durasi waktu tunggu permohonan aktif di setiap tahapan persetujuan." />
+
+    <BbCard>
+        <BbCardContent Class="pt-6">
+            <BbDataTable TData="AgeingRow" Data="_rows" InitialPageSize="25" AriaLabel="Umur berkas & SLA aktif">
+                <Columns>
+                    <BbDataTableColumn TData="AgeingRow" TValue="string" Header="Perusahaan">
+                        <CellTemplate Context="r">
+                            <div class="flex flex-col">
+                                <span class="font-medium">@r.NamaPerusahaan</span>
+                                <span class="text-xs text-muted-foreground">@r.Nomor · @r.IndustryTypeName</span>
+                            </div>
+                        </CellTemplate>
+                    </BbDataTableColumn>
+                    <BbDataTableColumn TData="AgeingRow" TValue="string" Header="Tahap" Width="140px" HeaderClass="whitespace-nowrap" CellClass="whitespace-nowrap">
+                        <CellTemplate Context="r">@WorkflowLabels.StepKindLabel(r.StepKind)</CellTemplate>
+                    </BbDataTableColumn>
+                    <BbDataTableColumn TData="AgeingRow" TValue="string" Header="Area" Property="@(r => r.AreaName)" Sortable="true" Width="140px" HeaderClass="whitespace-nowrap" CellClass="whitespace-nowrap" />
+                    <BbDataTableColumn TData="AgeingRow" TValue="string" Header="Sedang menunggu" Property="@(r => r.ActorLabel)" Sortable="true" Width="200px" HeaderClass="whitespace-nowrap" CellClass="whitespace-nowrap" />
+                    <BbDataTableColumn TData="AgeingRow" TValue="string" Header="Menunggu" Width="100px" HeaderClass="whitespace-nowrap" CellClass="whitespace-nowrap">
+                        <CellTemplate Context="r">@WorkflowLabels.WaitingLabel(r.WaitingSince)</CellTemplate>
+                    </BbDataTableColumn>
+                    <BbDataTableColumn TData="AgeingRow" TValue="string" Header="Aksi" Width="1px" HeaderClass="w-px whitespace-nowrap text-center" CellClass="w-px whitespace-nowrap text-center">
+                        <CellTemplate Context="r">
+                            <div class="flex items-center justify-center">
+                                <BbTooltip>
+                                    <BbTooltipTrigger>
+                                        <BbButton Href="@($"/companies/{r.CompanyId}")" Variant="ButtonVariant.Outline" Size="ButtonSize.IconSmall" AriaLabel="Tinjau">
+                                            <LucideIcon Name="eye" Class="size-4" />
+                                        </BbButton>
+                                    </BbTooltipTrigger>
+                                    <BbTooltipContent>Tinjau</BbTooltipContent>
+                                </BbTooltip>
+                            </div>
+                        </CellTemplate>
+                    </BbDataTableColumn>
+                </Columns>
+                <EmptyTemplate>
+                    <BbEmpty Title="Tidak ada berkas aktif" Description="Tidak ada berkas yang sedang menunggu tindakan saat ini." />
+                </EmptyTemplate>
+            </BbDataTable>
+        </BbCardContent>
+    </BbCard>
+}
+
+@code {
+    private List<AgeingRow> _rows = [];
+
+    protected override Capability[] RequiredCapabilities => [Capability.ViewAgeingReport];
+
+    protected override BreadcrumbItem[] Breadcrumbs =>
+    [
+        new("Beranda", "/"),
+        new("Laporan", "/reports"),
+        new("Umur Berkas & SLA", null),
+    ];
+
+    protected override async Task OnAuthorizedInitializedAsync()
+    {
+        _rows = (await Service.GetAgeingAsync(CurrentUser.Permissions)).ToList();
+    }
+}

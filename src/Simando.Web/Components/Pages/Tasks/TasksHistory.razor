@@ -1,0 +1,131 @@
+@page "/tasks/history"
+@inherits AdminPageBase
+@using Simando.Application.Tasks
+@using Simando.Application.Workflow
+@using Simando.Domain.Audit
+@using Simando.Domain.Security
+@inject ITasksService TasksService
+
+<PageTitle>Riwayat Tugas - DMS Simando</PageTitle>
+
+@if (Authorized)
+{
+    <div class="space-y-6">
+        <BbPageHeader Title="Riwayat Tindakan Tugas Saya" Subtitle="Catatan historis persetujuan, revisi, dan penolakan yang pernah Anda tindak lanjuti." />
+
+        @if (_loading)
+        {
+            <p class="text-sm text-muted-foreground">Memuat riwayat tindakan…</p>
+        }
+        else
+        {
+            <BbCard>
+                <BbCardHeader>
+                    <BbCardTitle>Log Tindakan Saya (@_totalCount)</BbCardTitle>
+                </BbCardHeader>
+                <BbCardContent>
+                    <BbDataTable TData="TaskHistoryItem" Data="_history" InitialPageSize="25" AriaLabel="Riwayat tindakan tugas">
+                        <Columns>
+                            <BbDataTableColumn TData="TaskHistoryItem" TValue="string" Header="Perusahaan" Width="30%">
+                                <CellTemplate Context="h">
+                                    <div class="flex flex-col">
+                                        <a href="/companies/@h.CompanyId" class="font-semibold text-primary hover:underline">@h.NamaPerusahaan</a>
+                                        <span class="text-xs text-muted-foreground">@h.Nomor</span>
+                                    </div>
+                                </CellTemplate>
+                            </BbDataTableColumn>
+                            <BbDataTableColumn TData="TaskHistoryItem" TValue="string" Header="Tindakan" Width="140px">
+                                <CellTemplate Context="h">@WorkflowLabels.ActionLabel(h.Action)</CellTemplate>
+                            </BbDataTableColumn>
+                            <BbDataTableColumn TData="TaskHistoryItem" TValue="DateTimeOffset" Header="Waktu" Property="@(h => h.ActedAt)" Sortable="true" Width="160px" />
+                            <BbDataTableColumn TData="TaskHistoryItem" TValue="string" Header="Catatan / Alasan">
+                                <CellTemplate Context="h">
+                                    @if (string.IsNullOrWhiteSpace(h.Comment))
+                                    {
+                                        <span class="text-muted-foreground italic">-</span>
+                                    }
+                                    else
+                                    {
+                                        <span>@h.Comment</span>
+                                    }
+                                </CellTemplate>
+                            </BbDataTableColumn>
+                        </Columns>
+                        <EmptyTemplate>
+                            <BbEmpty Title="Belum ada riwayat" Description="Setiap tindakan persetujuan atau revisi yang Anda lakukan akan tercatat di sini." />
+                        </EmptyTemplate>
+                    </BbDataTable>
+
+                    @if (_totalCount > 0)
+                    {
+                        <div class="flex items-center justify-between mt-4 px-2 text-xs text-muted-foreground">
+                            <div>
+                                Menampilkan @((_currentPage - 1) * _pageSize + 1) – @Math.Min(_currentPage * _pageSize, _totalCount) dari @_totalCount riwayat
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <BbButton Variant="ButtonVariant.Outline" Size="ButtonSize.Small" Disabled="@(_currentPage <= 1)" OnClick="PrevPageAsync">
+                                    Sebelumnya
+                                </BbButton>
+                                <span>Halaman @_currentPage dari @TotalPages</span>
+                                <BbButton Variant="ButtonVariant.Outline" Size="ButtonSize.Small" Disabled="@(_currentPage >= TotalPages)" OnClick="NextPageAsync">
+                                    Selanjutnya
+                                </BbButton>
+                            </div>
+                        </div>
+                    }
+                </BbCardContent>
+            </BbCard>
+        }
+    </div>
+}
+
+@code {
+    private List<TaskHistoryItem> _history = [];
+    private bool _loading = true;
+    private int _currentPage = 1;
+    private int _pageSize = 25;
+    private int _totalCount;
+
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling((double)_totalCount / _pageSize));
+
+    protected override Capability[] RequiredCapabilities => [Capability.ActOnApprovalStep];
+
+    protected override BreadcrumbItem[] Breadcrumbs =>
+    [
+        new("Beranda", "/"),
+        new("Tugas Saya", "/tasks"),
+        new("Riwayat Tugas", null),
+    ];
+
+    protected override async Task OnAuthorizedInitializedAsync()
+    {
+        await LoadPageAsync();
+    }
+
+    private async Task LoadPageAsync()
+    {
+        _loading = true;
+        var paged = await TasksService.GetPagedHistoryAsync(CurrentUser.UserId, _currentPage, _pageSize);
+        _history = paged.Items.ToList();
+        _totalCount = paged.TotalCount;
+        _loading = false;
+    }
+
+    private async Task NextPageAsync()
+    {
+        if (_currentPage < TotalPages)
+        {
+            _currentPage++;
+            await LoadPageAsync();
+        }
+    }
+
+    private async Task PrevPageAsync()
+    {
+        if (_currentPage > 1)
+        {
+            _currentPage--;
+            await LoadPageAsync();
+        }
+    }
+}

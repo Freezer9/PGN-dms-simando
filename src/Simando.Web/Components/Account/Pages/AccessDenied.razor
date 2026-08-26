@@ -1,0 +1,25 @@
+@page "/access-denied"
+@layout AuthLayout
+@attribute [AllowAnonymous]
+
+<PageTitle>Akses Ditolak - DMS Simando</PageTitle>
+
+<div class="min-h-screen flex items-center justify-center p-4">
+    <BbCard Class="w-full max-w-sm">
+        <BbCardHeader>
+            <BbCardTitle>Akses Ditolak</BbCardTitle>
+            <BbCardDescription>Izin tidak mencukupi</BbCardDescription>
+        </BbCardHeader>
+        <BbCardContent>
+            <BbAlert Variant="AlertVariant.Warning">
+                <BbAlertDescription>
+                    Anda tidak memiliki akses ke halaman ini. Jika menurut Anda ini keliru,
+                    hubungi administrator Anda.
+                </BbAlertDescription>
+            </BbAlert>
+        </BbCardContent>
+        <BbCardFooter>
+            <BbButton Href="/" Variant="ButtonVariant.Outline" Class="w-full">Kembali ke Beranda</BbButton>
+        </BbCardFooter>
+    </BbCard>
+</div>

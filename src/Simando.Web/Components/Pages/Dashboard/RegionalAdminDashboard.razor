@@ -1,0 +1,172 @@
+@using Simando.Application.Dashboard
+@using Simando.Application.Directory
+@using Simando.Domain.Directory
+@using Simando.Web.Components.Shared
+
+<div class="space-y-6">
+    <!-- Header with Action Shortcuts Bar -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold tracking-tight text-foreground">Beranda Regional Admin</h1>
+            <p class="text-xs text-muted-foreground mt-1">Region: <strong class="text-foreground">@RegionName</strong> · Pemantauan tugas tertahan, antrean evaluasi, dan corong regional.</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+            <BbButton Href="/tasks/blocked" Variant="ButtonVariant.Default" Size="ButtonSize.Small" Class="gap-1.5 shadow-xs">
+                <LucideIcon Name="octagon-alert" Class="size-4" />
+                <span>Kelola Tugas Tertahan</span>
+            </BbButton>
+            <BbButton Href="/reports/ageing" Variant="ButtonVariant.Outline" Size="ButtonSize.Small" Class="gap-1.5">
+                <LucideIcon Name="clock" Class="size-4" />
+                <span>Laporan Ageing</span>
+            </BbButton>
+            <BbButton Href="/directory" Variant="ButtonVariant.Secondary" Size="ButtonSize.Small" Class="gap-1.5">
+                <LucideIcon Name="building-2" Class="size-4" />
+                <span>Direktori Region</span>
+            </BbButton>
+        </div>
+    </div>
+
+    <!-- 1. Top Row Unified KPI Stat Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <BbStatTile Label="Total Pipeline Region"
+                    Value="@Data.RegionFunnelCounts.GetValueOrDefault((byte)1, 0).ToString("N0")"
+                    Subtext="@($"Total registrasi di {RegionName}")"
+                    Icon="bar-chart-3" />
+
+        <BbStatTile Label="Tugas Tertahan"
+                    Value="@Data.StuckTasks.Count.ToString("N0")"
+                    Subtext="@(Data.StuckTasks.Count > 0 ? "Berkas ditolak / perlu perhatian" : "Tidak ada berkas tertahan")"
+                    Icon="octagon-alert"
+                    Class="@(Data.StuckTasks.Count > 0 ? "border-rose-300 bg-rose-50/30 dark:border-rose-900/60 dark:bg-rose-950/20" : "")" />
+
+        <BbStatTile Label="Menunggu Tindakan Saya"
+                    Value="@Data.PendingMyActionCount.ToString("N0")"
+                    Subtext="Antrean Evaluasi Regional Admin (Stage 7)"
+                    Icon="user-check"
+                    Class="@(Data.PendingMyActionCount > 0 ? "border-amber-300 bg-amber-50/30 dark:border-amber-800 dark:bg-amber-950/20" : "")" />
+
+        <BbStatTile Label="Total Berkas Berjalan"
+                    Value="@Data.TotalWaitingActionCount.ToString("N0")"
+                    Subtext="Berkas aktif yang sedang berproses"
+                    Icon="hourglass" />
+    </div>
+
+    <!-- 2. Tugas Tertahan & Menunggu Saya Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Tugas Tertahan -->
+        <BbCard Class="border-rose-200 bg-rose-50/10 dark:border-rose-900/40 dark:bg-rose-950/10">
+            <BbCardHeader Class="flex flex-row items-center justify-between">
+                <div class="flex items-center gap-2 text-rose-800 dark:text-rose-300 font-semibold text-sm">
+                    <LucideIcon Name="octagon-alert" Class="size-4 text-rose-600 dark:text-rose-400" />
+                    <span>Tugas Tertahan (@Data.StuckTasks.Count)</span>
+                </div>
+                <a href="/tasks/blocked" class="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline">
+                    Kelola <LucideIcon Name="arrow-right" Class="size-3.5" />
+                </a>
+            </BbCardHeader>
+            <BbCardContent>
+                @if (Data.StuckTasks.Count == 0)
+                {
+                    <div class="p-4 text-center text-xs text-muted-foreground border rounded-md">Tidak ada tugas tertahan di region ini.</div>
+                }
+                else
+                {
+                    <div class="space-y-2">
+                        @foreach (var item in Data.StuckTasks)
+                        {
+                            <div class="p-2.5 border rounded-md bg-background flex items-center justify-between gap-2 text-xs shadow-xs">
+                                <div>
+                                    <div class="font-semibold text-foreground">@item.CompanyName (@item.CompanyNomor)</div>
+                                    <div class="text-muted-foreground text-[11px] flex items-center gap-1">
+                                        @item.Reason · <LucideIcon Name="clock" Class="size-3" /> @item.WaitingDays hari
+                                    </div>
+                                </div>
+                                <a href="/companies/@item.CompanyId" class="inline-flex items-center justify-center rounded-md text-xs font-semibold border border-input bg-background hover:bg-accent h-7 px-2.5">
+                                    Buka
+                                </a>
+                            </div>
+                        }
+                    </div>
+                }
+            </BbCardContent>
+        </BbCard>
+
+        <!-- Menunggu Saya -->
+        <BbCard>
+            <BbCardHeader Class="flex flex-row items-center justify-between">
+                <BbCardTitle>Menunggu Saya (@Data.PendingMyActionCount)</BbCardTitle>
+                <a href="/tasks" class="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline">
+                    Lihat Semua <LucideIcon Name="arrow-right" Class="size-3.5" />
+                </a>
+            </BbCardHeader>
+            <BbCardContent Class="space-y-4">
+                <div class="p-4 border rounded-md bg-muted/20 text-center">
+                    <span class="text-2xl font-bold text-foreground">@Data.PendingMyActionCount</span>
+                    <p class="text-xs text-muted-foreground mt-1">Berkas evaluasi &amp; persetujuan yang menunggu tindakan Admin Regional.</p>
+                </div>
+                <div class="flex justify-center">
+                    <a href="/directory?stage=7" class="inline-flex items-center justify-center rounded-md text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 shadow-xs gap-1.5">
+                        <LucideIcon Name="file-text" Class="size-4" />
+                        <span>Buka Antrean Evaluasi (Stage 7)</span>
+                    </a>
+                </div>
+            </BbCardContent>
+        </BbCard>
+    </div>
+
+    <!-- 3. Corong Region & Penuaan Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Corong Region -->
+        <BbCard>
+            <BbCardHeader>
+                <BbCardTitle>Corong Region</BbCardTitle>
+                <BbCardDescription>Ringkasan akumulasi record per tahap di region.</BbCardDescription>
+            </BbCardHeader>
+            <BbCardContent>
+                <div class="space-y-2 text-xs">
+                    @for (var i = 0; i < CompanyLabels.StageLabels.Length; i++)
+                    {
+                        var stageNum = (byte)(i + 1);
+                        var count = Data.RegionFunnelCounts.GetValueOrDefault(stageNum, 0);
+                        <div class="flex items-center justify-between py-1 border-b last:border-0">
+                            <span class="text-muted-foreground">@CompanyLabels.StageLabels[i]:</span>
+                            <span class="font-bold text-foreground">@count</span>
+                        </div>
+                    }
+                </div>
+            </BbCardContent>
+        </BbCard>
+
+        <!-- Penuaan (Ageing) -->
+        <BbCard>
+            <BbCardHeader Class="flex flex-row items-center justify-between">
+                <BbCardTitle>Penuaan (Ageing)</BbCardTitle>
+                <a href="/reports/ageing" class="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline">
+                    Lihat Laporan <LucideIcon Name="arrow-right" Class="size-3.5" />
+                </a>
+            </BbCardHeader>
+            <BbCardContent Class="space-y-3 text-xs">
+                <div class="p-3 border rounded-md bg-muted/20">
+                    <div class="font-semibold text-foreground">@Data.TotalWaitingActionCount Record Menunggu Action</div>
+                    <p class="text-muted-foreground text-[11px] mt-0.5">Total berkas aktif yang belum mencapai terbit NOL/RL.</p>
+                </div>
+                @if (Data.OldestWaitingItem is { } oldest)
+                {
+                    <div class="p-3 border rounded-md bg-amber-50/30 border-amber-200 dark:bg-amber-950/20 dark:border-amber-800">
+                        <div class="text-amber-800 dark:text-amber-300 font-semibold mb-1">Terlama Dalam Antrean:</div>
+                        <div class="font-bold text-foreground">@oldest.CompanyName (@oldest.CompanyNomor)</div>
+                        <div class="text-muted-foreground text-[11px] mt-0.5 flex items-center gap-1">
+                            <LucideIcon Name="clock" Class="size-3" />
+                            Menunggu @oldest.WaitingDays hari
+                        </div>
+                    </div>
+                }
+            </BbCardContent>
+        </BbCard>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public RegionalAdminDashboardDto Data { get; set; } = null!;
+    [Parameter, EditorRequired] public string RegionName { get; set; } = "Region";
+}

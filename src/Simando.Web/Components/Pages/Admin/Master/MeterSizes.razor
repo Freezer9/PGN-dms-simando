@@ -1,0 +1,218 @@
+@page "/master/meter-sizes"
+@inherits AdminPageBase
+@using System.ComponentModel.DataAnnotations
+@using Simando.Application.Common
+@using Simando.Domain.MasterData
+@using Simando.Domain.Security
+@inject IEntityService<MeterSize> Service
+@inject DialogService DialogService
+@inject ToastService ToastService
+
+<PageTitle>G-Size / Meter - DMS Simando</PageTitle>
+
+@if (Authorized)
+{
+    <BbPageHeader Title="Master Ukuran Meter (G-Size)" Subtitle="Katalog ukuran meter gas: memilih G-Size mengisi flowrate maksimum secara otomatis.">
+        <Actions>
+            <BbButton OnClick="OpenCreate" Size="ButtonSize.Small">
+                <LucideIcon Name="plus" Class="size-4 mr-1" />
+                Tambah G-Size
+            </BbButton>
+        </Actions>
+    </BbPageHeader>
+
+    <BbCard>
+        <BbCardContent Class="pt-6">
+            <BbDataTable TData="MeterSize" Data="_meterSizes" InitialPageSize="25" AriaLabel="Daftar G-Size">
+                <Columns>
+                    <BbDataTableColumn TData="MeterSize" TValue="string" Header="G-Size" Property="@(m => m.GSize)" Sortable="true" />
+                    <BbDataTableColumn TData="MeterSize" TValue="decimal" Header="Flow Nominal" Property="@(m => m.NominalFlow)" Sortable="true" Width="130px" HeaderClass="whitespace-nowrap" CellClass="whitespace-nowrap" />
+                    <BbDataTableColumn TData="MeterSize" TValue="decimal" Header="Flow Maks" Property="@(m => m.MaxFlow)" Sortable="true" Width="130px" HeaderClass="whitespace-nowrap" CellClass="whitespace-nowrap" />
+                    <BbDataTableColumn TData="MeterSize" TValue="decimal" Header="Tekanan" Property="@(m => m.PressureRating)" Sortable="true" Width="110px" HeaderClass="whitespace-nowrap" CellClass="whitespace-nowrap" />
+                    <BbDataTableColumn TData="MeterSize" TValue="string" Header="Aksi" Width="1px" HeaderClass="w-px whitespace-nowrap text-center" CellClass="w-px whitespace-nowrap text-center">
+                        <CellTemplate Context="meterSize">
+                            <div class="flex items-center justify-center gap-1">
+                                <BbTooltip>
+                                    <BbTooltipTrigger>
+                                        <BbButton Variant="ButtonVariant.Outline" Size="ButtonSize.IconSmall" AriaLabel="Ubah"
+                                                  OnClick="@(() => OpenEdit(meterSize))">
+                                            <LucideIcon Name="pencil" Class="h-4 w-4" />
+                                        </BbButton>
+                                    </BbTooltipTrigger>
+                                    <BbTooltipContent>Ubah</BbTooltipContent>
+                                </BbTooltip>
+                                <BbTooltip>
+                                    <BbTooltipTrigger>
+                                        <BbButton Variant="ButtonVariant.Outline" Size="ButtonSize.IconSmall" AriaLabel="Hapus" Class="text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/30"
+                                                  OnClick="@(() => DeleteAsync(meterSize))">
+                                            <LucideIcon Name="trash-2" Class="h-4 w-4" />
+                                        </BbButton>
+                                    </BbTooltipTrigger>
+                                    <BbTooltipContent>Hapus</BbTooltipContent>
+                                </BbTooltip>
+                            </div>
+                        </CellTemplate>
+                    </BbDataTableColumn>
+                </Columns>
+                <EmptyTemplate>
+                    <BbEmpty Title="Belum ada G-Size" Description="Tambahkan G-Size pertama.">
+                        <ChildContent>
+                            <BbButton Class="mt-4" OnClick="OpenCreate">Tambah G-Size</BbButton>
+                        </ChildContent>
+                    </BbEmpty>
+                </EmptyTemplate>
+            </BbDataTable>
+        </BbCardContent>
+    </BbCard>
+}
+
+<BbDialog @bind-Open="_dialogOpen">
+    <BbDialogContent>
+        <EditForm Model="_form" OnValidSubmit="SaveAsync" OnInvalidSubmit="HandleInvalidSubmit">
+            <DataAnnotationsValidator />
+            <BbDialogHeader>
+                <BbDialogTitle>@(_editingId is null ? "Tambah G-Size" : "Ubah G-Size")</BbDialogTitle>
+            </BbDialogHeader>
+            <div class="space-y-4 py-4">
+                <BbFormFieldInput TValue="string" @bind-Value="_form.GSize" Label="G-Size *" HelperText="Mis. 'G65'." />
+                <BbFormFieldNumericInput TValue="decimal" @bind-Value="_form.NominalFlow" Label="Flow Nominal *" Min="0m" DecimalPlaces="3" />
+                <BbFormFieldNumericInput TValue="decimal" @bind-Value="_form.MaxFlow" Label="Flow Maksimum *" Min="0m" DecimalPlaces="3" />
+                <BbFormFieldNumericInput TValue="decimal" @bind-Value="_form.PressureRating" Label="Tekanan *" Min="0m" DecimalPlaces="3" />
+                @if (_error is not null)
+                {
+                    <BbAlert Variant="AlertVariant.Danger">
+                        <BbAlertDescription>@_error</BbAlertDescription>
+                    </BbAlert>
+                }
+            </div>
+            <BbDialogFooter>
+                <BbButton Variant="ButtonVariant.Outline" Type="ButtonType.Button" OnClick="@(() => _dialogOpen = false)">Batal</BbButton>
+                <BbButton Type="ButtonType.Submit">Simpan</BbButton>
+            </BbDialogFooter>
+        </EditForm>
+    </BbDialogContent>
+</BbDialog>
+
+@code {
+    private sealed class MeterSizeFormModel
+    {
+        [Required(ErrorMessage = "G-Size wajib diisi")]
+        [StringLength(20, ErrorMessage = "G-Size maksimal 20 karakter")]
+        public string GSize { get; set; } = "";
+
+        [Range(0, double.MaxValue, ErrorMessage = "Flow nominal tidak boleh negatif")]
+        public decimal NominalFlow { get; set; }
+
+        [Range(0, double.MaxValue, ErrorMessage = "Flow maksimum tidak boleh negatif")]
+        public decimal MaxFlow { get; set; }
+
+        [Range(0, double.MaxValue, ErrorMessage = "Tekanan tidak boleh negatif")]
+        public decimal PressureRating { get; set; }
+    }
+
+    private List<MeterSize> _meterSizes = [];
+    private bool _dialogOpen;
+    private Guid? _editingId;
+    private string? _error;
+    private MeterSizeFormModel _form = new();
+
+    protected override Capability[] RequiredCapabilities => [Capability.ManageMasterData];
+
+    protected override BreadcrumbItem[] Breadcrumbs =>
+    [
+        new("Beranda", "/"),
+        new("Teknis", null),
+        new("G-Size / Meter", null),
+    ];
+
+    protected override Task OnAuthorizedInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        var meterSizes = await Service.GetAllAsync();
+        _meterSizes = meterSizes.OrderBy(m => m.GSize).ToList();
+    }
+
+    private void OpenCreate()
+    {
+        _editingId = null;
+        _form = new MeterSizeFormModel();
+        _error = null;
+        _dialogOpen = true;
+    }
+
+    private void OpenEdit(MeterSize meterSize)
+    {
+        _editingId = meterSize.Id;
+        _form = new MeterSizeFormModel
+        {
+            GSize = meterSize.GSize,
+            NominalFlow = meterSize.NominalFlow,
+            MaxFlow = meterSize.MaxFlow,
+            PressureRating = meterSize.PressureRating,
+        };
+        _error = null;
+        _dialogOpen = true;
+    }
+
+    private async Task SaveAsync()
+    {
+        _error = null;
+
+        try
+        {
+            if (_editingId is { } id)
+            {
+                await Service.UpdateAsync(id, existing =>
+                {
+                    existing.GSize = _form.GSize;
+                    existing.NominalFlow = _form.NominalFlow;
+                    existing.MaxFlow = _form.MaxFlow;
+                    existing.PressureRating = _form.PressureRating;
+                });
+            }
+            else
+            {
+                await Service.AddAsync(new MeterSize
+                {
+                    Id = Guid.NewGuid(),
+                    GSize = _form.GSize,
+                    NominalFlow = _form.NominalFlow,
+                    MaxFlow = _form.MaxFlow,
+                    PressureRating = _form.PressureRating,
+                });
+            }
+        }
+        catch (DuplicateNameException)
+        {
+            _error = "G-Size ini sudah digunakan.";
+            ToastService.Error(_error, "Gagal");
+            return;
+        }
+
+        var isEdit = _editingId is not null;
+        _dialogOpen = false;
+        await LoadAsync();
+        ToastService.Success(isEdit ? "G-Size berhasil diperbarui." : "G-Size berhasil ditambahkan.", "Berhasil");
+    }
+
+    private async Task DeleteAsync(MeterSize meterSize)
+    {
+        var result = await DialogService.ConfirmAsync(
+            $"Hapus G-Size \"{meterSize.GSize}\"?",
+            "Data G-Size ini akan dihapus dari daftar. Data riwayat yang sudah ada tidak akan terpengaruh.",
+            new ConfirmDialogOptions { Destructive = true, ConfirmText = "Hapus", CancelText = "Batal" });
+
+        if (!result.Confirmed)
+        {
+            return;
+        }
+
+        await Service.SoftDeleteAsync(meterSize.Id);
+
+        await LoadAsync();
+        ToastService.Success($"G-Size \"{meterSize.GSize}\" berhasil dihapus.", "Berhasil");
+    }
+
+    private void HandleInvalidSubmit() => ToastService.Error("Mohon lengkapi semua kolom yang wajib diisi.", "Validasi Gagal");
+}

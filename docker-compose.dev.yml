@@ -1,0 +1,73 @@
+# Dependencies only — run the app from the IDE against these.
+# Ports are published on loopback so the host-side app can reach them.
+#
+#   docker compose -f docker-compose.dev.yml up -d
+#
+# Shares the `simando` project name, so volumes carry over between this and the
+# full stack in docker-compose.yml. Config for the host-side app is in
+# src/Simando.Web/appsettings.Local.example.json.
+
+name: simando-dev
+
+x-hardened: &hardened
+  security_opt:
+    - no-new-privileges:true
+  cap_drop: [ALL]
+  restart: unless-stopped
+
+services:
+  postgres:
+    <<: *hardened
+    image: postgis/postgis:18-3.6-alpine
+    environment:
+      POSTGRES_DB: simando
+      POSTGRES_USER: simando
+      POSTGRES_PASSWORD: simando
+      POSTGRES_INITDB_ARGS: "--data-checksums"
+      PGDATA: /var/lib/postgresql/18/main
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    networks: [simando]
+    cap_add: [CHOWN, DAC_READ_SEARCH, FOWNER, SETGID, SETUID]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U simando -d simando"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ⚠️ Pre-1.0 — pin the exact beta, never `latest`.
+  # ⚠️ Path-style addressing only; the S3 client must set ForcePathStyle = true
+  #    or it resolves bucket.localhost and fails to connect.
+  rustfs:
+    <<: *hardened
+    image: rustfs/rustfs:1.0.0-beta.12
+    environment:
+      RUSTFS_ACCESS_KEY: simando-dev
+      RUSTFS_SECRET_KEY: simando-dev-secret
+      RUSTFS_VOLUMES: /data
+      RUSTFS_CONSOLE_ENABLE: "true"
+    ports:
+      - "127.0.0.1:9000:9000"   # S3 API
+      - "127.0.0.1:9001:9001"   # console
+    volumes:
+      - rustfs-data:/data
+    networks: [simando]
+    read_only: true
+    tmpfs:
+      - /logs:rw,noexec,nosuid,size=64m
+      - /tmp:rw,noexec,nosuid,size=64m
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  simando:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  rustfs-data:

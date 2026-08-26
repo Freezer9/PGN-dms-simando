@@ -1,0 +1,188 @@
+@page "/master/mrs-specs"
+@inherits AdminPageBase
+@using System.ComponentModel.DataAnnotations
+@using Simando.Application.Common
+@using Simando.Domain.MasterData
+@using Simando.Domain.Security
+@inject IEntityService<MrsSpec> Service
+@inject DialogService DialogService
+@inject ToastService ToastService
+
+<PageTitle>Spesifikasi MRS - DMS Simando</PageTitle>
+
+@if (Authorized)
+{
+    <BbPageHeader Title="Master Spesifikasi MRS" Subtitle="Katalog spesifikasi MRS, agar stasiun yang sama ditulis konsisten di setiap catatan.">
+        <Actions>
+            <BbButton OnClick="OpenCreate" Size="ButtonSize.Small">
+                <LucideIcon Name="plus" Class="size-4 mr-1" />
+                Tambah Spesifikasi MRS
+            </BbButton>
+        </Actions>
+    </BbPageHeader>
+
+    <BbCard>
+        <BbCardContent Class="pt-6">
+            <BbDataTable TData="MrsSpec" Data="_mrsSpecs" InitialPageSize="25" AriaLabel="Daftar spesifikasi MRS">
+                <Columns>
+                    <BbDataTableColumn TData="MrsSpec" TValue="string" Header="Nama" Property="@(m => m.Name)" Sortable="true" Filterable="true" />
+                    <BbDataTableColumn TData="MrsSpec" TValue="string" Header="Aksi" Width="1px" HeaderClass="w-px whitespace-nowrap text-center" CellClass="w-px whitespace-nowrap text-center">
+                        <CellTemplate Context="mrsSpec">
+                            <div class="flex items-center justify-center gap-1">
+                                <BbTooltip>
+                                    <BbTooltipTrigger>
+                                        <BbButton Variant="ButtonVariant.Outline" Size="ButtonSize.IconSmall" AriaLabel="Ubah"
+                                                  OnClick="@(() => OpenEdit(mrsSpec))">
+                                            <LucideIcon Name="pencil" Class="h-4 w-4" />
+                                        </BbButton>
+                                    </BbTooltipTrigger>
+                                    <BbTooltipContent>Ubah</BbTooltipContent>
+                                </BbTooltip>
+                                <BbTooltip>
+                                    <BbTooltipTrigger>
+                                        <BbButton Variant="ButtonVariant.Outline" Size="ButtonSize.IconSmall" AriaLabel="Hapus" Class="text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/30"
+                                                  OnClick="@(() => DeleteAsync(mrsSpec))">
+                                            <LucideIcon Name="trash-2" Class="h-4 w-4" />
+                                        </BbButton>
+                                    </BbTooltipTrigger>
+                                    <BbTooltipContent>Hapus</BbTooltipContent>
+                                </BbTooltip>
+                            </div>
+                        </CellTemplate>
+                    </BbDataTableColumn>
+                </Columns>
+                <EmptyTemplate>
+                    <BbEmpty Title="Belum ada spesifikasi MRS" Description="Tambahkan spesifikasi MRS pertama.">
+                        <ChildContent>
+                            <BbButton Class="mt-4" OnClick="OpenCreate">Tambah Spesifikasi MRS</BbButton>
+                        </ChildContent>
+                    </BbEmpty>
+                </EmptyTemplate>
+            </BbDataTable>
+        </BbCardContent>
+    </BbCard>
+}
+
+<BbDialog @bind-Open="_dialogOpen">
+    <BbDialogContent>
+        <EditForm Model="_form" OnValidSubmit="SaveAsync" OnInvalidSubmit="HandleInvalidSubmit">
+            <DataAnnotationsValidator />
+            <BbDialogHeader>
+                <BbDialogTitle>@(_editingId is null ? "Tambah Spesifikasi MRS" : "Ubah Spesifikasi MRS")</BbDialogTitle>
+            </BbDialogHeader>
+            <div class="space-y-4 py-4">
+                <BbFormFieldInput TValue="string" @bind-Value="_form.Name" Label="Nama *" />
+                @if (_error is not null)
+                {
+                    <BbAlert Variant="AlertVariant.Danger">
+                        <BbAlertDescription>@_error</BbAlertDescription>
+                    </BbAlert>
+                }
+            </div>
+            <BbDialogFooter>
+                <BbButton Variant="ButtonVariant.Outline" Type="ButtonType.Button" OnClick="@(() => _dialogOpen = false)">Batal</BbButton>
+                <BbButton Type="ButtonType.Submit">Simpan</BbButton>
+            </BbDialogFooter>
+        </EditForm>
+    </BbDialogContent>
+</BbDialog>
+
+@code {
+    private sealed class MrsSpecFormModel
+    {
+        [Required(ErrorMessage = "Nama wajib diisi")]
+        [StringLength(100, ErrorMessage = "Nama maksimal 100 karakter")]
+        public string Name { get; set; } = "";
+    }
+
+    private List<MrsSpec> _mrsSpecs = [];
+    private bool _dialogOpen;
+    private Guid? _editingId;
+    private string? _error;
+    private MrsSpecFormModel _form = new();
+
+    protected override Capability[] RequiredCapabilities => [Capability.ManageMasterData];
+
+    protected override BreadcrumbItem[] Breadcrumbs =>
+    [
+        new("Beranda", "/"),
+        new("Teknis", null),
+        new("Spesifikasi MRS", null),
+    ];
+
+    protected override Task OnAuthorizedInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        var mrsSpecs = await Service.GetAllAsync();
+        _mrsSpecs = mrsSpecs.OrderBy(m => m.Name).ToList();
+    }
+
+    private void OpenCreate()
+    {
+        _editingId = null;
+        _form = new MrsSpecFormModel();
+        _error = null;
+        _dialogOpen = true;
+    }
+
+    private void OpenEdit(MrsSpec mrsSpec)
+    {
+        _editingId = mrsSpec.Id;
+        _form = new MrsSpecFormModel { Name = mrsSpec.Name };
+        _error = null;
+        _dialogOpen = true;
+    }
+
+    private async Task SaveAsync()
+    {
+        _error = null;
+
+        try
+        {
+            if (_editingId is { } id)
+            {
+                await Service.UpdateAsync(id, existing => existing.Name = _form.Name);
+            }
+            else
+            {
+                await Service.AddAsync(new MrsSpec
+                {
+                    Id = Guid.NewGuid(),
+                    Name = _form.Name,
+                });
+            }
+        }
+        catch (DuplicateNameException)
+        {
+            _error = "Nama spesifikasi MRS sudah digunakan.";
+            ToastService.Error(_error, "Gagal");
+            return;
+        }
+
+        var isEdit = _editingId is not null;
+        _dialogOpen = false;
+        await LoadAsync();
+        ToastService.Success(isEdit ? "Spesifikasi MRS berhasil diperbarui." : "Spesifikasi MRS berhasil ditambahkan.", "Berhasil");
+    }
+
+    private async Task DeleteAsync(MrsSpec mrsSpec)
+    {
+        var result = await DialogService.ConfirmAsync(
+            $"Hapus spesifikasi MRS \"{mrsSpec.Name}\"?",
+            "Data spesifikasi MRS ini akan dihapus dari daftar. Data riwayat yang sudah ada tidak akan terpengaruh.",
+            new ConfirmDialogOptions { Destructive = true, ConfirmText = "Hapus", CancelText = "Batal" });
+
+        if (!result.Confirmed)
+        {
+            return;
+        }
+
+        await Service.SoftDeleteAsync(mrsSpec.Id);
+
+        await LoadAsync();
+        ToastService.Success($"Spesifikasi MRS \"{mrsSpec.Name}\" berhasil dihapus.", "Berhasil");
+    }
+
+    private void HandleInvalidSubmit() => ToastService.Error("Mohon lengkapi semua kolom yang wajib diisi.", "Validasi Gagal");
+}

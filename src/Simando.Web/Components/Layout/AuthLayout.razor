@@ -1,0 +1,17 @@
+@inherits LayoutComponentBase
+
+@* Pre-auth layout for sign-in, change-password, and access-denied screens. *@
+<div class="min-h-screen">
+    @Body
+</div>
+
+@* BbPortalHost required for overlay components. *@
+<BbPortalHost />
+<BbToastProvider />
+<BbDialogProvider />
+
+<div id="blazor-error-ui" data-nosnippet>
+    An unhandled error has occurred.
+    <a href="." class="reload">Reload</a>
+    <span class="dismiss">🗙</span>
+</div>

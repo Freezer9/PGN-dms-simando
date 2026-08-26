@@ -1,134 +1,180 @@
-# SIMANDO
+# DMS - Simando
 
-**Sistem Manajemen Dokumen Proses Berlangganan Gas**
+**Sistem Manajemen Proses Berlangganan Gas** — the web system that digitises
+PGN's gas-subscription sales pipeline: from an industrial prospect in a
+directory, through survey and pricing, to the issuance of a **NOL (No
+Objection Letter)**.
 
-A workflow management system for gas subscription processes, built with **Blazor Web App (.NET 10, InteractiveServer)** and **BlazorBlueprint** (shadcn/ui for Blazor) on top of **Tailwind CSS v4**.
+## Stack
 
-## Running
+.NET 10 · ASP.NET Core · Blazor Web App (`InteractiveServer`) · EF Core 10 +
+Npgsql · PostgreSQL 18 + PostGIS · S3-compatible object storage · Hangfire ·
+Serilog. Self-hosted.
 
-```bash
-export PATH="$HOME/.dotnet:$PATH"
-dotnet run --project Api        # http://localhost:5010
-dotnet run --project Frontend   # http://localhost:5009
-```
+See [docs/build/architecture.md](docs/build/architecture.md) for the
+reasoning behind each choice.
 
-Open `http://localhost:5009`. The Api applies EF Core migrations and seeds demo data on startup.
+## Prerequisites
 
-### Demo Accounts
+- [.NET 10 SDK](https://dotnet.microsoft.com/download)
+- Docker (with Compose)
+- A JS package manager for the Tailwind build: [bun](https://bun.sh) (primary,
+  `bun.lock` committed), pnpm, or npm — any one works
 
-All seeded on first run with password **`Passw0rd!`**:
-
-| Email | Role | Description |
-|---|---|---|
-| `sales@pgn.id` | SalesArea | Input, create, and upload subscription data |
-| `areahead@pgn.id` | AreaHead | View subscriptions in their area |
-| `admin@pgn.id` | AdminRegional | Manage region, assign reviewers, fill evaluation data |
-| `reviewer@pgn.id` | Reviewer | Review and approve/reject/revise subscriptions |
-| `division@pgn.id` | DivisionHead | Final approval authority |
-
-### Reseeding Database
-
-Delete the DB and restart:
+## Quickstart
 
 ```bash
-rm Api/Data/app.db Api/Data/app.db-wal Api/Data/app.db-shm 2>/dev/null
-dotnet run --project Api
+# 1. Start dependencies (Postgres+PostGIS, S3-compatible storage, docx→pdf converter)
+docker compose -f docker-compose.dev.yml up -d
+
+# 2. Configure the app for local dev
+cp src/Simando.Web/appsettings.Local.example.json src/Simando.Web/appsettings.Local.json
+
+# 3. Apply EF Core database migrations
+dotnet ef database update --project src/Simando.Infrastructure --startup-project src/Simando.Web
+
+# 4. Seed master data (geography, units of measure, industry types, etc.)
+dotnet run --project src/Simando.Web -- seed-master-data
+
+# 5. Seed initial accounts (System Admin & Demo Users)
+SeedAdmin__Password="<a strong password>" dotnet run --project src/Simando.Web -- seed-admin
+SeedDemo__Password="<a shared password>" dotnet run --project src/Simando.Web -- seed-demo-users
+
+# 6. Run (builds JS deps + Tailwind CSS automatically on restore/build)
+dotnet run --project src/Simando.Web
 ```
 
-## Pages
+### Hot reload
 
-| Route | Description |
+```bash
+scripts/dev.sh          # Windows: scripts/dev.ps1
+```
+
+Runs `dotnet watch` (C#/Razor hot reload, auto browser refresh) and the
+Tailwind watcher together in one terminal; `Ctrl+C` stops both.
+
+### Full containerised stack
+
+```bash
+docker compose up --build
+```
+
+Runs the app itself in a container alongside its dependencies. Use this to
+mirror deployment; use the quickstart above for day-to-day development.
+
+## Seeding accounts
+
+There's no self-service sign-up — the app has no one to sign in as until an
+account is seeded.
+
+### First System Admin
+
+```bash
+SeedAdmin__Password="<a strong password>" dotnet run --project src/Simando.Web -- seed-admin
+```
+
+Creates the one seed System Admin (`must_change_password` is set, so it's
+forced through `/change-password` on first sign-in). Safe to rerun — it
+no-ops once an active System Admin exists. See
+[docs/design/roles-permissions.md §2.6](docs/design/roles-permissions.md#bootstrapping-the-first-admin).
+
+### Demo / testing accounts, one per role
+
+```bash
+SeedDemo__Password="<a shared password>" dotnet run --project src/Simando.Web -- seed-demo-users
+```
+
+Creates a "Demo Region"/"Demo Area" plus one account per non-SysAdmin role,
+all sharing the password you supply (no forced change on first sign-in —
+deliberate, so the same shared password keeps working for whoever signs in
+next):
+
+Sign in with the email below, not the username — login is by email.
+
+| Role | Email |
 |---|---|
-| `/` | Dashboard — stat tiles, recent subscriptions, activity timeline |
-| `/subscriptions` | List all subscriptions with status/area filters |
-| `/subscriptions/{id}` | Detail view — workflow steps, document upload, review, sign-off |
-| `/review` | Review queue — subscriptions pending reviewer action |
-| `/evaluation` | Resume evaluasi — analysis and evaluation summary |
-| `/admin/users` | User management (AdminRegional only) |
+| Sales Area | `demo.salesarea@simando.local` |
+| Area Head | `demo.areahead@simando.local` |
+| Regional Admin | `demo.regionaladmin@simando.local` |
+| Reviewer | `demo.reviewer@simando.local` |
+| Division Head | `demo.divisionhead@simando.local` |
 
-Global: sidebar (`Ctrl/Cmd+B`), command palette (`Ctrl+K`), dark mode toggle.
+Idempotent — rerun anytime, including after a DB reset. Doesn't create a
+System Admin; use `seed-admin` above for that role.
 
-## Workflow
+Both commands read their password from config (`SeedAdmin:Password` /
+`SeedDemo:Password` — see `appsettings.Local.example.json`) or the matching
+environment variable (`SeedAdmin__Password` / `SeedDemo__Password`), never
+committed with a real value.
 
-```
-Directory → Plotting → Prospect → Survey → A1 → Permohonan NOL → Disetujui
-                                                          ↓
-                                                       Ditolak (back to Admin Regional)
-```
-
-- **Sales Area** creates subscriptions and uploads documents at each stage
-- **A1** stage includes digital sign-off (checkbox)
-- **Permohonan NOL** triggers review flow through assigned reviewers (1→2→3)
-- Each reviewer: **Setuju** (next) / **Tolak** (back to admin) / **Revisi** (back 1 step)
-- **Division Head** gives final approval after all reviewers approve
-
-## Architecture
-
-Three projects:
-
-```
-Shared/                     DTOs and enums shared by Api and Frontend
-  Models.cs                 SubscriptionDto, ReviewStepDto, UserInfo, requests/responses, enums
-
-Api/                        ASP.NET Core Web API — all business logic and data access
-  Data/
-    ApplicationDbContext.cs EF Core context (SQLite), ApplicationUser, IdentitySeeder
-    SimandoRoles.cs
-    Migrations/
-  Controllers/               AuthController, SubscriptionsController, EvaluationController, UsersController
-  Services/                  SubscriptionService, WorkflowService (status/review/sign-off logic)
-
-Frontend/                   Blazor Server UI — pure HTTP client of the Api
-  Services/                  Typed HttpClient wrappers (ISubscriptionService, IWorkflowService,
-                              IEvaluationService, IActivityService, IUserService, IAuthService),
-                              BearerTokenHandler forwards the JWT from the auth cookie's claims
-  Components/
-    Account/                 Login.razor calls Api's /api/auth/login, signs in a local cookie
-    Layout/                  AppShell, AppSidebar, CommandPalette, UserMenu
-    Pages/                    Home, Review, Evaluation, Subscriptions/*, Admin/Users
-  wwwroot/
-    app.css                   Component-specific CSS
-    css/app.generated.css     Tailwind v4 compiled utilities
-```
-
-Auth model: the Frontend keeps a cookie-authenticated Blazor circuit, but the cookie's claims (identity + role + the API's JWT) come from calling the Api's login endpoint rather than a local Identity store. Every Frontend→Api call rides on that forwarded bearer token, so authorization is enforced by the Api regardless of what the Frontend UI shows or hides.
-
-## Tech Stack
-
-- .NET 10 / Blazor Web App (InteractiveServer)
-- BlazorBlueprint 3.14.1 (shadcn/ui components)
-- Tailwind CSS v4.3
-- ASP.NET Core Identity + SQLite
-- Entity Framework Core 10
-
-## Deployment (Docker)
-
-Production domain: **simando.legain.id**. This stack does *not* run its own reverse proxy — `api` and `frontend` join a pre-existing external Docker network (`caddy`) that an already-running, separately-managed Caddy instance is also attached to. Neither container publishes a host port; they're reachable only by their explicit container names (`pgn-dms-simando-api:8080`, `pgn-dms-simando-frontend:8080`) — set explicitly so they don't collide with a same-named `api`/`frontend` service from another stack sharing that network.
+## Seeding master data
 
 ```bash
-# one-time, only if the network doesn't already exist:
-docker network create caddy
-
-cp .env.example .env
-# edit .env: set JWT_KEY to a real secret, e.g. `openssl rand -base64 48`
-
-docker compose up -d --build
+dotnet run --project src/Simando.Web -- seed-master-data
 ```
 
-- **`api`** — SQLite database (`Data/app.db`) and uploaded documents (`wwwroot/uploads`) live in named Docker volumes (`api_data`, `api_uploads`) so they survive `docker compose down`/rebuilds.
-- **`frontend`** — talks to `api` directly over the internal `caddy` network (`http://pgn-dms-simando-api:8080`), not through the external reverse proxy.
+No credentials needed. Imports the go-live-prerequisite lookup tables that
+ship with the repo rather than needing PGN input (`docs/domain/master-data.md
+§13`):
 
-Add this site block to the **external** Caddy's own Caddyfile (not part of this repo) so it can route to these containers by name:
+- **Administrative geography** — Province/Regency/District/Village, ~91,600
+  rows from [cahyadsn/wilayah](https://github.com/cahyadsn/wilayah) (the
+  dataset wilayah.id's API is itself built from). There's deliberately no
+  admin UI for this table — see the doc — so this import is the only way
+  the rows get in.
+- **Units of measure, fuel types, industry types, countries, segments** —
+  small lists sourced from the doc itself (or ISO 3166-1 for countries).
+
+Idempotent per table — safe to rerun, each list is skipped once it has any
+rows. Doesn't touch Regions/Areas, user accounts, meter sizes, document
+templates, or reference documents — those are blocked on PGN-supplied data
+and have no source to seed from yet.
+
+## Project structure
 
 ```
-simando.legain.id {
-    handle /api/* {
-        reverse_proxy pgn-dms-simando-api:8080
-    }
-    handle {
-        reverse_proxy pgn-dms-simando-frontend:8080
-    }
-}
+src/
+  Simando.Domain/           entities, enums, value objects, domain rules
+  Simando.Application/      use cases, DTOs, validators, service interfaces
+  Simando.Infrastructure/   EF Core, storage, document generation, Identity
+  Simando.Web/              Blazor Web App, components, endpoints, auth
+tests/
+  Simando.Domain.Tests/
+  Simando.Application.Tests/
+  Simando.Integration.Tests/
+  Simando.Web.Tests/
+  Simando.E2E.Tests/
 ```
 
-Rebuild after a code change: `docker compose up -d --build`. Tear down (keeps volumes): `docker compose down`. Wipe the database too: `docker compose down -v`.
+See [AGENTS.md](AGENTS.md) for the rules behind this layout (e.g. why
+`Simando.Domain` has no EF Core dependency), and
+[docs/build/architecture.md § Solution structure](docs/build/architecture.md#solution-structure)
+for the full feature-folder breakdown within each project.
+
+## Testing
+
+```bash
+dotnet test
+```
+
+Integration tests spin up real PostgreSQL/PostGIS and object storage via
+Testcontainers. See [docs/build/testing.md](docs/build/testing.md) for
+what's tested and to what depth — a few high-consequence areas (the
+permission model, the workflow state machine) are held to 100% branch
+coverage; most of the app is not.
+
+## Documentation
+
+| If you want... | Read |
+|---|---|
+| The full design-doc map (domain, data model, workflow, frontend) | [docs/README.md](docs/README.md) |
+| Conventions and invariants for contributing code (human or AI) | [AGENTS.md](AGENTS.md) |
+| Architecture and stack rationale | [docs/build/architecture.md](docs/build/architecture.md) |
+| Features not yet planned for v1 | [docs/future/README.md](docs/future/README.md) |
+
+## Configuration & secrets
+
+`appsettings.json` holds committed defaults. Real credentials go in
+`appsettings.Local.json` (gitignored and dockerignored — never commit it) or
+`dotnet user-secrets`. Copy `appsettings.Local.example.json` as a starting
+point; if you add a new local-only key, update that example file too.

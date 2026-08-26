@@ -1,0 +1,238 @@
+====================================================================================================
+SHEET: Tabel  dims=A3:A8
+====================================================================================================
+r  3 | A3=Bronze 1
+r  4 | A4=Bronze 2
+r  5 | A5=Bronze 3
+r  6 | A6=Silver
+r  7 | A7=Gold
+r  8 | A8=Platinum
+
+====================================================================================================
+SHEET: Entry Apps  dims=A1:Z1000
+====================================================================================================
+MERGED: ['A1:M1', 'D102:E102', 'D106:E106', 'D109:E109', 'D113:E113', 'D115:E115', 'D119:E119', 'D122:E122', 'D124:E124', 'D127:E127', 'D19:E19', 'D21:E21', 'D42:E42', 'D70:E71', 'D72:E72', 'D73:E73', 'D74:E74', 'D75:E75', 'D76:E76', 'D77:E77', 'D78:L78', 'D83:E83', 'D85:E85', 'D87:E87', 'D90:E90', 'D91:E91', 'D93:E93', 'D98:E98', 'F100:I100', 'F103:H103', 'F104:H104', 'F106:H106', 'F108:G108', 'F109:G109', 'F110:G110', 'F111:G111', 'F113:J113', 'F119:I119', 'F122:J122', 'F129:I129', 'F17:M17', 'F19:M19', 'F21:M21', 'F23:M23', 'F3:G3', 'F42:I42', 'F43:I43', 'F44:I44', 'F45:I45', 'F46:M46', 'F48:G48', 'F49:G49', 'F50:G50', 'F51:G51', 'F52:M52', 'F54:G54', 'F55:G55', 'F56:G56', 'F57:G57', 'F58:M58', 'F60:G60', 'F64:G64', 'F65:G65', 'F66:G66', 'F67:G67', 'F68:G68', 'F70:G71', 'F7:M7', 'F80:G80', 'F81:G81', 'F83:G83', 'F88:H88', 'F89:H89', 'F91:H91', 'F93:G93', 'F94:G94', 'F95:G95', 'F96:G96', 'F98:I98', 'F9:M9', 'G115:I115', 'G116:I116', 'G117:I117', 'G25:M25', 'G26:M26', 'G27:M27', 'G28:M28', 'G29:M29', 'G30:M30', 'G31:M31', 'G33:M33', 'G34:M34', 'G35:M35', 'G36:M36', 'G37:M37', 'G38:M38', 'G39:M39', 'H108:I108', 'H109:I109', 'H110:I110', 'H111:I111', 'H124:I124', 'H3:I3', 'H48:I48', 'H49:I49', 'H50:I50', 'H51:I51', 'H60:I60', 'H64:I64', 'H65:I65', 'H67:I67', 'H68:I68', 'H70:I70', 'H80:I80', 'H81:I81', 'H83:I83', 'H93:I93', 'H94:I94', 'H95:I95', 'H96:I96', 'I103:J103', 'I104:J104', 'I88:J88', 'I89:J89', 'J129:K129', 'J70:L70', 'J85:M85', 'K103:M103', 'K104:M104', 'K3:L3', 'K42:L42', 'K43:L43', 'K44:L44', 'K45:L45', 'K48:L48', 'K49:L49', 'K50:L50', 'K51:L51', 'K54:L54', 'K55:L55', 'K56:L56', 'K57:L57', 'K62:M62', 'K64:L64', 'K65:L65', 'K66:L66', 'K67:L67', 'K68:L68', 'K88:M88', 'K89:M89', 'L108:M108', 'L109:M109', 'L93:M93', 'L94:M94', 'M70:M71']
+r  1 | A1=SISTEM MANAGEMENT PROSES BERLANGGANAN GAS
+r  2 | C2=1.0 | D2=2.0 | E2=3.0 | F2=4.0 | H2=5.0 | J2=6.0 | K2=7.0 | M2=8.0
+r  3 | A3=Login | C3=Directory | D3=Plotting | E3=Prospect | F3=Survey | H3=A1 | J3=Permohonan NOL | K3=Evaluasi NOL | M3=Persetujuan NOL
+r  5 | C5=1.0 | D5=Nomor | F5=0000001 - 15 - 20 | N5=(Auto Generate) --> 0000001-Kode Prov - Kode Kab/Kota)
+r  6 | N6=(Urutan Prov dan Urutan Kab)
+r  7 | C7=1.0 | D7=Nama Perusahaan | F7=PT INDONESIA 1945 | N7=(Entry)
+r  9 | C9=1.0 | D9=Website | F9=www.indonesia1945.com | N9=(Entry)
+r 11 | C11=1.0 | D11=Lokasi | F11=Provinsi | I11=: | J11=Jawa Timur | N11=(Drop down : Prov)
+r 12 | F12=Kota/Kabupaten : | I12=: | J12=Surabaya | N12=(Drop down Kota/Kab)
+r 13 | F13=Kecamatan : | I13=: | J13=Genteng | N13=(Drop down Kec)
+r 14 | F14=Kelurahan/Desa : | I14=: | J14=Gentengkali | N14=(Drop down Desa/Kel)
+r 15 | F15=Alamat : | I15=: | J15=Jalan Pemuda 56 - 58 | N15=(Entry)
+r 17 | C17=1.0 | D17=Jenis Produksi | F17=Jasa Laundry | N17=(Drop down : data BPS)
+r 19 | C19=2.0 | D19=Plotting By | F19=○ Nama Sales | N19=(Drop Down : Nama Sales)
+r 21 | C21=2.0 | D21=Posisi Pelanggan | F21=○ Pengembangan          ○ Jalur Existing
+r 23 | C23=2.0 | D23=Kawasan | F23=○ Kawasan Industri        ○ Non Kawasan Industri
+r 25 | C25=3.0 | D25=PIC Perusahaan | F25=Nama | G25=: *
+r 26 | F26=Jabatan : | G26=: *
+r 27 | F27=Email | G27=:
+r 28 | F28=No HP | G28=:
+r 29 | F29=Linkdin | G29=:
+r 30 | F30=IG | G30=:
+r 31 | F31=FB | G31=:
+r 33 | F33=Nama | G33=: *
+r 34 | F34=Jabatan : | G34=: *
+r 35 | F35=Email | G35=:
+r 36 | F36=No HP | G36=:
+r 37 | F37=Linkdin | G37=:
+r 38 | F38=IG | G38=:
+r 39 | F39=FB | G39=:
+r 42 | D42=Produk Utama | F42=* | J42=Kaps/Tahun
+r 43 | F43=… | J43=Kaps/Tahun
+r 44 | F44=… | J44=Kaps/Tahun
+r 45 | F45=… | J45=Kaps/Tahun
+r 46 | F46=Catatan :
+r 48 | D48=Bahan Baku | F48=….. | H48=Impor/Lokal | J48=Negara | K48=Vol : | M48=Per Bulan
+r 49 | F49=….. | H49=Impor/Lokal | J49=Negara | K49=Vol : | M49=Per Bulan
+r 50 | F50=….. | H50=Impor/Lokal | J50=Negara | K50=Vol : | M50=Per Bulan
+r 51 | F51=….. | H51=Impor/Lokal | J51=Negara | K51=Vol : | M51=Per Bulan
+r 52 | F52=Catatan :
+r 54 | D54=Orientasi Pasar | F54=….. | H54=Impor/Lokal | J54=Negara  …. | K54=Vol : | M54=Per Bulan
+r 55 | F55=….. | H55=Impor/Lokal | J55=Negara …. | K55=Vol : | M55=Per Bulan
+r 56 | F56=….. | H56=Impor/Lokal | J56=Negara …. | K56=Vol : | M56=Per Bulan
+r 57 | F57=….. | H57=Impor/Lokal | J57=Negara …. | K57=Vol : | M57=Per Bulan
+r 58 | F58=Catatan :
+r 60 | D60=Jumlah Karyawan | H60=Orang | K60=Shift
+r 62 | D62=Jam Kerja | I62=Jam / hari | K62=Hari/Minggu
+r 64 | D64=Kebutuhan Energi | F64=○ Listrik | H64=○ Steam | J64=○ Panas | K64=○ Dingin | M64=○ Lainnya
+r 65 | E65=Kapasitas
+r 66 | F66=MW | I66=Ton/Jam | J66=Kkal | K66=TR
+r 67 | E67=Pemakaian
+r 68 | F68=Kwh | H68=Ton | J68=Kkal | K68=TR
+r 70 | D70=Kebutuhan Energi | F70=Kapasitas  / Unit | H70=Pola Operasi | J70=Sumber Energi | M70=Konversi ke Gas
+r 71 | H71=Jam | I71=Hari | J71=Jenis | K71=Pemakaian/
+Bulan | L71=Unit
+r 72 | D72=Steam Boiler | F72=4.0 | G72=Ton/Jam | H72=24.0 | I72=7.0 | J72=Batubara | K72=100000.0 | L72=Ton | N72=(Entry, Insert Row jika > 1)
+r 73 | D73=Thermal Oil Heater | F73=1000000.0 | G73=Kkal | H73=8.0 | I73=7.0 | J73=HSD | K73=30000.0 | L73=Liter
+r 74 | D74=Dryer | F74=750000.0 | G74=Kkal | H74=8.0 | I74=7.0 | J74=HSD | K74=20000.0 | L74=Liter
+r 78 | D78=Jumlah Kebutuhan Energi
+r 80 | D80=Pipa Gas Terdekat | F80=Jarak | H80=Diameter | J80=Tekanan
+r 81 | F81=*
+r 83 | D83=Regristrasi Berlangganan | F83=Tanggal
+r 85 | D85=Nama Penanggung Jawab | J85=Jabatan :
+r 87 | D87=Pemakaian Gas | F87=Periode | H87=s.d | K87=(jika ada lebih dari 1 periode maka bisa add row)
+r 88 | F88=Rata-rata | I88=Minimum | K88=Maksimum
+r 91 | D91=Permohonan Bulan dimulai
+r 92 | O92=Bulanan | P92=USD | Q92=Tahunan | R92=USD | S92=Harian | T92=USD
+r 93 | D93=Harga Gas | F93=○ Harian | H93=○ Bulanan | J93=○ Tahunan | K93=Segment | O93=B1 | P93=10000.0 | Q93=B1 | S93=B1
+r 94 | D94=○ Manual | F94=○ Reguler | H94=○ SiGas | J94=○ Bersyarat | K94=Kode Harga | O94=B2 | P94=9.66 | Q94=B2 | S94=B2
+r 95 | D95=○ Otomatis | O95=B3 | P95=9.5 | Q95=B3 | S95=B3
+r 96 | F96=OUP :                 % | H96=UMP :                 % | O96=Silver | P96=9.26 | Q96=Silver | S96=Silver
+r 97 | O97=Gold | P97=9.18 | Q97=Gold | S97=Gold
+r 98 | D98=Perhitungan Capex Awal | O98=Platinum | P98=8.78 | Q98=Platinum | S98=Platinum
+r100 | D100=MOM Penetapan Harga SiGas | F100=○ Tersedia | K100=Upload MOM
+r102 | D102=Permohonan NOL | F102=Periode | H102=s.d | K102=(jika ada lebih dari 1 periode maka bisa add row)
+r103 | D103=○ Sama dengan A1 | F103=Rata-rata | I103=Kontrak Minimum | K103=Kontrak Maksimum
+r104 | D104=○ Entry
+r106 | D106=Permohonan Bulan dimulai | I106=(Pilihan Tanggal Calender)
+r108 | F108=○ Harian | H108=○ Bulanan | J108=○ Tahunan | K108=Segment
+r109 | D109=Harga Gas | F109=○ Reguler | H109=○ SiGas | J109=○ Bersyarat | K109=Kode Harga
+r111 | F111=OUP :                 % | H111=UMP :                 %
+r113 | D113=Biaya Capex Pre GR3 | K113=Upload
+r114 | K114=1. A1
+r115 | D115=Biaya Penyambungan | F115=Reguler | K115=2. KK0
+r116 | F116=Extra
+r117 | F117=Jumlah
+r119 | D119=Capex - data Final
+r120 | D120=Pipa Induk | G120=m | I120=Inch/mm
+r121 | D121=Pipa Service | G121=m | I121=Inch/mm
+r122 | D122=Spesifikasi MRS
+r124 | D124=G.Size / Tekanan/ Maks Flowrate | F124=65.0 | G124=1.0 | H124=200.0
+r127 | D127=Hasil Perhitungan Kelayakan | F127=Internal Rate of Return (IRR)
+r128 | F128=Net Present Value (NPV)
+r129 | F129=Payback Period
+
+====================================================================================================
+SHEET: Directory Industry  dims=A2:Z18
+====================================================================================================
+r  2 | E2=Prov | F2=Kota/Kab | G2=Kec | H2=Kel/Desa | I2=Jenis Produksi
+r  3 | A3=DATA INDUSTRI DI INDONESIA | D3=Filter | E3=Jawa Timur | F3=Kendal | G3=Dawu | H3=Jombok | I3=Semua
+r  5 | A5=No | B5=Nama | C5=Produksi | D5=Action | L5=Action
+r  6 | A6=1.0 | B6=PT Big Note | C6=Kertas | D6=Plotting | E6=(Klik Nama Industri, akan masuk ke Form Entry untuk melengkapi Data: Sales, Kawasan, Jalur) | L6=Plotting
+r  7 | A7=2.0 | B7=PT Desa Makmur | C7=Bahan Tekstil | D7=Plotting | E7=(setelah Selesai, bisa memilih Plotting, | L7=Edit
+r  8 | A8=3.0 | B8=PT Esteemje | C8=Makanan Minuman | D8=Plotting | L8=Delete
+r  9 | A9=4.0 | B9=PT Fasad Indah | C9=Kaca | D9=Plotting
+r 10 | A10=5.0 | B10=PT Golden Elephant | C10=Ceramic | D10=Plotting
+r 11 | A11=6.0 | B11=PT Hari Cerah | C11=Kertas | D11=Plotting
+r 12 | A12=7.0 | B12=PT Indah Kejora | C12=Kimia | D12=Plotting
+r 13 | A13=8.0 | B13=PT Jaka Samudera | C13=Bahan Tekstil | D13=Delete
+r 14 | A14=9.0 | B14=PT Kota Baru | C14=Kaca | D14=Edit
+r 15 | A15=10.0 | B15=PT Larantuka | C15=Logam Dasar Baja | D15=Edit
+
+====================================================================================================
+SHEET: Data Plotting  dims=A2:Z33
+====================================================================================================
+r  2 | F2=Prov | G2=Kota/Kab | H2=Kec | I2=Kel/Desa | J2=Jalur Pipa | K2=Kawasan
+r  3 | A3=DATA INDUSTRI DI INDONESIA | E3=Filter | F3=Jawa Timur | G3=Kendal | H3=Dawu | I3=Jombok | J3=Existing | K3=Kawasan Industri
+r  5 | A5=No | B5=Nama | C5=Produksi | D5=Jalur Pipa | E5=Action | M5=Action
+r  6 | A6=1.0 | B6=PT Big Note | C6=Kertas | E6=Potensi | M6=Plotting
+r  7 | A7=2.0 | B7=PT Desa Makmur | C7=Bahan Tekstil | E7=Potensi | M7=Edit
+r  8 | A8=3.0 | B8=PT Esteemje | C8=Makanan Minuman | E8=Potensi | M8=Save
+r  9 | A9=4.0 | B9=PT Fasad Indah | C9=Kaca | E9=Edit
+r 10 | A10=5.0 | B10=PT Golden Elephant | C10=Ceramic | E10=Potensi
+r 11 | A11=6.0 | B11=PT Hari Cerah | C11=Kertas | E11=Potensi
+r 12 | A12=7.0 | B12=PT Indah Kejora | C12=Kimia | E12=Save
+r 13 | A13=8.0 | B13=PT Jaka Samudera | C13=Bahan Tekstil | E13=Save
+r 14 | A14=9.0 | B14=PT Kota Baru | C14=Kaca | E14=Edit
+r 15 | A15=10.0 | B15=PT Larantuka | C15=Logam Dasar Baja | E15=Edit
+r 30 | C30=Realisasi | D30=45.0 | E30=BBTUD
+r 31 | C31=60/64 *45 | D31=42.1875 | E31=BBTUD | F31=1265625 | G31=(42,19 x 1000 x Jumlah Hari Kerja Bulan Ini )
+r 32 | A32=#VALUE! | C32=Alokasi Total | D32=81.543 | E32=BBTUD | F32=2446290
+r 33 | C33=Persen | F33=0.5173650712
+
+====================================================================================================
+SHEET: Jenis Industri  dims=A3:Z24
+====================================================================================================
+r  3 | B3=Jenis Industri | C3=Contoh Produk
+r  4 | B4=Semua | C4=All
+r  5 | A5=1.0 | B5=Makanan Minuman | C5=Wafer, Biskuit
+r  6 | A6=2.0 | B6=Logam Dasar Non Baja | C6=Profil Aluminium
+r  7 | A7=3.0 | B7=Logam Dasar Baja | C7=Besi Beton
+r  8 | A8=4.0 | B8=Fabrikasi Logam Non Baja | C8=Furniture
+r  9 | A9=5.0 | B9=Fabrikasi Logam Baja | C9=Otomotif, Heat Exchanger
+r 10 | A10=6.0 | B10=Bahan Tekstil | C10=Kain Sarung, Kain Pakaian
+r 11 | A11=7.0 | B11=Kertas | C11=Karton, Packaging
+r 12 | A12=8.0 | B12=Kaca | C12=Kaca Otomotif, Kaca Lembaran, Gelas
+r 13 | A13=9.0 | B13=Ceramic | C13=Keramik Lantai, Keramik Sanitary, Genteng
+r 14 | A14=10.0 | B14=CNG/LNG | C14=CNG, LNG
+r 15 | A15=11.0 | B15=Kimia | C15=Stereofoam, Sabun,
+r 16 | A16=12.0 | B16=Smelter | C16=Smelter Emas, Smelter Aluminium
+r 17 | A17=13.0 | B17=Rubber | C17=Ban, Balon
+r 18 | A18=14.0 | B18=Plastic | C18=Alat Rumah Tangga, Packaging
+r 19 | A19=15.0 | B19=Laundry | C19=Jasa Laundry
+r 20 | A20=16.0 | B20=Tobacco | C20=Rokok
+r 21 | A21=17.0 | B21=Wood | C21=Furniture, Floring
+r 22 | A22=18.0 | B22=Farmasi | C22=Obat, Infus
+r 23 | A23=19.0 | B23=Gas Industri | C23=H2, O2, CO2
+r 24 | A24=20.0 | B24=Horeka | C24=Hotel, Resto, Kafe
+
+====================================================================================================
+SHEET: Sheet1  dims=A4:D13
+====================================================================================================
+r  4 | A4=1.0 | B4=Direktory Industri | C4=Input Data Industri | D4=Nama, Lokasi, Jenis Produksi
+r  5 | A5=2.0 | B5=Plotting Data | C5=Memetakan lokasi Industri
+r  6 | A6=3.0 | B6=Potensi | C6=Melakukan Visit Pertama, info kebutuhan energi
+r  7 | A7=4.0
+r  8 | A8=5.0
+r  9 | A9=6.0
+r 10 | A10=7.0
+r 11 | A11=8.0
+r 12 | A12=9.0
+r 13 | A13=10.0
+
+====================================================================================================
+SHEET: KK0  dims=A2:K73
+====================================================================================================
+MERGED: ['A59:A60', 'B59:B60', 'C59:D59', 'D11:F11', 'D12:F12', 'D13:F13', 'D14:F14', 'D15:F15', 'D16:F16', 'D17:F17', 'D18:F18', 'D19:J19', 'D42:J42', 'D44:E44', 'D45:E45', 'D4:I4', 'D54:K54', 'E59:F59', 'G11:H11', 'G12:H12', 'G13:H13', 'G14:H14', 'G15:H15', 'G16:H16', 'G17:H17', 'G18:H18', 'G22:H22', 'G23:H23', 'G24:H24', 'G27:H27', 'G28:H28', 'G29:H29', 'G59:G60', 'H59:H60', 'I11:J11', 'I12:J12', 'I13:J13', 'I15:J15', 'I16:J16', 'I17:J17', 'I59:J59', 'K59:K60']
+r  2 | A2=PT PERUSAHAAN GAS NEGARA (Persero) Tbk
+r  4 | A4=1.0 | B4=Nama CalonPelanggan
+r  5 | A5=2.0 | B5=Alamat | D5=Kantor
+r  6 | D6=Lokasi Pemasangan
+r  7 | D7=Tagging
+r  9 | D9=Telp | F9=Kantor | H9=Perusahaan
+r 10 | D10=Status Kepemilikan
+r 11 | A11=3.0 | B11=Contact Person | D11=Nama | G11=No. HP | I11=Jabatan
+r 14 | A14=4.0 | B14=Jenis Usaha / Produk
+r 15 | D15=Jenis Produk | G15=Jumlah Produksi | I15=Harga Produk
+r 16 | A16=5.0 | B16=Jumlah Produksi
+r 19 | D19=Catatan :
+r 20 | A20=6.0 | B20=Bahan Baku (%)
+r 21 | B21=Dalam Negeri | F21=%
+r 22 | B22=Luar Negeri | F22=% | G22=Negara Asal | I22=%
+r 25 | A25=7.0 | B25=Orientasi Pasar
+r 26 | B26=Dalam Negeri | F26=%
+r 27 | B27=Luar Negeri | F27=% | G27=Negara Tujuan | I27=%
+r 30 | A30=8.0 | B30=Jumlah Karyawan | F30=Orang
+r 31 | B31=Jumlah Shift | F31=Shift
+r 33 | A33=9.0 | B33=Jam Kerja Operasi
+r 35 | A35=10.0 | B35=Beban Puncak | D35=Mulai pukul | G35=s.d Pukul
+r 36 | D36=Mulai pukul | G36=s.d Pukul
+r 38 | A38=11.0 | B38=Kebutuhan Jasa/Produk | E38=Energi | G38=Engineriing | I38=O&M
+r 40 | A40=12.0 | B40=Bahan Bakar Eksisting | E40=LPG | G40=CNG | I40=HSD | K40=MFO
+r 41 | E41=Batubara | G41=Cangkang | I41=Kayu | K41=Lainnya
+r 42 | B42=Nama Pemasok
+r 44 | A44=13.0 | B44=Kapasitas Listrik | F44=KW
+r 45 | B45=Pemakaian Listrik | F45=KWh
+r 47 | A47=14.0 | B47=Rencana Pemanfaatan Gas | E47=Bahan Baku
+r 48 | E48=Bahan Bakar
+r 49 | E49=Pembangkit Listrik
+r 50 | E50=CNG
+r 51 | E51=Transportasi Gas
+r 52 | E52=......................(Sebutkan)
+r 54 | A54=15.0 | D54=deskripsi Proses Produksi :
+r 56 | A56=16.0 | B56=Estimasi Pipa Terdekat | E56=meter
+r 58 | A58=17.0 | B58=PERINCIAN BAHAN BAKAR YANG DIPAKAI SAAT INI
+r 59 | A59=No | B59=Jenis Peralatan | C59=Kapasitas / Jam | E59=Pola Operasi | G59=Jenis Bahan Bakar | H59=harga bahan Bakar | I59=Konsumsi Energi/Bulan | K59=Konversi ke Gas
+r 60 | C60=Volume | D60=Unit | E60=Jam/Hari | F60=Hari/Minggu | I60=Volume | J60=Unit
+r 61 | A61=1.0 | B61=Steam Boiler | C61=10.0 | D61=Ton/h | E61=24.0 | F61=7.0 | G61=Batu Bara | H61=1500.0 | I61=70000.0 | J61=Ton | K61=46666.66667
+r 62 | A62=2.0 | B62=Thermal Oil Heater | C62=2000000.0 | D62=Kkal | E62=24.0 | F62=7.0 | G62=HSD | H62=21000.0 | I62=30000.0 | J62=Liter | K62=30000
+r 63 | A63=3.0 | B63=Melting Furnace | C63=1000000.0 | D63=Kkal | E63=24.0 | F63=7.0 | G63=HSD | H63=21000.0 | I63=20000.0 | J63=Liter | K63=20000
+r 64 | A64=4.0
+r 67 | B67=Jumlah Kebutuhan Energi | K67=96666.66667
+r 70 | B70=Surveyor | H70=Calon Pelanggan
+r 73 | B73=Nama | H73=Nama

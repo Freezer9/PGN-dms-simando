@@ -1,0 +1,41 @@
+@page "/Error"
+@using System.Diagnostics
+
+<PageTitle>Error - DMS Simando</PageTitle>
+
+<div class="container max-w-xl py-12">
+    <BbCard>
+        <BbCardHeader>
+            <BbCardTitle>Terjadi Kesalahan</BbCardTitle>
+            <BbCardDescription>Gagal memproses permintaan Anda.</BbCardDescription>
+        </BbCardHeader>
+        <BbCardContent Class="space-y-4">
+            @if (ShowRequestId)
+            {
+                <BbAlert Variant="AlertVariant.Danger">
+                    <BbAlertDescription>
+                        <strong>ID Permintaan:</strong> <code>@RequestId</code>
+                    </BbAlertDescription>
+                </BbAlert>
+            }
+
+            <p class="text-sm text-muted-foreground">
+                Apabila masalah ini terus berlanjut, hubungi tim dukungan teknis administrator Anda.
+            </p>
+        </BbCardContent>
+        <BbCardFooter>
+            <BbButton Href="/" Variant="ButtonVariant.Outline" Class="w-full">Kembali ke Beranda</BbButton>
+        </BbCardFooter>
+    </BbCard>
+</div>
+
+@code {
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    private string? RequestId { get; set; }
+    private bool ShowRequestId => !string.IsNullOrEmpty(RequestId);
+
+    protected override void OnInitialized() =>
+        RequestId = Activity.Current?.Id ?? HttpContext?.TraceIdentifier;
+}

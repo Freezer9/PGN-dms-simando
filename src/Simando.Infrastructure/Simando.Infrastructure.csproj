@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Simando.Application\Simando.Application.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- OrganisationServiceTests.cs instantiates the internal OrganisationService directly -->
+    <InternalsVisibleTo Include="Simando.Integration.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- GeographySeeder reads these at runtime via GetManifestResourceStream;
+         see Persistence/SeedData/Geography/README.md for provenance. -->
+    <EmbeddedResource Include="Persistence\SeedData\Geography\*.csv" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AWSSDK.S3" />
+    <PackageReference Include="ClosedXML" />
+    <PackageReference Include="DocumentFormat.OpenXml" />
+    <PackageReference Include="MailKit" />
+    <PackageReference Include="EFCore.NamingConventions" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
+    <PackageReference Include="Microsoft.Graph" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL.NetTopologySuite" />
+  </ItemGroup>
+
+  <PropertyGroup>
+  </PropertyGroup>
+
+</Project>

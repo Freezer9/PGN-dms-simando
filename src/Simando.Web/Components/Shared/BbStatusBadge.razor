@@ -1,0 +1,33 @@
+@namespace Simando.Web.Components.Shared
+@using Simando.Application.Directory
+@using Simando.Domain.Workflow
+
+<span class="@($"inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-medium border {BadgeCssClass} {Class}")">
+    @if (ShowDot)
+    {
+        <span class="size-1.5 rounded-full bg-current"></span>
+    }
+    @Text
+</span>
+
+@code {
+    [Parameter] public RecordStatus? Status { get; set; }
+    [Parameter] public byte? Stage { get; set; }
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public bool ShowDot { get; set; } = true;
+    [Parameter] public string Class { get; set; } = string.Empty;
+
+    private string Text => Label ?? (Stage.HasValue ? CompanyLabels.StageLabel(Stage.Value) : Status?.ToString() ?? "-");
+
+    private string BadgeCssClass => (Status, Stage) switch
+    {
+        (RecordStatus.IssuedNol, _) => "bg-emerald-50 text-emerald-700 border-emerald-200",
+        (RecordStatus.IssuedRl, _) or (RecordStatus.Discontinued, _) => "bg-rose-50 text-rose-700 border-rose-200",
+        (RecordStatus.Rejected, _) => "bg-rose-50 text-rose-700 border-rose-200",
+        (RecordStatus.Draft, _) => "bg-slate-100 text-slate-700 border-slate-200",
+        (_, 7 or 8) => "bg-emerald-50 text-emerald-700 border-emerald-200",
+        (_, 5 or 6) => "bg-amber-50 text-amber-700 border-amber-200",
+        (_, 2 or 3 or 4) => "bg-sky-50 text-sky-700 border-sky-200",
+        _ => "bg-slate-100 text-slate-700 border-slate-200",
+    };
+}

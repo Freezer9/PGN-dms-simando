@@ -1,0 +1,75 @@
+using Simando.Domain.Survey;
+
+namespace Simando.Application.Directory;
+
+// One aggregate — the KK0 form is a single scrolling page, not tabs, so the
+// UI loads header + all four repeating groups in one call. Nullable
+// throughout except CompanyId/JumlahKebutuhanEnergi — a stage-3-only
+// Company has no Survey row yet, and the form is autosave, so a partial
+// header is the common case, not an edge case.
+public sealed record SurveyDetail(
+    Guid CompanyId,
+    DateOnly? TanggalSurvey,
+    Guid? SurveyorUserId,
+    string? SurveyorUserName,
+    int? JumlahKaryawan,
+    short? JumlahShift,
+    decimal? JamKerjaPerHari,
+    short? HariPerMinggu,
+    TimeOnly? BebanPuncak1Mulai,
+    TimeOnly? BebanPuncak1Selesai,
+    TimeOnly? BebanPuncak2Mulai,
+    TimeOnly? BebanPuncak2Selesai,
+    KebutuhanEnergiJenis? KebutuhanEnergi,
+    string? KebutuhanEnergiLainnya,
+    decimal? KapasitasNilai,
+    Guid? KapasitasUnitId,
+    decimal? PemakaianNilai,
+    Guid? PemakaianUnitId,
+    decimal? PipaTerdekatJarakM,
+    decimal? PipaTerdekatDiameter,
+    decimal? PipaTerdekatTekanan,
+    BahanBakarEksisting? BahanBakarEksisting,
+    string? NamaPemasok,
+    decimal? KapasitasListrikKw,
+    decimal? PemakaianListrikKwh,
+    RencanaPemanfaatanGas? RencanaPemanfaatanGas,
+    string? DeskripsiProsesProduksi,
+    decimal? MinEfisiensiDiharapkanPct,
+    decimal? WillingnessToPayUsdMmbtu,
+    string? KeteranganLain,
+    decimal JumlahKebutuhanEnergi,
+    IReadOnlyList<SurveyProductDetail> Products,
+    IReadOnlyList<SurveyRawMaterialDetail> RawMaterials,
+    IReadOnlyList<SurveyMarketDetail> Markets,
+    IReadOnlyList<SurveyEquipmentDetail> Equipment);
+
+public sealed record SaveSurveyRequest(
+    DateOnly? TanggalSurvey,
+    Guid? SurveyorUserId,
+    int? JumlahKaryawan,
+    short? JumlahShift,
+    decimal? JamKerjaPerHari,
+    short? HariPerMinggu,
+    TimeOnly? BebanPuncak1Mulai,
+    TimeOnly? BebanPuncak1Selesai,
+    TimeOnly? BebanPuncak2Mulai,
+    TimeOnly? BebanPuncak2Selesai,
+    KebutuhanEnergiJenis? KebutuhanEnergi,
+    string? KebutuhanEnergiLainnya,
+    decimal? KapasitasNilai,
+    Guid? KapasitasUnitId,
+    decimal? PemakaianNilai,
+    Guid? PemakaianUnitId,
+    decimal? PipaTerdekatJarakM,
+    decimal? PipaTerdekatDiameter,
+    decimal? PipaTerdekatTekanan,
+    BahanBakarEksisting? BahanBakarEksisting,
+    string? NamaPemasok,
+    decimal? KapasitasListrikKw,
+    decimal? PemakaianListrikKwh,
+    RencanaPemanfaatanGas? RencanaPemanfaatanGas,
+    string? DeskripsiProsesProduksi,
+    decimal? MinEfisiensiDiharapkanPct,
+    decimal? WillingnessToPayUsdMmbtu,
+    string? KeteranganLain);

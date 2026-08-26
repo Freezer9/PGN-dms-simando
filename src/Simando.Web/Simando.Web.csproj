@@ -1,0 +1,51 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Simando.Application\Simando.Application.csproj" />
+    <ProjectReference Include="..\Simando.Infrastructure\Simando.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BlazorBlueprint.Components" />
+    <PackageReference Include="BlazorBlueprint.Icons.Lucide" />
+    <PackageReference Include="Hangfire.AspNetCore" />
+    <PackageReference Include="Hangfire.PostgreSql" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Serilog.AspNetCore" />
+    <PackageReference Include="Serilog.Sinks.Console" />
+    <PackageReference Include="Serilog.Sinks.File" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
+    <!-- Off in Docker: css stage already builds+COPYs app.css; no bun/pnpm/npm on that image.
+         dotnet publish -p:SimandoBuildCss=false -->
+    <SimandoBuildCss Condition="'$(SimandoBuildCss)' == ''">true</SimandoBuildCss>
+    <_JsCmdUnix>sh &quot;$(MSBuildThisFileDirectory)../../scripts/js.sh&quot;</_JsCmdUnix>
+    <_JsCmdWin>powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildThisFileDirectory)../../scripts/js.ps1&quot;</_JsCmdWin>
+    <_JsCmd Condition="'$(OS)' == 'Windows_NT'">$(_JsCmdWin)</_JsCmd>
+    <_JsCmd Condition="'$(OS)' != 'Windows_NT'">$(_JsCmdUnix)</_JsCmd>
+  </PropertyGroup>
+
+  <!-- syncs node_modules with bun.lock so `dotnet restore` alone builds a fresh clone -->
+  <Target Name="SimandoJsInstall" AfterTargets="Restore" Condition="'$(SimandoBuildCss)' == 'true'">
+    <Exec Command="$(_JsCmd) install" />
+  </Target>
+
+  <!-- Styles/app.css -> wwwroot/app.css, before every build/run/publish.
+       Skipped under `dotnet watch` (DOTNET_WATCH=1, set by dotnet-watch
+       itself): scripts/dev.sh already runs a long-lived, unminified Tailwind
+       watcher for that session. Running this one-shot minified build too
+       would overwrite the watcher's output on every dotnet-watch rebuild,
+       which dotnet watch then sees as *another* file change and rebuilds
+       again: a feedback loop of redundant builds fighting over the same
+       output file, not just wasted work. -->
+  <Target Name="SimandoTailwindBuild" BeforeTargets="Build"
+          Condition="'$(SimandoBuildCss)' == 'true' AND '$(DOTNET_WATCH)' != '1'">
+    <Exec Command="$(_JsCmd) build" />
+  </Target>
+
+</Project>

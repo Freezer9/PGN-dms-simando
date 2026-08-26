@@ -1,0 +1,38 @@
+*SISTEM MANAJEMEN PROSES BERLANGGANAN GAS*
+
+Nama app: 
+
+Problem statement:
+Orang perusahaan tidak bisa memonitor workflownya statusnya dah sampai mana, bagaimana progressnya belum jelas.
+
+Sales area (bertugas input update, create data):
+1. Directory - database perusahaan besar, yang berminat mana saja tempatnya, tampilkan di map
+2. Plotting - 
+3. Prospect - rencana yang akan di survey
+4. Survey - survey tempat yang potensial, yang sudah pernah disurvey dimana lalu tunjukkan di map
+5. A1 - ada form yang dikerjakan diluar sistem ini, discan upload sudah. Yang word bisa didownload lalu di sign basah atau langsung di web secara digital, ditunjukkan di map yang sudah status ini.
+
+Flow alur dokumen:
+1. Formulir di upload hingga naik status A1 
+2. ⁠Kalau mau naik status harus upload dokumen di luar system untuk bukti kelayakan 
+3. ⁠baru bisa naik status ke Permohonan NOL
+
+Reviewer area:
+1. Yang di review setelah A1
+
+Regional (Admin):
+1. Bisa dipilih reviewernya siapa saja bisa 2-3 reviewer
+
+Flow birokrasi:
+1. Reviewer harus dari 1 mengalir hingga ke reviewer .
+2. ⁠lalu reviewer hingga ke approval division head, approval 
+3. ⁠area head regional bisa melihat 1 region itu tapi sales area spesifik hanya bisa melihat area tersebut
+4. ⁠Area head hanya sampe lampiran 17 resume evaluasi
+5. ⁠output dari hasil review adalah resume evaluasi
+6. ⁠bagian regional melengkapi data yang sudah diinput dari area
+7. ⁠data analisis kelayakan posisinya di regional admin
+
+Flow status:
+1. Setuju naik 1 tingkat
+2. ⁠Tolak langsung balek ke admin regional
+3. ⁠Revisi turun 1 tingkat

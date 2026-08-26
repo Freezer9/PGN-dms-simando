@@ -1,0 +1,370 @@
+@page "/tasks/blocked"
+@inherits AdminPageBase
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.EntityFrameworkCore
+@using Simando.Application.Tasks
+@using Simando.Application.Workflow
+@using Simando.Domain.Security
+@using Simando.Infrastructure.Persistence
+@inject ITasksService TasksService
+@inject IWorkflowService WorkflowService
+@inject IDbContextFactory<SimandoDbContext> DbFactory
+@inject ToastService ToastService
+
+<PageTitle>Tugas Tertahan - DMS Simando</PageTitle>
+
+@if (Authorized)
+{
+    <div class="space-y-6">
+        <BbPageHeader Title="Tugas Tertahan & Perlu Perhatian" Subtitle="Daftar berkas ditolak, tertahan > 7 hari, atau belum memiliki penanggung jawab." />
+
+        @if (_loading)
+        {
+            <p class="text-sm text-muted-foreground">Memuat daftar tugas tertahan…</p>
+        }
+        else
+        {
+            <BbCard Class="border-red-200">
+                <BbCardHeader>
+                    <BbCardTitle>Daftar Tugas Tertahan (@_blockedTasks.Count)</BbCardTitle>
+                </BbCardHeader>
+                <BbCardContent>
+                    <div class="flex items-center gap-2 mb-4">
+                        <div class="relative flex-1 min-w-[220px] max-w-md">
+                            <LucideIcon Name="search" Class="size-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none z-10" />
+                            <BbInput Type="InputType.Text"
+                                     Value="@_searchTerm"
+                                     ValueChanged="@OnSearchTermChanged"
+                                     UpdateTiming="UpdateTiming.Debounced"
+                                     DebounceInterval="300"
+                                     Placeholder="Cari nama perusahaan atau nomor..."
+                                     Class="h-8 text-xs pl-8 w-full" />
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(_searchTerm))
+                        {
+                            <BbButton Variant="ButtonVariant.Ghost" Size="ButtonSize.Small" OnClick="ResetSearch" Class="h-8 text-xs text-muted-foreground hover:text-foreground">
+                                <LucideIcon Name="x" Class="size-3.5 mr-1" /> Reset Filter
+                            </BbButton>
+                        }
+                    </div>
+
+                    <BbDataTable TData="TaskListItem" Data="FilteredBlockedTasks" InitialPageSize="25" AriaLabel="Daftar tugas tertahan">
+                        <Columns>
+                            <BbDataTableColumn TData="TaskListItem" TValue="string" Header="Perusahaan">
+                                <CellTemplate Context="t">
+                                    <div class="flex flex-col">
+                                        <span class="font-medium">@t.NamaPerusahaan</span>
+                                        <span class="text-xs text-muted-foreground">@t.Nomor · @t.IndustryTypeName</span>
+                                    </div>
+                                </CellTemplate>
+                            </BbDataTableColumn>
+                            <BbDataTableColumn TData="TaskListItem" TValue="string" Header="Tahap" Width="140px" HeaderClass="whitespace-nowrap" CellClass="whitespace-nowrap">
+                                <CellTemplate Context="t">@WorkflowLabels.StepKindLabel(t.StepKind)</CellTemplate>
+                            </BbDataTableColumn>
+                            <BbDataTableColumn TData="TaskListItem" TValue="string" Header="Area" Property="@(t => t.AreaName)" Sortable="true" Width="140px" HeaderClass="whitespace-nowrap" CellClass="whitespace-nowrap" />
+                            <BbDataTableColumn TData="TaskListItem" TValue="string" Header="Diajukan" Property="@(t => t.SubmittedByName)" Sortable="true" Width="140px" HeaderClass="whitespace-nowrap" CellClass="whitespace-nowrap" />
+                            <BbDataTableColumn TData="TaskListItem" TValue="string" Header="Tertahan" Width="120px" HeaderClass="whitespace-nowrap" CellClass="whitespace-nowrap">
+                                <CellTemplate Context="t"><span class="inline-flex items-center gap-1"><LucideIcon Name="clock" Class="h-3.5 w-3.5 text-muted-foreground" /> @WorkflowLabels.WaitingLabel(t.WaitingSince)</span></CellTemplate>
+                            </BbDataTableColumn>
+                            <BbDataTableColumn TData="TaskListItem" TValue="string" Header="Aksi" Width="1px" HeaderClass="w-px whitespace-nowrap text-center" CellClass="w-px whitespace-nowrap text-center">
+                                <CellTemplate Context="t">
+                                    <div class="flex items-center justify-center gap-1">
+                                        <BbTooltip>
+                                            <BbTooltipTrigger>
+                                                <BbButton Href="@($"/companies/{t.CompanyId}")" Variant="ButtonVariant.Outline" Size="ButtonSize.IconSmall" AriaLabel="Buka">
+                                                    <LucideIcon Name="eye" Class="size-4" />
+                                                </BbButton>
+                                            </BbTooltipTrigger>
+                                            <BbTooltipContent>Buka</BbTooltipContent>
+                                        </BbTooltip>
+                                        @if (CurrentUser.HasCapability(Capability.ReassignWorkflowStep))
+                                        {
+                                            if (t.StepId == Guid.Empty)
+                                            {
+                                                <BbTooltip>
+                                                    <BbTooltipTrigger>
+                                                        <BbButton OnClick="@(() => OpenRework(t))" Variant="ButtonVariant.Outline" Size="ButtonSize.IconSmall" AriaLabel="Kembalikan ke Draft">
+                                                            <LucideIcon Name="undo-2" Class="size-4" />
+                                                        </BbButton>
+                                                    </BbTooltipTrigger>
+                                                    <BbTooltipContent>Kembalikan ke Draft</BbTooltipContent>
+                                                </BbTooltip>
+                                                <BbTooltip>
+                                                    <BbTooltipTrigger>
+                                                        <BbButton OnClick="@(() => OpenDiscontinue(t))" Variant="ButtonVariant.Outline" Size="ButtonSize.IconSmall" AriaLabel="Hentikan Permohonan" Class="text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/30">
+                                                            <LucideIcon Name="square-x" Class="size-4" />
+                                                        </BbButton>
+                                                    </BbTooltipTrigger>
+                                                    <BbTooltipContent>Hentikan Permohonan</BbTooltipContent>
+                                                </BbTooltip>
+                                            }
+                                            else
+                                            {
+                                                <BbTooltip>
+                                                    <BbTooltipTrigger>
+                                                        <BbButton OnClick="@(() => OpenReassign(t))" Variant="ButtonVariant.Outline" Size="ButtonSize.IconSmall" AriaLabel="Tugaskan Ulang">
+                                                            <LucideIcon Name="user-check" Class="size-4" />
+                                                        </BbButton>
+                                                    </BbTooltipTrigger>
+                                                    <BbTooltipContent>Tugaskan Ulang</BbTooltipContent>
+                                                </BbTooltip>
+                                            }
+                                        }
+                                    </div>
+                                </CellTemplate>
+                            </BbDataTableColumn>
+                        </Columns>
+                        <EmptyTemplate>
+                            <BbEmpty Title="Tidak ada tugas tertahan" Description="Semua tugas di wilayah Anda berjalan dengan lancar." />
+                        </EmptyTemplate>
+                    </BbDataTable>
+                </BbCardContent>
+            </BbCard>
+        }
+    </div>
+
+    @if (_selectedTask is not null)
+    {
+        if (_showReworkDialog)
+        {
+            <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                <EditForm Model="_reworkForm" OnValidSubmit="SubmitRework" OnInvalidSubmit="HandleInvalidSubmit" Class="bg-background border rounded-lg p-6 max-w-md w-full space-y-4 shadow-lg">
+                    <DataAnnotationsValidator />
+                    <h3 class="text-lg font-semibold">Kembalikan Berkas ke Draft</h3>
+                    <p class="text-xs text-muted-foreground">Perusahaan: <strong>@_selectedTask.NamaPerusahaan</strong> (@_selectedTask.Nomor)</p>
+
+                    <BbFormFieldTextarea @bind-Value="_reworkForm.ActionComment"
+                                         Label="Catatan Perbaikan *"
+                                         Placeholder="Masukkan catatan perbaikan untuk Sales Area..." />
+
+                    @if (_error is not null)
+                    {
+                        <p class="text-xs text-red-600">@_error</p>
+                    }
+
+                    <div class="flex justify-end gap-2 pt-2">
+                        <BbButton OnClick="CloseDialogs" Variant="ButtonVariant.Outline" Size="ButtonSize.Small" Type="ButtonType.Button">Batal</BbButton>
+                        <BbButton Type="ButtonType.Submit" Variant="ButtonVariant.Default" Size="ButtonSize.Small">Kembalikan ke Draft</BbButton>
+                    </div>
+                </EditForm>
+            </div>
+        }
+        else if (_showDiscontinueDialog)
+        {
+            <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                <EditForm Model="_discontinueForm" OnValidSubmit="SubmitDiscontinue" OnInvalidSubmit="HandleInvalidSubmit" Class="bg-background border rounded-lg p-6 max-w-md w-full space-y-4 shadow-lg">
+                    <DataAnnotationsValidator />
+                    <h3 class="text-lg font-semibold">Hentikan Permohonan</h3>
+                    <p class="text-xs text-muted-foreground">Perusahaan: <strong>@_selectedTask.NamaPerusahaan</strong> (@_selectedTask.Nomor)</p>
+
+                    <BbFormFieldTextarea @bind-Value="_discontinueForm.ActionComment"
+                                         Label="Alasan Penghentian *"
+                                         Placeholder="Masukkan alasan penghentian permohonan..." />
+
+                    @if (_error is not null)
+                    {
+                        <p class="text-xs text-red-600">@_error</p>
+                    }
+
+                    <div class="flex justify-end gap-2 pt-2">
+                        <BbButton OnClick="CloseDialogs" Variant="ButtonVariant.Outline" Size="ButtonSize.Small" Type="ButtonType.Button">Batal</BbButton>
+                        <BbButton Type="ButtonType.Submit" Variant="ButtonVariant.Destructive" Size="ButtonSize.Small">Hentikan Permohonan</BbButton>
+                    </div>
+                </EditForm>
+            </div>
+        }
+        else
+        {
+            <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                <div class="bg-background border rounded-lg p-6 max-w-md w-full space-y-4 shadow-lg">
+                    <h3 class="text-lg font-semibold">Tugaskan Ulang Langkah Persetujuan</h3>
+                    <p class="text-xs text-muted-foreground">Perusahaan: <strong>@_selectedTask.NamaPerusahaan</strong> (@_selectedTask.Nomor)</p>
+
+                    <BbFormFieldCombobox TValue="Guid?"
+                                         Value="@_selectedUserId"
+                                         ValueChanged="@((Guid? val) => _selectedUserId = val)"
+                                         Label="Pilih Pengguna Tujuan *"
+                                         Required="true"
+                                         Options="ReassignUserOptions"
+                                         Placeholder="-- Pilih Pengguna --"
+                                         SearchPlaceholder="Cari pengguna..."
+                                         EmptyMessage="Tidak ada pengguna"
+                                         MatchTriggerWidth
+                                         Class="w-full"
+                                         InputClass="w-full text-xs" />
+
+                    @if (_error is not null)
+                    {
+                        <p class="text-xs text-red-600">@_error</p>
+                    }
+
+                    <div class="flex justify-end gap-2 pt-2">
+                        <BbButton OnClick="CloseDialogs" Variant="ButtonVariant.Outline" Size="ButtonSize.Small">Batal</BbButton>
+                        <BbButton OnClick="SubmitReassign" Variant="ButtonVariant.Default" Size="ButtonSize.Small">Simpan Penugasan</BbButton>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+}
+
+@code {
+    private sealed class ActionFormModel
+    {
+        [Required(ErrorMessage = "Catatan / alasan wajib diisi")]
+        public string ActionComment { get; set; } = "";
+    }
+
+    private List<TaskListItem> _blockedTasks = [];
+    private bool _loading = true;
+    private string _searchTerm = string.Empty;
+
+    private IEnumerable<TaskListItem> FilteredBlockedTasks =>
+        string.IsNullOrWhiteSpace(_searchTerm)
+            ? _blockedTasks
+            : _blockedTasks.Where(t =>
+                t.NamaPerusahaan.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                t.Nomor.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase));
+
+    private void OnSearchTermChanged(string value) => _searchTerm = value;
+    private void ResetSearch() => _searchTerm = string.Empty;
+
+    private TaskListItem? _selectedTask;
+    private Guid? _selectedUserId;
+    private bool _showReworkDialog;
+    private bool _showDiscontinueDialog;
+    private ActionFormModel _reworkForm = new();
+    private ActionFormModel _discontinueForm = new();
+
+    private IEnumerable<SelectOption<Guid?>> ReassignUserOptions =>
+        _userOptions.Select(u => new SelectOption<Guid?>(u.Id, $"{u.FullName} ({u.UserName})"))
+            .Prepend(new SelectOption<Guid?>(null, "-- Pilih Pengguna --"));
+    private List<(Guid Id, string FullName, string UserName)> _userOptions = [];
+    private string? _error;
+
+    protected override Capability[] RequiredCapabilities => [Capability.ReassignWorkflowStep];
+
+    protected override BreadcrumbItem[] Breadcrumbs =>
+    [
+        new("Beranda", "/"),
+        new("Tugas Saya", "/tasks"),
+        new("Tugas Tertahan", null),
+    ];
+
+    protected override async Task OnAuthorizedInitializedAsync()
+    {
+        _blockedTasks = (await TasksService.GetBlockedTasksAsync(CurrentUser.Permissions)).ToList();
+        _loading = false;
+    }
+
+    private void OpenRework(TaskListItem task)
+    {
+        _selectedTask = task;
+        _reworkForm = new ActionFormModel();
+        _error = null;
+        _showReworkDialog = true;
+        _showDiscontinueDialog = false;
+    }
+
+    private void OpenDiscontinue(TaskListItem task)
+    {
+        _selectedTask = task;
+        _discontinueForm = new ActionFormModel();
+        _error = null;
+        _showReworkDialog = false;
+        _showDiscontinueDialog = true;
+    }
+
+    private async Task OpenReassign(TaskListItem task)
+    {
+        _selectedTask = task;
+        _error = null;
+        _showReworkDialog = false;
+        _showDiscontinueDialog = false;
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var users = await db.Users.AsNoTracking()
+            .OrderBy(u => u.FullName)
+            .Select(u => new { u.Id, u.FullName, u.UserName })
+            .ToListAsync();
+
+        _userOptions = users.Select(u => (u.Id, u.FullName, u.UserName ?? string.Empty)).ToList();
+    }
+
+    private void CloseDialogs()
+    {
+        _selectedTask = null;
+        _selectedUserId = Guid.Empty;
+        _showReworkDialog = false;
+        _showDiscontinueDialog = false;
+        _reworkForm = new ActionFormModel();
+        _discontinueForm = new ActionFormModel();
+        _error = null;
+    }
+
+    private async Task SubmitReassign()
+    {
+        if (_selectedTask is null || _selectedUserId is null || _selectedUserId == Guid.Empty)
+        {
+            _error = "Harap pilih pengguna tujuan.";
+            return;
+        }
+
+        var result = await WorkflowService.ReassignStepAsync(
+            _selectedTask.StepId, _selectedUserId.Value, CurrentUser.UserId, CurrentUser.Permissions);
+
+        if (result.Succeeded)
+        {
+            CloseDialogs();
+            _blockedTasks = (await TasksService.GetBlockedTasksAsync(CurrentUser.Permissions)).ToList();
+            ToastService.Success("Penugasan tahapan berhasil diperbarui.", "Tersimpan");
+        }
+        else
+        {
+            _error = result.Error;
+            ToastService.Error(result.Error ?? "Gagal mengalihkan penugasan tahapan.", "Gagal");
+        }
+    }
+
+    private async Task SubmitRework()
+    {
+        if (_selectedTask is null) return;
+
+        var result = await WorkflowService.ReworkAsync(
+            _selectedTask.CompanyId, _reworkForm.ActionComment, CurrentUser.UserId, CurrentUser.Permissions);
+
+        if (result.Succeeded)
+        {
+            CloseDialogs();
+            _blockedTasks = (await TasksService.GetBlockedTasksAsync(CurrentUser.Permissions)).ToList();
+            ToastService.Success("Permohonan berhasil dikembalikan ke Draft.", "Dikembalikan");
+        }
+        else
+        {
+            _error = result.Error;
+            ToastService.Error(result.Error ?? "Gagal mengembalikan permohonan.", "Gagal");
+        }
+    }
+
+    private async Task SubmitDiscontinue()
+    {
+        if (_selectedTask is null) return;
+
+        var result = await WorkflowService.DiscontinueAsync(
+            _selectedTask.CompanyId, _discontinueForm.ActionComment, CurrentUser.UserId, CurrentUser.Permissions);
+
+        if (result.Succeeded)
+        {
+            CloseDialogs();
+            _blockedTasks = (await TasksService.GetBlockedTasksAsync(CurrentUser.Permissions)).ToList();
+            ToastService.Warning("Permohonan berhasil dihentikan.", "Dihentikan");
+        }
+        else
+        {
+            _error = result.Error;
+            ToastService.Error(result.Error ?? "Gagal menghentikan permohonan.", "Gagal");
+        }
+    }
+
+    private void HandleInvalidSubmit() => ToastService.Error("Mohon lengkapi semua kolom yang wajib diisi.", "Validasi Gagal");
+}

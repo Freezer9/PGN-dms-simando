@@ -1,0 +1,202 @@
+FORM OUTPUT DATA.DOCX — FLOATING SHAPE ANNOTATIONS
+==================================================
+
+19 anchored text-box shapes drawn ON TOP of the 17 embedded screenshots.
+
+These are NOT paragraph text. They live in <mc:AlternateContent><wps:txbx> shapes
+with <wp:anchor> positioning, and a naive text extraction returns them as loose
+sentences with no indication of which image — or which part of which image —
+they belong to. The positions below were recovered from the anchor offsets and
+are what make them readable.
+
+Anchor frame: positionV is relativeFrom="paragraph", and each image sits alone in
+its paragraph, so **y is measured from the top edge of the image**. positionH is
+column / margin / page; page-relative values have the 1" page margin subtracted
+below so every x is relative to the image's left edge.
+
+
+PAGE MAP
+--------
+Established from each screenshot's own "Hal.: N dari 211" header block and
+cross-checked against the PDF viewer's page indicator visible in the screenshot
+chrome (viewer page = document page + 2, consistent across all 17).
+
+  img  doc p.  viewer   content                                      annotations
+  ---  ------  ------   ------------------------------------------   -----------
+   1     160   162/213  Lampiran 10 — Formulir KK0                   FORM 1
+   2     161   163/213  Lampiran 11 — Formulir Registrasi (A1)       FORM 2
+   3     162   164/213  Lampiran 11 cont.                            —
+   4     165   167/213  Lampiran Formulir — Daftar Peralatan Gas     —
+   5     175   177/213  Lampiran 17 — Evaluasi Registrasi            FORM 3
+   6     180   182/213  Lampiran 17 §6–7                             —
+   7     181   183/213  Lampiran 17 §8 spreadsheet, §9 gambar        2
+   8     182   184/213  Lampiran 17 §10, §11                         2
+   9     169   171/213  Lampiran 15 — Permohonan NOL/RL              4
+  10     170   172/213  Lampiran 15 cont.                            —
+  11     185   187/213  Resume Evaluasi / Analisis                   6
+  12     186   188/213  Resume Evaluasi cont.                        2
+  13     171   173/213  Lampiran 16 — Penerbitan NOL/RL              —
+  14     172   174/213  Lampiran 16 cont.                            —
+  15     173   175/213  Lampiran 16 cont.                            —
+  16     174   176/213  Lampiran 16 — tanda tangan                   —
+  17      66    68/213  Diagram Alir 6.1                             —
+
+Two pages have no legible "Hal.:" header of their own and are numbered from the
+viewer indicator alone:
+  * p165 — the Daftar Peralatan Gas lampiran (viewer 167/213).
+  * p169 — cropped above its header (viewer 171/213).
+
+Source PDF filename, legible in the screenshot title bar and tab:
+  "Final-PO Berlangganan Gas 2023_ o.pdf"  — 213 viewer pages, 211 numbered.
+This is the file to request from PGN.
+
+
+THE ANNOTATIONS
+---------------
+
+--- image 1 — p160, Lampiran 10 (KK0) ------------------------------------------
+  @ x=4.30" y=-0.28"  (above the image)
+    FORM 1
+
+--- image 2 — p161, Lampiran 11 (A1) -------------------------------------------
+  @ x=6.00" y=0.03"
+    FORM 2
+
+--- image 5 — p175, Lampiran 17 (Evaluasi) -------------------------------------
+  @ x=6.18" y=0.01"
+    FORM 3
+
+  >> Exactly three pages carry a FORM label, and they are the three data-entry
+     forms: KK0, A1, Evaluasi. Lampiran 15/16 (Nota Dinas) and the Resume
+     Evaluasi carry none — they are generated output, not forms.
+
+--- image 7 — p181, Lampiran 17 §8 and §9 --------------------------------------
+  @ x=2.95" y=1.24"   over §8 "Spread sheet Peralatan Gas", inside the grid
+    Entry Data
+
+  @ x=3.04" y=5.40"   over §9 "Gambar Rencana/Situasi Pabrik, Rencana Pipa PGN
+                      Di Dalam Pabrik, Lokasi MRS, dan Pipa Instalasi"
+    Upload Gambar
+
+  >> The two markers are on ADJACENT sections of the same page. The contrast is
+     deliberate: §8 is to be keyed in, §9 is to be uploaded as an image.
+
+  Grid structure, read from the screenshot:
+    header : SPREADSHEET KAPASITAS PERALATAN UNTUK PERHITUNGAN KAPASITAS METER
+    columns: NO | NAMA PERALATAN | KAPASITAS MAKSIMUM | JAM OPERASI |
+             WAKTU (JAM) 1 2 3 … 24
+    rows   : 20 equipment rows (pre-numbered), then a JUMLAH row totalling
+             each hour column
+    below  : a. Jam Operasi          … Jam/Hari
+             b. Laju Alir (m3/Jam)   Maksimum … M3/Jam
+                                     Minimum  … M3/Jam
+             c. Keterangan           (free text block)
+
+--- image 8 — p182, Lampiran 17 §10 and §11 ------------------------------------
+  @ x=2.62" y=1.97"   over §10 "Gambar Situasi Pipa Eksisting, Rencana Pipa Ke
+                      Lokasi Calon Pelanggan, dan Potensi Sekitar Pabrik
+                      (Pelanggan/Potensi Lain)"
+    Upload Gambar
+
+  @ y=6.26" (no x offset)  over §11 "Usulan Titik Taping dan Keandalan Jaringan"
+    Upload Gambar
+
+--- image 9 — p169, Lampiran 15 (Permohonan NOL/RL, Nota Dinas) ----------------
+  @ x=2.13" y=2.24"   over the "Menunjuk:" block — three numbered lines
+    Drop Down Daftar Dokumen dan atau Entry manual
+
+  @ x=3.90" y=3.57"   over Nama Perusahaan / Nama Pimpinan Perusahaan /
+                      Alamat Kantor / Alamat Pabrik / Produksi Utama /
+                      Jangka waktu kontrak
+    Otomasi Data Tersedia
+
+  @ x=-0.42" y=5.00"  left margin, over "Isi Permohonan Berlangganan Gas /
+                      Amendemen Perjanjian"
+    Memilih Produk : Harian, Bulanan, Tahunan
+    Memilih : Reguler/ Bersyarat
+    Bersyarat : Sebutkan Term Bersyaratya dan alasan
+
+  @ y=7.13" (no x offset)  foot of page
+    MEMILIH APPROVAL :
+    Creator : Sales ………….
+    Setelah di Create ; SAVE / SUBMITT
+    Review 1 : PIC Area Support (by email link)
+    Review 2 : PIC Leader Area Support (by email link)
+    Approval : Area Head ….(by email)
+    SAVE / APPROVED / REVISION / REJECT
+
+  Also legible on the form itself:
+    Yang Terhormat : Direktur Komersial / General Manager, Sales and Operation
+                     Region (I/II/III/IV)
+    Dari           : General Manager, Sales and Operation Region (I/II/III/IV)
+                     / Area Head
+
+--- image 11 — p185, Resume Evaluasi / Analisis --------------------------------
+  @ x=5.13" y=0.40"   beside the title block
+    Executive Summary
+
+  @ x=4.35" y=0.82"   over §I.1 "Status Capel di RKAP"
+    Otomasi Area …..
+    Tabel : Kontrak Min, kontrak Maks, Rencana Pemakaian, Produk dan Sub Produ[k]
+
+  @ x=4.58" y=2.40"   over §3 "Target tandatangan PJBG" / §4 heading
+    Entry : Otomasi Dari Data Gate Review
+
+  @ x=4.17" y=3.13"   over the §4 Gate Review table (Total Nilai Capex, Pipa
+                      Induk/Cabang, Pipa Servis, G-Size MR/S, Durasi
+                      Pelaksanaan, Maksimum Kapasitas Meter)
+    Entry : Ambil Data dari Data Gate Review
+
+  @ x=5.35" y=5.12"   over §5 "Analisis pasokan" (Gas Balance / BBTUD)
+    Entry : Deskripsi dan Upload Tabel
+    Jika ada table gas Balance maka bisa diambil dari sana atau sementara
+    Upload Picture
+
+  @ x=2.40" y=7.26"   over §6 "Analisis kelayakan" (IRR / Pay Back table)
+    Entry : Deskripsi
+    Upload Picture resume Perhitungan Kelayakan
+
+  Loose paragraph in the same block, not in a shape:
+    01/0RBB/300626
+    — unlabelled. Shape and position suggest a specimen Nota Dinas number
+      (seq / code / DDMMYY). NOT confirmed; ask PGN before treating it as a
+      numbering format.
+
+--- image 12 — p186, Resume Evaluasi cont. -------------------------------------
+  @ x=4.40" y=0.01"   over §7 "Analisis Kompetitor"
+    Entry : Deskripsi
+    Upload Picture Data Kompetitor
+
+  @ x=4.42" y=0.63"   over §8 "Lain-lain"
+    LAIN - LAIN
+    Entry : Pilih Upload Dokumen Acuan Kerja :
+    Ketentuan Produk-Sub Produk , Segmentasi
+    Ketentuan  Harga Gas
+    Ketentuan Biaya Penyambungan
+    Ketentuan Jaminan Pembayaran
+    Ketentuan Biaya Sewa Lahan
+
+  Also legible on the form itself:
+    Disiapkan oleh, <<Nama Jabatan Fungsi Sales & Customer Management Regional>>
+    — the Resume Evaluasi is prepared by the Regional function.
+
+
+REPRODUCING
+-----------
+Shapes are in word/document.xml. Take the mc:Choice branch only — mc:Fallback
+holds a VML duplicate of every shape and will double every annotation.
+
+    import xml.etree.ElementTree as ET
+    MC = 'http://schemas.openxmlformats.org/markup-compatibility/2006'
+    WP = 'http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing'
+    W  = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
+
+    for alt in root.iter(f'{{{MC}}}AlternateContent'):
+        ch = alt.find(f'{{{MC}}}Choice')          # never iterate the whole alt
+        anchor = ch.find(f'.//{{{WP}}}anchor')
+        text = ''.join(n.text or '' for n in ch.iter(f'{{{W}}}t'))
+        # anchor/positionV/posOffset is EMU; /914400 = inches from image top
+
+To render them back over the screenshots, note each image carries an <a:srcRect>
+crop (l/t/r/b as parts-per-100000) that removes the PDF-viewer chrome. Apply the
+crop first, then scale by (cropped_pixels / displayed_inches) from <wp:extent>.
