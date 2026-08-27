@@ -1,5 +1,6 @@
 using BlazorBlueprint.Components;
 using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Simando.Infrastructure;
 using Simando.Infrastructure.Persistence;
@@ -44,10 +45,19 @@ var app = builder.Build();
 
 await using (var scope = app.Services.CreateAsyncScope())
 {
+    var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("DatabaseStartup");
     var dbFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<SimandoDbContext>>();
     await using var db = await dbFactory.CreateDbContextAsync();
+
+    logger.LogInformation("Applying database migrations...");
     await db.Database.MigrateAsync();
+    logger.LogInformation("Database migrations applied successfully.");
 }
+
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
 
 if (!app.Environment.IsDevelopment())
 {

@@ -36,6 +36,7 @@ services:
     read_only: true
     tmpfs:
       - /tmp:rw,noexec,nosuid,size=256m
+      - /home/app/.aspnet:rw,noexec,nosuid,size=32m
     depends_on:
       postgres:
         condition: service_healthy
@@ -58,10 +59,11 @@ services:
       - simando-internal
     cap_add: [CHOWN, DAC_READ_SEARCH, FOWNER, SETGID, SETUID]
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U simando -d simando"]
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U simando -d simando"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 30s
 
   # ⚠️ Pre-1.0 — pin the exact beta, never `latest`.
   # ⚠️ Path-style addressing only; the S3 client must set ForcePathStyle = true
@@ -90,6 +92,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 30s
 
 networks:
   simando-internal:

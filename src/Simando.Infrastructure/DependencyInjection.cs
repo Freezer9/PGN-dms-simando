@@ -47,7 +47,14 @@ public static class DependencyInjection
         services.AddDbContextFactory<SimandoDbContext>(options => options
             .UseNpgsql(
                 configuration.GetConnectionString("Postgres"),
-                npgsql => npgsql.UseNetTopologySuite())
+                npgsql =>
+                {
+                    npgsql.UseNetTopologySuite();
+                    npgsql.EnableRetryOnFailure(
+                        maxRetryCount: 5,
+                        maxRetryDelay: TimeSpan.FromSeconds(5),
+                        errorCodesToAdd: null);
+                })
             .UseSnakeCaseNamingConvention(),
             lifetime: ServiceLifetime.Scoped);
 
