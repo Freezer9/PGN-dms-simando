@@ -33,8 +33,6 @@ services:
     networks:
       - simando-internal
       - caddy
-    volumes:
-      - dataprotection-data:/home/app/.aspnet/DataProtection-Keys
     read_only: true
     tmpfs:
       - /tmp:rw,noexec,nosuid,size=256m
@@ -104,4 +102,3 @@ networks:
 volumes:
   postgres-data:
   rustfs-data:
-  dataprotection-data:

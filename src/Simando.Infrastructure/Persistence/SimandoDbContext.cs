@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -25,8 +26,10 @@ namespace Simando.Infrastructure.Persistence;
 // CurrentUser's own comment for why that class takes no DbContext
 // dependency in return, avoiding a construction-order cycle.
 public sealed class SimandoDbContext(DbContextOptions<SimandoDbContext> options, ICurrentUser currentUser)
-    : IdentityUserContext<ApplicationUser, Guid>(options)
+    : IdentityUserContext<ApplicationUser, Guid>(options), IDataProtectionKeyContext
 {
+    public DbSet<DataProtectionKey> DataProtectionKeys => Set<DataProtectionKey>();
+
     public DbSet<Region> Regions => Set<Region>();
     public DbSet<Area> Areas => Set<Area>();
     public DbSet<RoleAssignment> RoleAssignments => Set<RoleAssignment>();

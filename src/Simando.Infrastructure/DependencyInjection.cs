@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -63,6 +65,10 @@ public static class DependencyInjection
         services.AddIdentityCore<ApplicationUser>(options => ConfigurePasswordAndLockout(options, configuration))
             .AddEntityFrameworkStores<SimandoDbContext>()
             .AddClaimsPrincipalFactory<ApplicationUserClaimsPrincipalFactory>();
+
+        services.AddDataProtection()
+            .PersistKeysToDbContext<SimandoDbContext>()
+            .SetApplicationName("simando");
 
         services.AddScoped<AdminSeeder>();
         services.AddScoped<DemoUserSeeder>();
