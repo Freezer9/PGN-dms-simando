@@ -70,16 +70,16 @@ if (!app.Environment.IsDevelopment())
 
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 
-// Opt the API controllers (account, attachments, documents, reports/export)
+// Opt API controllers and framework/static asset routes (/_framework, /_content, /_blazor, /styles, /js, or files with extensions)
 // out of the re-execute above via the documented IStatusCodePagesFeature
-// hook: a 403/404 from a download or export link should come back as a
+// hook: a 403/404 from a download or static asset should come back as a
 // small, clean status-only response, not the full interactive-shell page
 // (sidebar, nav, notifications — several more DB round-trips) re-executed
 // as the body. Must run after UseStatusCodePagesWithReExecute, which is
 // what adds the feature to toggle.
 app.Use(async (context, next) =>
 {
-    if (IsApiControllerRoute(context.Request.Path))
+    if (ShouldDisableStatusCodeReExecute(context.Request.Path))
     {
         var feature = context.Features.Get<IStatusCodePagesFeature>();
         if (feature is not null)
@@ -109,11 +109,17 @@ app.MapRazorComponents<App>()
 app.Run();
 return 0;
 
-static bool IsApiControllerRoute(PathString path) =>
+static bool ShouldDisableStatusCodeReExecute(PathString path) =>
     path.StartsWithSegments("/account") ||
     path.StartsWithSegments("/attachments") ||
     path.StartsWithSegments("/documents") ||
-    path.StartsWithSegments("/reports/export");
+    path.StartsWithSegments("/reports/export") ||
+    path.StartsWithSegments("/_framework") ||
+    path.StartsWithSegments("/_content") ||
+    path.StartsWithSegments("/_blazor") ||
+    path.StartsWithSegments("/styles") ||
+    path.StartsWithSegments("/js") ||
+    Path.HasExtension(path.Value);
 
 // The implicit Program class from top-level statements is internal by
 // default; Simando.Integration.Tests' WebApplicationFactory<Program> (for

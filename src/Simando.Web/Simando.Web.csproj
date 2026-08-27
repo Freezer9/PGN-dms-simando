@@ -20,6 +20,7 @@
   </ItemGroup>
 
   <PropertyGroup>
+    <RequiresAspNetWebAssets>true</RequiresAspNetWebAssets>
     <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
     <!-- Off in Docker: css stage already builds+COPYs app.css; no bun/pnpm/npm on that image.
          dotnet publish -p:SimandoBuildCss=false -->
