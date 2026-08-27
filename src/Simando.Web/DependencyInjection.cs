@@ -24,12 +24,13 @@ public static class DependencyInjection
                 options.SlidingExpiration = true;
             });
 
-        // Secure-by-default FallbackPolicy. RequireAssertion exempts /_blazor without UseWhen pipeline branching.
+        // Secure-by-default FallbackPolicy. RequireAssertion exempts /_blazor and /_framework without UseWhen pipeline branching.
         services.AddAuthorization(options =>
         {
             options.FallbackPolicy = new AuthorizationPolicyBuilder()
                 .RequireAssertion(context =>
-                    context.Resource is HttpContext { Request.Path: var path } && path.StartsWithSegments("/_blazor")
+                    context.Resource is HttpContext { Request.Path: var path } &&
+                    (path.StartsWithSegments("/_blazor") || path.StartsWithSegments("/_framework"))
                         ? true
                         : context.User.Identity?.IsAuthenticated == true)
                 .Build();

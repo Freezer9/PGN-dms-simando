@@ -35,6 +35,7 @@ public sealed class MustChangePasswordMiddleware(RequestDelegate next)
             return true;
         }
 
-        return context.Request.Path.StartsWithSegments("/_blazor");
+        return context.Request.Path.StartsWithSegments("/_blazor") ||
+               context.Request.Path.StartsWithSegments("/_framework");
     }
 }

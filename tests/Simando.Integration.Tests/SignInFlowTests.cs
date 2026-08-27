@@ -75,6 +75,28 @@ public class SignInFlowTests : IAsyncLifetime
         RedirectPath(response).ShouldStartWith("/sign-in");
     }
 
+    [Fact(DisplayName = "Unauthenticated request to /_framework/blazor.web.js is not redirected to /sign-in")]
+    public async Task Unauthenticated_FrameworkAsset_IsNotRedirected()
+    {
+        var response = await _client.GetAsync("/_framework/blazor.web.js");
+
+        response.StatusCode.ShouldNotBe(HttpStatusCode.Redirect);
+    }
+
+    [Fact(DisplayName = "Forwarded proto and host headers are respected in auth challenge redirect")]
+    public async Task ForwardedHeaders_RespectedInRedirect()
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/");
+        request.Headers.Add("X-Forwarded-Proto", "https");
+        request.Headers.Add("X-Forwarded-Host", "simando.legain.id");
+        request.Headers.Add("X-Forwarded-For", "172.18.0.5");
+
+        var response = await _client.SendAsync(request);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.Redirect);
+        response.Headers.Location!.ToString().ShouldStartWith("https://simando.legain.id/sign-in");
+    }
+
     [Fact(DisplayName = "A17: /forgot-password does not exist, even once signed in")]
     public async Task ForgotPassword_Is404()
     {
