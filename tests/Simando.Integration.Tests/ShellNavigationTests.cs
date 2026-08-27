@@ -40,6 +40,11 @@ public class ShellNavigationTests : IAsyncLifetime
                     config.AddInMemoryCollection(new Dictionary<string, string?>
                     {
                         ["ConnectionStrings:Postgres"] = _container.GetConnectionString(),
+                        ["Storage:Type"] = "S3",
+                        ["Storage:S3:ServiceUrl"] = "http://localhost:9000",
+                        ["Storage:S3:Bucket"] = "simando",
+                        ["Storage:S3:AccessKey"] = "test",
+                        ["Storage:S3:SecretKey"] = "test",
                     }))
                 // StorageStartupProbe writes to real storage on host start —
                 // this test doesn't exercise storage and has no MinIO/S3 of
