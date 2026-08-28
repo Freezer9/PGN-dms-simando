@@ -21,6 +21,7 @@ import type {
 	SaveNolIssuanceRequest,
 	SkemaHarga,
 } from "@/api/types";
+import { DocumentDownloadButton } from "@/components/documents/document-download-buttons";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -260,21 +261,28 @@ export function NolIssuanceForm({
 					</div>
 				</div>
 
-				{canEdit && (
-					<Button
-						type="submit"
-						size="sm"
-						disabled={saveMutation.isPending}
-						className="h-9 text-xs flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
-					>
-						{saveMutation.isPending ? (
-							<Loader2 className="size-3.5 animate-spin" />
-						) : (
-							<Save className="size-3.5" />
-						)}
-						Simpan Penerbitan NOL
-					</Button>
-				)}
+				<div className="flex items-center gap-2">
+					<DocumentDownloadButton
+						companyId={companyId}
+						documentType="nol-issuance"
+						label="Unduh Surat Penerbitan NOL (.docx)"
+					/>
+					{canEdit && (
+						<Button
+							type="submit"
+							size="sm"
+							disabled={saveMutation.isPending}
+							className="h-9 text-xs flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
+						>
+							{saveMutation.isPending ? (
+								<Loader2 className="size-3.5 animate-spin" />
+							) : (
+								<Save className="size-3.5" />
+							)}
+							Simpan Penerbitan NOL
+						</Button>
+					)}
+				</div>
 			</div>
 
 			{/* SECTION 1: KEPUTUSAN & NOMOR SURAT RESMI */}

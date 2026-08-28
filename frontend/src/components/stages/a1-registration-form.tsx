@@ -24,6 +24,7 @@ import type {
 	SkemaHarga,
 	StatusBangunan,
 } from "@/api/types";
+import { DocumentDownloadButton } from "@/components/documents/document-download-buttons";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -290,21 +291,28 @@ export function A1RegistrationForm({
 					</div>
 				</div>
 
-				{canEdit && (
-					<Button
-						type="submit"
-						size="sm"
-						disabled={saveMutation.isPending}
-						className="h-9 text-xs flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white"
-					>
-						{saveMutation.isPending ? (
-							<Loader2 className="size-3.5 animate-spin" />
-						) : (
-							<Save className="size-3.5" />
-						)}
-						Simpan Formulir A1
-					</Button>
-				)}
+				<div className="flex items-center gap-2">
+					<DocumentDownloadButton
+						companyId={companyId}
+						documentType="a1"
+						label="Unduh Formulir A1 (.docx)"
+					/>
+					{canEdit && (
+						<Button
+							type="submit"
+							size="sm"
+							disabled={saveMutation.isPending}
+							className="h-9 text-xs flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white"
+						>
+							{saveMutation.isPending ? (
+								<Loader2 className="size-3.5 animate-spin" />
+							) : (
+								<Save className="size-3.5" />
+							)}
+							Simpan Formulir A1
+						</Button>
+					)}
+				</div>
 			</div>
 
 			{/* SECTION 1: DATA PIC & SUMBER REGISTRASI */}

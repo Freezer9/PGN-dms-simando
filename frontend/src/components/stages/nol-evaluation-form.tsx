@@ -24,6 +24,7 @@ import type {
 	SkemaPembayaran,
 	StatusRkap,
 } from "@/api/types";
+import { DocumentDownloadButton } from "@/components/documents/document-download-buttons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -451,6 +452,11 @@ export function NolEvaluationForm({
 					</div>
 
 					<div className="flex items-center gap-2">
+						<DocumentDownloadButton
+							companyId={companyId}
+							documentType="evaluation"
+							label="Unduh Resume Evaluasi (.docx)"
+						/>
 						{canEdit && (
 							<Button
 								type="submit"

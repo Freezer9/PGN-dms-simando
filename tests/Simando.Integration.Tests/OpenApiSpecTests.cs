@@ -110,6 +110,14 @@ public class OpenApiSpecTests : IAsyncLifetime
         paths.TryGetProperty("/api/master/mrs-specs", out _).ShouldBeTrue();
         paths.TryGetProperty("/api/master/meter-sizes", out _).ShouldBeTrue();
         paths.TryGetProperty("/api/master/reviewers", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/companies/{companyId}/attachments", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/attachments/{id}/download", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/attachments/{id}", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/documents/company/{companyId}/kk0", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/documents/company/{companyId}/a1", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/documents/company/{companyId}/nol-request", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/documents/company/{companyId}/evaluation", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/documents/company/{companyId}/nol-issuance", out _).ShouldBeTrue();
     }
 
     [Fact(DisplayName = "Scalar interactive docs /scalar/v1 returns 200 OK HTML")]

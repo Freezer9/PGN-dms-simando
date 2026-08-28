@@ -120,6 +120,10 @@ export type ReworkRequest = components["schemas"]["ReworkRequest"];
 export type DiscontinueRequest = components["schemas"]["DiscontinueRequest"];
 export type WorkflowAction = components["schemas"]["WorkflowAction"];
 
+// Epic 7: Attachments & Document Generation
+export type AttachmentDetail = components["schemas"]["AttachmentDetail"];
+export type AttachmentKind = components["schemas"]["AttachmentKind"];
+
 // Epic 6: Tasks, Inbox & Workflow Approvals
 export type TaskListItem = components["schemas"]["TaskListItem"];
 export type TaskHistoryItem = components["schemas"]["TaskHistoryItem"];

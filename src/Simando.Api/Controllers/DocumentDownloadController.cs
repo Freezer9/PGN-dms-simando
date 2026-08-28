@@ -9,6 +9,7 @@ using Simando.Infrastructure.Persistence;
 namespace Simando.Api.Controllers;
 
 [ApiController]
+[Route("api/documents")]
 [Route("documents")]
 [Authorize]
 public sealed class DocumentDownloadController(

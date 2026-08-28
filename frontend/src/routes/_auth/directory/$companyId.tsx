@@ -10,6 +10,7 @@ import {
 	Layers,
 	Loader2,
 	MapPin,
+	Paperclip,
 	Plus,
 	Save,
 	Star,
@@ -21,12 +22,16 @@ import * as React from "react";
 import { toast } from "sonner";
 import { $api } from "@/api/client";
 import type {
+	AttachmentKind,
 	ContactDetail,
 	Kawasan,
 	PosisiPelanggan,
 	SaveContactRequest,
 	SavePlottingRequest,
 } from "@/api/types";
+import { AttachmentList } from "@/components/attachments/attachment-list";
+import { AttachmentUploadDialog } from "@/components/attachments/attachment-upload-dialog";
+import { DocumentDownloadDropdown } from "@/components/documents/document-download-buttons";
 import { Map, type MapCoordinates } from "@/components/map";
 import { A1RegistrationForm } from "@/components/stages/a1-registration-form";
 import { NolEvaluationForm } from "@/components/stages/nol-evaluation-form";
@@ -165,6 +170,20 @@ function CompanyRecordHubPage() {
 			params: { path: { id: companyId } },
 		},
 	);
+
+	// 7. Fetch Attachments
+	const { data: attachments = [] } = $api.useQuery(
+		"get",
+		"/api/companies/{companyId}/attachments",
+		{
+			params: { path: { companyId } },
+		},
+	);
+
+	// State for Upload Attachment Modal
+	const [uploadDialogOpen, setUploadDialogOpen] = React.useState(false);
+	const [uploadDialogKind, setUploadDialogKind] =
+		React.useState<AttachmentKind>("Other");
 
 	// State for Contact Modal (Add / Edit)
 	const [contactModalOpen, setContactModalOpen] = React.useState(false);
@@ -474,6 +493,7 @@ function CompanyRecordHubPage() {
 				</div>
 
 				<div className="flex items-center gap-2">
+					<DocumentDownloadDropdown companyId={companyId} />
 					{company.currentStage === 2 && (
 						<Button
 							size="sm"
@@ -603,7 +623,7 @@ function CompanyRecordHubPage() {
 
 			{/* 9-Tabbed Hub Navigation */}
 			<Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-				<TabsList className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 h-auto p-1 bg-muted/60 border rounded-lg">
+				<TabsList className="grid grid-cols-2 sm:grid-cols-5 lg:grid-cols-10 h-auto p-1 bg-muted/60 border rounded-lg">
 					<TabsTrigger value="overview" className="text-xs py-2">
 						Ringkasan
 					</TabsTrigger>
@@ -627,6 +647,20 @@ function CompanyRecordHubPage() {
 					</TabsTrigger>
 					<TabsTrigger value="nol-issue" className="text-xs py-2">
 						Penerbitan
+					</TabsTrigger>
+					<TabsTrigger
+						value="attachments"
+						className="text-xs py-2 flex items-center justify-center gap-1"
+					>
+						<span>Lampiran</span>
+						{attachments.length > 0 && (
+							<Badge
+								variant="secondary"
+								className="text-[10px] h-4 px-1 rounded-full font-mono"
+							>
+								{attachments.length}
+							</Badge>
+						)}
 					</TabsTrigger>
 					<TabsTrigger value="timeline" className="text-xs py-2">
 						Lini Masa
@@ -1147,7 +1181,44 @@ function CompanyRecordHubPage() {
 					/>
 				</TabsContent>
 
-				{/* TAB 9: LINI MASA & AUDIT TRAIL */}
+				{/* TAB 9: BERKAS LAMPIRAN & DOKUMEN (STAGE ATTACHMENTS) */}
+				<TabsContent value="attachments" className="space-y-4 pt-4">
+					<Card className="border-border/60 shadow-xs">
+						<CardHeader className="p-4 flex flex-row items-center justify-between">
+							<div>
+								<CardTitle className="text-base font-semibold flex items-center gap-2">
+									<Paperclip className="size-4 text-primary" />
+									Berkas Lampiran & Dokumen Pendukung
+								</CardTitle>
+								<CardDescription className="text-xs">
+									Kelola seluruh arsip digital, berkas pindaian formulir
+									bertanda tangan, dan lampiran teknis pelanggan
+								</CardDescription>
+							</div>
+							<Button
+								size="sm"
+								onClick={() => {
+									setUploadDialogKind("Other");
+									setUploadDialogOpen(true);
+								}}
+								className="h-8 text-xs flex items-center gap-1.5"
+							>
+								<Plus className="size-3.5" /> Unggah Dokumen
+							</Button>
+						</CardHeader>
+						<CardContent className="p-4 pt-0">
+							<AttachmentList
+								companyId={companyId}
+								onUploadClick={() => {
+									setUploadDialogKind("Other");
+									setUploadDialogOpen(true);
+								}}
+							/>
+						</CardContent>
+					</Card>
+				</TabsContent>
+
+				{/* TAB 10: LINI MASA & AUDIT TRAIL */}
 				<TabsContent value="timeline" className="pt-4">
 					<Card className="border-border/60 shadow-xs">
 						<CardHeader>
@@ -1319,6 +1390,14 @@ function CompanyRecordHubPage() {
 					</form>
 				</DialogContent>
 			</Dialog>
+
+			{/* Attachment Upload Modal */}
+			<AttachmentUploadDialog
+				companyId={companyId}
+				isOpen={uploadDialogOpen}
+				defaultKind={uploadDialogKind}
+				onClose={() => setUploadDialogOpen(false)}
+			/>
 		</div>
 	);
 }

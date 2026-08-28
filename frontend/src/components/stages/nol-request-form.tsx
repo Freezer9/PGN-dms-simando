@@ -21,6 +21,7 @@ import type {
 	SaveNolRequestRequest,
 	SkemaHarga,
 } from "@/api/types";
+import { DocumentDownloadButton } from "@/components/documents/document-download-buttons";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -408,6 +409,11 @@ export function NolRequestForm({
 				</div>
 
 				<div className="flex items-center gap-2">
+					<DocumentDownloadButton
+						companyId={companyId}
+						documentType="nol-request"
+						label="Unduh Permohonan NOL (.docx)"
+					/>
 					{canEdit && (
 						<Button
 							type="submit"

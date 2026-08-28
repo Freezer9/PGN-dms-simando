@@ -15,6 +15,7 @@ import type {
 	SaveSurveyRequest,
 	SurveyDetail,
 } from "@/api/types";
+import { DocumentDownloadButton } from "@/components/documents/document-download-buttons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -536,21 +537,28 @@ export function SurveyKk0Form({
 					</div>
 				</div>
 
-				{canEdit && (
-					<Button
-						type="submit"
-						size="sm"
-						disabled={saveMutation.isPending}
-						className="h-9 text-xs flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
-					>
-						{saveMutation.isPending ? (
-							<Loader2 className="size-3.5 animate-spin" />
-						) : (
-							<Save className="size-3.5" />
-						)}
-						Simpan Data Survei KK0
-					</Button>
-				)}
+				<div className="flex items-center gap-2">
+					<DocumentDownloadButton
+						companyId={companyId}
+						documentType="kk0"
+						label="Unduh Formulir KK0 (.docx)"
+					/>
+					{canEdit && (
+						<Button
+							type="submit"
+							size="sm"
+							disabled={saveMutation.isPending}
+							className="h-9 text-xs flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
+						>
+							{saveMutation.isPending ? (
+								<Loader2 className="size-3.5 animate-spin" />
+							) : (
+								<Save className="size-3.5" />
+							)}
+							Simpan Data Survei KK0
+						</Button>
+					)}
+				</div>
 			</div>
 
 			{/* SECTION 1: PELAKSANAAN & OPERASIONAL */}

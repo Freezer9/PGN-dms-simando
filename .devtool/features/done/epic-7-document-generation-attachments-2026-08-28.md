@@ -1,12 +1,12 @@
 ---
 id: "epic-7-document-generation-attachments-2026-08-28"
-status: "backlog"
+status: "done"
 priority: "medium"
 assignee: null
 dueDate: null
 created: "2026-08-28T00:00:00.000Z"
-modified: "2026-08-28T00:00:00.000Z"
-completedAt: null
+modified: "2026-08-28T18:50:00.000Z"
+completedAt: "2026-08-28T18:50:00.000Z"
 labels: ["backend", "frontend", "documents", "attachments", "s3"]
 order: "a6"
 ---
@@ -17,9 +17,9 @@ Provide document generation (.docx template-merge for 6 official Lampiran) and s
 
 ## User Stories & Scope
 
-- [ ] **Story 7.1:** Backend Document Download Endpoints (`GET /api/documents/company/{id}/{docType}`: KK0, A1, Permohonan NOL, Evaluasi, Surat Penerbitan Docx).
-- [ ] **Story 7.2:** Backend Attachment API (`POST /api/attachments/upload` multipart, `GET /api/attachments/{id}/download`, `DELETE /api/attachments/{id}`).
-- [ ] **Story 7.3:** Frontend Document & Attachment Components: File upload dropzone with progress bar, mime-type validation, download triggers, and Word template download buttons on each stage tab.
+- [x] **Story 7.1:** Backend Document Download Endpoints (`GET /api/documents/company/{id}/{docType}`: KK0, A1, Permohonan NOL, Evaluasi, Surat Penerbitan Docx).
+- [x] **Story 7.2:** Backend Attachment API (`POST /api/attachments/upload` multipart, `GET /api/attachments/{id}/download`, `DELETE /api/attachments/{id}`).
+- [x] **Story 7.3:** Frontend Document & Attachment Components: File upload dropzone with progress bar, mime-type validation, download triggers, and Word template download buttons on each stage tab.
 
 ## Acceptance Criteria
 
