@@ -189,6 +189,44 @@ export type webhooks = Record<string, never>;
 export interface components {
 	schemas: {
 		AccessScope: "All" | "Region" | "Area";
+		Role:
+			| "SalesArea"
+			| "AreaHead"
+			| "RegionalAdmin"
+			| "Reviewer"
+			| "DivisionHead"
+			| "SystemAdmin";
+		Capability:
+			| "ViewCompanyRecords"
+			| "CreateCompany"
+			| "EditStages1To3"
+			| "SoftDeleteCompany"
+			| "DropMovePin"
+			| "EditSurvey"
+			| "EditA1"
+			| "SignUploadSignedA1"
+			| "EditNolRequest"
+			| "EditEvaluation"
+			| "ProduceResumeEvaluasi"
+			| "RecordFeedCheckpoint"
+			| "UploadAttachments"
+			| "DownloadAttachments"
+			| "GenerateDocuments"
+			| "SubmitForApproval"
+			| "ActOnApprovalStep"
+			| "IssueNolRl"
+			| "SetApprovedTerms"
+			| "ChooseReviewers"
+			| "ReassignWorkflowStep"
+			| "ViewTimeline"
+			| "ViewDashboardFunnel"
+			| "ViewAgeingReport"
+			| "ExportExcel"
+			| "ExportContactDataPii"
+			| "ManageMasterData"
+			| "BreakGlassRecordRead"
+			| "AssignRoles"
+			| "ViewBreakGlassActivity";
 		ChangePasswordRequest: {
 			currentPassword: string;
 			newPassword: string;
@@ -204,8 +242,8 @@ export interface components {
 			areaId?: string | null;
 			/** Format: uuid */
 			regionId?: string | null;
-			roles: string[];
-			capabilities: string[];
+			roles: components["schemas"]["Role"][];
+			capabilities: components["schemas"]["Capability"][];
 			mustChangePassword: boolean;
 		};
 		LoginRequest: {

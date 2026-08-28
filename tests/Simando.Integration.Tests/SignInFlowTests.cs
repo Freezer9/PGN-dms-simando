@@ -89,7 +89,7 @@ public class SignInFlowTests : IAsyncLifetime
         userDto.Email.ShouldBe(AdminEmail);
         userDto.MustChangePassword.ShouldBeTrue();
         userDto.Scope.ShouldBe(AccessScope.All);
-        userDto.Roles.ShouldContain(Role.SystemAdmin.ToString());
+        userDto.Roles.ShouldContain(Role.SystemAdmin);
 
         response.Headers.ShouldContain(h => h.Key == "Set-Cookie");
     }

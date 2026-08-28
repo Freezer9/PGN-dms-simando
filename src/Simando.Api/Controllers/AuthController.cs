@@ -20,8 +20,8 @@ public sealed record CurrentUserDto(
     AccessScope Scope,
     Guid? AreaId,
     Guid? RegionId,
-    IReadOnlyCollection<string> Roles,
-    IReadOnlyCollection<string> Capabilities,
+    IReadOnlyCollection<Role> Roles,
+    IReadOnlyCollection<Capability> Capabilities,
     bool MustChangePassword);
 
 [ApiController]
@@ -178,8 +178,16 @@ public sealed class AuthController(
         var areaId = Guid.TryParse(areaIdStr, out var a) ? a : (Guid?)null;
         var regionIdStr = principal.FindFirst(SimandoUserClaimsPrincipalFactory.RegionIdClaimType)?.Value;
         var regionId = Guid.TryParse(regionIdStr, out var r) ? r : (Guid?)null;
-        var roles = principal.FindAll(ClaimTypes.Role).Select(c => c.Value).ToArray();
-        var capabilities = principal.FindAll(SimandoUserClaimsPrincipalFactory.CapabilityClaimType).Select(c => c.Value).ToArray();
+        var roles = principal.FindAll(ClaimTypes.Role)
+            .Select(c => Enum.TryParse<Role>(c.Value, out var role) ? role : (Role?)null)
+            .Where(r => r.HasValue)
+            .Select(r => r!.Value)
+            .ToArray();
+        var capabilities = principal.FindAll(SimandoUserClaimsPrincipalFactory.CapabilityClaimType)
+            .Select(c => Enum.TryParse<Capability>(c.Value, out var cap) ? cap : (Capability?)null)
+            .Where(c => c.HasValue)
+            .Select(c => c!.Value)
+            .ToArray();
 
         return new CurrentUserDto(
             user.Id,

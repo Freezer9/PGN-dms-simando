@@ -5,6 +5,7 @@ import {
 	CheckCircle2,
 	Clock,
 	FileCheck,
+	Sparkles,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -14,27 +15,30 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
+import { useAuth } from "@/lib/auth";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/_auth/")({
 	component: DashboardHome,
 });
 
 function DashboardHome() {
+	const { user } = useAuth();
+
 	return (
 		<div className="space-y-6">
-			<div className="flex items-center justify-between">
+			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
 				<div>
-					<h1 className="text-3xl font-bold tracking-tight">
+					<h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
 						Dashboard Pipeline Gas
 					</h1>
-					<p className="text-muted-foreground mt-1">
+					<p className="text-muted-foreground mt-1 text-sm">
 						Sistem Informasi Manajemen Dokumen Berlangganan Gas (DMS Simando)
 					</p>
 				</div>
 				<div className="flex items-center gap-2">
 					<Badge variant="outline" className="gap-1.5 py-1 px-3">
 						<span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-						Live System
+						Sesi Aktif: {user?.roles?.[0] || "User"}
 					</Badge>
 				</div>
 			</div>
@@ -99,26 +103,43 @@ function DashboardHome() {
 
 			<Card>
 				<CardHeader>
-					<CardTitle>Status Pipeline Penjualan</CardTitle>
+					<CardTitle className="text-lg">Status Pipeline Penjualan</CardTitle>
 					<CardDescription>
 						Monitoring tahapan berlangganan gas dari Prospek hingga Penerbitan
 						Surat NOL
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
-					<div className="flex items-center justify-between py-4 border-b">
+					<div className="flex items-center justify-between py-3 border-b">
 						<div className="flex items-center gap-3">
-							<CheckCircle2 className="h-5 w-5 text-emerald-600" />
+							<CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
 							<div>
 								<p className="font-medium text-sm">
-									Arsitektur Terpisah: React SPA + ASP.NET Core 10 Web API
+									Autentikasi & RBAC Shell Aktif
 								</p>
 								<p className="text-xs text-muted-foreground">
-									OpenAPI 3.1, TanStack Query & Biome Linter/Formatter
+									Sesi Cookie ASP.NET Identity, Dynamic Navigation Menu & Route
+									Guards
 								</p>
 							</div>
 						</div>
 						<Badge variant="secondary">Active</Badge>
+					</div>
+
+					<div className="flex items-center justify-between py-3">
+						<div className="flex items-center gap-3">
+							<Sparkles className="h-5 w-5 text-primary shrink-0" />
+							<div>
+								<p className="font-medium text-sm">
+									Pengguna Terhubung: {user?.fullName} ({user?.email})
+								</p>
+								<p className="text-xs text-muted-foreground">
+									Scope: {user?.scope} • Hak Akses:{" "}
+									{user?.capabilities?.length || 0} capabilities
+								</p>
+							</div>
+						</div>
+						<Badge variant="outline">{user?.scope}</Badge>
 					</div>
 				</CardContent>
 			</Card>
