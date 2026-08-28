@@ -26,7 +26,7 @@ internal sealed class WorkflowService(
     {
         await using var db = await dbContextFactory.CreateDbContextAsync(ct);
 
-        var company = await db.Companies.FirstAsync(c => c.Id == companyId, ct);
+        var company = await db.Companies.IgnoreQueryFilters().FirstAsync(c => c.Id == companyId, ct);
 
         if (company.CreatedBy != actorUserId)
         {
@@ -48,7 +48,7 @@ internal sealed class WorkflowService(
             return SubmitResult.Rejected("Pengajuan persetujuan hanya dapat dilakukan pada Tahap 6 (Permohonan NOL).");
         }
 
-        var existingAttachmentKinds = await db.Attachments.AsNoTracking()
+        var existingAttachmentKinds = await db.Attachments.IgnoreQueryFilters().AsNoTracking()
             .Where(a => a.CompanyId == companyId)
             .Select(a => a.Kind)
             .ToListAsync(ct);
@@ -123,8 +123,8 @@ internal sealed class WorkflowService(
     {
         await using var db = await dbContextFactory.CreateDbContextAsync(ct);
 
-        var instance = await db.WorkflowInstances.FirstAsync(i => i.Id == workflowInstanceId, ct);
-        var company = await db.Companies.FirstAsync(c => c.Id == instance.CompanyId, ct);
+        var instance = await db.WorkflowInstances.IgnoreQueryFilters().FirstAsync(i => i.Id == workflowInstanceId, ct);
+        var company = await db.Companies.IgnoreQueryFilters().FirstAsync(c => c.Id == instance.CompanyId, ct);
 
         if (company.Status != RecordStatus.RegionalAdmin)
         {
@@ -195,9 +195,9 @@ internal sealed class WorkflowService(
     {
         await using var db = await dbContextFactory.CreateDbContextAsync(ct);
 
-        var step = await db.WorkflowSteps.FirstAsync(s => s.Id == stepId, ct);
-        var instance = await db.WorkflowInstances.FirstAsync(i => i.Id == step.WorkflowInstanceId, ct);
-        var company = await db.Companies.FirstAsync(c => c.Id == instance.CompanyId, ct);
+        var step = await db.WorkflowSteps.IgnoreQueryFilters().FirstAsync(s => s.Id == stepId, ct);
+        var instance = await db.WorkflowInstances.IgnoreQueryFilters().FirstAsync(i => i.Id == step.WorkflowInstanceId, ct);
+        var company = await db.Companies.IgnoreQueryFilters().FirstAsync(c => c.Id == instance.CompanyId, ct);
 
         if (WorkflowStepAssignment.CurrentStepKind(company.Status) != step.Kind)
         {
@@ -224,19 +224,24 @@ internal sealed class WorkflowService(
             return WorkflowActResult.Rejected("Berkas ini berada di luar wilayah Anda.");
         }
 
-        var stage7Editors = await db.NolEvaluations.AsNoTracking()
+        var stage7Editors = await db.NolEvaluations.IgnoreQueryFilters().AsNoTracking()
             .Where(e => e.NolRequestId == company.Id && e.EvaluatedBy.HasValue)
             .Select(e => e.EvaluatedBy!.Value)
             .ToListAsync(ct);
 
-        if (PermissionEvaluator.IsSelfApproval(actorUserId, company.CreatedBy, stage7Editors))
+        if (actorUserId == company.CreatedBy)
         {
-            return WorkflowActResult.Rejected("Tidak dapat bertindak pada berkas yang Anda buat sendiri atau evaluasi yang Anda sunting.");
+            return WorkflowActResult.Rejected("Tidak dapat bertindak pada berkas yang Anda buat sendiri.");
+        }
+
+        if (step.Kind != WorkflowStepKind.RegionalAdmin && stage7Editors.Contains(actorUserId))
+        {
+            return WorkflowActResult.Rejected("Tidak dapat bertindak pada berkas evaluasi yang Anda sunting.");
         }
 
         if (step.Kind == WorkflowStepKind.RegionalAdmin && action == WorkflowAction.Setuju)
         {
-            var reviewersChosen = await db.WorkflowSteps
+            var reviewersChosen = await db.WorkflowSteps.IgnoreQueryFilters()
                 .AnyAsync(s => s.WorkflowInstanceId == instance.Id && s.Kind == WorkflowStepKind.Reviewer1, ct);
             if (!reviewersChosen)
             {
@@ -297,15 +302,15 @@ internal sealed class WorkflowService(
     {
         await using var db = await dbContextFactory.CreateDbContextAsync(ct);
 
-        var step = await db.WorkflowSteps.FirstOrDefaultAsync(s => s.Id == stepId, ct);
+        var step = await db.WorkflowSteps.IgnoreQueryFilters().FirstOrDefaultAsync(s => s.Id == stepId, ct);
         if (step is null)
             return WorkflowActResult.Rejected("Langkah tidak ditemukan.");
 
-        var instance = await db.WorkflowInstances.FirstOrDefaultAsync(i => i.Id == step.WorkflowInstanceId, ct);
+        var instance = await db.WorkflowInstances.IgnoreQueryFilters().FirstOrDefaultAsync(i => i.Id == step.WorkflowInstanceId, ct);
         if (instance is null)
             return WorkflowActResult.Rejected("Workflow instance tidak ditemukan.");
 
-        var company = await db.Companies.FirstOrDefaultAsync(c => c.Id == instance.CompanyId, ct);
+        var company = await db.Companies.IgnoreQueryFilters().FirstOrDefaultAsync(c => c.Id == instance.CompanyId, ct);
         if (company is null)
             return WorkflowActResult.Rejected("Berkas perusahaan tidak ditemukan.");
 
@@ -354,7 +359,7 @@ internal sealed class WorkflowService(
     {
         await using var db = await dbContextFactory.CreateDbContextAsync(ct);
 
-        var company = await db.Companies.FirstOrDefaultAsync(c => c.Id == companyId, ct);
+        var company = await db.Companies.IgnoreQueryFilters().FirstOrDefaultAsync(c => c.Id == companyId, ct);
         if (company is null)
             return WorkflowActResult.Rejected("Berkas perusahaan tidak ditemukan.");
 
@@ -406,7 +411,7 @@ internal sealed class WorkflowService(
     {
         await using var db = await dbContextFactory.CreateDbContextAsync(ct);
 
-        var company = await db.Companies.FirstOrDefaultAsync(c => c.Id == companyId, ct);
+        var company = await db.Companies.IgnoreQueryFilters().FirstOrDefaultAsync(c => c.Id == companyId, ct);
         if (company is null)
             return WorkflowActResult.Rejected("Berkas perusahaan tidak ditemukan.");
 
@@ -430,7 +435,7 @@ internal sealed class WorkflowService(
         var now = DateTimeOffset.UtcNow;
         company.Status = transition.NewStatus!.Value;
 
-        var instance = await db.WorkflowInstances.FirstOrDefaultAsync(i => i.CompanyId == companyId && i.CompletedAt == null, ct);
+        var instance = await db.WorkflowInstances.IgnoreQueryFilters().FirstOrDefaultAsync(i => i.CompanyId == companyId && i.CompletedAt == null, ct);
         if (instance is not null)
         {
             instance.CompletedAt = now;
@@ -492,7 +497,7 @@ internal sealed class WorkflowService(
     {
         if (kind is WorkflowStepKind.Reviewer1 or WorkflowStepKind.Reviewer2 or WorkflowStepKind.Reviewer3)
         {
-            var step = await db.WorkflowSteps.FirstOrDefaultAsync(s => s.WorkflowInstanceId == instanceId && s.Kind == kind, ct);
+            var step = await db.WorkflowSteps.IgnoreQueryFilters().FirstOrDefaultAsync(s => s.WorkflowInstanceId == instanceId && s.Kind == kind, ct);
             if (step?.AssignedUserId is { } assignedUserId)
             {
                 await notifications.SendAsync(assignedUserId, company.Id, message, ct);
@@ -502,7 +507,7 @@ internal sealed class WorkflowService(
         }
 
         var role = WorkflowStepAssignment.RequiredRole(kind);
-        var area = await db.Areas.FirstOrDefaultAsync(a => a.Id == company.AreaId, ct);
+        var area = await db.Areas.IgnoreQueryFilters().FirstOrDefaultAsync(a => a.Id == company.AreaId, ct);
         var scopeId = kind == WorkflowStepKind.AreaHead
             ? company.AreaId
             : (area?.RegionId ?? Guid.Empty);
@@ -512,7 +517,7 @@ internal sealed class WorkflowService(
 
     private async Task NotifyRoleHoldersAsync(SimandoDbContext db, Role role, Guid scopeId, Guid companyId, string message, CancellationToken ct)
     {
-        var recipientUserIds = await db.RoleAssignments
+        var recipientUserIds = await db.RoleAssignments.IgnoreQueryFilters()
             .Where(a => a.Active && a.Role == role && (a.AreaId == scopeId || a.RegionId == scopeId))
             .Select(a => a.UserId)
             .ToListAsync(ct);
@@ -525,7 +530,7 @@ internal sealed class WorkflowService(
 
     private static async Task<bool> IsScopedToCompanyAsync(SimandoDbContext db, EffectivePermissions actor, Guid companyAreaId, CancellationToken ct)
     {
-        var area = await db.Areas.FirstOrDefaultAsync(a => a.Id == companyAreaId, ct);
+        var area = await db.Areas.IgnoreQueryFilters().FirstOrDefaultAsync(a => a.Id == companyAreaId, ct);
         if (area is null) return false;
         return PermissionEvaluator.CanView(actor.Scope, actor.AreaId, actor.RegionId, companyAreaId, area.RegionId);
     }

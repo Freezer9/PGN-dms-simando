@@ -1,0 +1,38 @@
+:80 {
+    root * /srv
+    encode gzip zstd
+
+    # Proxy backend API, Scalar documentation, and OpenAPI schemas to .NET Web API
+    handle /api/* {
+        reverse_proxy api:8080
+    }
+
+    handle /scalar/* {
+        reverse_proxy api:8080
+    }
+
+    handle /openapi/* {
+        reverse_proxy api:8080
+    }
+
+    # SPA routing fallback: try files matching URI, then fallback to /index.html
+    handle {
+        try_files {path} /index.html
+        file_server
+    }
+
+    # Security and caching headers
+    header {
+        X-Frame-Options "SAMEORIGIN"
+        X-Content-Type-Options "nosniff"
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+
+    @static {
+        path /assets/*
+    }
+    header @static {
+        Cache-Control "public, max-age=31536000, immutable"
+    }
+}

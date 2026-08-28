@@ -1,5 +1,6 @@
-# Full stack: the app plus its dependencies, reachable by service name.
-# Only the app publishes a port. For IDE-based work use docker-compose.dev.yml.
+# Full stack: DMS Simando (React SPA + Caddy, .NET 10 Web API, PostGIS, RustFS S3)
+# All services connected via internal bridge network.
+# Only the web service (Caddy) publishes the port. For IDE-based work use docker-compose.dev.yml.
 
 name: simando
 
@@ -10,12 +11,27 @@ x-hardened: &hardened
   restart: unless-stopped
 
 services:
-  app:
+  web:
     <<: *hardened
-    container_name: simando-apps
+    container_name: simando-web
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      # 127.0.0.1, not 0.0.0.0 — prevents exposure outside the host loopback
+      - "127.0.0.1:8080:80"
+    networks:
+      - simando-internal
+    depends_on:
+      api:
+        condition: service_healthy
+
+  api:
+    <<: *hardened
+    container_name: simando-api
     build:
       context: .
-      dockerfile: src/Simando.Web/Dockerfile
+      dockerfile: src/Simando.Api/Dockerfile
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__Postgres: "Host=simando-postgres;Port=5432;Database=simando;Username=simando;Password=simando"
@@ -25,14 +41,8 @@ services:
       Storage__S3__AccessKey: simando-dev
       Storage__S3__SecretKey: simando-dev-secret
       Storage__S3__ForcePathStyle: "true"
-    ports:
-      # 127.0.0.1, not 0.0.0.0 — Docker writes its own iptables rules, so an
-      # unprefixed mapping is reachable on every interface regardless of the
-      # host firewall.
-      - "127.0.0.1:8080:8080"
     networks:
       - simando-internal
-      - caddy
     read_only: true
     tmpfs:
       - /tmp:rw,noexec,nosuid,size=256m
@@ -64,16 +74,12 @@ services:
       retries: 5
       start_period: 30s
 
-  # ⚠️ Pre-1.0 — pin the exact beta, never `latest`.
-  # ⚠️ Path-style addressing only; the S3 client must set ForcePathStyle = true
-  #    or it resolves bucket.rustfs and fails to connect.
+  # S3-compatible object storage
   rustfs:
     <<: *hardened
     container_name: simando-rustfs
     image: rustfs/rustfs:1.0.0-beta.12
     environment:
-      # _FILE variants exist for both keys — use those against /run/secrets in
-      # any deployed environment.
       RUSTFS_ACCESS_KEY: simando-dev
       RUSTFS_SECRET_KEY: simando-dev-secret
       RUSTFS_VOLUMES: /data
@@ -96,8 +102,6 @@ services:
 networks:
   simando-internal:
     driver: bridge
-  caddy:
-    external: true
 
 volumes:
   postgres-data:
