@@ -1,5 +1,6 @@
 using System.Net;
-using System.Text.RegularExpressions;
+using System.Net.Http.Json;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -7,13 +8,15 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Shouldly;
+using Simando.Api.Controllers;
+using Simando.Domain.Security;
 using Simando.Infrastructure.Identity;
 using Simando.Infrastructure.Persistence;
 using Testcontainers.PostgreSql;
 
 namespace Simando.Integration.Tests;
 
-// End-to-end HTTP auth pipeline tests per docs/build/03-testing.md §3.
+// End-to-end Web API auth pipeline tests for Simando.Api.
 public class SignInFlowTests : IAsyncLifetime
 {
     private const string AdminUsername = "admin";
@@ -45,10 +48,6 @@ public class SignInFlowTests : IAsyncLifetime
                         ["Storage:S3:AccessKey"] = "test",
                         ["Storage:S3:SecretKey"] = "test",
                     }))
-                // StorageStartupProbe writes to real storage on host start —
-                // this test doesn't exercise storage and has no MinIO/S3 of
-                // its own, so it would otherwise inherit whatever Storage:S3
-                // config happens to be on the machine running the suite.
                 .ConfigureServices(services => services.RemoveAll<IHostedService>()));
 
         await using (var scope = _factory.Services.CreateAsyncScope())
@@ -71,134 +70,95 @@ public class SignInFlowTests : IAsyncLifetime
         await _container.DisposeAsync();
     }
 
-    [Fact(DisplayName = "Unauthenticated request to / redirects to /sign-in (fallback authorization policy)")]
-    public async Task Unauthenticated_RedirectsToSignIn()
+    [Fact(DisplayName = "Unauthenticated request to protected endpoint returns 401 Unauthorized")]
+    public async Task Unauthenticated_Returns401()
     {
-        var response = await _client.GetAsync("/");
+        var response = await _client.GetAsync("/api/auth/me");
 
-        response.StatusCode.ShouldBe(HttpStatusCode.Redirect);
-        RedirectPath(response).ShouldStartWith("/sign-in");
+        response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
     }
 
-    [Fact(DisplayName = "Unauthenticated request to /_framework/blazor.web.js is not redirected to /sign-in")]
-    public async Task Unauthenticated_FrameworkAsset_IsNotRedirected()
+    [Fact(DisplayName = "Valid sign-in returns 200 OK with CurrentUserDto and sets auth cookie")]
+    public async Task ValidSignIn_ReturnsUserDto_And_SetsCookie()
     {
-        var response = await _client.GetAsync("/_framework/blazor.web.js");
+        var response = await _client.PostAsJsonAsync("/api/auth/login", new LoginRequest(AdminEmail, AdminPassword));
 
-        response.StatusCode.ShouldNotBe(HttpStatusCode.Redirect);
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var userDto = await response.Content.ReadFromJsonAsync<CurrentUserDto>();
+        userDto.ShouldNotBeNull();
+        userDto.Email.ShouldBe(AdminEmail);
+        userDto.MustChangePassword.ShouldBeTrue();
+        userDto.Scope.ShouldBe(AccessScope.All);
+        userDto.Roles.ShouldContain(Role.SystemAdmin.ToString());
+
+        response.Headers.ShouldContain(h => h.Key == "Set-Cookie");
     }
 
-    [Fact(DisplayName = "Forwarded proto and host headers are respected in auth challenge redirect")]
-    public async Task ForwardedHeaders_RespectedInRedirect()
+    [Fact(DisplayName = "Wrong password and unknown email return 401 with identical ProblemDetails")]
+    public async Task WrongPassword_And_UnknownEmail_RejectedIdentically()
     {
-        using var request = new HttpRequestMessage(HttpMethod.Get, "/");
-        request.Headers.Add("X-Forwarded-Proto", "https");
-        request.Headers.Add("X-Forwarded-Host", "simando.legain.id");
-        request.Headers.Add("X-Forwarded-For", "172.18.0.5");
+        var wrongPasswordResponse = await _client.PostAsJsonAsync("/api/auth/login", new LoginRequest(AdminEmail, "wrong-password"));
+        var unknownUserResponse = await _client.PostAsJsonAsync("/api/auth/login", new LoginRequest("nonexistent@pgn.co.id", "wrong-password"));
 
-        var response = await _client.SendAsync(request);
+        wrongPasswordResponse.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
+        unknownUserResponse.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
 
-        response.StatusCode.ShouldBe(HttpStatusCode.Redirect);
-        response.Headers.Location!.ToString().ShouldStartWith("https://simando.legain.id/sign-in");
+        var wrongDetails = await wrongPasswordResponse.Content.ReadFromJsonAsync<ProblemDetails>();
+        var unknownDetails = await unknownUserResponse.Content.ReadFromJsonAsync<ProblemDetails>();
+
+        wrongDetails.ShouldNotBeNull();
+        unknownDetails.ShouldNotBeNull();
+        wrongDetails.Title.ShouldBe(unknownDetails.Title);
+        wrongDetails.Detail.ShouldBe(unknownDetails.Detail);
     }
 
-    [Fact(DisplayName = "A17: /forgot-password does not exist, even once signed in")]
-    public async Task ForgotPassword_Is404()
+    [Fact(DisplayName = "Authenticated user with must_change_password is forbidden on standard endpoints with ProblemDetails")]
+    public async Task MustChangePassword_BlocksStandardEndpoints()
     {
-        // Unauthenticated hits the fallback policy first (redirect to
-        // /sign-in) same as any other undefined route — not a special case
-        // for this one. The meaningful check is that no page exists behind
-        // the sign-in wall either.
-        await SignInAsync(AdminEmail, AdminPassword);
-        await ChangePasswordAsync(AdminPassword, "New-Correct-Horse-1");
+        var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", new LoginRequest(AdminEmail, AdminPassword));
+        loginResponse.StatusCode.ShouldBe(HttpStatusCode.OK);
 
-        var response = await _client.GetAsync("/forgot-password");
+        // Access an endpoint not marked with [AllowDuringPasswordChange]
+        var response = await _client.GetAsync("/reports/export/funnel");
 
-        response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+        response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+        var problemDetails = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+        problemDetails.ShouldNotBeNull();
+        problemDetails.Extensions.ShouldContainKey("code");
+        problemDetails.Extensions["code"]?.ToString().ShouldBe("PasswordChangeRequired");
     }
 
-    [Fact(DisplayName = "Valid sign-in sets the auth cookie; a MustChangePassword user is redirected from any other path (A5)")]
-    public async Task ValidSignIn_ForcesChangePassword()
+    [Fact(DisplayName = "Changing password clears must_change_password and allows normal API requests")]
+    public async Task ChangePassword_ClearsMustChangePassword_AndUnlocks()
     {
-        var signInResponse = await SignInAsync(AdminEmail, AdminPassword);
-        signInResponse.StatusCode.ShouldBe(HttpStatusCode.Redirect);
+        var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", new LoginRequest(AdminEmail, AdminPassword));
+        loginResponse.StatusCode.ShouldBe(HttpStatusCode.OK);
 
-        var homeResponse = await _client.GetAsync("/");
+        var newPassword = "New-Correct-Horse-Password-1";
+        var changeResponse = await _client.PostAsJsonAsync("/api/auth/change-password", new ChangePasswordRequest(AdminPassword, newPassword));
+        changeResponse.StatusCode.ShouldBe(HttpStatusCode.OK);
 
-        homeResponse.StatusCode.ShouldBe(HttpStatusCode.Redirect);
-        RedirectPath(homeResponse).ShouldStartWith("/change-password");
+        var changedDto = await changeResponse.Content.ReadFromJsonAsync<CurrentUserDto>();
+        changedDto.ShouldNotBeNull();
+        changedDto.MustChangePassword.ShouldBeFalse();
+
+        var meResponse = await _client.GetAsync("/api/auth/me");
+        meResponse.StatusCode.ShouldBe(HttpStatusCode.OK);
+
+        var meDto = await meResponse.Content.ReadFromJsonAsync<CurrentUserDto>();
+        meDto.ShouldNotBeNull();
+        meDto.MustChangePassword.ShouldBeFalse();
     }
 
-    [Fact(DisplayName = "A2/A3: wrong password and unknown email are rejected identically")]
-    public async Task WrongPassword_And_UnknownEmail_RejectedTheSameWay()
+    [Fact(DisplayName = "Logout ends the authenticated session")]
+    public async Task Logout_EndsSession()
     {
-        var wrongPasswordResponse = await SignInAsync(AdminEmail, "definitely-wrong-Password-1");
-        var unknownUserResponse = await SignInAsync("no-such-user@pgn.co.id", "whatever-Password-1");
+        await _client.PostAsJsonAsync("/api/auth/login", new LoginRequest(AdminEmail, AdminPassword));
 
-        wrongPasswordResponse.StatusCode.ShouldBe(unknownUserResponse.StatusCode);
-        wrongPasswordResponse.Headers.Location!.OriginalString.ShouldBe(unknownUserResponse.Headers.Location!.OriginalString);
-    }
+        var logoutResponse = await _client.PostAsync("/api/auth/logout", null);
+        logoutResponse.StatusCode.ShouldBe(HttpStatusCode.NoContent);
 
-    [Fact(DisplayName = "Changing the password clears must_change_password and unlocks normal navigation")]
-    public async Task ChangePassword_ClearsMustChangePassword()
-    {
-        await SignInAsync(AdminEmail, AdminPassword);
-
-        var changeResponse = await ChangePasswordAsync(AdminPassword, "New-Correct-Horse-1");
-        changeResponse.StatusCode.ShouldBe(HttpStatusCode.Redirect);
-        changeResponse.Headers.Location!.OriginalString.ShouldBe("/");
-
-        var homeResponse = await _client.GetAsync("/");
-        homeResponse.StatusCode.ShouldBe(HttpStatusCode.OK);
-    }
-
-    private async Task<HttpResponseMessage> SignInAsync(string email, string password)
-    {
-        var token = await GetAntiforgeryTokenAsync("/sign-in");
-
-        var form = new Dictionary<string, string>
-        {
-            ["email"] = email,
-            ["password"] = password,
-            ["__RequestVerificationToken"] = token,
-        };
-
-        return await _client.PostAsync("/account/sign-in", new FormUrlEncodedContent(form));
-    }
-
-    private async Task<HttpResponseMessage> ChangePasswordAsync(string currentPassword, string newPassword)
-    {
-        var token = await GetAntiforgeryTokenAsync("/change-password");
-
-        var form = new Dictionary<string, string>
-        {
-            ["currentPassword"] = currentPassword,
-            ["newPassword"] = newPassword,
-            ["__RequestVerificationToken"] = token,
-        };
-
-        return await _client.PostAsync("/account/change-password", new FormUrlEncodedContent(form));
-    }
-
-    private async Task<string> GetAntiforgeryTokenAsync(string path)
-    {
-        var response = await _client.GetAsync(path);
-        var html = await response.Content.ReadAsStringAsync();
-
-        var match = Regex.Match(html, "name=\"__RequestVerificationToken\"[^>]*value=\"([^\"]+)\"");
-        match.Success.ShouldBeTrue($"Could not find the antiforgery token in the {path} page (status {response.StatusCode}):\n{html}");
-
-        return match.Groups[1].Value;
-    }
-
-    // The cookie auth handler's own challenge redirect (e.g. to
-    // LoginPath) is an absolute URI; a plain context.Response.Redirect(...)
-    // in this app's own middleware (the must-change-password check) is
-    // relative. Uri.PathAndQuery throws on a relative Uri, so normalize both
-    // shapes to a path-only string.
-    private static string RedirectPath(HttpResponseMessage response)
-    {
-        var location = response.Headers.Location!;
-        return location.IsAbsoluteUri ? location.PathAndQuery : location.OriginalString;
+        var meResponse = await _client.GetAsync("/api/auth/me");
+        meResponse.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
     }
 }

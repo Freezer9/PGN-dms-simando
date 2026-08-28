@@ -3,13 +3,12 @@
     <Project Path="src/Simando.Application/Simando.Application.csproj" />
     <Project Path="src/Simando.Domain/Simando.Domain.csproj" />
     <Project Path="src/Simando.Infrastructure/Simando.Infrastructure.csproj" />
-    <Project Path="src/Simando.Web/Simando.Web.csproj" />
+    <Project Path="src/Simando.Api/Simando.Api.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Simando.Application.Tests/Simando.Application.Tests.csproj" />
     <Project Path="tests/Simando.Domain.Tests/Simando.Domain.Tests.csproj" />
     <Project Path="tests/Simando.E2E.Tests/Simando.E2E.Tests.csproj" />
     <Project Path="tests/Simando.Integration.Tests/Simando.Integration.Tests.csproj" />
-    <Project Path="tests/Simando.Web.Tests/Simando.Web.Tests.csproj" />
   </Folder>
 </Solution>

@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Json;
 using System.Text.RegularExpressions;
 using Amazon.Runtime;
 using Amazon.S3;
@@ -153,29 +154,10 @@ public class AttachmentDownloadTests : IAsyncLifetime
     {
         var client = _factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
 
-        var token = await GetAntiforgeryTokenAsync(client, "/sign-in");
-        var form = new Dictionary<string, string>
-        {
-            ["email"] = email,
-            ["password"] = Password,
-            ["__RequestVerificationToken"] = token,
-        };
-
-        var signIn = await client.PostAsync("/account/sign-in", new FormUrlEncodedContent(form));
-        signIn.StatusCode.ShouldBe(HttpStatusCode.Redirect, $"sign-in as {email} did not succeed");
+        var response = await client.PostAsJsonAsync("/api/auth/login", new Simando.Api.Controllers.LoginRequest(email, Password));
+        response.StatusCode.ShouldBe(HttpStatusCode.OK, $"sign-in as {email} did not succeed");
 
         return client;
-    }
-
-    private static async Task<string> GetAntiforgeryTokenAsync(HttpClient client, string path)
-    {
-        var response = await client.GetAsync(path);
-        var html = await response.Content.ReadAsStringAsync();
-
-        var match = Regex.Match(html, "name=\"__RequestVerificationToken\"[^>]*value=\"([^\"]+)\"");
-        match.Success.ShouldBeTrue($"Could not find the antiforgery token on {path} (status {response.StatusCode}):\n{html}");
-
-        return match.Groups[1].Value;
     }
 
     private sealed record Seed(

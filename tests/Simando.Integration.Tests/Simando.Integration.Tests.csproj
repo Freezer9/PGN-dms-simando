@@ -21,7 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Simando.Infrastructure\Simando.Infrastructure.csproj" />
-    <ProjectReference Include="..\..\src\Simando.Web\Simando.Web.csproj" />
+    <ProjectReference Include="..\..\src\Simando.Api\Simando.Api.csproj" />
   </ItemGroup>
 
 </Project>
