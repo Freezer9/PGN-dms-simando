@@ -66,6 +66,7 @@ public class OpenApiSpecTests : IAsyncLifetime
         response.Content.Headers.ContentType?.MediaType.ShouldBe("application/json");
 
         var json = await response.Content.ReadAsStringAsync();
+
         using var doc = JsonDocument.Parse(json);
         var root = doc.RootElement;
 
@@ -80,6 +81,13 @@ public class OpenApiSpecTests : IAsyncLifetime
         paths.TryGetProperty("/api/auth/logout", out _).ShouldBeTrue();
         paths.TryGetProperty("/api/auth/me", out _).ShouldBeTrue();
         paths.TryGetProperty("/api/auth/change-password", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/companies", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/companies/{id}", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/companies/{id}/contacts", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/companies/{id}/plotting", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/companies/map-pins", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/geography/provinces", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/master/industry-types", out _).ShouldBeTrue();
     }
 
     [Fact(DisplayName = "Scalar interactive docs /scalar/v1 returns 200 OK HTML")]

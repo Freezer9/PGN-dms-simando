@@ -1,5 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
@@ -22,6 +24,11 @@ public class SignInFlowTests : IAsyncLifetime
     private const string AdminUsername = "admin";
     private const string AdminEmail = "admin@pgn.co.id";
     private const string AdminPassword = "Correct-Horse-Battery-Staple-1";
+
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
+    {
+        Converters = { new JsonStringEnumConverter() }
+    };
 
     private readonly PostgreSqlContainer _container = new PostgreSqlBuilder("postgis/postgis:18-3.6-alpine")
         .WithDatabase("simando")
@@ -84,7 +91,7 @@ public class SignInFlowTests : IAsyncLifetime
         var response = await _client.PostAsJsonAsync("/api/auth/login", new LoginRequest(AdminEmail, AdminPassword));
 
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
-        var userDto = await response.Content.ReadFromJsonAsync<CurrentUserDto>();
+        var userDto = await response.Content.ReadFromJsonAsync<CurrentUserDto>(JsonOptions);
         userDto.ShouldNotBeNull();
         userDto.Email.ShouldBe(AdminEmail);
         userDto.MustChangePassword.ShouldBeTrue();
@@ -138,14 +145,14 @@ public class SignInFlowTests : IAsyncLifetime
         var changeResponse = await _client.PostAsJsonAsync("/api/auth/change-password", new ChangePasswordRequest(AdminPassword, newPassword));
         changeResponse.StatusCode.ShouldBe(HttpStatusCode.OK);
 
-        var changedDto = await changeResponse.Content.ReadFromJsonAsync<CurrentUserDto>();
+        var changedDto = await changeResponse.Content.ReadFromJsonAsync<CurrentUserDto>(JsonOptions);
         changedDto.ShouldNotBeNull();
         changedDto.MustChangePassword.ShouldBeFalse();
 
         var meResponse = await _client.GetAsync("/api/auth/me");
         meResponse.StatusCode.ShouldBe(HttpStatusCode.OK);
 
-        var meDto = await meResponse.Content.ReadFromJsonAsync<CurrentUserDto>();
+        var meDto = await meResponse.Content.ReadFromJsonAsync<CurrentUserDto>(JsonOptions);
         meDto.ShouldNotBeNull();
         meDto.MustChangePassword.ShouldBeFalse();
     }

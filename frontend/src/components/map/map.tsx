@@ -1,4 +1,10 @@
-import maplibregl from "maplibre-gl";
+import {
+	Map as MapLibreInstance,
+	Marker,
+	NavigationControl,
+	Popup,
+	type StyleSpecification,
+} from "maplibre-gl";
 import * as React from "react";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { cn } from "@/lib/utils";
@@ -23,18 +29,18 @@ export interface MapProps extends React.HTMLAttributes<HTMLDivElement> {
 	pins?: MapPin[];
 	selectedCoordinates?: MapCoordinates | null;
 	onCoordinateSelect?: (coords: MapCoordinates) => void;
-	mapStyle?: string | maplibregl.StyleSpecification;
+	mapStyle?: string | StyleSpecification;
 }
 
 // Default to Indonesia center [lng, lat]
 const DEFAULT_CENTER: [number, number] = [106.8456, -6.2088]; // Jakarta
 const DEFAULT_ZOOM = 11;
 
-const DEFAULT_MAP_STYLE = {
-	version: 8 as const,
+const DEFAULT_MAP_STYLE: StyleSpecification = {
+	version: 8,
 	sources: {
 		osm: {
-			type: "raster" as const,
+			type: "raster",
 			tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
 			tileSize: 256,
 			attribution: "&copy; OpenStreetMap contributors",
@@ -43,7 +49,7 @@ const DEFAULT_MAP_STYLE = {
 	layers: [
 		{
 			id: "osm-layer",
-			type: "raster" as const,
+			type: "raster",
 			source: "osm",
 			minzoom: 0,
 			maxzoom: 19,
@@ -67,9 +73,9 @@ export const Map = React.forwardRef<HTMLDivElement, MapProps>(
 		ref,
 	) => {
 		const containerRef = React.useRef<HTMLDivElement>(null);
-		const mapInstanceRef = React.useRef<maplibregl.Map | null>(null);
-		const activeMarkerRef = React.useRef<maplibregl.Marker | null>(null);
-		const pinMarkersRef = React.useRef<maplibregl.Marker[]>([]);
+		const mapInstanceRef = React.useRef<MapLibreInstance | null>(null);
+		const activeMarkerRef = React.useRef<Marker | null>(null);
+		const pinMarkersRef = React.useRef<Marker[]>([]);
 
 		React.useImperativeHandle(
 			ref,
@@ -81,7 +87,7 @@ export const Map = React.forwardRef<HTMLDivElement, MapProps>(
 		React.useEffect(() => {
 			if (!containerRef.current) return;
 
-			const map = new maplibregl.Map({
+			const map = new MapLibreInstance({
 				container: containerRef.current,
 				style: mapStyle,
 				center,
@@ -92,7 +98,7 @@ export const Map = React.forwardRef<HTMLDivElement, MapProps>(
 
 			if (interactive) {
 				map.addControl(
-					new maplibregl.NavigationControl({
+					new NavigationControl({
 						showCompass: true,
 						showZoom: true,
 					}),
@@ -136,7 +142,7 @@ export const Map = React.forwardRef<HTMLDivElement, MapProps>(
 			}
 
 			if (selectedCoordinates) {
-				const marker = new maplibregl.Marker({
+				const marker = new Marker({
 					color: "#00509E",
 					draggable: true,
 				})
@@ -167,12 +173,12 @@ export const Map = React.forwardRef<HTMLDivElement, MapProps>(
 			pinMarkersRef.current = [];
 
 			for (const pin of pins) {
-				const marker = new maplibregl.Marker({
+				const marker = new Marker({
 					color: pin.color || "#2563eb",
 				}).setLngLat([pin.coordinates.longitude, pin.coordinates.latitude]);
 
 				if (pin.title || pin.description) {
-					const popup = new maplibregl.Popup({ offset: 25 }).setHTML(`
+					const popup = new Popup({ offset: 25 }).setHTML(`
             <div class="p-2">
               ${pin.title ? `<strong class="text-sm font-semibold">${pin.title}</strong>` : ""}
               ${pin.description ? `<p class="text-xs text-gray-600 mt-1">${pin.description}</p>` : ""}

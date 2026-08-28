@@ -14,6 +14,10 @@ import { Route as AccessDeniedRouteImport } from './routes/access-denied'
 import { Route as ChangePasswordRouteImport } from './routes/change-password'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as AuthIndexRouteImport } from './routes/_auth/index'
+import { Route as AuthMapRouteImport } from './routes/_auth/map'
+import { Route as AuthDirectoryIndexRouteImport } from './routes/_auth/directory/index'
+import { Route as AuthDirectoryCompanyIdRouteImport } from './routes/_auth/directory/$companyId'
+import { Route as AuthDirectoryNewRouteImport } from './routes/_auth/directory/new'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/_auth',
@@ -39,18 +43,46 @@ const AuthIndexRoute = AuthIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthRoute,
 } as any)
+const AuthMapRoute = AuthMapRouteImport.update({
+  id: '/map',
+  path: '/map',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthDirectoryIndexRoute = AuthDirectoryIndexRouteImport.update({
+  id: '/directory/',
+  path: '/directory/',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthDirectoryCompanyIdRoute = AuthDirectoryCompanyIdRouteImport.update({
+  id: '/directory/$companyId',
+  path: '/directory/$companyId',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthDirectoryNewRoute = AuthDirectoryNewRouteImport.update({
+  id: '/directory/new',
+  path: '/directory/new',
+  getParentRoute: () => AuthRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthIndexRoute
   '/access-denied': typeof AccessDeniedRoute
   '/change-password': typeof ChangePasswordRoute
   '/sign-in': typeof SignInRoute
+  '/map': typeof AuthMapRoute
+  '/directory/$companyId': typeof AuthDirectoryCompanyIdRoute
+  '/directory/new': typeof AuthDirectoryNewRoute
+  '/directory/': typeof AuthDirectoryIndexRoute
 }
 export interface FileRoutesByTo {
   '/access-denied': typeof AccessDeniedRoute
   '/change-password': typeof ChangePasswordRoute
   '/sign-in': typeof SignInRoute
+  '/map': typeof AuthMapRoute
   '/': typeof AuthIndexRoute
+  '/directory/$companyId': typeof AuthDirectoryCompanyIdRoute
+  '/directory/new': typeof AuthDirectoryNewRoute
+  '/directory': typeof AuthDirectoryIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -58,20 +90,44 @@ export interface FileRoutesById {
   '/access-denied': typeof AccessDeniedRoute
   '/change-password': typeof ChangePasswordRoute
   '/sign-in': typeof SignInRoute
+  '/_auth/map': typeof AuthMapRoute
   '/_auth/': typeof AuthIndexRoute
+  '/_auth/directory/$companyId': typeof AuthDirectoryCompanyIdRoute
+  '/_auth/directory/new': typeof AuthDirectoryNewRoute
+  '/_auth/directory/': typeof AuthDirectoryIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/access-denied' | '/change-password' | '/sign-in'
+  fullPaths:
+    | '/'
+    | '/access-denied'
+    | '/change-password'
+    | '/sign-in'
+    | '/map'
+    | '/directory/$companyId'
+    | '/directory/new'
+    | '/directory/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/access-denied' | '/change-password' | '/sign-in' | '/'
+  to:
+    | '/access-denied'
+    | '/change-password'
+    | '/sign-in'
+    | '/map'
+    | '/'
+    | '/directory/$companyId'
+    | '/directory/new'
+    | '/directory'
   id:
     | '__root__'
     | '/_auth'
     | '/access-denied'
     | '/change-password'
     | '/sign-in'
+    | '/_auth/map'
     | '/_auth/'
+    | '/_auth/directory/$companyId'
+    | '/_auth/directory/new'
+    | '/_auth/directory/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -118,15 +174,51 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthIndexRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_auth/map': {
+      id: '/_auth/map'
+      path: '/map'
+      fullPath: '/map'
+      preLoaderRoute: typeof AuthMapRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/directory/': {
+      id: '/_auth/directory/'
+      path: '/directory'
+      fullPath: '/directory/'
+      preLoaderRoute: typeof AuthDirectoryIndexRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/directory/$companyId': {
+      id: '/_auth/directory/$companyId'
+      path: '/directory/$companyId'
+      fullPath: '/directory/$companyId'
+      preLoaderRoute: typeof AuthDirectoryCompanyIdRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/directory/new': {
+      id: '/_auth/directory/new'
+      path: '/directory/new'
+      fullPath: '/directory/new'
+      preLoaderRoute: typeof AuthDirectoryNewRouteImport
+      parentRoute: typeof AuthRoute
+    }
   }
 }
 
 interface AuthRouteChildren {
+  AuthMapRoute: typeof AuthMapRoute
   AuthIndexRoute: typeof AuthIndexRoute
+  AuthDirectoryCompanyIdRoute: typeof AuthDirectoryCompanyIdRoute
+  AuthDirectoryNewRoute: typeof AuthDirectoryNewRoute
+  AuthDirectoryIndexRoute: typeof AuthDirectoryIndexRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
+  AuthMapRoute: AuthMapRoute,
   AuthIndexRoute: AuthIndexRoute,
+  AuthDirectoryCompanyIdRoute: AuthDirectoryCompanyIdRoute,
+  AuthDirectoryNewRoute: AuthDirectoryNewRoute,
+  AuthDirectoryIndexRoute: AuthDirectoryIndexRoute,
 }
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
