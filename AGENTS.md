@@ -53,6 +53,7 @@ change one of these, grep the repo for references before assuming you're done.
 - **Backend Runtime & Framework:** .NET 10 (LTS) · ASP.NET Core 10 Web API
 - **API Spec & Docs:** OpenAPI 3.1 (`Microsoft.AspNetCore.OpenApi`) + Scalar UI (`Scalar.AspNetCore` at `/scalar/v1`)
 - **Database & ORM:** EF Core 10 + Npgsql · **PostgreSQL 18 + PostGIS** (NetTopologySuite geography Point)
+- **Object Mapping & Projections:** **Mapster v10** (`Mapster` + `Mapster.DependencyInjection`, assembly-scanned `IRegister`, `ProjectToType<TDto>()`)
 - **Auth & RBAC:** ASP.NET Core Identity (SameSite=Lax Cookie Auth, Scoped `ICurrentUser` driving EF Core RLS query filters)
 - **Background Jobs & Logging:** Hangfire · FluentValidation · Serilog
 - **Frontend Runtime & Bundler:** **Bun** (strictly prefer `bun` / `bunx --bun` over `npm`/`npx`) + Vite 8
@@ -152,6 +153,7 @@ canonical for coding conventions, licensing, and secrets handling. Digest:
 - Secrets never committed; use `appsettings.Local.json` (gitignored + dockerignored) or `dotnet user-secrets`.
 - Indonesian domain vocabulary stays verbatim; routes/URLs stay English.
 - DTO & Model naming taxonomy: `Dto` for top-level service payloads, `Item`/`Row` for grid line items, `Detail`/`Summary` for read projections, `Request`/`Filter` for inputs, `Result` for outcomes.
+- Object mapping & projections: use **Mapster** for mapping domain entities to DTOs and EF Core LINQ query projections (`ProjectToType<TDto>()`). Implement `IRegister` in `Simando.Application` for complex/custom mappings.
 - Comments explain "why," never "what," and only when needed or the code itself is not obvious; keep it minimal / compact.
 - Use `shadcn/ui` components and Tailwind CSS v4, not raw unstyled HTML elements.
 - Use `mapcn` (`bunx --bun shadcn@latest add @mapcn/map`) for map plotting and geospatial features.

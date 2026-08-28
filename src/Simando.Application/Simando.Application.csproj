@@ -6,6 +6,8 @@
 
   <ItemGroup>
     <PackageReference Include="FluentValidation" />
+    <PackageReference Include="Mapster" />
+    <PackageReference Include="Mapster.DependencyInjection" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
   </ItemGroup>
 

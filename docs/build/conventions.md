@@ -52,6 +52,13 @@ To keep data transfer objects and read projections intent-revealing and DDD-alig
 
 **Rule for Frontend Tables & Forms:** When typing TanStack Table rows or TanStack Form schemas, use the generated OpenAPI types corresponding to these DTOs (`schema.d.ts`), maintaining consistent nomenclature across both tiers.
 
+## Object Mapping with Mapster
+
+- **Use Mapster for DTO Conversions:** Use Mapster (`Adapt<T>()` or `IMapper`) to map between domain entities and application DTOs.
+- **EF Core Database Projections:** For query endpoints and data grids, use `queryable.ProjectToType<TDto>()` to let EF Core project directly in SQL. Avoid fetching full entities and running in-memory projection loops (`.ToList().Select(...)`).
+- **Custom Mapping Configurations:** When default naming conventions do not suffice, implement `IRegister` inside `Simando.Application/<Module>/MappingConfig.cs`. These are registered automatically on startup via `AddApplicationServices()`.
+- **Domain Independence:** `Simando.Domain` must not reference Mapster. All mapping definitions belong in `Simando.Application`.
+
 ## Git commit messages
 
 - Use Conventional Commits format (`type(scope): concise description` or `type: concise description`).

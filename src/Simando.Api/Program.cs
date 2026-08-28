@@ -4,6 +4,7 @@ using Scalar.AspNetCore;
 using Simando.Api;
 using Simando.Api.Cli;
 using Simando.Api.Middleware;
+using Simando.Application;
 using Simando.Infrastructure;
 using Simando.Infrastructure.Persistence;
 
@@ -42,6 +43,7 @@ builder.Services.AddOpenApi(options =>
     });
 });
 
+builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddApiServices(builder.Configuration);
 builder.Services.AddControllers();

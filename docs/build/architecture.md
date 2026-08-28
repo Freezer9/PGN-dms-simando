@@ -46,6 +46,7 @@ dozens of concurrent users. It needs correctness, auditability and clear status.
 | **UI Components & Styling** | **shadcn/ui** + **Tailwind CSS v4** | Radix UI primitives, Lucide icons, accessible responsive components |
 | **Maps** | **mapcn** (`@mapcn/map`) | MapLibre GL map components via `bunx --bun shadcn@latest add @mapcn/map` |
 | **ORM** | **EF Core 10** + **Npgsql** | |
+| **Object Mapping** | **Mapster v10** | High-performance DTO mapping & EF Core LINQ projection (`ProjectToType<T>()`) |
 | **Database** | **PostgreSQL 18 + PostGIS** | PostGIS via **NetTopologySuite**, natively supported by Npgsql |
 | **Auth** | **ASP.NET Core Identity, local accounts** | SameSite=Lax Cookie Auth, Scoped `ICurrentUser` driving EF Core RLS |
 | **Background jobs** | **Hangfire** | Email queue, orphan sweep. Has a self-hosted dashboard |
@@ -255,6 +256,15 @@ Append-only. No updates, no deletes. Current status is a projection of the log;
 if they ever disagree, the log wins. Enforce with a database trigger rejecting
 `UPDATE`/`DELETE` on `status_event` — application discipline is not enough for a
 record that backs commercial decisions.
+
+### Object Mapping & Projections (Mapster)
+
+**Mapster v10** handles object-to-object mapping and compile-time EF Core LINQ projections across `Simando.Application`:
+
+- **Convention-based mapping:** Properties with identical names and compatible types map automatically without explicit boilerplate.
+- **LINQ database projections:** `ProjectToType<TDto>()` projects directly from EF Core `IQueryable<TEntity>` into flat DTOs (`CompanyListItem`, `PendingApprovalItem`, etc.) in the SQL query itself, minimizing database roundtrips and memory overhead.
+- **Explicit registration via `IRegister`:** Custom mapping transformations (e.g. enum-to-label conversions, nested aggregates) implement Mapster's `IRegister` interface and are automatically discovered via assembly scanning during `services.AddApplicationServices()`.
+- **Domain isolation:** `Simando.Domain` contains zero Mapster references; all mapping configs and DTOs reside in `Simando.Application`.
 
 ---
 

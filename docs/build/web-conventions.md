@@ -43,6 +43,11 @@ public async Task<IActionResult> Create([FromBody] CreateCompanyRequest request,
 - Interactive API documentation is available locally via Scalar at `/scalar/v1`, exposing the raw specification at `/openapi/v1.json`.
 - Every controller action must include `[ProducesResponseType]` annotations for all expected HTTP status codes to produce complete, accurate TypeScript types during codegen.
 
+### DTO Mapping & Query Projections (Mapster)
+- **Database Projections:** Application queries project directly from EF Core entities to response DTOs using `queryable.ProjectToType<TDto>()`.
+- **In-Memory Mapping:** Use `entity.Adapt<TDto>()` or `IMapper` for single entity-to-DTO mappings inside commands and service handlers.
+- **Config Scanning:** All `IRegister` mapping definitions in `Simando.Application` are discovered and registered at application startup via `builder.Services.AddApplicationServices()`.
+
 ---
 
 ## 2. Authentication, RBAC & Row-Level Security
