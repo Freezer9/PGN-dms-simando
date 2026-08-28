@@ -2,7 +2,7 @@
 
 **Application name: `DMS - Simando`.**
 
-Stack decided: **.NET for both backend and frontend**, **self-hosted**. This
+Stack decided: **.NET 10 Web API backend + React 19 SPA frontend**, **self-hosted**. This
 document works out what that means concretely.
 
 ---
@@ -34,57 +34,42 @@ dozens of concurrent users. It needs correctness, auditability and clear status.
 
 | Layer | Choice | Notes |
 |---|---|---|
-| **Runtime** | **.NET 10 (LTS)** | LTS matters for an SOE handover; support runs to Nov 2028 |
-| **Web** | **ASP.NET Core 10** | |
-| **UI** | **Blazor Web App**, `InteractiveServer` render mode | Both tiers in .NET as required. See rationale below |
+| **Backend Runtime** | **.NET 10 (LTS)** | LTS matters for an SOE handover; support runs to Nov 2028 |
+| **Web API** | **ASP.NET Core 10 Web API** | RESTful controllers returning ProblemDetails RFC 7807 |
+| **API Spec & Docs** | **OpenAPI 3.1** + **Scalar** | `Microsoft.AspNetCore.OpenApi` at `/openapi/v1.json`, interactive UI at `/scalar/v1` via `Scalar.AspNetCore` |
+| **Frontend Runtime & Bundler** | **Bun** + **Vite 8** | Bun as package manager and script runner; Vite for fast HMR |
+| **Frontend Framework** | **React 19** + **TypeScript** | Modern SPA with React 19 transitions and hooks |
+| **Frontend Routing** | **@tanstack/react-router** | Type-safe file-based routing, loader data prefetching, search param validation |
+| **API Client & Caching** | **openapi-typescript** + **openapi-react-query** | Schema codegen (`openapi-typescript`), `openapi-fetch`, wrapped by `openapi-react-query` & `@tanstack/react-query` v5 |
+| **Data Tables & Grids** | **@tanstack/react-table** (v8) | Headless data tables for directory, inbox, audit log, and master data grids |
+| **Forms & State** | **@tanstack/react-form** + **zod** | Reactive type-safe forms with nested field arrays, dirty tracking, and Zod schemas |
+| **UI Components & Styling** | **shadcn/ui** + **Tailwind CSS v4** | Radix UI primitives, Lucide icons, accessible responsive components |
+| **Maps** | **mapcn** (`@mapcn/map`) | MapLibre GL map components via `bunx --bun shadcn@latest add @mapcn/map` |
 | **ORM** | **EF Core 10** + **Npgsql** | |
 | **Database** | **PostgreSQL 18 + PostGIS** | PostGIS via **NetTopologySuite**, natively supported by Npgsql |
-| **Auth** | **ASP.NET Core Identity, local accounts** | No access to PGN's directory. SSO seam kept for later |
-| **Background jobs** | **Hangfire** | Email queue, once email is switched on. Has a self-hosted dashboard |
-| **Object storage** | **MinIO** now, **OneDrive** when PGN grants tenant access — one interface, chosen by config | AWS SDK for .NET / Microsoft Graph SDK. See [storage](storage.md) |
+| **Auth** | **ASP.NET Core Identity, local accounts** | SameSite=Lax Cookie Auth, Scoped `ICurrentUser` driving EF Core RLS |
+| **Background jobs** | **Hangfire** | Email queue, orphan sweep. Has a self-hosted dashboard |
+| **Object storage** | **S3-compatible (RustFS / MinIO)** now, **OneDrive** when PGN grants tenant access | AWS SDK for .NET / Microsoft Graph SDK. See [storage](storage.md) |
 | **Documents (.docx)** | **Open XML SDK** (`DocumentFormat.OpenXml`) — template merge | |
 | **Excel export** | **ClosedXML** (MIT) | Not EPPlus — its licence is non-commercial since v5 |
-| **Maps** | **Leaflet** + OpenStreetMap via Blazor JS interop | |
-| **Validation** | **FluentValidation** | The forms are large and conditional |
+| **Validation** | **FluentValidation** (Backend) + **Zod** (Frontend) | Consistent server & client validation rules |
 | **Logging** | **Serilog** → files + Seq/ELK | |
 | **Email** | **MailKit** — *built but disabled* | Email is deferred |
+| **Testing** | **xUnit** + **Testcontainers** (Backend) · **Vitest** + **Playwright** (Frontend/E2E) | |
 
-> **Docs vs. dev stack naming:** this table and `storage.md` describe the
-> object storage generically as "MinIO." The actual dev/prod compose files
-> use **RustFS** (S3-compatible) instead — same interface
-> (`IAttachmentStore`), different concrete image. Don't "fix" this
-> mismatch; the docs describe the abstraction, the compose files are the
-> current concrete choice.
-| **Testing** | **xUnit** + **Testcontainers** (real PostGIS in integration tests) | |
+### Headless Web API + React SPA Architecture
 
-### Why Blazor Server rather than WebAssembly
+Decoupling the frontend into a standalone React 19 SPA powered by the TanStack ecosystem and a headless .NET 10 Web API provides several distinct advantages:
 
-`InteractiveServer` is the right default here:
-
-- **Users are internal, on PGN's network.** The SignalR latency objection doesn't apply.
-- **RBAC stays server-side.** No separate API surface to secure; the area/region
-  scope is applied in the same process that renders. With WASM you would have to
-  build and defend a full REST API in addition.
-- **The forms are huge.** KK0 alone has ~60 fields plus four repeating groups.
-  Server-side rendering keeps the download small and the state on the server.
-- **Sensitive data never leaves the server** unless rendered — survey forms carry
-  customer production volumes and fuel costs.
-
-Trade-off: a persistent circuit per user and **sticky sessions if load-balanced**.
-For this user count, a single instance is likely enough. Use the .NET 8+ Blazor
-Web App template so individual components can be switched to WASM later without
-re-platforming.
+- **Type-Safe Contract Synchronization:** The backend serves an OpenAPI 3.1 specification at `/openapi/v1.json`. Running `bun run codegen` in the frontend invokes `openapi-typescript` to generate static TypeScript types (`src/api/schema.d.ts`), which `openapi-react-query` binds to `$api.useQuery` and `$api.useMutation` with zero manual boilerplate.
+- **Client-Side Responsiveness & State Management:** TanStack Router provides file-based routing and deep link search param state. TanStack Query manages cache invalidation, background refetching, and optimistic updates.
+- **Complex Multi-Step Form Management:** Heavy forms like Survey KK0 (~60 fields with dynamic equipment tables) and A1 Customer Registration benefit from `@tanstack/react-form`'s fine-grained field reactivity and Zod validation schemas without round-trip server latency.
+- **Rich Geospatial UX:** `mapcn` integrates MapLibre GL seamlessly with Tailwind and React, supporting interactive pin-drops, spatial coordinate extraction, and reverse geocoding directly in the browser.
+- **Secure Server-Side RBAC & Row-Level Security:** Authentication uses SameSite=Lax HTTP-only cookies. Every API request resolves a scoped `ICurrentUser`, so EF Core global query filters enforce Area/Region data scoping seamlessly across all queries.
 
 ---
 
 ## Solution structure
-
-Feature folders, not technical layers within a layer. `Domain`, `Application`
-and `Infrastructure` each mirror the same module list from the breakdown
-below, so "where does NOL evaluation logic live" has one answer at every
-layer — `Nol/` — instead of a grep across a flat `Services/` folder. A folder
-that doesn't exist yet is one nothing has needed so far; add it when that
-module gets built, not ahead of it.
 
 ```
 Simando.sln
@@ -117,9 +102,7 @@ Simando.sln
 │  │                             Identity, MailKit, Hangfire
 │  │  ├─ Persistence/              SimandoDbContext, Migrations/, and
 │  │  │                            Configurations/ (one EntityTypeConfiguration
-│  │  │                            per entity — group into subfolders mirroring
-│  │  │                            Domain once the flat count stops being
-│  │  │                            readable; not there yet)
+│  │  │                            per entity)
 │  │  ├─ Identity/                 ApplicationUser, AdminSeeder — Identity glue
 │  │  ├─ Storage/                  S3AttachmentStore, OneDriveAttachmentStore
 │  │  ├─ Documents/                Open XML generator + Templates/ (the 6 Lampiran .docx)
@@ -127,28 +110,41 @@ Simando.sln
 │  │  ├─ Workflow/                 EF-backed IWorkflowService — snapshots WorkflowStep rows
 │  │  └─ BackgroundJobs/           Hangfire: orphan-attachment sweep, notification dispatch
 │  │
-│  └─ Simando.Web/               Blazor Web App, components, endpoints, auth
-│     ├─ Cli/                      seed-admin and future one-off commands
-│     ├─ Controllers/              plain endpoints for anything writing the HTTP
-│     │                            response directly — sign-in, attachment/document
-│     │                            downloads, Excel export (web-conventions.md)
-│     ├─ Middleware/               MustChangePasswordMiddleware and similar
-│     ├─ Security/                 CurrentUser — per-circuit ICurrentUser
-│     └─ Components/
-│        ├─ Layout/                  MainLayout, AuthLayout — the app shell
-│        ├─ Account/Pages/           sign-in, change-password, access-denied
-│        ├─ Companies/                Directory, Plotting, Map, and the record hub
-│        │  └─ Detail/                  the hub's nine tabs, one component each
-│        ├─ Tasks/                    inbox, Tugas Tertahan, action history
-│        ├─ Reports/                  the five report screens
-│        └─ Admin/                    the fourteen /master/* + two /admin/* screens
+│  └─ Simando.Api/               ASP.NET Core 10 Web API
+│     ├─ Cli/                      seed-admin, seed-demo-users, seed-master-data
+│     ├─ Controllers/              REST API endpoints (Companies, Survey, Nol, Tasks, Reports, Admin, Attachments)
+│     ├─ Middleware/               MustChangePasswordMiddleware, ProblemDetailsExceptionHandler
+│     └─ Security/                 ApiCurrentUser — scoped ICurrentUser per HTTP request
+│
+├─ frontend/                     React 19 SPA (Bun + Vite 8 + TypeScript)
+│  ├─ src/
+│  │  ├─ api/                      schema.d.ts (generated via openapi-typescript), client.ts ($api)
+│  │  ├─ components/
+│  │  │  ├─ ui/                    shadcn/ui primitives (button, dialog, dropdown, input, table, etc.)
+│  │  │  ├─ map/                   mapcn MapLibre wrapper components
+│  │  │  └─ layout/                AppHeader, Sidebar, Breadcrumb, UserMenu
+│  │  ├─ features/                 feature-centric components, tables, and forms
+│  │  │  ├─ auth/                  login form, change password modal, capability gates
+│  │  │  ├─ companies/             directory table, company hub, plotting form with mapcn
+│  │  │  ├─ survey/                KK0 multi-section form with TanStack Form & equipment table
+│  │  │  ├─ registration/          A1 registration form
+│  │  │  ├─ nol/                   NOL request, evaluation form, issuance tab
+│  │  │  ├─ tasks/                 inbox table, approval action modal, stuck-steps monitor
+│  │  │  ├─ reports/               funnel chart, gas demand, ageing analysis, Excel export
+│  │  │  └─ admin/                 user management, organisation hierarchy, lookup CRUDs
+│  │  ├─ routes/                   TanStack Router file-based route tree (__root.tsx, /companies, /tasks, etc.)
+│  │  ├─ hooks/                    custom hooks for auth, permissions, theme
+│  │  └─ lib/                      zod schemas, date formatters, currency helpers
+│  ├─ index.html
+│  ├─ package.json
+│  └─ vite.config.ts
 │
 └─ tests/
    ├─ Simando.Domain.Tests/          mirrors Domain's module folders — pure, fast, no I/O
    ├─ Simando.Application.Tests/     mirrors Application's module folders
-   ├─ Simando.Integration.Tests/     Testcontainers: real PostGIS + MinIO
-   ├─ Simando.Web.Tests/             bUnit — forms, repeating rows, permission gates
-   └─ Simando.E2E.Tests/             Playwright — one happy-path smoke test
+   ├─ Simando.Integration.Tests/     Testcontainers: real PostGIS + S3 + WebApplicationFactory
+   ├─ frontend.tests/                Vitest — TanStack Form schemas, custom hooks, table filters
+   └─ Simando.E2E.Tests/             Playwright — end-to-end sales pipeline smoke test
 ```
 
 The domain project has **no EF Core dependency**. The workflow transition rules
@@ -325,14 +321,16 @@ provides.
 
 ```mermaid
 flowchart TD
-    U["PGN staff<br/><i>intranet</i>"] --> RP["Nginx / YARP<br/>TLS termination"]
-    RP --> APP["Simando.Web<br/><i>ASP.NET Core 10 · Blazor Server</i>"]
-    APP --> PG[("PostgreSQL 18<br/>+ PostGIS")]
-    APP --> STORE[("Attachment store<br/><i>MinIO now · OneDrive later</i>")]
-    APP --> HF["Hangfire<br/><i>jobs, in-process</i>"]
-    APP --> SMTP["PGN SMTP<br/><i>deferred — built, disabled</i>"]
+    U["PGN staff<br/><i>intranet</i>"] --> RP["Nginx / YARP<br/>Reverse Proxy & TLS"]
+    RP -->|/* static routes| FE["Frontend SPA<br/><i>React 19 (Nginx static / Vite dev)</i>"]
+    RP -->|/api/*, /openapi/*| API["Simando.Api<br/><i>ASP.NET Core 10 Web API</i>"]
+    API --> PG[("PostgreSQL 18<br/>+ PostGIS")]
+    API --> STORE[("Attachment store<br/><i>RustFS / MinIO now · OneDrive later</i>")]
+    API --> HF["Hangfire<br/><i>jobs, in-process</i>"]
+    API --> SMTP["PGN SMTP<br/><i>deferred — built, disabled</i>"]
 
-    style APP fill:#e8f0fe,stroke:#4285f4,color:#000
+    style FE fill:#f3e8fd,stroke:#9333ea,color:#000
+    style API fill:#e8f0fe,stroke:#4285f4,color:#000
     style PG fill:#e6f4ea,stroke:#34a853,color:#000
     style STORE fill:#fef7e0,stroke:#fbbc04,color:#000
 ```
@@ -340,8 +338,7 @@ flowchart TD
 Docker Compose is sufficient at this scale; Kubernetes only if PGN already runs
 it. Linux containers throughout.
 
-**Sticky sessions** are required at the reverse proxy if more than one app
-instance runs — Blazor Server circuits are stateful.
+The reverse proxy routes `/api/*`, `/openapi/*`, `/scalar/*` to the Kestrel backend and all other routes to the React SPA static build (with fallback to `index.html` for client-side routing via TanStack Router).
 
 ### Configuration
 
@@ -359,7 +356,7 @@ startup and consumed as `IOptions<T>`.
 | `Serilog` | Sinks, levels | |
 
 > **Upload size is a three-layer setting.** nginx `client_max_body_size`, Kestrel's
-> `MaxRequestBodySize` and the Blazor `InputFile` `maxAllowedSize` must agree.
+> `MaxRequestBodySize` and frontend dropzone `maxFileSize` must agree.
 > Raising one alone produces a 413 at the layer you forgot, which is why this is
 > config rather than an admin screen. Put the three in the deployment runbook as
 > one item.
@@ -463,9 +460,9 @@ someone is in a hurry.
   pre-signed URLs and no Graph `downloadUrl`** — downloads stream through the app
   in both providers, because a URL that escapes the scope check leaks one Area's
   commercial analysis to another
-  ([storage §2](storage.md#access-control-is-ours)). That endpoint is a
-  controller action, not a Razor component — see
-  [web-conventions](web-conventions.md#where-this-applies-next).
+  ([storage §2](storage.md#access-control-is-ours)). That endpoint is an
+  authenticated REST API controller action — see
+  [web-conventions](web-conventions.md#3-attachment--document-streaming).
 - **Immutable audit** on everything workflow-related, enforced by trigger.
 - **PII**: NPWP, personal mobile numbers, and named individuals' social handles.
   Indonesia's PDP Law (UU 27/2022) applies. Restrict contact-data export and log

@@ -188,7 +188,7 @@ The count next to *Tugas Saya* is the strongest single answer to the client's
 problem statement. Rules:
 
 - Counts **only steps where it is this user's turn** — not everything visible
-- Refreshes on the Blazor circuit without a page reload
+- Refreshes reactively via TanStack Query invalidation or background polling without a page reload
 - Also rendered in the browser tab title, so it is visible when the tab is in the
   background
 

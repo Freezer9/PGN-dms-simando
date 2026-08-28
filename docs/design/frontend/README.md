@@ -41,9 +41,7 @@ not friendlier.
 survey capture, which may happen on a tablet in the field — see
 [12-patterns-and-states](12-patterns-and-states.md#responsive).
 
-**Blazor render modes.** Default `InteractiveServer`
-([architecture](../../build/architecture.md#why-blazor-server-rather-than-webassembly)).
-Static SSR is fine for read-only report pages; note per-page where it differs.
+**SPA Architecture.** React 19 Single-Page Application (SPA) powered by TanStack Suite (`@tanstack/react-router`, `@tanstack/react-query`, `@tanstack/react-table`, `@tanstack/react-form`), `shadcn/ui`, `mapcn`, and type-safe API generation via `openapi-typescript` / `openapi-react-query`. All navigation is client-side with loader prefetching and validated search parameters.
 
 **Wireframe notation.**
 

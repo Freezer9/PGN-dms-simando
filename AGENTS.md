@@ -30,7 +30,7 @@ scratch. When something is ambiguous, the answer is very likely already in
 | Frontend / screens          | [docs/design/frontend/13-page-role-matrix.md](docs/design/frontend/13-page-role-matrix.md) → [docs/design/frontend/README.md](docs/design/frontend/README.md) |
 | Before writing tests        | [docs/build/testing.md](docs/build/testing.md)                                                                                                                |
 | Storage / attachments       | [docs/build/storage.md](docs/build/storage.md)                                                                                                                |
-| Render modes / new endpoint | [docs/build/web-conventions.md](docs/build/web-conventions.md)                                                                                                |
+| API & frontend conventions  | [docs/build/web-conventions.md](docs/build/web-conventions.md)                                                                                                |
 | "Is this in scope for v1?"  | [docs/future/README.md](docs/future/README.md) — six features raised but not confirmed                                                                        |
 
 **Canonical-source rule** (inherited from `docs/`): each topic below is owned by
@@ -45,16 +45,24 @@ change one of these, grep the repo for references before assuming you're done.
 | Master/config data inventory                        | `docs/domain/master-data.md`       |
 | Features not yet planned                            | `docs/future/README.md`            |
 | Storage abstraction                                 | `docs/build/storage.md`            |
-| Render modes, component vs. endpoint                | `docs/build/web-conventions.md`    |
+| API endpoints and frontend conventions              | `docs/build/web-conventions.md`    |
 | Coding conventions, licensing, secrets              | `docs/build/conventions.md`        |
 
 ## Stack
 
-.NET 10 (LTS) · ASP.NET Core · **Blazor Web App, `InteractiveServer`** (not
-WASM — see [docs/build/architecture.md](docs/build/architecture.md#why-blazor-server-rather-than-webassembly))
-· EF Core 10 + Npgsql · **PostgreSQL 18 + PostGIS** · ASP.NET Core Identity,
-**local accounts, no SSO** · Hangfire (background jobs) · FluentValidation ·
-Serilog · xUnit + Testcontainers + bUnit.
+- **Backend Runtime & Framework:** .NET 10 (LTS) · ASP.NET Core 10 Web API
+- **API Spec & Docs:** OpenAPI 3.1 (`Microsoft.AspNetCore.OpenApi`) + Scalar UI (`Scalar.AspNetCore` at `/scalar/v1`)
+- **Database & ORM:** EF Core 10 + Npgsql · **PostgreSQL 18 + PostGIS** (NetTopologySuite geography Point)
+- **Auth & RBAC:** ASP.NET Core Identity (SameSite=Lax Cookie Auth, Scoped `ICurrentUser` driving EF Core RLS query filters)
+- **Background Jobs & Logging:** Hangfire · FluentValidation · Serilog
+- **Frontend Runtime & Bundler:** **Bun** (strictly prefer `bun` / `bunx --bun` over `npm`/`npx`) + Vite 8
+- **Frontend UI Framework:** **React 19** + TypeScript
+- **Frontend Routing:** `@tanstack/react-router` (type-safe file-based routes & search params)
+- **API Client & Caching:** `openapi-typescript` + `openapi-fetch` + `openapi-react-query` + `@tanstack/react-query` v5
+- **Data Tables & Forms:** `@tanstack/react-table` v8 + `@tanstack/react-form` + `zod`
+- **UI Components & Styling:** `shadcn/ui` (Tailwind CSS v4 + Radix UI) + `lucide-react`
+- **Geospatial Mapping:** `mapcn` (`bunx --bun shadcn@latest add @mapcn/map`, powered by MapLibre GL)
+- **Testing:** xUnit + Testcontainers (Backend) · Vitest + Playwright (Frontend & E2E)
 
 ## Solution layout
 
@@ -63,14 +71,21 @@ src/
   Simando.Domain/           entities, enums, value objects, domain rules
                              — NO EF Core dependency, deliberately (see below)
   Simando.Application/      use cases, DTOs, validators, service interfaces
-  Simando.Infrastructure/   EF Core, storage (S3/OneDrive), OpenXML, Identity
-  Simando.Web/              Blazor Web App, components, endpoints, auth
+  Simando.Infrastructure/   EF Core, storage (S3/RustFS), OpenXML, Identity
+  Simando.Api/              ASP.NET Core 10 Web API, REST controllers, OpenAPI 3.1, auth
+frontend/
+  src/
+    api/                    schema.d.ts (generated via codegen), client.ts ($api openapi-react-query)
+    components/             shadcn/ui components, mapcn map, layout shell, shared widgets
+    features/               feature modules (companies, survey, nol, tasks, admin, reports)
+    routes/                 TanStack Router file-based routes
+    hooks/                  custom react hooks
+    lib/                    utilities, zod validation schemas
 tests/
   Simando.Domain.Tests/         pure, fast, no I/O
   Simando.Application.Tests/
-  Simando.Integration.Tests/    Testcontainers: real PostGIS + S3-compatible store
-  Simando.Web.Tests/            bUnit — Blazor forms, permission gates
-  Simando.E2E.Tests/            Playwright — one happy-path smoke test
+  Simando.Integration.Tests/    Testcontainers: real PostGIS + S3 store + WebApplicationFactory
+  frontend.tests/               Vitest (hooks, schemas, tables) + Playwright (E2E smoke test)
 ```
 
 Each of `Domain`/`Application`/`Infrastructure` is organised into feature
@@ -87,26 +102,30 @@ demonstrated without a database.
 ## Build, run, test
 
 ```bash
-dotnet build Simando.slnx          # restores JS deps + builds Tailwind CSS automatically
-dotnet test                        # all test projects
-dotnet test tests/Simando.Domain.Tests   # fast loop while working in Domain
+# Backend (.NET 10 Web API)
+dotnet build Simando.slnx
+dotnet test                                       # all .NET test projects
+dotnet test tests/Simando.Domain.Tests            # fast loop while working in Domain
 
-# Local dev: run the app from the IDE against containerised dependencies
+# Local dev: run dependencies and Web API
 docker compose -f docker-compose.dev.yml up -d     # Postgres+PostGIS, RustFS (S3-compat)
-cp src/Simando.Web/appsettings.Local.example.json src/Simando.Web/appsettings.Local.json
-dotnet ef database update --project src/Simando.Infrastructure --startup-project src/Simando.Web
-dotnet run --project src/Simando.Web -- seed-master-data
-SeedAdmin__Password="<password>" dotnet run --project src/Simando.Web -- seed-admin
-SeedDemo__Password="<password>" dotnet run --project src/Simando.Web -- seed-demo-users
-dotnet run --project src/Simando.Web
+cp src/Simando.Api/appsettings.Local.example.json src/Simando.Api/appsettings.Local.json
+dotnet ef database update --project src/Simando.Infrastructure --startup-project src/Simando.Api
+dotnet run --project src/Simando.Api -- seed-master-data
+SeedAdmin__Password="<password>" dotnet run --project src/Simando.Api -- seed-admin
+SeedDemo__Password="<password>" dotnet run --project src/Simando.Api -- seed-demo-users
+dotnet run --project src/Simando.Api              # starts Web API at https://localhost:5001
 
-# Full containerised stack (app included)
+# Frontend (React 19 SPA via Bun)
+cd frontend
+bun install
+bun run codegen                                   # generates src/api/schema.d.ts from OpenAPI spec
+bun run dev                                       # starts Vite dev server with proxy to API
+bun test                                          # runs frontend unit tests with Vitest
+
+# Full containerised stack (API + Frontend + DB + Storage)
 docker compose up --build
 ```
-
-`Simando.Web.csproj` shells out to `scripts/js.sh` (or `.ps1` on Windows) on
-restore/build to install JS deps (bun > pnpm > npm) and build
-`wwwroot/app.css` from Tailwind — don't hand-edit that generated file.
 
 ## Backlog
 
@@ -127,18 +146,18 @@ Full detail in [docs/build/conventions.md](docs/build/conventions.md) —
 canonical for coding conventions, licensing, and secrets handling. Digest:
 
 - `decimal`, never `double`, for money/volumetric values.
-- Central package management — versions only in `Directory.Packages.props`.
+- Package manager: always use `bun` (or `pnpm`), never `npm`/`npx`. Use `bunx <pkg>` instead of `npx <pkg>`.
+- Central package management for .NET — versions only in `Directory.Packages.props`.
 - ClosedXML for Excel export, never EPPlus (licensing).
-- Secrets never committed; use `appsettings.Local.json` (gitignored +
-  dockerignored) or `dotnet user-secrets`.
+- Secrets never committed; use `appsettings.Local.json` (gitignored + dockerignored) or `dotnet user-secrets`.
 - Indonesian domain vocabulary stays verbatim; routes/URLs stay English.
 - DTO & Model naming taxonomy: `Dto` for top-level service payloads, `Item`/`Row` for grid line items, `Detail`/`Summary` for read projections, `Request`/`Filter` for inputs, `Result` for outcomes.
-- Comments explain "why," never "what." and only when needed or the code itself is not obvious, and also keep it minimal / compact
-- Use `BlazorBlueprint` MCP components, not raw HTML, for UI screens.
-- Razor pages/components use `IEntityService<T>` (or a bespoke
-  Application-layer service for non-`AuditableEntity` types like `Company`)
-  — never inject `SimandoDbContext` directly.
-- `wwwroot/app.css` is a Tailwind-generated build artifact (ignored by git, compiled via `scripts/js.sh` on build); never hand-edit it.
+- Comments explain "why," never "what," and only when needed or the code itself is not obvious; keep it minimal / compact.
+- Use `shadcn/ui` components and Tailwind CSS v4, not raw unstyled HTML elements.
+- Use `mapcn` (`bunx --bun shadcn@latest add @mapcn/map`) for map plotting and geospatial features.
+- Form handling: use `@tanstack/react-form` combined with `zod` schemas for client validation.
+- API interactions: use `$api.useQuery` and `$api.useMutation` from `openapi-react-query` generated types; never handwrite untyped fetch calls.
+- Web API Controllers return RFC 7807 `ProblemDetails` on errors and use standard HTTP status codes.
 - Git commit messages: single-line subject only following Conventional Commits (`type(scope): description` or `type: description`), no commit bodies.
 
 ## Architecture invariants (don't casually refactor these away)

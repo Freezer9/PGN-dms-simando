@@ -5,8 +5,7 @@ system that digitises PGN's gas-subscription sales pipeline: from an industrial
 prospect in a directory, through survey and pricing, to the issuance of a
 **NOL (No Objection Letter)**.
 
-**Stack:** .NET 10 · ASP.NET Core · Blazor Web App · EF Core · PostgreSQL +
-PostGIS · MinIO or OneDrive · self-hosted.
+**Stack:** .NET 10 (LTS) · ASP.NET Core 10 Web API · OpenAPI 3.1 + Scalar · React 19 SPA (Bun + Vite + TanStack Suite + shadcn/ui + mapcn) · EF Core 10 · PostgreSQL 18 + PostGIS · S3-compatible storage · self-hosted.
 
 ---
 
@@ -55,7 +54,7 @@ docs/
 │
 ├── build/                     HOW WE SHIP IT
 │   ├── architecture.md        stack, modules, deployment, security
-│   ├── web-conventions.md     ← canonical: render modes, component vs. endpoint
+│   ├── web-conventions.md     ← canonical: REST API, OpenAPI, and frontend conventions
 │   ├── testing.md             fixtures for the riskiest calculations
 │   └── storage.md             S3 / OneDrive abstraction and migration
 │
@@ -133,7 +132,7 @@ never redefined:
 | Entities and fields | [design/data-model.md](design/data-model.md) |
 | Scope, capability, turn | [design/roles-permissions.md](design/roles-permissions.md) |
 | Configuration inventory | [domain/master-data.md](domain/master-data.md) |
-| Render modes, component vs. endpoint | [build/web-conventions.md](build/web-conventions.md) |
+| REST API and frontend conventions | [build/web-conventions.md](build/web-conventions.md) |
 | Features not yet planned | [future/README.md](future/README.md) |
 
 If you change one of these, grep for references before assuming you are done.

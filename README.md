@@ -7,9 +7,8 @@ Objection Letter)**.
 
 ## Stack
 
-.NET 10 · ASP.NET Core · Blazor Web App (`InteractiveServer`) · EF Core 10 +
-Npgsql · PostgreSQL 18 + PostGIS · S3-compatible object storage · Hangfire ·
-Serilog. Self-hosted.
+- **Backend:** .NET 10 (LTS) · ASP.NET Core 10 Web API · OpenAPI 3.1 (`Microsoft.AspNetCore.OpenApi`) + Scalar UI · EF Core 10 + Npgsql · PostgreSQL 18 + PostGIS · S3-compatible object storage · Hangfire · Serilog.
+- **Frontend:** React 19 + TypeScript · **Bun** & Vite 8 · TanStack Suite (`@tanstack/react-router`, `@tanstack/react-query` v5, `@tanstack/react-table` v8, `@tanstack/react-form` + `zod`) · `openapi-typescript` + `openapi-fetch` + `openapi-react-query` · `shadcn/ui` (Tailwind CSS v4 + Radix UI) · `mapcn` (MapLibre GL).
 
 See [docs/build/architecture.md](docs/build/architecture.md) for the
 reasoning behind each choice.
@@ -18,40 +17,47 @@ reasoning behind each choice.
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download)
 - Docker (with Compose)
-- A JS package manager for the Tailwind build: [bun](https://bun.sh) (primary,
-  `bun.lock` committed), pnpm, or npm — any one works
+- [Bun](https://bun.sh) (primary package manager & runtime for frontend, `bun.lock` committed; pnpm as fallback)
 
 ## Quickstart
 
+### 1. Backend (.NET 10 Web API)
+
 ```bash
-# 1. Start dependencies (Postgres+PostGIS, S3-compatible storage, docx→pdf converter)
+# Start dependencies (Postgres+PostGIS, S3-compatible storage, docx→pdf converter)
 docker compose -f docker-compose.dev.yml up -d
 
-# 2. Configure the app for local dev
-cp src/Simando.Web/appsettings.Local.example.json src/Simando.Web/appsettings.Local.json
+# Configure the Web API for local dev
+cp src/Simando.Api/appsettings.Local.example.json src/Simando.Api/appsettings.Local.json
 
-# 3. Apply EF Core database migrations
-dotnet ef database update --project src/Simando.Infrastructure --startup-project src/Simando.Web
+# Apply EF Core database migrations
+dotnet ef database update --project src/Simando.Infrastructure --startup-project src/Simando.Api
 
-# 4. Seed master data (geography, units of measure, industry types, etc.)
-dotnet run --project src/Simando.Web -- seed-master-data
+# Seed master data (geography, units of measure, industry types, etc.)
+dotnet run --project src/Simando.Api -- seed-master-data
 
-# 5. Seed initial accounts (System Admin & Demo Users)
-SeedAdmin__Password="<a strong password>" dotnet run --project src/Simando.Web -- seed-admin
-SeedDemo__Password="<a shared password>" dotnet run --project src/Simando.Web -- seed-demo-users
+# Seed initial accounts (System Admin & Demo Users)
+SeedAdmin__Password="<a strong password>" dotnet run --project src/Simando.Api -- seed-admin
+SeedDemo__Password="<a shared password>" dotnet run --project src/Simando.Api -- seed-demo-users
 
-# 6. Run (builds JS deps + Tailwind CSS automatically on restore/build)
-dotnet run --project src/Simando.Web
+# Run the Web API backend (listens on https://localhost:5001, OpenAPI at /openapi/v1.json, Scalar UI at /scalar/v1)
+dotnet run --project src/Simando.Api
 ```
 
-### Hot reload
+### 2. Frontend (React 19 SPA)
 
 ```bash
-scripts/dev.sh          # Windows: scripts/dev.ps1
-```
+cd frontend
 
-Runs `dotnet watch` (C#/Razor hot reload, auto browser refresh) and the
-Tailwind watcher together in one terminal; `Ctrl+C` stops both.
+# Install dependencies via Bun
+bun install
+
+# Generate TypeScript API definitions from the running Web API OpenAPI spec
+bun run codegen
+
+# Start Vite development server (proxies /api to https://localhost:5001)
+bun run dev
+```
 
 ### Full containerised stack
 
@@ -59,8 +65,7 @@ Tailwind watcher together in one terminal; `Ctrl+C` stops both.
 docker compose up --build
 ```
 
-Runs the app itself in a container alongside its dependencies. Use this to
-mirror deployment; use the quickstart above for day-to-day development.
+Runs the entire stack (PostgreSQL + PostGIS, S3 storage, .NET 10 Web API, React SPA via reverse proxy) in containers. Use this to mirror deployment; use the quickstart above for day-to-day development.
 
 ## Seeding accounts
 
@@ -70,7 +75,7 @@ account is seeded.
 ### First System Admin
 
 ```bash
-SeedAdmin__Password="<a strong password>" dotnet run --project src/Simando.Web -- seed-admin
+SeedAdmin__Password="<a strong password>" dotnet run --project src/Simando.Api -- seed-admin
 ```
 
 Creates the one seed System Admin (`must_change_password` is set, so it's
@@ -81,7 +86,7 @@ no-ops once an active System Admin exists. See
 ### Demo / testing accounts, one per role
 
 ```bash
-SeedDemo__Password="<a shared password>" dotnet run --project src/Simando.Web -- seed-demo-users
+SeedDemo__Password="<a shared password>" dotnet run --project src/Simando.Api -- seed-demo-users
 ```
 
 Creates a "Demo Region"/"Demo Area" plus one account per non-SysAdmin role,
@@ -110,7 +115,7 @@ committed with a real value.
 ## Seeding master data
 
 ```bash
-dotnet run --project src/Simando.Web -- seed-master-data
+dotnet run --project src/Simando.Api -- seed-master-data
 ```
 
 No credentials needed. Imports the go-live-prerequisite lookup tables that
@@ -137,13 +142,20 @@ src/
   Simando.Domain/           entities, enums, value objects, domain rules
   Simando.Application/      use cases, DTOs, validators, service interfaces
   Simando.Infrastructure/   EF Core, storage, document generation, Identity
-  Simando.Web/              Blazor Web App, components, endpoints, auth
+  Simando.Api/              ASP.NET Core 10 Web API, REST controllers, OpenAPI 3.1, auth
+frontend/
+  src/
+    api/                    schema.d.ts (generated), client.ts ($api openapi-react-query)
+    components/             shadcn/ui components, mapcn map, layout shell, shared widgets
+    features/               feature modules (companies, survey, nol, tasks, admin, reports)
+    routes/                 TanStack Router file-based routes
+    hooks/                  custom react hooks
+    lib/                    utilities, zod validation schemas
 tests/
   Simando.Domain.Tests/
   Simando.Application.Tests/
   Simando.Integration.Tests/
-  Simando.Web.Tests/
-  Simando.E2E.Tests/
+  frontend.tests/
 ```
 
 See [AGENTS.md](AGENTS.md) for the rules behind this layout (e.g. why

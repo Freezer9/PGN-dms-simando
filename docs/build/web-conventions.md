@@ -1,111 +1,121 @@
-# Build — Blazor Server Conventions
+# Build — Web API & Frontend Conventions
 
-> **Canonical.** This document owns the interactive-render-mode rules and the
-> component-vs-endpoint split. [architecture](architecture.md) references it
-> rather than restating it.
+> **Canonical.** This document owns the REST API conventions, OpenAPI contract generation, and React frontend architectural patterns. [architecture.md](architecture.md) references it rather than restating it.
 
-## Interactivity is global, not per-page
+---
 
-`App.razor` sets `@rendermode InteractiveServer` on `<Routes>`, not on individual
-pages. A page's own `@rendermode` does not extend to its **Layout** — confirmed the
-hard way building the app shell (Task 6): a plain `@onclick` placed directly in
-`MainLayout` never fired until interactivity was made global, because the layout
-that wraps `@Body` is a separate component the page's render mode doesn't reach.
+## 1. Backend REST API Conventions
 
-Per-page interactivity (the alternative BlazorBlueprint's own setup docs describe)
-only works cleanly when the layout itself has nothing interactive. Once the shell's
-sidebar, dropdowns and collapsible groups live in the layout, global is the only
-option that doesn't mean re-declaring `@rendermode` on every page *and* somehow
-making the layout interactive without receiving `@Body` across a render-mode
-boundary — which Blazor rejects outright (`InvalidOperationException: Cannot pass
-the parameter 'Body' ... arbitrary code and cannot be serialized`).
+### Route Structure & Resource Naming
+All Web API endpoints are organized under the `/api/` route prefix and grouped logically by domain resources using ASP.NET Core API Controllers:
 
-## Anything that mutates the HTTP response belongs in a Controller, not a component
+| Resource Path | Controller | Primary Responsibilities |
+|---|---|---|
+| `/api/auth/*` | `AuthController` | Sign-in, sign-out, session verification, change-password |
+| `/api/companies/*` | `CompaniesController` | Company directory, plotting, stages 1–3 data |
+| `/api/survey/*` | `SurveyController` | Stage 4 KK0 survey data, equipment, gas conversion |
+| `/api/registration/*` | `RegistrationController` | Stage 5 A1 customer registration |
+| `/api/nol/*` | `NolController` | Stages 6–8 NOL request, evaluation, issuance |
+| `/api/tasks/*` | `TasksController` | User tasks inbox, stuck-steps monitor, action history |
+| `/api/workflow/*` | `WorkflowController` | Approval step execution (Setuju, Revisi, Tolak) |
+| `/api/reports/*` | `ReportsController` | Funnel, gas demand, ageing, ClosedXML Excel exports |
+| `/api/attachments/*` | `AttachmentsController` | Multipart file upload, secure authenticated stream downloads |
+| `/api/documents/*` | `DocumentsController` | OpenXML Lampiran docx generation and stream downloads |
+| `/api/admin/*` | `AdminController` | Users, roles, organisation hierarchy, master lookup CRUDs |
 
-An interactive component's C# runs over the SignalR circuit, not inside the
-original HTTP request. By the time its event handlers or lifecycle methods run,
-the response may already be sent (prerender) or the request may not be a fresh
-HTTP request at all (a same-circuit Blazor navigation, including plain `<a href>`
-clicks — Blazor's enhanced navigation intercepts those too). Either way, writing
-response headers at that point fails or silently does nothing:
+### Response Envelopes & Error Handling (RFC 7807 ProblemDetails)
+- **Success Responses:** Return direct JSON DTOs or collections with standard HTTP status codes (`200 OK`, `201 Created`, `204 No Content`).
+- **Error Responses:** All validation errors, business rule violations, domain exceptions, and authorization failures return RFC 7807 standard `ProblemDetails` or `ValidationProblemDetails` (`400 Bad Request`, `401 Unauthorized`, `403 Forbidden`, `404 Not Found`, `409 Conflict`, `422 Unprocessable Entity`).
 
-- `SignInManager.SignOutAsync()` called from a Razor component's
-  `OnInitializedAsync` worked fine when the page was static (every visit was a
-  fresh request), and broke the moment the shell went interactive: the sign-out
-  link became a same-circuit navigation, and the cookie write failed with
-  `Headers are read-only, response has already started`.
-- The sign-in and change-password forms hit this from the start: `@rendermode
-  InteractiveServer` on those pages was never optional (BlazorBlueprint's own
-  components need it), so their cookie-writing was routed around the component
-  tree from day one.
+```csharp
+[HttpPost]
+[ProducesResponseType(typeof(CompanyDto), StatusCodes.Status201Created)]
+[ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+[ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+public async Task<IActionResult> Create([FromBody] CreateCompanyRequest request, CancellationToken ct)
+{
+    // ...
+}
+```
 
-**The rule:** any action that must write a cookie, set a response header, or
-stream a file needs a plain ASP.NET Core endpoint, reached via a native `<form>`
-POST or `<a href>` GET — never a Razor component's own handler. This project uses
-MVC controllers under `Simando.Web/Controllers/`, routed **by resource, not under
-`/api/...`** — e.g. `/account/sign-in`, `/attachments/{id}/download`. These
-endpoints return redirects or file streams to the same Blazor app, not JSON to an
-external client, so an `/api` prefix would misdescribe them: it invites the next
-contributor to assume REST conventions (content negotiation, versioning) that
-don't apply here. (`AccountController` is the reference implementation: sign-in,
-change-password, sign-out, mounted at `/account`.) Antiforgery validation for
-these actions is done manually
-(`IAntiforgery.ValidateRequestAsync`) inside each action, since the tokens
-`<AntiforgeryToken />` renders come from the same underlying service.
+### OpenAPI 3.1 & Metadata Specifications
+- Built-in OpenAPI is configured via `builder.Services.AddOpenApi()` in ASP.NET Core 10.
+- Interactive API documentation is available locally via Scalar at `/scalar/v1`, exposing the raw specification at `/openapi/v1.json`.
+- Every controller action must include `[ProducesResponseType]` annotations for all expected HTTP status codes to produce complete, accurate TypeScript types during codegen.
 
-**Prefer constructor injection here, not minimal-API delegate parameters.**
-`SignInManager<TUser>` implements ASP.NET Core Identity's
-`IEndpointParameterMetadataProvider`, which auto-attaches an authorization
-requirement when the type is declared as a *minimal API delegate parameter* —
-one that was observed to survive `.AllowAnonymous()` on the endpoint. Controller
-constructor injection doesn't go through that metadata-building path, so this
-doesn't apply there; it's specifically a minimal-API pitfall, and part of why
-this project uses controllers for identity-touching endpoints rather than
-`app.MapPost(...)`.
+---
 
-## Where this applies next
+## 2. Authentication, RBAC & Row-Level Security
 
-Every future feature that streams a file to the browser needs the same
-treatment — a controller action, not a component:
+- **Cookie Authentication:** ASP.NET Core Identity configures `SameSite=Lax` HTTP-only cookies with secure attributes.
+- **Per-Request `ICurrentUser`:** An `ApiCurrentUser` scoped service resolves the authenticated principal from `HttpContext.User`, loading their active role, assigned `RegionId`, `AreaId`, and computed `AccessScope`.
+- **EF Core RLS:** Global query filters in `SimandoDbContext` automatically apply Area/Region visibility constraints across all queries executed in that request context.
+- **Capability Authorization:** Endpoints enforce RBAC capabilities via `[Authorize(Policy = "...")]` or custom `[RequireCapability(Capability.ManageMasterData)]` attributes.
 
-- **Attachment downloads** — already specified as "an authorised endpoint that
-  re-checks scope" ([architecture §Security](architecture.md#security),
-  [storage §Access control is ours](storage.md#access-control-is-ours)).
-  No pre-signed URLs, so the download has to stream through the app; that stream
-  is a controller action.
-- **Generated `.docx` downloads** — the [Document
-  Generator](architecture.md#document-generator) merges a template and hands
-  the user a file; same shape as an attachment download.
-- **Excel export** ([design/reporting](../design/reporting.md)) — ClosedXML
-  writes a workbook to a stream; the browser needs a real HTTP response with a
-  `Content-Disposition` header to save it, not a component render.
+---
 
-None of these are built yet. When they are, they belong alongside
-`AccountController` — a `AttachmentsController`, `DocumentsController`, or similar
-under `Simando.Web/Controllers/`, not a Razor component or a `MapGet` lambda in
-`Program.cs`. Route each by resource, the same way: `/attachments/{id}/download`,
-`/documents/{id}/download`, `/reports/export` — no `/api` prefix, for the same
-reason as `AccountController` above.
+## 3. Attachment & Document Streaming
 
-## Middleware exemptions live at the endpoint, not in the middleware
+Every file download (attachments, OpenXML `.docx` lampiran merges, ClosedXML `.xlsx` exports) is served through an authenticated API endpoint:
+- **No Pre-Signed Storage URLs:** Storage keys are never exposed directly to clients. Downloads stream securely through the backend after verifying user permissions and row-level access scope.
+- **Content-Disposition Headers:** Handlers set `Content-Disposition: attachment; filename="..."` with verified MIME types (`application/vnd.openxmlformats-officedocument.wordprocessingml.document`, `application/pdf`, `image/jpeg`).
 
-`MustChangePasswordMiddleware` (and any future gate that runs for every request —
-a maintenance-mode check, a terms-of-service gate) needs a small set of routes to
-stay reachable regardless. The temptation is to hand-list those paths inside the
-middleware's exemption check. Don't: a hand-listed path silently drifts out of
-sync the moment a route is renamed or a new one needs the same exemption, and
-nothing fails loudly when it does — the user is just redirect-looped instead.
+---
 
-Read exemptions from **endpoint metadata** instead, the same way ASP.NET Core's
-own `IAllowAnonymous` already works: `context.GetEndpoint()?.Metadata`. Static
-assets carry it via `MapStaticAssets().AllowAnonymous()`; app routes that need a
-custom exemption declare a marker attribute at the endpoint itself —
-`[AllowDuringPasswordChange]` on `ChangePassword.razor`'s `@attribute` line and on
-the relevant `AccountController` actions (`Simando.Web/Security/`
-`AllowDuringPasswordChangeAttribute.cs`) — so the exemption travels with the route
-it protects rather than living as a string the middleware has to keep in sync by
-hand.
+## 4. Frontend Architecture & Tooling
 
-The one exception that stays hardcoded is `/_blazor`: it's the SignalR circuit
-hub, mapped internally by `AddInteractiveServerRenderMode()`, not an endpoint this
-app defines — there is no attribute to attach it to.
+### Package Manager & Scripts
+Always use **Bun** (or `pnpm` if bun is not suitable), never `npm`/`npx`.
+
+```bash
+bun install                                       # install npm dependencies
+bun run codegen                                   # generate src/api/schema.d.ts from /openapi/v1.json
+bun run dev                                       # start Vite dev server with proxy
+bun test                                          # run Vitest unit tests
+bun run build                                     # produce optimized production build
+```
+
+### Zero-Runtime Type-Safe Client (`openapi-typescript` + `openapi-react-query`)
+1. **Schema Generation:** `openapi-typescript` generates static TypeScript types in `src/api/schema.d.ts` from `/openapi/v1.json`.
+2. **Client Configuration:**
+   ```typescript
+   // src/api/client.ts
+   import createFetchClient from 'openapi-fetch';
+   import createClient from 'openapi-react-query';
+   import type { paths } from './schema';
+
+   export const fetchClient = createFetchClient<paths>({
+     baseUrl: '/api',
+     credentials: 'include',
+   });
+
+   export const $api = createClient(fetchClient);
+   ```
+3. **Usage in Components:**
+   ```typescript
+   // Type-safe query
+   const { data, isLoading } = $api.useQuery('get', '/api/companies', {
+     params: { query: { stage: 'Prospek', page: 1, pageSize: 20 } },
+   });
+
+   // Type-safe mutation
+   const mutation = $api.useMutation('post', '/api/companies');
+   ```
+
+### Routing: TanStack Router
+- **File-Based Routing:** Route trees live under `src/routes/`.
+- **Search Parameter Validation:** Every table filter, pagination param, and tab state is validated using `zodSearchValidator`.
+- **Prefetching:** Route loaders prefetch critical data using `$api.queryOptions(...)` before rendering pages.
+
+### Forms: TanStack Form + Zod
+- Use `@tanstack/react-form` for all multi-step and dynamic forms (Survey KK0, A1 Registration, Plotting, Approval Action dialogs).
+- Bind form field validation schemas directly with `zod`.
+- Dynamic arrays (e.g. Survey equipment and material rows) use TanStack Form's fine-grained field array helpers.
+
+### Tables: TanStack Table v8
+- Headless table configuration for Directory, Tasks Inbox, Stuck-Steps, and Master Data grids.
+- Paired with `shadcn/ui` table primitives (`Table`, `TableHeader`, `TableRow`, `TableCell`).
+
+### UI & Maps
+- **UI Components:** `shadcn/ui` (built on Tailwind CSS v4 and Radix UI primitives) with `lucide-react` icons.
+- **Geospatial Maps:** `mapcn` (`@mapcn/map`), installed via `bunx --bun shadcn@latest add @mapcn/map`, providing MapLibre GL map components for interactive coordinate plotting and pin-drops.

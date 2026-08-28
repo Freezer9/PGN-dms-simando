@@ -37,7 +37,7 @@ No illustrations. This is a tool people use all day.
 | **Permission** | Explain the scope: *"Record ini berada di Area Sidoarjo, di luar lingkup Anda."* |
 | **Conflict** | See [concurrent edits](#concurrent-edits) |
 | **Server** | Toast with a reference id for support; never a raw stack trace |
-| **Circuit lost** | Blazor's reconnect banner, restyled in Indonesian: *"Koneksi terputus. Mencoba menyambungkan kembali…"* |
+| **Network error** | TanStack Query retry toast / offline banner: *"Koneksi terputus. Mencoba menyambungkan kembali…"* |
 
 ---
 

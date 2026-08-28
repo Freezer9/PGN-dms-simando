@@ -2,24 +2,23 @@
 name: form-design-and-validation
 description: >
   Playbook and rules for form design, layout spacing, mandatory field asterisk indicators,
-  and DataAnnotations validation architecture in Simando DMS. Use when building or updating
-  Blazor forms, inputs, select fields, date pickers, or modal dialog forms.
+  TanStack Form architecture, and Zod validation in Simando DMS. Use when building or updating
+  React forms, inputs, select fields, date pickers, or modal dialog forms.
 ---
 
 # Form Design & Validation Playbook
 
-This playbook defines mandatory rules and architectural patterns for all form controls, layout grids, validation logic, and modal dialog forms across Simando DMS.
+This playbook defines mandatory rules and architectural patterns for all form controls, layout grids, validation logic, and modal dialog forms across Simando DMS using **React 19**, **@tanstack/react-form**, **Zod**, and **shadcn/ui**.
 
 ---
 
 ## 1. Mandatory Field Asterisk (`*`) Rule
 
-- **Rule**: Every mandatory/required form field label **MUST explicitly include an asterisk (`*`)** at the end of the label text (e.g. `Label="Nama *"`).
-- **Required Property Wiring**: Always pair the label asterisk with `Required="true"` on BlazorBlueprint form field components so ARIA accessibility flags match visual indicators:
-  ```razor
-  <BbFormFieldInput TValue="string" @bind-Value="_form.Name" Label="Nama *" Required="true" />
-  <BbFormFieldSelect TValue="Guid?" @bind-Value="_form.AreaId" Label="Area *" Required="true" Options="_areaOptions" />
-  <BbFormFieldDatePicker @bind-Value="_form.Tanggal" Label="Tanggal Survei *" Required="true" />
+- **Rule**: Every mandatory/required form field label **MUST explicitly include an asterisk (`*`)** formatted with danger/destructive styling:
+  ```tsx
+  <Label htmlFor="name">
+    Nama Perusahaan <span className="text-destructive">*</span>
+  </Label>
   ```
 - **Optional Fields**: Optional fields **MUST NOT** include an asterisk in their label text.
 
@@ -27,79 +26,139 @@ This playbook defines mandatory rules and architectural patterns for all form co
 
 ## 2. Form Layout & Grid Spacing Guidelines
 
-- **Grid Separation**: Multi-column form layouts MUST use clean grid spacing (`gap-4` or `gap-6`) to prevent controls from touching or overlapping horizontally.
-- **Full Width Parameter Wiring (`Class` & `InputClass`)**:
-  - `Class="w-full"` sets the outer field container width.
-  - `InputClass="w-full"` sets the inner control width (trigger button, text box, select element).
-  - Always provide both `Class="w-full" InputClass="w-full"` on form fields inside grid columns to prevent controls from snapping together or rendering auto-width:
-    ```razor
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <BbFormFieldDatePicker @bind-Value="_date" Label="Tanggal *" Required="true" Class="w-full" InputClass="w-full" />
-        <BbFormFieldSelect TValue="Guid?" @bind-Value="_selectId" Label="Surveyor *" Required="true" Options="_options" Class="w-full" InputClass="w-full" />
-    </div>
-    ```
+- **Grid Separation**: Multi-column form layouts MUST use clean grid spacing (`gap-4` or `gap-6`) to prevent controls from touching or overlapping horizontally:
+  ```tsx
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {/* Form Fields */}
+  </div>
+  ```
+- **Full Width Wiring**: Ensure form inputs span their container width (`w-full`) so responsiveness is maintained across desktop and tablet viewports.
 
 ---
 
-## 3. DataAnnotations Validation Architecture
+## 3. TanStack Form & Zod Validation Architecture
 
-- **Standard Form Architecture**: Wrap forms in `<EditForm Model="model" OnValidSubmit="...">` and include `<DataAnnotationsValidator />`:
-  ```razor
-  <EditForm Model="_form" OnValidSubmit="SaveAsync">
-      <DataAnnotationsValidator />
-      <BbDialogHeader>
-          <BbDialogTitle>@(_editingId is null ? "Tambah Data" : "Ubah Data")</BbDialogTitle>
-      </BbDialogHeader>
-      <div class="space-y-4 py-4">
-          <BbFormFieldInput TValue="string" @bind-Value="_form.Code" Label="Kode *" Required="true" />
-          <BbFormFieldInput TValue="string" @bind-Value="_form.Name" Label="Nama *" Required="true" />
-          @if (_error is not null)
-          {
-              <BbAlert Variant="AlertVariant.Danger">
-                  <BbAlertDescription>@_error</BbAlertDescription>
-              </BbAlert>
-          }
-      </div>
-      <BbDialogFooter>
-          <BbButton Variant="ButtonVariant.Outline" Type="ButtonType.Button" OnClick="CloseDialog">Batal</BbButton>
-          <BbButton Type="ButtonType.Submit">Simpan</BbButton>
-      </BbDialogFooter>
-  </EditForm>
+- **Schema Definition**: Define Zod validation schemas matching backend OpenAPI contracts:
+  ```typescript
+  import { z } from 'zod';
+
+  export const createCompanySchema = z.object({
+    name: z.string().min(1, 'Nama perusahaan wajib diisi').max(200),
+    areaId: z.string().uuid('Area wajib dipilih'),
+    segmentId: z.string().uuid('Segmen wajib dipilih'),
+    picName: z.string().min(1, 'Nama PIC wajib diisi'),
+    picPhone: z.string().min(8, 'Nomor telepon minimal 8 digit'),
+    estimatedGasDemand: z.number().positive('Perkiraan kebutuhan gas harus lebih dari 0'),
+  });
+
+  export type CreateCompanyFormValues = z.infer<typeof createCompanySchema>;
   ```
-- **Form Model Classes**: Define nested `sealed class FormModel` inside `@code` blocks with DataAnnotation attributes:
-  ```csharp
-  private sealed class FormModel
-  {
-      [Required(ErrorMessage = "Kode wajib diisi")]
-      [StringLength(20, ErrorMessage = "Kode maksimal 20 karakter")]
-      public string Code { get; set; } = "";
 
-      [Required(ErrorMessage = "Nama wajib diisi")]
-      [StringLength(100, ErrorMessage = "Nama maksimal 100 karakter")]
-      public string Name { get; set; } = "";
+- **Standard Form Hook Setup**:
+  ```tsx
+  import { useForm } from '@tanstack/react-form';
+  import { zodValidator } from '@tanstack/zod-form-adapter';
+  import { toast } from 'sonner';
+  import { $api } from '@/api/client';
+  import { Button } from '@/components/ui/button';
+  import { Input } from '@/components/ui/input';
+  import { Label } from '@/components/ui/label';
+
+  export function CreateCompanyDialog({ open, onOpenChange, onSuccess }: Props) {
+    const createMutation = $api.useMutation('post', '/api/companies');
+
+    const form = useForm({
+      defaultValues: {
+        name: '',
+        areaId: '',
+        segmentId: '',
+        picName: '',
+        picPhone: '',
+        estimatedGasDemand: 0,
+      } as CreateCompanyFormValues,
+      validatorAdapter: zodValidator(),
+      validators: {
+        onChange: createCompanySchema,
+      },
+      onSubmit: async ({ value }) => {
+        try {
+          await createMutation.mutateAsync({ body: value });
+          toast.success('Perusahaan berhasil ditambahkan', { description: value.name });
+          onSuccess();
+          onOpenChange(false);
+        } catch (error) {
+          toast.error('Gagal menambahkan perusahaan', {
+            description: (error as Error).message ?? 'Terjadi kesalahan pada server',
+          });
+        }
+      },
+    });
+
+    return (
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          form.handleSubmit();
+        }}
+        className="space-y-4"
+      >
+        <form.Field
+          name="name"
+          children={(field) => (
+            <div className="space-y-1">
+              <Label htmlFor={field.name}>
+                Nama Perusahaan <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id={field.name}
+                value={field.state.value}
+                onBlur={field.handleBlur}
+                onChange={(e) => field.handleChange(e.target.value)}
+                placeholder="PT Contoh Energi Nusantara"
+              />
+              {field.state.meta.errors.length > 0 && (
+                <p className="text-xs text-destructive">{field.state.meta.errors[0]}</p>
+              )}
+            </div>
+          )}
+        />
+
+        <div className="flex justify-end gap-2 pt-4">
+          <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
+            Batal
+          </Button>
+          <Button type="submit" disabled={createMutation.isPending}>
+            {createMutation.isPending ? 'Menyimpan...' : 'Simpan'}
+          </Button>
+        </div>
+      </form>
+    );
   }
   ```
+
+- **Dynamic Field Arrays (e.g. Survey Equipment)**: Use TanStack Form field array helpers (`field.pushValue`, `field.removeValue`) to manage repeating tabular rows cleanly.
 
 ---
 
 ## 4. Modal Dialogs vs. Inline Table Row Editing
 
-- **Avoid Inline Table Editing**: Do not squeeze form inputs into narrow data table cells (`BbTableCell`). Squeezing multiple inputs into table cells causes horizontal squishing, truncated placeholders (`Nama peralat...`), and action button collisions on narrow viewports.
-- **Use Dedicated Dialog Modals (`<BbDialog>`)**:
-  - Render data tables as clean read-only display rows with compact action icons (`pencil` edit, `trash-2` delete).
-  - Open a spacious `<BbDialog>` modal dialog for creating or editing row items.
+- **Avoid Inline Table Editing**: Do not squeeze text inputs and buttons directly into narrow data table cells. Squeezing multiple inputs into table rows causes severe horizontal squishing, truncated placeholders, and UI breakage on narrow screens.
+- **Use Dedicated Dialog Modals (`<Dialog>`)**:
+  - Render data tables as clean read-only display rows with compact action buttons (`Pencil` edit, `Trash2` delete).
+  - Open a dedicated `<Dialog>` or `<Sheet>` for creating or editing row items.
 
 ---
 
 ## 5. Metric Summaries & Calculated Totals
 
-- **Single Prominent Display Card**: Derived calculations and calculated totals (e.g. `Jumlah Kebutuhan Energi`) MUST be rendered in a single prominent metric card near the source dataset (e.g. right below the equipment table).
+- **Single Prominent Display Card**: Derived calculations and calculated totals (e.g. `Jumlah Kebutuhan Energi`) MUST be computed with `useMemo` from form state and rendered in a prominent metric card near the source dataset (e.g. right below the equipment table).
 - **No Duplication**: Calculated summary metrics MUST NOT be duplicated across multiple section cards or rendered as editable form input fields.
 
 ---
 
 ## 6. Toast Notification Feedback
 
-- **Inject ToastService**: Always inject `@inject ToastService ToastService` in form components.
-- **Success & Error Feedback**: Upon successful form submission, trigger a success toast (e.g. `ToastService.Success("Formulir berhasil disimpan.", "Tersimpan");`). On error or failure, trigger an error toast (e.g. `ToastService.Error(result.Error ?? "Gagal menyimpan formulir.", "Gagal");`).
-
+- **Toast System**: Use `sonner` (`toast.success`, `toast.error`, `toast.info`).
+- **Success Feedback**: Upon successful form submission, show `toast.success("Perusahaan berhasil disimpan.")`.
+- **Error Feedback**: On validation or mutation failure, show `toast.error("Gagal menyimpan data.", { description: err.message })`.

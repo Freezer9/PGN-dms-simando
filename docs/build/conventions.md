@@ -15,9 +15,8 @@
 
 ## Package management
 
-Central package management only. Add/bump packages in
-`Directory.Packages.props` (`PackageVersion`); `.csproj` files carry
-`PackageReference` with no version attribute.
+- **Backend (.NET):** Central package management only. Add/bump packages in `Directory.Packages.props` (`PackageVersion`); `.csproj` files carry `PackageReference` with no version attribute.
+- **Frontend (Node/Bun):** Prefer **Bun** (or `pnpm` if bun is not suitable) over `npm`/`npx`. Use `bun install`, `bun add <pkg>`, and `bunx <pkg>` instead of `npx <pkg>`. Commit `bun.lock`. Never use `npm`.
 
 ## Licensing
 
@@ -46,12 +45,12 @@ To keep data transfer objects and read projections intent-revealing and DDD-alig
 | Role | Suffix / Pattern | Examples | Description |
 | :--- | :--- | :--- | :--- |
 | **Top-Level Payloads** | **`Dto`** | `ApproverDashboardDto`, `GasDemandReportDto`, `SurveyProductivityReportDto` | Container objects returned as top-level responses by Application services (`IDashboardService`, `IReportsService`). |
-| **Grid / Collection Rows** | **`Item`** or **`Row`** | `PendingApprovalItem`, `StuckTaskItem`, `CompanyListItem`, `SurveyProductivityRow` | Line items inside collection properties (e.g., `BbDataTable TData="PendingApprovalItem"`). Signals that the type is a single line item, not an aggregate response container. |
+| **Grid / Collection Rows** | **`Item`** or **`Row`** | `PendingApprovalItem`, `StuckTaskItem`, `CompanyListItem`, `SurveyProductivityRow` | Line items inside collection properties (consumed by `@tanstack/react-table`). Signals that the type is a single line item, not an aggregate response container. |
 | **Read Projections & Views** | **`Detail`** or **`Summary`** | `CompanyDetail`, `SurveyDetail`, `PlottingDetail`, `ContactSummary` | Aggregated read models or compact projections for record views and cards. |
-| **Command / Query Inputs** | **`Request`** or **`Filter`** | `CreateCompanyRequest`, `CompanyListFilter` | Inbound payload parameters sent from forms and UI interactions. |
+| **Command / Query Inputs** | **`Request`** or **`Filter`** | `CreateCompanyRequest`, `CompanyListFilter` | Inbound payload parameters sent from forms and API requests. |
 | **Operation Outcomes** | **`Result`** | `StageEditResult`, `SubmitResult`, `WorkflowActResult` | Result objects carrying status, validation error messages, or outcome payloads. |
 
-**Rule for Blazor Pages:** When binding table components (`BbDataTable TData="..."`), use the collection line item type (e.g., `PendingApprovalItem` or `SurveyProductivityRow`) rather than assuming a `*Dto` suffix.
+**Rule for Frontend Tables & Forms:** When typing TanStack Table rows or TanStack Form schemas, use the generated OpenAPI types corresponding to these DTOs (`schema.d.ts`), maintaining consistent nomenclature across both tiers.
 
 ## Git commit messages
 
@@ -68,26 +67,13 @@ business rule, a rejected alternative and why. Never narrate implementation
 or debugging history ("this used to X, then broke when Y, so now Z") — that
 belongs in a doc or task log, not living in the file. If the
 rationale is more than a few lines or applies to more than one file, it
-belongs in `docs/`, with the code carrying a one-line pointer to it (see
-[docs/build/web-conventions.md](web-conventions.md) and its use in
-`AccountController.cs` for the pattern).
+belongs in `docs/`, with the code carrying a one-line pointer to it.
 
-## BlazorBlueprint components, OKLCH theming, MCP usage
+## Frontend UI Components (shadcn/ui), Tailwind CSS v4, Lucide Icons, and mapcn
 
-- Always use official `BlazorBlueprint` components (`BbCard`,
-  `BbCardHeader`, `BbCardTitle`, `BbCardDescription`, `BbCardContent`,
-  `BbCardFooter`, `BbEmpty`, `BbAlert`, `BbSidebarHeaderContent`,
-  `BbSidebarHeaderInfo`, `BbSidebarMenuChevron`, etc.) rather than raw
-  unstyled HTML (`<h3>`, raw `<div>` flex wrappers, or raw `<LucideIcon>`
-  chevrons) when building UI screens.
-- **Consult the MCP tool server first:** before building or refactoring UI
-  components, query the registered `blazorblueprint` MCP tool server
-  (`get_component`, `get_setup`, `search_components`, `validate_icon`) to
-  verify required sub-components, parameter names, valid Lucide icon names,
-  slot structures, and icon-mode behaviors.
-- **OKLCH theme system:** theme color tokens belong in
-  `wwwroot/styles/theme.css` using pure `oklch(...)` color space for light
-  (`:root`) and dark (`.dark`) modes (no `data-base-color` HTML attributes
-  required), preserving PGN Corporate Blue
-  (`--primary: oklch(0.352 0.165 259.7)`).
-- **Tailwind CSS build artifact:** `wwwroot/app.css` is automatically generated from Tailwind on build by `scripts/js.sh` and is ignored by git. Never hand-edit `wwwroot/app.css`.
+- **UI Components:** Use official `shadcn/ui` components (Card, Button, Dialog, DropdownMenu, Table, Input, Select, etc.) rather than raw unstyled HTML elements.
+- **Tailwind CSS v4 & OKLCH Theming:** Global theme variables reside in CSS using OKLCH color space for light and dark modes, preserving PGN Corporate Blue (`--primary: oklch(0.352 0.165 259.7)`).
+- **Icons:** Use `lucide-react` for all application iconography.
+- **Geospatial Maps:** Use `mapcn` (`@mapcn/map`, powered by MapLibre GL) installed via `bunx --bun shadcn@latest add @mapcn/map` for map visualization, pin-drop coordinate selection, and boundary views.
+- **Forms & Validation:** Use `@tanstack/react-form` combined with `zod` for type-safe validation schemas matching backend contracts.
+- **API Fetching & Caching:** Use `$api.useQuery` and `$api.useMutation` from `openapi-react-query` generated from `/openapi/v1.json`.

@@ -19,10 +19,10 @@ for what that leaves to test.
 
 | Layer | Scope | Tooling | Where |
 |---|---|---|---|
-| **Unit** | Workflow transitions, permission resolution, `Nomor` rendering | xUnit, no I/O | `Simando.Domain.Tests` |
-| **Integration** | Query filters, RLS, sequence allocation, document generation | xUnit + **Testcontainers** (real PostGIS + MinIO) | `Simando.Integration.Tests` |
-| **Component** | Blazor forms, repeating rows, permission gates | bUnit | `Simando.Web.Tests` |
-| **Smoke** | Sign-in → create → survey → submit → approve → issue | Playwright, one happy path | `Simando.E2E.Tests` |
+| **Domain Unit** | Workflow transitions, permission resolution, `Nomor` rendering | xUnit, no I/O | `Simando.Domain.Tests` |
+| **Backend Integration** | Controllers, Query filters, RLS, sequence allocation, document generation | xUnit + **Testcontainers** (real PostGIS + S3) + `WebApplicationFactory<Program>` | `Simando.Integration.Tests` |
+| **Frontend Unit & Component** | TanStack Form schemas with Zod, custom hooks, TanStack Table filters | Vitest + React Testing Library | `frontend.tests` / `frontend/src/**/*.test.tsx` |
+| **Smoke / E2E** | Sign-in → create → survey → submit → approve → issue | Playwright, full sales pipeline happy path | `Simando.E2E.Tests` |
 
 The domain project has **no EF Core dependency**
 ([architecture](architecture.md#solution-structure)) precisely so layer 1
