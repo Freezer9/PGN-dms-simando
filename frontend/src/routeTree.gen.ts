@@ -16,9 +16,23 @@ import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as AuthIndexRouteImport } from './routes/_auth/index'
 import { Route as AuthMapRouteImport } from './routes/_auth/map'
 import { Route as AuthTasksRouteImport } from './routes/_auth/tasks'
+import { Route as AuthAdminBreakGlassRouteImport } from './routes/_auth/admin/break-glass'
+import { Route as AuthAdminStuckStepsRouteImport } from './routes/_auth/admin/stuck-steps'
+import { Route as AuthAdminUsersRouteImport } from './routes/_auth/admin/users'
 import { Route as AuthDirectoryIndexRouteImport } from './routes/_auth/directory/index'
 import { Route as AuthDirectoryCompanyIdRouteImport } from './routes/_auth/directory/$companyId'
 import { Route as AuthDirectoryNewRouteImport } from './routes/_auth/directory/new'
+import { Route as AuthMasterCountriesRouteImport } from './routes/_auth/master/countries'
+import { Route as AuthMasterFuelTypesRouteImport } from './routes/_auth/master/fuel-types'
+import { Route as AuthMasterIndustryTypesRouteImport } from './routes/_auth/master/industry-types'
+import { Route as AuthMasterMeterSizesRouteImport } from './routes/_auth/master/meter-sizes'
+import { Route as AuthMasterMrsSpecsRouteImport } from './routes/_auth/master/mrs-specs'
+import { Route as AuthMasterOrganisationRouteImport } from './routes/_auth/master/organisation'
+import { Route as AuthMasterReasonCategoriesRouteImport } from './routes/_auth/master/reason-categories'
+import { Route as AuthMasterReferenceDocumentsRouteImport } from './routes/_auth/master/reference-documents'
+import { Route as AuthMasterSegmentsRouteImport } from './routes/_auth/master/segments'
+import { Route as AuthMasterUnitsRouteImport } from './routes/_auth/master/units'
+import { Route as AuthMasterUsersRouteImport } from './routes/_auth/master/users'
 import { Route as AuthReportsIndexRouteImport } from './routes/_auth/reports/index'
 import { Route as AuthReportsAgeingRouteImport } from './routes/_auth/reports/ageing'
 import { Route as AuthReportsFunnelRouteImport } from './routes/_auth/reports/funnel'
@@ -63,6 +77,21 @@ const AuthTasksRoute = AuthTasksRouteImport.update({
   path: '/tasks',
   getParentRoute: () => AuthRoute,
 } as any)
+const AuthAdminBreakGlassRoute = AuthAdminBreakGlassRouteImport.update({
+  id: '/admin/break-glass',
+  path: '/admin/break-glass',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthAdminStuckStepsRoute = AuthAdminStuckStepsRouteImport.update({
+  id: '/admin/stuck-steps',
+  path: '/admin/stuck-steps',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthAdminUsersRoute = AuthAdminUsersRouteImport.update({
+  id: '/admin/users',
+  path: '/admin/users',
+  getParentRoute: () => AuthRoute,
+} as any)
 const AuthDirectoryIndexRoute = AuthDirectoryIndexRouteImport.update({
   id: '/directory/',
   path: '/directory/',
@@ -76,6 +105,63 @@ const AuthDirectoryCompanyIdRoute = AuthDirectoryCompanyIdRouteImport.update({
 const AuthDirectoryNewRoute = AuthDirectoryNewRouteImport.update({
   id: '/directory/new',
   path: '/directory/new',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthMasterCountriesRoute = AuthMasterCountriesRouteImport.update({
+  id: '/master/countries',
+  path: '/master/countries',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthMasterFuelTypesRoute = AuthMasterFuelTypesRouteImport.update({
+  id: '/master/fuel-types',
+  path: '/master/fuel-types',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthMasterIndustryTypesRoute = AuthMasterIndustryTypesRouteImport.update({
+  id: '/master/industry-types',
+  path: '/master/industry-types',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthMasterMeterSizesRoute = AuthMasterMeterSizesRouteImport.update({
+  id: '/master/meter-sizes',
+  path: '/master/meter-sizes',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthMasterMrsSpecsRoute = AuthMasterMrsSpecsRouteImport.update({
+  id: '/master/mrs-specs',
+  path: '/master/mrs-specs',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthMasterOrganisationRoute = AuthMasterOrganisationRouteImport.update({
+  id: '/master/organisation',
+  path: '/master/organisation',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthMasterReasonCategoriesRoute =
+  AuthMasterReasonCategoriesRouteImport.update({
+    id: '/master/reason-categories',
+    path: '/master/reason-categories',
+    getParentRoute: () => AuthRoute,
+  } as any)
+const AuthMasterReferenceDocumentsRoute =
+  AuthMasterReferenceDocumentsRouteImport.update({
+    id: '/master/reference-documents',
+    path: '/master/reference-documents',
+    getParentRoute: () => AuthRoute,
+  } as any)
+const AuthMasterSegmentsRoute = AuthMasterSegmentsRouteImport.update({
+  id: '/master/segments',
+  path: '/master/segments',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthMasterUnitsRoute = AuthMasterUnitsRouteImport.update({
+  id: '/master/units',
+  path: '/master/units',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthMasterUsersRoute = AuthMasterUsersRouteImport.update({
+  id: '/master/users',
+  path: '/master/users',
   getParentRoute: () => AuthRoute,
 } as any)
 const AuthReportsIndexRoute = AuthReportsIndexRouteImport.update({
@@ -132,8 +218,22 @@ export interface FileRoutesByFullPath {
   '/sign-in': typeof SignInRoute
   '/map': typeof AuthMapRoute
   '/tasks': typeof AuthTasksRouteWithChildren
+  '/admin/break-glass': typeof AuthAdminBreakGlassRoute
+  '/admin/stuck-steps': typeof AuthAdminStuckStepsRoute
+  '/admin/users': typeof AuthAdminUsersRoute
   '/directory/$companyId': typeof AuthDirectoryCompanyIdRoute
   '/directory/new': typeof AuthDirectoryNewRoute
+  '/master/countries': typeof AuthMasterCountriesRoute
+  '/master/fuel-types': typeof AuthMasterFuelTypesRoute
+  '/master/industry-types': typeof AuthMasterIndustryTypesRoute
+  '/master/meter-sizes': typeof AuthMasterMeterSizesRoute
+  '/master/mrs-specs': typeof AuthMasterMrsSpecsRoute
+  '/master/organisation': typeof AuthMasterOrganisationRoute
+  '/master/reason-categories': typeof AuthMasterReasonCategoriesRoute
+  '/master/reference-documents': typeof AuthMasterReferenceDocumentsRoute
+  '/master/segments': typeof AuthMasterSegmentsRoute
+  '/master/units': typeof AuthMasterUnitsRoute
+  '/master/users': typeof AuthMasterUsersRoute
   '/reports/ageing': typeof AuthReportsAgeingRoute
   '/reports/funnel': typeof AuthReportsFunnelRoute
   '/reports/gas-demand': typeof AuthReportsGasDemandRoute
@@ -151,8 +251,22 @@ export interface FileRoutesByTo {
   '/sign-in': typeof SignInRoute
   '/map': typeof AuthMapRoute
   '/': typeof AuthIndexRoute
+  '/admin/break-glass': typeof AuthAdminBreakGlassRoute
+  '/admin/stuck-steps': typeof AuthAdminStuckStepsRoute
+  '/admin/users': typeof AuthAdminUsersRoute
   '/directory/$companyId': typeof AuthDirectoryCompanyIdRoute
   '/directory/new': typeof AuthDirectoryNewRoute
+  '/master/countries': typeof AuthMasterCountriesRoute
+  '/master/fuel-types': typeof AuthMasterFuelTypesRoute
+  '/master/industry-types': typeof AuthMasterIndustryTypesRoute
+  '/master/meter-sizes': typeof AuthMasterMeterSizesRoute
+  '/master/mrs-specs': typeof AuthMasterMrsSpecsRoute
+  '/master/organisation': typeof AuthMasterOrganisationRoute
+  '/master/reason-categories': typeof AuthMasterReasonCategoriesRoute
+  '/master/reference-documents': typeof AuthMasterReferenceDocumentsRoute
+  '/master/segments': typeof AuthMasterSegmentsRoute
+  '/master/units': typeof AuthMasterUnitsRoute
+  '/master/users': typeof AuthMasterUsersRoute
   '/reports/ageing': typeof AuthReportsAgeingRoute
   '/reports/funnel': typeof AuthReportsFunnelRoute
   '/reports/gas-demand': typeof AuthReportsGasDemandRoute
@@ -173,8 +287,22 @@ export interface FileRoutesById {
   '/_auth/map': typeof AuthMapRoute
   '/_auth/tasks': typeof AuthTasksRouteWithChildren
   '/_auth/': typeof AuthIndexRoute
+  '/_auth/admin/break-glass': typeof AuthAdminBreakGlassRoute
+  '/_auth/admin/stuck-steps': typeof AuthAdminStuckStepsRoute
+  '/_auth/admin/users': typeof AuthAdminUsersRoute
   '/_auth/directory/$companyId': typeof AuthDirectoryCompanyIdRoute
   '/_auth/directory/new': typeof AuthDirectoryNewRoute
+  '/_auth/master/countries': typeof AuthMasterCountriesRoute
+  '/_auth/master/fuel-types': typeof AuthMasterFuelTypesRoute
+  '/_auth/master/industry-types': typeof AuthMasterIndustryTypesRoute
+  '/_auth/master/meter-sizes': typeof AuthMasterMeterSizesRoute
+  '/_auth/master/mrs-specs': typeof AuthMasterMrsSpecsRoute
+  '/_auth/master/organisation': typeof AuthMasterOrganisationRoute
+  '/_auth/master/reason-categories': typeof AuthMasterReasonCategoriesRoute
+  '/_auth/master/reference-documents': typeof AuthMasterReferenceDocumentsRoute
+  '/_auth/master/segments': typeof AuthMasterSegmentsRoute
+  '/_auth/master/units': typeof AuthMasterUnitsRoute
+  '/_auth/master/users': typeof AuthMasterUsersRoute
   '/_auth/reports/ageing': typeof AuthReportsAgeingRoute
   '/_auth/reports/funnel': typeof AuthReportsFunnelRoute
   '/_auth/reports/gas-demand': typeof AuthReportsGasDemandRoute
@@ -195,8 +323,22 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/map'
     | '/tasks'
+    | '/admin/break-glass'
+    | '/admin/stuck-steps'
+    | '/admin/users'
     | '/directory/$companyId'
     | '/directory/new'
+    | '/master/countries'
+    | '/master/fuel-types'
+    | '/master/industry-types'
+    | '/master/meter-sizes'
+    | '/master/mrs-specs'
+    | '/master/organisation'
+    | '/master/reason-categories'
+    | '/master/reference-documents'
+    | '/master/segments'
+    | '/master/units'
+    | '/master/users'
     | '/reports/ageing'
     | '/reports/funnel'
     | '/reports/gas-demand'
@@ -214,8 +356,22 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/map'
     | '/'
+    | '/admin/break-glass'
+    | '/admin/stuck-steps'
+    | '/admin/users'
     | '/directory/$companyId'
     | '/directory/new'
+    | '/master/countries'
+    | '/master/fuel-types'
+    | '/master/industry-types'
+    | '/master/meter-sizes'
+    | '/master/mrs-specs'
+    | '/master/organisation'
+    | '/master/reason-categories'
+    | '/master/reference-documents'
+    | '/master/segments'
+    | '/master/units'
+    | '/master/users'
     | '/reports/ageing'
     | '/reports/funnel'
     | '/reports/gas-demand'
@@ -235,8 +391,22 @@ export interface FileRouteTypes {
     | '/_auth/map'
     | '/_auth/tasks'
     | '/_auth/'
+    | '/_auth/admin/break-glass'
+    | '/_auth/admin/stuck-steps'
+    | '/_auth/admin/users'
     | '/_auth/directory/$companyId'
     | '/_auth/directory/new'
+    | '/_auth/master/countries'
+    | '/_auth/master/fuel-types'
+    | '/_auth/master/industry-types'
+    | '/_auth/master/meter-sizes'
+    | '/_auth/master/mrs-specs'
+    | '/_auth/master/organisation'
+    | '/_auth/master/reason-categories'
+    | '/_auth/master/reference-documents'
+    | '/_auth/master/segments'
+    | '/_auth/master/units'
+    | '/_auth/master/users'
     | '/_auth/reports/ageing'
     | '/_auth/reports/funnel'
     | '/_auth/reports/gas-demand'
@@ -307,6 +477,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthTasksRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_auth/admin/break-glass': {
+      id: '/_auth/admin/break-glass'
+      path: '/admin/break-glass'
+      fullPath: '/admin/break-glass'
+      preLoaderRoute: typeof AuthAdminBreakGlassRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/admin/stuck-steps': {
+      id: '/_auth/admin/stuck-steps'
+      path: '/admin/stuck-steps'
+      fullPath: '/admin/stuck-steps'
+      preLoaderRoute: typeof AuthAdminStuckStepsRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/admin/users': {
+      id: '/_auth/admin/users'
+      path: '/admin/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AuthAdminUsersRouteImport
+      parentRoute: typeof AuthRoute
+    }
     '/_auth/directory/': {
       id: '/_auth/directory/'
       path: '/directory'
@@ -326,6 +517,83 @@ declare module '@tanstack/react-router' {
       path: '/directory/new'
       fullPath: '/directory/new'
       preLoaderRoute: typeof AuthDirectoryNewRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/master/countries': {
+      id: '/_auth/master/countries'
+      path: '/master/countries'
+      fullPath: '/master/countries'
+      preLoaderRoute: typeof AuthMasterCountriesRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/master/fuel-types': {
+      id: '/_auth/master/fuel-types'
+      path: '/master/fuel-types'
+      fullPath: '/master/fuel-types'
+      preLoaderRoute: typeof AuthMasterFuelTypesRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/master/industry-types': {
+      id: '/_auth/master/industry-types'
+      path: '/master/industry-types'
+      fullPath: '/master/industry-types'
+      preLoaderRoute: typeof AuthMasterIndustryTypesRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/master/meter-sizes': {
+      id: '/_auth/master/meter-sizes'
+      path: '/master/meter-sizes'
+      fullPath: '/master/meter-sizes'
+      preLoaderRoute: typeof AuthMasterMeterSizesRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/master/mrs-specs': {
+      id: '/_auth/master/mrs-specs'
+      path: '/master/mrs-specs'
+      fullPath: '/master/mrs-specs'
+      preLoaderRoute: typeof AuthMasterMrsSpecsRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/master/organisation': {
+      id: '/_auth/master/organisation'
+      path: '/master/organisation'
+      fullPath: '/master/organisation'
+      preLoaderRoute: typeof AuthMasterOrganisationRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/master/reason-categories': {
+      id: '/_auth/master/reason-categories'
+      path: '/master/reason-categories'
+      fullPath: '/master/reason-categories'
+      preLoaderRoute: typeof AuthMasterReasonCategoriesRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/master/reference-documents': {
+      id: '/_auth/master/reference-documents'
+      path: '/master/reference-documents'
+      fullPath: '/master/reference-documents'
+      preLoaderRoute: typeof AuthMasterReferenceDocumentsRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/master/segments': {
+      id: '/_auth/master/segments'
+      path: '/master/segments'
+      fullPath: '/master/segments'
+      preLoaderRoute: typeof AuthMasterSegmentsRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/master/units': {
+      id: '/_auth/master/units'
+      path: '/master/units'
+      fullPath: '/master/units'
+      preLoaderRoute: typeof AuthMasterUnitsRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/master/users': {
+      id: '/_auth/master/users'
+      path: '/master/users'
+      fullPath: '/master/users'
+      preLoaderRoute: typeof AuthMasterUsersRouteImport
       parentRoute: typeof AuthRoute
     }
     '/_auth/reports/': {
@@ -414,8 +682,22 @@ interface AuthRouteChildren {
   AuthMapRoute: typeof AuthMapRoute
   AuthTasksRoute: typeof AuthTasksRouteWithChildren
   AuthIndexRoute: typeof AuthIndexRoute
+  AuthAdminBreakGlassRoute: typeof AuthAdminBreakGlassRoute
+  AuthAdminStuckStepsRoute: typeof AuthAdminStuckStepsRoute
+  AuthAdminUsersRoute: typeof AuthAdminUsersRoute
   AuthDirectoryCompanyIdRoute: typeof AuthDirectoryCompanyIdRoute
   AuthDirectoryNewRoute: typeof AuthDirectoryNewRoute
+  AuthMasterCountriesRoute: typeof AuthMasterCountriesRoute
+  AuthMasterFuelTypesRoute: typeof AuthMasterFuelTypesRoute
+  AuthMasterIndustryTypesRoute: typeof AuthMasterIndustryTypesRoute
+  AuthMasterMeterSizesRoute: typeof AuthMasterMeterSizesRoute
+  AuthMasterMrsSpecsRoute: typeof AuthMasterMrsSpecsRoute
+  AuthMasterOrganisationRoute: typeof AuthMasterOrganisationRoute
+  AuthMasterReasonCategoriesRoute: typeof AuthMasterReasonCategoriesRoute
+  AuthMasterReferenceDocumentsRoute: typeof AuthMasterReferenceDocumentsRoute
+  AuthMasterSegmentsRoute: typeof AuthMasterSegmentsRoute
+  AuthMasterUnitsRoute: typeof AuthMasterUnitsRoute
+  AuthMasterUsersRoute: typeof AuthMasterUsersRoute
   AuthReportsAgeingRoute: typeof AuthReportsAgeingRoute
   AuthReportsFunnelRoute: typeof AuthReportsFunnelRoute
   AuthReportsGasDemandRoute: typeof AuthReportsGasDemandRoute
@@ -429,8 +711,22 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthMapRoute: AuthMapRoute,
   AuthTasksRoute: AuthTasksRouteWithChildren,
   AuthIndexRoute: AuthIndexRoute,
+  AuthAdminBreakGlassRoute: AuthAdminBreakGlassRoute,
+  AuthAdminStuckStepsRoute: AuthAdminStuckStepsRoute,
+  AuthAdminUsersRoute: AuthAdminUsersRoute,
   AuthDirectoryCompanyIdRoute: AuthDirectoryCompanyIdRoute,
   AuthDirectoryNewRoute: AuthDirectoryNewRoute,
+  AuthMasterCountriesRoute: AuthMasterCountriesRoute,
+  AuthMasterFuelTypesRoute: AuthMasterFuelTypesRoute,
+  AuthMasterIndustryTypesRoute: AuthMasterIndustryTypesRoute,
+  AuthMasterMeterSizesRoute: AuthMasterMeterSizesRoute,
+  AuthMasterMrsSpecsRoute: AuthMasterMrsSpecsRoute,
+  AuthMasterOrganisationRoute: AuthMasterOrganisationRoute,
+  AuthMasterReasonCategoriesRoute: AuthMasterReasonCategoriesRoute,
+  AuthMasterReferenceDocumentsRoute: AuthMasterReferenceDocumentsRoute,
+  AuthMasterSegmentsRoute: AuthMasterSegmentsRoute,
+  AuthMasterUnitsRoute: AuthMasterUnitsRoute,
+  AuthMasterUsersRoute: AuthMasterUsersRoute,
   AuthReportsAgeingRoute: AuthReportsAgeingRoute,
   AuthReportsFunnelRoute: AuthReportsFunnelRoute,
   AuthReportsGasDemandRoute: AuthReportsGasDemandRoute,

@@ -147,6 +147,28 @@ public class OpenApiSpecTests : IAsyncLifetime
         paths.TryGetProperty("/api/reports/export/nol-outcomes", out _).ShouldBeTrue();
         paths.TryGetProperty("/api/reports/export/ageing", out _).ShouldBeTrue();
         paths.TryGetProperty("/api/reports/export/directory", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/admin/users", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/admin/users/{id}/roles", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/admin/users/{id}/roles/{assignmentId}", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/admin/users/{id}/reset-password", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/admin/users/{id}/status", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/admin/organisation", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/admin/organisation/regions", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/admin/organisation/regions/{id}", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/admin/organisation/areas", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/admin/organisation/areas/{id}", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/admin/master/industry-types", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/admin/master/segments", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/admin/master/fuel-types", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/admin/master/units", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/admin/master/meter-sizes", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/admin/master/mrs-specs", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/admin/master/reason-categories", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/admin/master/reference-documents", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/admin/break-glass/logs", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/admin/break-glass/request", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/admin/stuck-steps", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/admin/stuck-steps/reassign", out _).ShouldBeTrue();
     }
 
     [Fact(DisplayName = "Scalar interactive docs /scalar/v1 returns 200 OK HTML")]

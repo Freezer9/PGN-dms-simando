@@ -181,4 +181,63 @@ export type NolOutcomesReportDto =
 export type NolOutcomeReasonRow = components["schemas"]["NolOutcomeReasonRow"];
 export type AgeingRow = components["schemas"]["AgeingRow"];
 
+// Epic 9: Master Data & System Administration
+export type UserListItemDto = components["schemas"]["UserListItemDto"];
+export type RoleAssignmentDto = components["schemas"]["RoleAssignmentDto"];
+export type CreateUserRequest = components["schemas"]["CreateUserRequest"];
+export type CreateUserResponse = components["schemas"]["CreateUserResponse"];
+export type AddRoleAssignmentRequest =
+	components["schemas"]["AddRoleAssignmentRequest"];
+export type ResetPasswordResponse =
+	components["schemas"]["ResetPasswordResponse"];
+export type SetUserStatusRequest =
+	components["schemas"]["SetUserStatusRequest"];
+
+export type RegionWithAreasDto = components["schemas"]["RegionWithAreasDto"];
+export type AreaItemDto = components["schemas"]["AreaItemDto"];
+export type CreateRegionRequest = components["schemas"]["CreateRegionRequest"];
+export type UpdateRegionRequest = components["schemas"]["UpdateRegionRequest"];
+export type CreateAreaRequest = components["schemas"]["CreateAreaRequest"];
+export type UpdateAreaRequest = components["schemas"]["UpdateAreaRequest"];
+
+export type ReasonCategoryDto = components["schemas"]["ReasonCategoryDto"];
+export type CreateIndustryTypeRequest =
+	components["schemas"]["CreateIndustryTypeRequest"];
+export type UpdateIndustryTypeRequest =
+	components["schemas"]["UpdateIndustryTypeRequest"];
+export type CreateSegmentRequest =
+	components["schemas"]["CreateSegmentRequest"];
+export type UpdateSegmentRequest =
+	components["schemas"]["UpdateSegmentRequest"];
+export type CreateFuelTypeRequest =
+	components["schemas"]["CreateFuelTypeRequest"];
+export type UpdateFuelTypeRequest =
+	components["schemas"]["UpdateFuelTypeRequest"];
+export type CreateUnitRequest = components["schemas"]["CreateUnitRequest"];
+export type UpdateUnitRequest = components["schemas"]["UpdateUnitRequest"];
+export type CreateMeterSizeRequest =
+	components["schemas"]["CreateMeterSizeRequest"];
+export type UpdateMeterSizeRequest =
+	components["schemas"]["UpdateMeterSizeRequest"];
+export type CreateMrsSpecRequest =
+	components["schemas"]["CreateMrsSpecRequest"];
+export type UpdateMrsSpecRequest =
+	components["schemas"]["UpdateMrsSpecRequest"];
+export type CreateReasonCategoryRequest =
+	components["schemas"]["CreateReasonCategoryRequest"];
+export type UpdateReasonCategoryRequest =
+	components["schemas"]["UpdateReasonCategoryRequest"];
+export type CreateReferenceDocumentRequest =
+	components["schemas"]["CreateReferenceDocumentRequest"];
+export type UpdateReferenceDocumentRequest =
+	components["schemas"]["UpdateReferenceDocumentRequest"];
+
+export type BreakGlassAccessDto = components["schemas"]["BreakGlassAccessDto"];
+export type PagedResultOfBreakGlassAccessDto =
+	components["schemas"]["PagedResultOfBreakGlassAccessDto"];
+export type BreakGlassRequest = components["schemas"]["BreakGlassRequest"];
+export type StuckStepItemDto = components["schemas"]["StuckStepItemDto"];
+export type AdminReassignStepRequest =
+	components["schemas"]["AdminReassignStepRequest"];
+
 export type Paths = paths;

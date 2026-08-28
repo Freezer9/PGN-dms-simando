@@ -224,4 +224,18 @@ public sealed class MasterDataController(IDbContextFactory<SimandoDbContext> dbC
 
         return Ok(result);
     }
+
+    [HttpGet("reason-categories")]
+    [ProducesResponseType<IReadOnlyList<ReasonCategoryDto>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetReasonCategories(CancellationToken ct)
+    {
+        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
+        var items = await db.ReasonCategories
+            .AsNoTracking()
+            .OrderBy(r => r.Name)
+            .Select(r => new ReasonCategoryDto(r.Id, r.Name))
+            .ToListAsync(ct);
+
+        return Ok(items);
+    }
 }
