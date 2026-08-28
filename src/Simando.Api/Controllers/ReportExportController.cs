@@ -10,6 +10,7 @@ using Simando.Infrastructure.Persistence;
 namespace Simando.Api.Controllers;
 
 [ApiController]
+[Route("api/reports/export")]
 [Route("reports/export")]
 [Authorize]
 public sealed class ReportExportController(
@@ -20,19 +21,28 @@ public sealed class ReportExportController(
     private const string XlsxMimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
     [HttpGet("funnel")]
-    public async Task<IActionResult> ExportFunnel(CancellationToken ct)
+    [Produces(XlsxMimeType)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> ExportFunnel(
+        [FromQuery] Guid? areaId = null,
+        [FromQuery] Guid? regionId = null,
+        CancellationToken ct = default)
     {
         await using var db = await dbContextFactory.CreateDbContextAsync(ct);
         var permissions = await ResolvePermissionsAsync(db, ct);
         if (permissions is null) return Unauthorized();
 
-        var data = await reportsService.GetFunnelAsync(permissions, null, null, ct);
+        var data = await reportsService.GetFunnelAsync(permissions, areaId, regionId, ct);
         var bytes = excelExportService.ExportFunnelReport(data);
 
         return File(bytes, XlsxMimeType, $"Laporan_Corong_Penjualan_{DateTime.UtcNow:yyyyMMdd}.xlsx");
     }
 
     [HttpGet("gas-demand")]
+    [Produces(XlsxMimeType)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> ExportGasDemand(CancellationToken ct)
     {
         await using var db = await dbContextFactory.CreateDbContextAsync(ct);
@@ -46,19 +56,25 @@ public sealed class ReportExportController(
     }
 
     [HttpGet("survey-productivity")]
-    public async Task<IActionResult> ExportSurveyProductivity(CancellationToken ct)
+    [Produces(XlsxMimeType)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> ExportSurveyProductivity([FromQuery] int? year = null, CancellationToken ct = default)
     {
         await using var db = await dbContextFactory.CreateDbContextAsync(ct);
         var permissions = await ResolvePermissionsAsync(db, ct);
         if (permissions is null) return Unauthorized();
 
-        var data = await reportsService.GetSurveyProductivityAsync(permissions, null, ct);
+        var data = await reportsService.GetSurveyProductivityAsync(permissions, year, ct);
         var bytes = excelExportService.ExportSurveyProductivityReport(data);
 
         return File(bytes, XlsxMimeType, $"Laporan_Produktivitas_Survei_{DateTime.UtcNow:yyyyMMdd}.xlsx");
     }
 
     [HttpGet("nol-outcomes")]
+    [Produces(XlsxMimeType)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> ExportNolOutcomes(CancellationToken ct)
     {
         await using var db = await dbContextFactory.CreateDbContextAsync(ct);
@@ -71,7 +87,26 @@ public sealed class ReportExportController(
         return File(bytes, XlsxMimeType, $"Laporan_Hasil_NOL_RL_{DateTime.UtcNow:yyyyMMdd}.xlsx");
     }
 
+    [HttpGet("ageing")]
+    [Produces(XlsxMimeType)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> ExportAgeing(CancellationToken ct)
+    {
+        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
+        var permissions = await ResolvePermissionsAsync(db, ct);
+        if (permissions is null) return Unauthorized();
+
+        var data = await reportsService.GetAgeingAsync(permissions, ct);
+        var bytes = excelExportService.ExportAgeingReport(data);
+
+        return File(bytes, XlsxMimeType, $"Laporan_Penuaan_Workflow_{DateTime.UtcNow:yyyyMMdd}.xlsx");
+    }
+
     [HttpGet("directory")]
+    [Produces(XlsxMimeType)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> ExportDirectory([FromQuery] bool includePii = false, CancellationToken ct = default)
     {
         await using var db = await dbContextFactory.CreateDbContextAsync(ct);

@@ -19,6 +19,12 @@ import { Route as AuthTasksRouteImport } from './routes/_auth/tasks'
 import { Route as AuthDirectoryIndexRouteImport } from './routes/_auth/directory/index'
 import { Route as AuthDirectoryCompanyIdRouteImport } from './routes/_auth/directory/$companyId'
 import { Route as AuthDirectoryNewRouteImport } from './routes/_auth/directory/new'
+import { Route as AuthReportsIndexRouteImport } from './routes/_auth/reports/index'
+import { Route as AuthReportsAgeingRouteImport } from './routes/_auth/reports/ageing'
+import { Route as AuthReportsFunnelRouteImport } from './routes/_auth/reports/funnel'
+import { Route as AuthReportsGasDemandRouteImport } from './routes/_auth/reports/gas-demand'
+import { Route as AuthReportsNolOutcomesRouteImport } from './routes/_auth/reports/nol-outcomes'
+import { Route as AuthReportsSurveyProductivityRouteImport } from './routes/_auth/reports/survey-productivity'
 import { Route as AuthTasksIndexRouteImport } from './routes/_auth/tasks/index'
 import { Route as AuthTasksBlockedRouteImport } from './routes/_auth/tasks/blocked'
 import { Route as AuthTasksHistoryRouteImport } from './routes/_auth/tasks/history'
@@ -72,6 +78,37 @@ const AuthDirectoryNewRoute = AuthDirectoryNewRouteImport.update({
   path: '/directory/new',
   getParentRoute: () => AuthRoute,
 } as any)
+const AuthReportsIndexRoute = AuthReportsIndexRouteImport.update({
+  id: '/reports/',
+  path: '/reports/',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthReportsAgeingRoute = AuthReportsAgeingRouteImport.update({
+  id: '/reports/ageing',
+  path: '/reports/ageing',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthReportsFunnelRoute = AuthReportsFunnelRouteImport.update({
+  id: '/reports/funnel',
+  path: '/reports/funnel',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthReportsGasDemandRoute = AuthReportsGasDemandRouteImport.update({
+  id: '/reports/gas-demand',
+  path: '/reports/gas-demand',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthReportsNolOutcomesRoute = AuthReportsNolOutcomesRouteImport.update({
+  id: '/reports/nol-outcomes',
+  path: '/reports/nol-outcomes',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthReportsSurveyProductivityRoute =
+  AuthReportsSurveyProductivityRouteImport.update({
+    id: '/reports/survey-productivity',
+    path: '/reports/survey-productivity',
+    getParentRoute: () => AuthRoute,
+  } as any)
 const AuthTasksIndexRoute = AuthTasksIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -97,9 +134,15 @@ export interface FileRoutesByFullPath {
   '/tasks': typeof AuthTasksRouteWithChildren
   '/directory/$companyId': typeof AuthDirectoryCompanyIdRoute
   '/directory/new': typeof AuthDirectoryNewRoute
+  '/reports/ageing': typeof AuthReportsAgeingRoute
+  '/reports/funnel': typeof AuthReportsFunnelRoute
+  '/reports/gas-demand': typeof AuthReportsGasDemandRoute
+  '/reports/nol-outcomes': typeof AuthReportsNolOutcomesRoute
+  '/reports/survey-productivity': typeof AuthReportsSurveyProductivityRoute
   '/tasks/blocked': typeof AuthTasksBlockedRoute
   '/tasks/history': typeof AuthTasksHistoryRoute
   '/directory/': typeof AuthDirectoryIndexRoute
+  '/reports/': typeof AuthReportsIndexRoute
   '/tasks/': typeof AuthTasksIndexRoute
 }
 export interface FileRoutesByTo {
@@ -110,9 +153,15 @@ export interface FileRoutesByTo {
   '/': typeof AuthIndexRoute
   '/directory/$companyId': typeof AuthDirectoryCompanyIdRoute
   '/directory/new': typeof AuthDirectoryNewRoute
+  '/reports/ageing': typeof AuthReportsAgeingRoute
+  '/reports/funnel': typeof AuthReportsFunnelRoute
+  '/reports/gas-demand': typeof AuthReportsGasDemandRoute
+  '/reports/nol-outcomes': typeof AuthReportsNolOutcomesRoute
+  '/reports/survey-productivity': typeof AuthReportsSurveyProductivityRoute
   '/tasks/blocked': typeof AuthTasksBlockedRoute
   '/tasks/history': typeof AuthTasksHistoryRoute
   '/directory': typeof AuthDirectoryIndexRoute
+  '/reports': typeof AuthReportsIndexRoute
   '/tasks': typeof AuthTasksIndexRoute
 }
 export interface FileRoutesById {
@@ -126,9 +175,15 @@ export interface FileRoutesById {
   '/_auth/': typeof AuthIndexRoute
   '/_auth/directory/$companyId': typeof AuthDirectoryCompanyIdRoute
   '/_auth/directory/new': typeof AuthDirectoryNewRoute
+  '/_auth/reports/ageing': typeof AuthReportsAgeingRoute
+  '/_auth/reports/funnel': typeof AuthReportsFunnelRoute
+  '/_auth/reports/gas-demand': typeof AuthReportsGasDemandRoute
+  '/_auth/reports/nol-outcomes': typeof AuthReportsNolOutcomesRoute
+  '/_auth/reports/survey-productivity': typeof AuthReportsSurveyProductivityRoute
   '/_auth/tasks/blocked': typeof AuthTasksBlockedRoute
   '/_auth/tasks/history': typeof AuthTasksHistoryRoute
   '/_auth/directory/': typeof AuthDirectoryIndexRoute
+  '/_auth/reports/': typeof AuthReportsIndexRoute
   '/_auth/tasks/': typeof AuthTasksIndexRoute
 }
 export interface FileRouteTypes {
@@ -142,9 +197,15 @@ export interface FileRouteTypes {
     | '/tasks'
     | '/directory/$companyId'
     | '/directory/new'
+    | '/reports/ageing'
+    | '/reports/funnel'
+    | '/reports/gas-demand'
+    | '/reports/nol-outcomes'
+    | '/reports/survey-productivity'
     | '/tasks/blocked'
     | '/tasks/history'
     | '/directory/'
+    | '/reports/'
     | '/tasks/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -155,9 +216,15 @@ export interface FileRouteTypes {
     | '/'
     | '/directory/$companyId'
     | '/directory/new'
+    | '/reports/ageing'
+    | '/reports/funnel'
+    | '/reports/gas-demand'
+    | '/reports/nol-outcomes'
+    | '/reports/survey-productivity'
     | '/tasks/blocked'
     | '/tasks/history'
     | '/directory'
+    | '/reports'
     | '/tasks'
   id:
     | '__root__'
@@ -170,9 +237,15 @@ export interface FileRouteTypes {
     | '/_auth/'
     | '/_auth/directory/$companyId'
     | '/_auth/directory/new'
+    | '/_auth/reports/ageing'
+    | '/_auth/reports/funnel'
+    | '/_auth/reports/gas-demand'
+    | '/_auth/reports/nol-outcomes'
+    | '/_auth/reports/survey-productivity'
     | '/_auth/tasks/blocked'
     | '/_auth/tasks/history'
     | '/_auth/directory/'
+    | '/_auth/reports/'
     | '/_auth/tasks/'
   fileRoutesById: FileRoutesById
 }
@@ -255,6 +328,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthDirectoryNewRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_auth/reports/': {
+      id: '/_auth/reports/'
+      path: '/reports'
+      fullPath: '/reports/'
+      preLoaderRoute: typeof AuthReportsIndexRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/reports/ageing': {
+      id: '/_auth/reports/ageing'
+      path: '/reports/ageing'
+      fullPath: '/reports/ageing'
+      preLoaderRoute: typeof AuthReportsAgeingRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/reports/funnel': {
+      id: '/_auth/reports/funnel'
+      path: '/reports/funnel'
+      fullPath: '/reports/funnel'
+      preLoaderRoute: typeof AuthReportsFunnelRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/reports/gas-demand': {
+      id: '/_auth/reports/gas-demand'
+      path: '/reports/gas-demand'
+      fullPath: '/reports/gas-demand'
+      preLoaderRoute: typeof AuthReportsGasDemandRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/reports/nol-outcomes': {
+      id: '/_auth/reports/nol-outcomes'
+      path: '/reports/nol-outcomes'
+      fullPath: '/reports/nol-outcomes'
+      preLoaderRoute: typeof AuthReportsNolOutcomesRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/reports/survey-productivity': {
+      id: '/_auth/reports/survey-productivity'
+      path: '/reports/survey-productivity'
+      fullPath: '/reports/survey-productivity'
+      preLoaderRoute: typeof AuthReportsSurveyProductivityRouteImport
+      parentRoute: typeof AuthRoute
+    }
     '/_auth/tasks/': {
       id: '/_auth/tasks/'
       path: '/'
@@ -301,7 +416,13 @@ interface AuthRouteChildren {
   AuthIndexRoute: typeof AuthIndexRoute
   AuthDirectoryCompanyIdRoute: typeof AuthDirectoryCompanyIdRoute
   AuthDirectoryNewRoute: typeof AuthDirectoryNewRoute
+  AuthReportsAgeingRoute: typeof AuthReportsAgeingRoute
+  AuthReportsFunnelRoute: typeof AuthReportsFunnelRoute
+  AuthReportsGasDemandRoute: typeof AuthReportsGasDemandRoute
+  AuthReportsNolOutcomesRoute: typeof AuthReportsNolOutcomesRoute
+  AuthReportsSurveyProductivityRoute: typeof AuthReportsSurveyProductivityRoute
   AuthDirectoryIndexRoute: typeof AuthDirectoryIndexRoute
+  AuthReportsIndexRoute: typeof AuthReportsIndexRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
@@ -310,7 +431,13 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthIndexRoute: AuthIndexRoute,
   AuthDirectoryCompanyIdRoute: AuthDirectoryCompanyIdRoute,
   AuthDirectoryNewRoute: AuthDirectoryNewRoute,
+  AuthReportsAgeingRoute: AuthReportsAgeingRoute,
+  AuthReportsFunnelRoute: AuthReportsFunnelRoute,
+  AuthReportsGasDemandRoute: AuthReportsGasDemandRoute,
+  AuthReportsNolOutcomesRoute: AuthReportsNolOutcomesRoute,
+  AuthReportsSurveyProductivityRoute: AuthReportsSurveyProductivityRoute,
   AuthDirectoryIndexRoute: AuthDirectoryIndexRoute,
+  AuthReportsIndexRoute: AuthReportsIndexRoute,
 }
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)

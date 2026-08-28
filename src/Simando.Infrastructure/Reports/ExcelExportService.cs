@@ -169,6 +169,51 @@ internal sealed class ExcelExportService : IExcelExportService
         return ms.ToArray();
     }
 
+    public byte[] ExportAgeingReport(IReadOnlyList<AgeingRow> rows)
+    {
+        using var workbook = new XLWorkbook();
+        var ws = workbook.Worksheets.Add("Penuaan Workflow");
+
+        ws.Cell(1, 1).Value = "LAPORAN PENUAAN PROSES PERSETUJUAN (WORKFLOW AGEING)";
+        ws.Cell(1, 1).Style.Font.Bold = true;
+        ws.Cell(1, 1).Style.Font.FontSize = 14;
+
+        ws.Cell(2, 1).Value = $"Total Berkas Berjalan: {rows.Count} | Diperbarui: {DateTime.UtcNow:dd MMMM yyyy HH:mm} UTC";
+        ws.Cell(2, 1).Style.Font.Italic = true;
+
+        var headers = new[] { "Nomor Register", "Nama Perusahaan", "Sektor Industri", "Tahap Berjalan", "Sales Area", "Regional", "Menunggu Tindakan Di", "Menunggu Sejak", "Durasi (Hari)" };
+        for (int i = 0; i < headers.Length; i++)
+        {
+            var cell = ws.Cell(4, i + 1);
+            cell.Value = headers[i];
+            cell.Style.Font.Bold = true;
+            cell.Style.Fill.BackgroundColor = XLColor.FromHtml("#1E3A8A");
+            cell.Style.Font.FontColor = XLColor.White;
+        }
+
+        int row = 5;
+        foreach (var r in rows)
+        {
+            var days = (int)(DateTimeOffset.UtcNow - r.WaitingSince).TotalDays;
+            ws.Cell(row, 1).Value = r.Nomor;
+            ws.Cell(row, 2).Value = r.NamaPerusahaan;
+            ws.Cell(row, 3).Value = r.IndustryTypeName;
+            ws.Cell(row, 4).Value = r.StepKind.ToString();
+            ws.Cell(row, 5).Value = r.AreaName;
+            ws.Cell(row, 6).Value = r.RegionName;
+            ws.Cell(row, 7).Value = r.ActorLabel;
+            ws.Cell(row, 8).Value = r.WaitingSince.ToString("yyyy-MM-dd HH:mm");
+            ws.Cell(row, 9).Value = Math.Max(0, days);
+            row++;
+        }
+
+        ws.Columns().AdjustToContents();
+
+        using var ms = new MemoryStream();
+        workbook.SaveAs(ms);
+        return ms.ToArray();
+    }
+
     public byte[] ExportCompanyDirectory(IReadOnlyList<CompanyDirectoryRow> rows, bool includePiiContactData)
     {
         using var workbook = new XLWorkbook();

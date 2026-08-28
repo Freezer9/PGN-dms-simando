@@ -20,5 +20,6 @@ public interface IExcelExportService
     byte[] ExportGasDemandReport(GasDemandReportDto report);
     byte[] ExportSurveyProductivityReport(SurveyProductivityReportDto report);
     byte[] ExportNolOutcomesReport(NolOutcomesReportDto report);
+    byte[] ExportAgeingReport(IReadOnlyList<AgeingRow> rows);
     byte[] ExportCompanyDirectory(IReadOnlyList<CompanyDirectoryRow> rows, bool includePiiContactData);
 }

@@ -1,12 +1,12 @@
 ---
 id: "epic-8-dashboards-analytics-reporting-2026-08-28"
-status: "backlog"
+status: "done"
 priority: "medium"
 assignee: null
 dueDate: null
 created: "2026-08-28T00:00:00.000Z"
-modified: "2026-08-28T00:00:00.000Z"
-completedAt: null
+modified: "2026-08-28T19:50:00.000Z"
+completedAt: "2026-08-28T19:50:00.000Z"
 labels: ["backend", "frontend", "dashboard", "reports", "excel"]
 order: "a7"
 ---
@@ -17,10 +17,10 @@ Deliver role-adaptive dashboard views, analytical report screens (Funnel, Gas De
 
 ## User Stories & Scope
 
-- [ ] **Story 8.1:** Backend Dashboard Stats API (`GET /api/dashboard/stats`): Aggregated metrics tailored by role (Sales Area, Regional Admin, Approver, System Admin).
-- [ ] **Story 8.2:** Frontend Role-Adaptive Dashboard (`/`): KPI summary cards, active pipeline distribution, pending action alerts, and recent company activities.
-- [ ] **Story 8.3:** Backend Report APIs (`/api/reports/funnel`, `/api/reports/gas-demand`, `/api/reports/survey-productivity`, `/api/reports/nol-outcomes`, `/api/reports/ageing`, plus `/export` xlsx endpoints).
-- [ ] **Story 8.4:** Frontend Reports Hub & Report Screens (`/reports/*`): Interactive visual charts, data tables with TanStack Table, date/area filters, and Excel download actions.
+- [x] **Story 8.1:** Backend Dashboard Stats API (`GET /api/dashboard/stats`): Aggregated metrics tailored by role (Sales Area, Regional Admin, Approver, System Admin).
+- [x] **Story 8.2:** Frontend Role-Adaptive Dashboard (`/`): KPI summary cards, active pipeline distribution, pending action alerts, and recent company activities.
+- [x] **Story 8.3:** Backend Report APIs (`/api/reports/funnel`, `/api/reports/gas-demand`, `/api/reports/survey-productivity`, `/api/reports/nol-outcomes`, `/api/reports/ageing`, plus `/export` xlsx endpoints).
+- [x] **Story 8.4:** Frontend Reports Hub & Report Screens (`/reports/*`): Interactive visual charts, data tables with TanStack Table, date/area filters, and Excel download actions.
 
 ## Acceptance Criteria
 

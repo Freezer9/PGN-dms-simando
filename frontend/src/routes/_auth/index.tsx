@@ -1,20 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import {
-	Activity,
-	Building2,
-	CheckCircle2,
-	Clock,
-	FileCheck,
-	Sparkles,
-} from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+import { Loader2 } from "lucide-react";
+import { $api } from "@/api/client";
+import { ApproverDashboard } from "@/components/dashboard/approver-dashboard";
+import { RegionalAdminDashboard } from "@/components/dashboard/regional-admin-dashboard";
+import { SalesAreaDashboard } from "@/components/dashboard/sales-area-dashboard";
+import { SystemAdminDashboard } from "@/components/dashboard/system-admin-dashboard";
+import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/_auth/")({
@@ -24,125 +15,84 @@ export const Route = createFileRoute("/_auth/")({
 function DashboardHome() {
 	const { user } = useAuth();
 
-	return (
-		<div className="space-y-6">
-			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-				<div>
-					<h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-						Dashboard Pipeline Gas
-					</h1>
-					<p className="text-muted-foreground mt-1 text-sm">
-						Sistem Informasi Manajemen Dokumen Berlangganan Gas (DMS Simando)
+	const {
+		data: statsData,
+		isLoading,
+		error,
+	} = $api.useQuery("get", "/api/dashboard/stats", undefined, {
+		refetchInterval: 60000, // Refresh dashboard stats every 60s
+	});
+
+	if (isLoading) {
+		return (
+			<div className="flex flex-col items-center justify-center min-h-[400px] gap-3">
+				<Loader2 className="size-8 animate-spin text-primary" />
+				<p className="text-sm text-muted-foreground">
+					Memuat data dashboard pipeline gas...
+				</p>
+			</div>
+		);
+	}
+
+	if (error || !statsData) {
+		return (
+			<Card className="border-destructive/30 bg-destructive/5">
+				<CardContent className="py-8 text-center space-y-2">
+					<h3 className="font-semibold text-lg text-destructive">
+						Gagal Memuat Data Dashboard
+					</h3>
+					<p className="text-sm text-muted-foreground">
+						Terjadi kendala saat memuat metrik pipeline. Silakan muat ulang
+						halaman.
 					</p>
-				</div>
-				<div className="flex items-center gap-2">
-					<Badge variant="outline" className="gap-1.5 py-1 px-3">
-						<span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-						Sesi Aktif: {user?.roles?.[0] || "User"}
-					</Badge>
-				</div>
-			</div>
-
-			<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-				<Card>
-					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-						<CardTitle className="text-sm font-medium">Total Prospek</CardTitle>
-						<Building2 className="h-4 w-4 text-muted-foreground" />
-					</CardHeader>
-					<CardContent>
-						<div className="text-2xl font-bold">128</div>
-						<p className="text-xs text-muted-foreground mt-1">
-							Industri terdaftar di Area
-						</p>
-					</CardContent>
-				</Card>
-
-				<Card>
-					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-						<CardTitle className="text-sm font-medium">
-							Dalam Survei (KK0)
-						</CardTitle>
-						<Clock className="h-4 w-4 text-amber-500" />
-					</CardHeader>
-					<CardContent>
-						<div className="text-2xl font-bold">34</div>
-						<p className="text-xs text-muted-foreground mt-1">
-							Verifikasi teknis & plotting
-						</p>
-					</CardContent>
-				</Card>
-
-				<Card>
-					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-						<CardTitle className="text-sm font-medium">Review NOL</CardTitle>
-						<Activity className="h-4 w-4 text-blue-500" />
-					</CardHeader>
-					<CardContent>
-						<div className="text-2xl font-bold">12</div>
-						<p className="text-xs text-muted-foreground mt-1">
-							Menunggu persetujuan reviewer
-						</p>
-					</CardContent>
-				</Card>
-
-				<Card>
-					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-						<CardTitle className="text-sm font-medium">
-							NOL Terbit (RL)
-						</CardTitle>
-						<FileCheck className="h-4 w-4 text-emerald-500" />
-					</CardHeader>
-					<CardContent>
-						<div className="text-2xl font-bold">82</div>
-						<p className="text-xs text-muted-foreground mt-1">
-							Siap berkontrak gas
-						</p>
-					</CardContent>
-				</Card>
-			</div>
-
-			<Card>
-				<CardHeader>
-					<CardTitle className="text-lg">Status Pipeline Penjualan</CardTitle>
-					<CardDescription>
-						Monitoring tahapan berlangganan gas dari Prospek hingga Penerbitan
-						Surat NOL
-					</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<div className="flex items-center justify-between py-3 border-b">
-						<div className="flex items-center gap-3">
-							<CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
-							<div>
-								<p className="font-medium text-sm">
-									Autentikasi & RBAC Shell Aktif
-								</p>
-								<p className="text-xs text-muted-foreground">
-									Sesi Cookie ASP.NET Identity, Dynamic Navigation Menu & Route
-									Guards
-								</p>
-							</div>
-						</div>
-						<Badge variant="secondary">Active</Badge>
-					</div>
-
-					<div className="flex items-center justify-between py-3">
-						<div className="flex items-center gap-3">
-							<Sparkles className="h-5 w-5 text-primary shrink-0" />
-							<div>
-								<p className="font-medium text-sm">
-									Pengguna Terhubung: {user?.fullName} ({user?.email})
-								</p>
-								<p className="text-xs text-muted-foreground">
-									Scope: {user?.scope} • Hak Akses:{" "}
-									{user?.capabilities?.length || 0} capabilities
-								</p>
-							</div>
-						</div>
-						<Badge variant="outline">{user?.scope}</Badge>
-					</div>
 				</CardContent>
 			</Card>
-		</div>
-	);
+		);
+	}
+
+	// 1. System Admin
+	if (statsData.role === "SystemAdmin" && statsData.systemAdmin) {
+		return <SystemAdminDashboard data={statsData.systemAdmin} />;
+	}
+
+	// 2. Regional Admin
+	if (statsData.role === "RegionalAdmin" && statsData.regionalAdmin) {
+		return (
+			<RegionalAdminDashboard
+				data={statsData.regionalAdmin}
+				regionName={user?.scope === "Region" ? "Wilayah Regional" : "Regional"}
+			/>
+		);
+	}
+
+	// 3. Sales Area
+	if (statsData.role === "SalesArea" && statsData.salesArea) {
+		return (
+			<SalesAreaDashboard
+				data={statsData.salesArea}
+				areaName={user?.scope === "Area" ? "Sales Area" : "Area"}
+			/>
+		);
+	}
+
+	// 4. Approver / Reviewer / Area Head / Division Head
+	if (statsData.approver) {
+		const roleTitleMap: Record<string, string> = {
+			AreaHead: "Area Head",
+			Reviewer: "Reviewer Teknis & Komersial",
+			DivisionHead: "Division Head",
+		};
+		const roleTitle = roleTitleMap[statsData.role] || "Verifikasi & Reviewer";
+
+		return (
+			<ApproverDashboard data={statsData.approver} roleTitle={roleTitle} />
+		);
+	}
+
+	// Fallback if specific payload not attached but salesArea exists
+	if (statsData.salesArea) {
+		return <SalesAreaDashboard data={statsData.salesArea} />;
+	}
+
+	return null;
 }

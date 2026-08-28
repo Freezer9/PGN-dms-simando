@@ -142,4 +142,43 @@ export type MrsSpecDto = components["schemas"]["MrsSpecDto"];
 export type MeterSizeDto = components["schemas"]["MeterSizeDto"];
 export type ReviewerOptionDto = components["schemas"]["ReviewerOptionDto"];
 
+// Epic 8: Dashboards, Analytics & Reporting
+export type DashboardStatsResponse =
+	components["schemas"]["DashboardStatsResponse"];
+export type SalesAreaDashboardDto =
+	components["schemas"]["SalesAreaDashboardDto"];
+export type ReturnedWorkItem = components["schemas"]["ReturnedWorkItem"];
+export type ActiveApprovalItem = components["schemas"]["ActiveApprovalItem"];
+export type ApproverDashboardDto =
+	components["schemas"]["ApproverDashboardDto"];
+export type PendingApprovalItem = components["schemas"]["PendingApprovalItem"];
+export type ApproverPerformanceDto =
+	components["schemas"]["ApproverPerformanceDto"];
+export type AreaActivityItem = components["schemas"]["AreaActivityItem"];
+export type RegionalAdminDashboardDto =
+	components["schemas"]["RegionalAdminDashboardDto"];
+export type StuckTaskItem = components["schemas"]["StuckTaskItem"];
+export type AgeingSummaryItem = components["schemas"]["AgeingSummaryItem"];
+export type SystemAdminDashboardDto =
+	components["schemas"]["SystemAdminDashboardDto"];
+export type MasterDataHealthItem =
+	components["schemas"]["MasterDataHealthItem"];
+
+export type FunnelReportDto = components["schemas"]["FunnelReportDto"];
+export type FunnelStageRow = components["schemas"]["FunnelStageRow"];
+export type GasDemandReportDto = components["schemas"]["GasDemandReportDto"];
+export type GasDemandByStageRow = components["schemas"]["GasDemandByStageRow"];
+export type GasDemandByRegionRow =
+	components["schemas"]["GasDemandByRegionRow"];
+export type GasDemandByIndustryRow =
+	components["schemas"]["GasDemandByIndustryRow"];
+export type SurveyProductivityReportDto =
+	components["schemas"]["SurveyProductivityReportDto"];
+export type SurveyProductivityRow =
+	components["schemas"]["SurveyProductivityRow"];
+export type NolOutcomesReportDto =
+	components["schemas"]["NolOutcomesReportDto"];
+export type NolOutcomeReasonRow = components["schemas"]["NolOutcomeReasonRow"];
+export type AgeingRow = components["schemas"]["AgeingRow"];
+
 export type Paths = paths;

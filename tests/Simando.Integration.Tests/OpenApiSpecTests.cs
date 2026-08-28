@@ -67,6 +67,19 @@ public class OpenApiSpecTests : IAsyncLifetime
 
         var json = await response.Content.ReadAsStringAsync();
 
+        try
+        {
+            var frontendDir = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../frontend"));
+            if (System.IO.Directory.Exists(frontendDir))
+            {
+                await System.IO.File.WriteAllTextAsync(Path.Combine(frontendDir, "openapi.json"), json);
+            }
+        }
+        catch
+        {
+            // Ignore file write in environments without directory access
+        }
+
         using var doc = JsonDocument.Parse(json);
         var root = doc.RootElement;
 
@@ -118,6 +131,22 @@ public class OpenApiSpecTests : IAsyncLifetime
         paths.TryGetProperty("/api/documents/company/{companyId}/nol-request", out _).ShouldBeTrue();
         paths.TryGetProperty("/api/documents/company/{companyId}/evaluation", out _).ShouldBeTrue();
         paths.TryGetProperty("/api/documents/company/{companyId}/nol-issuance", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/dashboard/stats", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/dashboard/sales", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/dashboard/approver", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/dashboard/regional-admin", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/dashboard/system-admin", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/reports/funnel", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/reports/gas-demand", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/reports/survey-productivity", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/reports/nol-outcomes", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/reports/ageing", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/reports/export/funnel", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/reports/export/gas-demand", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/reports/export/survey-productivity", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/reports/export/nol-outcomes", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/reports/export/ageing", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/reports/export/directory", out _).ShouldBeTrue();
     }
 
     [Fact(DisplayName = "Scalar interactive docs /scalar/v1 returns 200 OK HTML")]
