@@ -93,6 +93,12 @@ public class OpenApiSpecTests : IAsyncLifetime
         paths.TryGetProperty("/api/companies/{id}/workflow/start", out _).ShouldBeTrue();
         paths.TryGetProperty("/api/companies/{id}/workflow/choose-reviewers", out _).ShouldBeTrue();
         paths.TryGetProperty("/api/workflow/steps/{stepId}/act", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/workflow/steps/{stepId}/reassign", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/tasks/inbox", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/tasks/region", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/tasks/blocked", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/tasks/history", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/tasks/summary", out _).ShouldBeTrue();
         paths.TryGetProperty("/api/companies/map-pins", out _).ShouldBeTrue();
         paths.TryGetProperty("/api/geography/provinces", out _).ShouldBeTrue();
         paths.TryGetProperty("/api/master/industry-types", out _).ShouldBeTrue();

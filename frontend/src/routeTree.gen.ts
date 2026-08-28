@@ -15,9 +15,13 @@ import { Route as ChangePasswordRouteImport } from './routes/change-password'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as AuthIndexRouteImport } from './routes/_auth/index'
 import { Route as AuthMapRouteImport } from './routes/_auth/map'
+import { Route as AuthTasksRouteImport } from './routes/_auth/tasks'
 import { Route as AuthDirectoryIndexRouteImport } from './routes/_auth/directory/index'
 import { Route as AuthDirectoryCompanyIdRouteImport } from './routes/_auth/directory/$companyId'
 import { Route as AuthDirectoryNewRouteImport } from './routes/_auth/directory/new'
+import { Route as AuthTasksIndexRouteImport } from './routes/_auth/tasks/index'
+import { Route as AuthTasksBlockedRouteImport } from './routes/_auth/tasks/blocked'
+import { Route as AuthTasksHistoryRouteImport } from './routes/_auth/tasks/history'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/_auth',
@@ -48,6 +52,11 @@ const AuthMapRoute = AuthMapRouteImport.update({
   path: '/map',
   getParentRoute: () => AuthRoute,
 } as any)
+const AuthTasksRoute = AuthTasksRouteImport.update({
+  id: '/tasks',
+  path: '/tasks',
+  getParentRoute: () => AuthRoute,
+} as any)
 const AuthDirectoryIndexRoute = AuthDirectoryIndexRouteImport.update({
   id: '/directory/',
   path: '/directory/',
@@ -63,6 +72,21 @@ const AuthDirectoryNewRoute = AuthDirectoryNewRouteImport.update({
   path: '/directory/new',
   getParentRoute: () => AuthRoute,
 } as any)
+const AuthTasksIndexRoute = AuthTasksIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthTasksRoute,
+} as any)
+const AuthTasksBlockedRoute = AuthTasksBlockedRouteImport.update({
+  id: '/blocked',
+  path: '/blocked',
+  getParentRoute: () => AuthTasksRoute,
+} as any)
+const AuthTasksHistoryRoute = AuthTasksHistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => AuthTasksRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthIndexRoute
@@ -70,9 +94,13 @@ export interface FileRoutesByFullPath {
   '/change-password': typeof ChangePasswordRoute
   '/sign-in': typeof SignInRoute
   '/map': typeof AuthMapRoute
+  '/tasks': typeof AuthTasksRouteWithChildren
   '/directory/$companyId': typeof AuthDirectoryCompanyIdRoute
   '/directory/new': typeof AuthDirectoryNewRoute
+  '/tasks/blocked': typeof AuthTasksBlockedRoute
+  '/tasks/history': typeof AuthTasksHistoryRoute
   '/directory/': typeof AuthDirectoryIndexRoute
+  '/tasks/': typeof AuthTasksIndexRoute
 }
 export interface FileRoutesByTo {
   '/access-denied': typeof AccessDeniedRoute
@@ -82,7 +110,10 @@ export interface FileRoutesByTo {
   '/': typeof AuthIndexRoute
   '/directory/$companyId': typeof AuthDirectoryCompanyIdRoute
   '/directory/new': typeof AuthDirectoryNewRoute
+  '/tasks/blocked': typeof AuthTasksBlockedRoute
+  '/tasks/history': typeof AuthTasksHistoryRoute
   '/directory': typeof AuthDirectoryIndexRoute
+  '/tasks': typeof AuthTasksIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -91,10 +122,14 @@ export interface FileRoutesById {
   '/change-password': typeof ChangePasswordRoute
   '/sign-in': typeof SignInRoute
   '/_auth/map': typeof AuthMapRoute
+  '/_auth/tasks': typeof AuthTasksRouteWithChildren
   '/_auth/': typeof AuthIndexRoute
   '/_auth/directory/$companyId': typeof AuthDirectoryCompanyIdRoute
   '/_auth/directory/new': typeof AuthDirectoryNewRoute
+  '/_auth/tasks/blocked': typeof AuthTasksBlockedRoute
+  '/_auth/tasks/history': typeof AuthTasksHistoryRoute
   '/_auth/directory/': typeof AuthDirectoryIndexRoute
+  '/_auth/tasks/': typeof AuthTasksIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -104,9 +139,13 @@ export interface FileRouteTypes {
     | '/change-password'
     | '/sign-in'
     | '/map'
+    | '/tasks'
     | '/directory/$companyId'
     | '/directory/new'
+    | '/tasks/blocked'
+    | '/tasks/history'
     | '/directory/'
+    | '/tasks/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/access-denied'
@@ -116,7 +155,10 @@ export interface FileRouteTypes {
     | '/'
     | '/directory/$companyId'
     | '/directory/new'
+    | '/tasks/blocked'
+    | '/tasks/history'
     | '/directory'
+    | '/tasks'
   id:
     | '__root__'
     | '/_auth'
@@ -124,10 +166,14 @@ export interface FileRouteTypes {
     | '/change-password'
     | '/sign-in'
     | '/_auth/map'
+    | '/_auth/tasks'
     | '/_auth/'
     | '/_auth/directory/$companyId'
     | '/_auth/directory/new'
+    | '/_auth/tasks/blocked'
+    | '/_auth/tasks/history'
     | '/_auth/directory/'
+    | '/_auth/tasks/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -181,6 +227,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthMapRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_auth/tasks': {
+      id: '/_auth/tasks'
+      path: '/tasks'
+      fullPath: '/tasks'
+      preLoaderRoute: typeof AuthTasksRouteImport
+      parentRoute: typeof AuthRoute
+    }
     '/_auth/directory/': {
       id: '/_auth/directory/'
       path: '/directory'
@@ -202,11 +255,49 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthDirectoryNewRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_auth/tasks/': {
+      id: '/_auth/tasks/'
+      path: '/'
+      fullPath: '/tasks/'
+      preLoaderRoute: typeof AuthTasksIndexRouteImport
+      parentRoute: typeof AuthTasksRoute
+    }
+    '/_auth/tasks/blocked': {
+      id: '/_auth/tasks/blocked'
+      path: '/blocked'
+      fullPath: '/tasks/blocked'
+      preLoaderRoute: typeof AuthTasksBlockedRouteImport
+      parentRoute: typeof AuthTasksRoute
+    }
+    '/_auth/tasks/history': {
+      id: '/_auth/tasks/history'
+      path: '/history'
+      fullPath: '/tasks/history'
+      preLoaderRoute: typeof AuthTasksHistoryRouteImport
+      parentRoute: typeof AuthTasksRoute
+    }
   }
 }
 
+interface AuthTasksRouteChildren {
+  AuthTasksBlockedRoute: typeof AuthTasksBlockedRoute
+  AuthTasksHistoryRoute: typeof AuthTasksHistoryRoute
+  AuthTasksIndexRoute: typeof AuthTasksIndexRoute
+}
+
+const AuthTasksRouteChildren: AuthTasksRouteChildren = {
+  AuthTasksBlockedRoute: AuthTasksBlockedRoute,
+  AuthTasksHistoryRoute: AuthTasksHistoryRoute,
+  AuthTasksIndexRoute: AuthTasksIndexRoute,
+}
+
+const AuthTasksRouteWithChildren = AuthTasksRoute._addFileChildren(
+  AuthTasksRouteChildren,
+)
+
 interface AuthRouteChildren {
   AuthMapRoute: typeof AuthMapRoute
+  AuthTasksRoute: typeof AuthTasksRouteWithChildren
   AuthIndexRoute: typeof AuthIndexRoute
   AuthDirectoryCompanyIdRoute: typeof AuthDirectoryCompanyIdRoute
   AuthDirectoryNewRoute: typeof AuthDirectoryNewRoute
@@ -215,6 +306,7 @@ interface AuthRouteChildren {
 
 const AuthRouteChildren: AuthRouteChildren = {
   AuthMapRoute: AuthMapRoute,
+  AuthTasksRoute: AuthTasksRouteWithChildren,
   AuthIndexRoute: AuthIndexRoute,
   AuthDirectoryCompanyIdRoute: AuthDirectoryCompanyIdRoute,
   AuthDirectoryNewRoute: AuthDirectoryNewRoute,

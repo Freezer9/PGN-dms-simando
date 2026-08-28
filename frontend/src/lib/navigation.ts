@@ -31,6 +31,7 @@ const BROWSE_PIPELINE_ROLES = ["SalesArea", "AreaHead", "RegionalAdmin"];
 export function buildNavigationMenu(
 	user: CurrentUserDto | null,
 	pendingTaskCount?: number | null,
+	blockedTaskCount?: number | null,
 ): NavMenu {
 	if (!user) {
 		return { sections: [] };
@@ -67,11 +68,14 @@ export function buildNavigationMenu(
 	}
 
 	if (capabilities.has("ReassignWorkflowStep") && user.scope === "Region") {
+		const blockedBadge =
+			blockedTaskCount && blockedTaskCount > 0 ? blockedTaskCount : null;
 		caseWorkNodes.push({
 			type: "item",
 			title: "Tugas Tertahan",
 			href: "/tasks/blocked",
 			icon: "octagon-alert",
+			badge: blockedBadge,
 		});
 	}
 

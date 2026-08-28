@@ -115,9 +115,17 @@ export type SubmitResult = components["schemas"]["SubmitResult"];
 export type ChooseReviewersRequest =
 	components["schemas"]["ChooseReviewersRequest"];
 export type ActOnStepRequest = components["schemas"]["ActOnStepRequest"];
+export type ReassignStepRequest = components["schemas"]["ReassignStepRequest"];
 export type ReworkRequest = components["schemas"]["ReworkRequest"];
 export type DiscontinueRequest = components["schemas"]["DiscontinueRequest"];
 export type WorkflowAction = components["schemas"]["WorkflowAction"];
+
+// Epic 6: Tasks, Inbox & Workflow Approvals
+export type TaskListItem = components["schemas"]["TaskListItem"];
+export type TaskHistoryItem = components["schemas"]["TaskHistoryItem"];
+export type PagedResultOfTaskHistoryItem =
+	components["schemas"]["PagedResultOfTaskHistoryItem"];
+export type TasksSummaryDto = components["schemas"]["TasksSummaryDto"];
 
 // Epic 5: Master Data Lookups
 export type FuelTypeDto = components["schemas"]["FuelTypeDto"];

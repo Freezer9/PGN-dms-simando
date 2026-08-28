@@ -10,6 +10,7 @@ using Simando.Infrastructure.Persistence;
 namespace Simando.Api.Controllers;
 
 public sealed record ActOnStepRequest(WorkflowAction Action, string? Comment);
+public sealed record ReassignStepRequest(Guid NewUserId, string? Reason);
 
 [ApiController]
 [Route("api/workflow")]
@@ -46,6 +47,39 @@ public sealed class WorkflowController(
             return BadRequest(new ProblemDetails
             {
                 Title = "Workflow Action Rejected",
+                Detail = result.Error,
+            });
+        }
+
+        return Ok();
+    }
+
+    [HttpPost("steps/{stepId:guid}/reassign")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> Reassign(Guid stepId, [FromBody] ReassignStepRequest request, CancellationToken ct)
+    {
+        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
+        var actorContext = await ResolveActorContextAsync(db, ct);
+        if (actorContext is null)
+        {
+            return Unauthorized();
+        }
+
+        var result = await workflowService.ReassignStepAsync(
+            stepId,
+            request.NewUserId,
+            actorContext.Value.UserId,
+            actorContext.Value.Permissions,
+            ct);
+
+        if (!result.Succeeded)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Reassignment Rejected",
                 Detail = result.Error,
             });
         }

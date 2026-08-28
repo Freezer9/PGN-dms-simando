@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { ChevronDown } from "lucide-react";
 import * as React from "react";
+import { $api } from "@/api/client";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/lib/auth";
 import {
@@ -13,7 +14,27 @@ import { DynamicIcon } from "./icon";
 
 export function Sidebar({ className }: { className?: string }) {
 	const { user } = useAuth();
-	const menu = React.useMemo(() => buildNavigationMenu(user), [user]);
+
+	// Live task summary query for badge counts
+	const { data: taskSummary } = $api.useQuery(
+		"get",
+		"/api/tasks/summary",
+		undefined,
+		{
+			enabled: !!user,
+			refetchInterval: 30000, // Refresh counts every 30s
+		},
+	);
+
+	const menu = React.useMemo(
+		() =>
+			buildNavigationMenu(
+				user,
+				taskSummary?.myTasksCount,
+				taskSummary?.blockedTasksCount,
+			),
+		[user, taskSummary?.myTasksCount, taskSummary?.blockedTasksCount],
+	);
 
 	return (
 		<aside

@@ -92,4 +92,39 @@ describe("Navigation Menu Engine", () => {
 			expect(tasksItem.badge).toBe(5);
 		}
 	});
+
+	it("includes badge for pending tasks and blocked tasks on RegionalAdmin", () => {
+		const regionalAdminUser: CurrentUserDto = {
+			id: "4",
+			username: "regadmin",
+			email: "regadmin@pgn.co.id",
+			fullName: "Regional Admin User",
+			scope: "Region",
+			roles: ["RegionalAdmin"],
+			capabilities: [
+				"ActOnApprovalStep",
+				"ReassignWorkflowStep",
+				"ViewCompanyRecords",
+			],
+			mustChangePassword: false,
+		};
+
+		const menuWithBadge = buildNavigationMenu(regionalAdminUser, 5, 2);
+		const tasksItem = menuWithBadge.sections
+			.flatMap((s) => s.nodes)
+			.find((n) => n.type === "item" && n.href === "/tasks");
+		const blockedItem = menuWithBadge.sections
+			.flatMap((s) => s.nodes)
+			.find((n) => n.type === "item" && n.href === "/tasks/blocked");
+
+		expect(tasksItem).toBeDefined();
+		if (tasksItem && tasksItem.type === "item") {
+			expect(tasksItem.badge).toBe(5);
+		}
+
+		expect(blockedItem).toBeDefined();
+		if (blockedItem && blockedItem.type === "item") {
+			expect(blockedItem.badge).toBe(2);
+		}
+	});
 });
