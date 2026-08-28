@@ -1,21 +1,17 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
 	AlertCircle,
 	ArrowLeft,
-	Award,
 	Building2,
 	CheckCircle2,
 	Clock,
 	Edit2,
-	FileSpreadsheet,
-	FileText,
 	Layers,
 	Loader2,
 	MapPin,
 	Plus,
-	RotateCw,
 	Save,
-	ShieldCheck,
 	Star,
 	Trash2,
 	UserCheck,
@@ -32,6 +28,12 @@ import type {
 	SavePlottingRequest,
 } from "@/api/types";
 import { Map, type MapCoordinates } from "@/components/map";
+import { A1RegistrationForm } from "@/components/stages/a1-registration-form";
+import { NolEvaluationForm } from "@/components/stages/nol-evaluation-form";
+import { NolIssuanceForm } from "@/components/stages/nol-issuance-form";
+import { NolRequestForm } from "@/components/stages/nol-request-form";
+import { SurveyKk0Form } from "@/components/stages/survey-kk0-form";
+import { WorkflowActionBar } from "@/components/stages/workflow-action-bar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -79,7 +81,7 @@ export const Route = createFileRoute("/_auth/directory/$companyId")({
 
 function CompanyRecordHubPage() {
 	const { companyId } = Route.useParams();
-	const utils = $api.useUtils();
+	const queryClient = useQueryClient();
 
 	// Active tab
 	const [activeTab, setActiveTab] = React.useState("overview");
@@ -118,6 +120,47 @@ function CompanyRecordHubPage() {
 	const { data: timeline } = $api.useQuery(
 		"get",
 		"/api/companies/{id}/timeline",
+		{
+			params: { path: { id: companyId } },
+		},
+	);
+
+	// 6. Fetch Stage 4 - 8 Details
+	const { data: surveyData } = $api.useQuery(
+		"get",
+		"/api/companies/{id}/survey",
+		{
+			params: { path: { id: companyId } },
+		},
+	);
+
+	const { data: registrationData } = $api.useQuery(
+		"get",
+		"/api/companies/{id}/registration",
+		{
+			params: { path: { id: companyId } },
+		},
+	);
+
+	const { data: nolRequestData } = $api.useQuery(
+		"get",
+		"/api/companies/{id}/nol-request",
+		{
+			params: { path: { id: companyId } },
+		},
+	);
+
+	const { data: nolEvaluationData } = $api.useQuery(
+		"get",
+		"/api/companies/{id}/nol-evaluation",
+		{
+			params: { path: { id: companyId } },
+		},
+	);
+
+	const { data: nolIssuanceData } = $api.useQuery(
+		"get",
+		"/api/companies/{id}/nol-issuance",
 		{
 			params: { path: { id: companyId } },
 		},
@@ -175,8 +218,12 @@ function CompanyRecordHubPage() {
 			onSuccess: () => {
 				toast.success("Kontak berhasil ditambahkan");
 				setContactModalOpen(false);
-				utils.invalidateQueries({
-					queryKey: ["get", "/api/companies/{id}/contacts"],
+				queryClient.invalidateQueries({
+					queryKey: [
+						"get",
+						"/api/companies/{id}/contacts",
+						{ params: { path: { id: companyId } } },
+					],
 				});
 			},
 			onError: (err) => {
@@ -192,8 +239,12 @@ function CompanyRecordHubPage() {
 			onSuccess: () => {
 				toast.success("Kontak berhasil diperbarui");
 				setContactModalOpen(false);
-				utils.invalidateQueries({
-					queryKey: ["get", "/api/companies/{id}/contacts"],
+				queryClient.invalidateQueries({
+					queryKey: [
+						"get",
+						"/api/companies/{id}/contacts",
+						{ params: { path: { id: companyId } } },
+					],
 				});
 			},
 			onError: (err) => {
@@ -208,8 +259,12 @@ function CompanyRecordHubPage() {
 		{
 			onSuccess: () => {
 				toast.success("Kontak berhasil dihapus");
-				utils.invalidateQueries({
-					queryKey: ["get", "/api/companies/{id}/contacts"],
+				queryClient.invalidateQueries({
+					queryKey: [
+						"get",
+						"/api/companies/{id}/contacts",
+						{ params: { path: { id: companyId } } },
+					],
 				});
 			},
 			onError: (err) => {
@@ -225,11 +280,19 @@ function CompanyRecordHubPage() {
 		{
 			onSuccess: () => {
 				toast.success("Konfigurasi Plotting Berhasil Disimpan");
-				utils.invalidateQueries({
-					queryKey: ["get", "/api/companies/{id}"],
+				queryClient.invalidateQueries({
+					queryKey: [
+						"get",
+						"/api/companies/{id}",
+						{ params: { path: { id: companyId } } },
+					],
 				});
-				utils.invalidateQueries({
-					queryKey: ["get", "/api/companies/{id}/plotting"],
+				queryClient.invalidateQueries({
+					queryKey: [
+						"get",
+						"/api/companies/{id}/plotting",
+						{ params: { path: { id: companyId } } },
+					],
 				});
 			},
 			onError: (err) => {
@@ -245,8 +308,12 @@ function CompanyRecordHubPage() {
 			onSuccess: () => {
 				toast.success("Titik Koordinat Lokasi Berhasil Diperbarui");
 				setHasChangedCoords(false);
-				utils.invalidateQueries({
-					queryKey: ["get", "/api/companies/{id}"],
+				queryClient.invalidateQueries({
+					queryKey: [
+						"get",
+						"/api/companies/{id}",
+						{ params: { path: { id: companyId } } },
+					],
 				});
 			},
 			onError: (err) => {
@@ -263,11 +330,19 @@ function CompanyRecordHubPage() {
 		{
 			onSuccess: () => {
 				toast.success("Berhasil Dipromosikan ke Tahap 3 (Prospek)!");
-				utils.invalidateQueries({
-					queryKey: ["get", "/api/companies/{id}"],
+				queryClient.invalidateQueries({
+					queryKey: [
+						"get",
+						"/api/companies/{id}",
+						{ params: { path: { id: companyId } } },
+					],
 				});
-				utils.invalidateQueries({
-					queryKey: ["get", "/api/companies/{id}/timeline"],
+				queryClient.invalidateQueries({
+					queryKey: [
+						"get",
+						"/api/companies/{id}/timeline",
+						{ params: { path: { id: companyId } } },
+					],
 				});
 			},
 			onError: (err) => {
@@ -476,6 +551,9 @@ function CompanyRecordHubPage() {
 					</div>
 				</CardContent>
 			</Card>
+
+			{/* Universal Workflow Action Bar */}
+			<WorkflowActionBar company={company} />
 
 			{/* Visual 8-Stage Progress Stepper */}
 			<Card className="border-border/60 shadow-xs">
@@ -1024,156 +1102,49 @@ function CompanyRecordHubPage() {
 
 				{/* TAB 4: SURVEI KK0 (STAGE 4) */}
 				<TabsContent value="survey" className="pt-4">
-					<Card className="border-border/60 shadow-xs">
-						<CardHeader>
-							<CardTitle className="text-base font-semibold flex items-center gap-2">
-								<FileSpreadsheet className="size-4 text-emerald-600" />
-								Tahap 4 — Survei KK0 & Profil Calon Pelanggan
-							</CardTitle>
-							<CardDescription className="text-xs">
-								Pengumpulan profil data konsumsi gas calon pelanggan, peralatan
-								bakar, dan kebutuhan volume
-							</CardDescription>
-						</CardHeader>
-						<CardContent className="space-y-4">
-							<div className="p-4 bg-muted/40 rounded-lg border text-xs text-muted-foreground flex items-center justify-between">
-								<span>
-									Status Survei KK0:{" "}
-									<strong className="text-foreground">
-										{company.currentStage >= 4
-											? "Telah Dilakukan"
-											: "Menunggu Tahapan Plotting Selesai"}
-									</strong>
-								</span>
-								<Badge variant="outline" className="text-xs">
-									Tahap 4
-								</Badge>
-							</div>
-						</CardContent>
-					</Card>
+					<SurveyKk0Form
+						companyId={companyId}
+						initialData={surveyData}
+						canEdit={company.userCanEdit}
+					/>
 				</TabsContent>
 
 				{/* TAB 5: REGISTRASI A1 (STAGE 5) */}
 				<TabsContent value="reg-a1" className="pt-4">
-					<Card className="border-border/60 shadow-xs">
-						<CardHeader>
-							<CardTitle className="text-base font-semibold flex items-center gap-2">
-								<FileText className="size-4 text-amber-600" />
-								Tahap 5 — Registrasi Formulir A1
-							</CardTitle>
-							<CardDescription className="text-xs">
-								Pendaftaran formulir permohonan berlangganan resmi (Formulir A1)
-								dari calon pelanggan
-							</CardDescription>
-						</CardHeader>
-						<CardContent className="space-y-4">
-							<div className="p-4 bg-muted/40 rounded-lg border text-xs text-muted-foreground flex items-center justify-between">
-								<span>
-									Status Registrasi A1:{" "}
-									<strong className="text-foreground">
-										{company.currentStage >= 5
-											? "Formulir A1 Terdaftar"
-											: "Belum Mengajukan Formulir A1"}
-									</strong>
-								</span>
-								<Badge variant="outline" className="text-xs">
-									Tahap 5
-								</Badge>
-							</div>
-						</CardContent>
-					</Card>
+					<A1RegistrationForm
+						companyId={companyId}
+						initialData={registrationData}
+						canEdit={company.userCanEdit}
+					/>
 				</TabsContent>
 
 				{/* TAB 6: PERMOHONAN NOL (STAGE 6) */}
 				<TabsContent value="nol-req" className="pt-4">
-					<Card className="border-border/60 shadow-xs">
-						<CardHeader>
-							<CardTitle className="text-base font-semibold flex items-center gap-2">
-								<ShieldCheck className="size-4 text-orange-600" />
-								Tahap 6 — Permohonan NOL (Notice of Letter)
-							</CardTitle>
-							<CardDescription className="text-xs">
-								Pengajuan permohonan kepastian alokasi pasokan gas dan kapasitas
-								pipa
-							</CardDescription>
-						</CardHeader>
-						<CardContent className="space-y-4">
-							<div className="p-4 bg-muted/40 rounded-lg border text-xs text-muted-foreground flex items-center justify-between">
-								<span>
-									Status Permohonan:{" "}
-									<strong className="text-foreground">
-										{company.currentStage >= 6
-											? "Permohonan Diajukan"
-											: "Belum Tahap Permohonan NOL"}
-									</strong>
-								</span>
-								<Badge variant="outline" className="text-xs">
-									Tahap 6
-								</Badge>
-							</div>
-						</CardContent>
-					</Card>
+					<NolRequestForm
+						companyId={companyId}
+						initialData={nolRequestData}
+						canEdit={company.userCanEdit}
+						canSubmit={company.userCanSubmit}
+					/>
 				</TabsContent>
 
 				{/* TAB 7: EVALUASI NOL (STAGE 7) */}
 				<TabsContent value="nol-eval" className="pt-4">
-					<Card className="border-border/60 shadow-xs">
-						<CardHeader>
-							<CardTitle className="text-base font-semibold flex items-center gap-2">
-								<RotateCw className="size-4 text-purple-600" />
-								Tahap 7 — Evaluasi Berjenjang NOL
-							</CardTitle>
-							<CardDescription className="text-xs">
-								Review teknis dan operasional berjenjang (Reviewer 1, 2, 3
-								hingga Approval)
-							</CardDescription>
-						</CardHeader>
-						<CardContent className="space-y-4">
-							<div className="p-4 bg-muted/40 rounded-lg border text-xs text-muted-foreground flex items-center justify-between">
-								<span>
-									Status Evaluasi:{" "}
-									<strong className="text-foreground">
-										{company.currentStage >= 7
-											? "Dalam Proses Evaluasi"
-											: "Belum Memasuki Evaluasi"}
-									</strong>
-								</span>
-								<Badge variant="outline" className="text-xs">
-									Tahap 7
-								</Badge>
-							</div>
-						</CardContent>
-					</Card>
+					<NolEvaluationForm
+						companyId={companyId}
+						initialData={nolEvaluationData}
+						canEdit={company.userCanEdit}
+						canChooseReviewers={company.userCanChooseReviewers}
+					/>
 				</TabsContent>
 
 				{/* TAB 8: PENERBITAN NOL (STAGE 8) */}
 				<TabsContent value="nol-issue" className="pt-4">
-					<Card className="border-border/60 shadow-xs">
-						<CardHeader>
-							<CardTitle className="text-base font-semibold flex items-center gap-2">
-								<Award className="size-4 text-green-600" />
-								Tahap 8 — Penerbitan Dokumen NOL
-							</CardTitle>
-							<CardDescription className="text-xs">
-								Penerbitan surat kepastian pasokan gas resmi (Notice of Letter)
-							</CardDescription>
-						</CardHeader>
-						<CardContent className="space-y-4">
-							<div className="p-4 bg-muted/40 rounded-lg border text-xs text-muted-foreground flex items-center justify-between">
-								<span>
-									Status Penerbitan NOL:{" "}
-									<strong className="text-foreground">
-										{company.currentStage >= 8
-											? "NOL Telah Terbit"
-											: "Belum Diterbitkan"}
-									</strong>
-								</span>
-								<Badge variant="outline" className="text-xs">
-									Tahap 8
-								</Badge>
-							</div>
-						</CardContent>
-					</Card>
+					<NolIssuanceForm
+						companyId={companyId}
+						initialData={nolIssuanceData}
+						canEdit={company.userCanEdit}
+					/>
 				</TabsContent>
 
 				{/* TAB 9: LINI MASA & AUDIT TRAIL */}

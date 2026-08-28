@@ -894,6 +894,631 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/companies/{id}/survey": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["SurveyDetail"];
+                        "application/json": components["schemas"]["SurveyDetail"];
+                        "text/json": components["schemas"]["SurveyDetail"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SaveSurveyFullPayload"];
+                    "text/json": components["schemas"]["SaveSurveyFullPayload"];
+                    "application/*+json": components["schemas"]["SaveSurveyFullPayload"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/companies/{id}/registration": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["A1RegistrationDetail"];
+                        "application/json": components["schemas"]["A1RegistrationDetail"];
+                        "text/json": components["schemas"]["A1RegistrationDetail"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SaveA1RegistrationRequest"];
+                    "text/json": components["schemas"]["SaveA1RegistrationRequest"];
+                    "application/*+json": components["schemas"]["SaveA1RegistrationRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/companies/{id}/nol-request": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["NolRequestDetail"];
+                        "application/json": components["schemas"]["NolRequestDetail"];
+                        "text/json": components["schemas"]["NolRequestDetail"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SaveNolRequestRequest"];
+                    "text/json": components["schemas"]["SaveNolRequestRequest"];
+                    "application/*+json": components["schemas"]["SaveNolRequestRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/companies/{id}/nol-evaluation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["NolEvaluationDetail"];
+                        "application/json": components["schemas"]["NolEvaluationDetail"];
+                        "text/json": components["schemas"]["NolEvaluationDetail"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SaveNolEvaluationRequest"];
+                    "text/json": components["schemas"]["SaveNolEvaluationRequest"];
+                    "application/*+json": components["schemas"]["SaveNolEvaluationRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/companies/{id}/nol-issuance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["NolIssuanceDetail"];
+                        "application/json": components["schemas"]["NolIssuanceDetail"];
+                        "text/json": components["schemas"]["NolIssuanceDetail"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SaveNolIssuanceRequest"];
+                    "text/json": components["schemas"]["SaveNolIssuanceRequest"];
+                    "application/*+json": components["schemas"]["SaveNolIssuanceRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/companies/{id}/workflow/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["SubmitResult"];
+                        "application/json": components["schemas"]["SubmitResult"];
+                        "text/json": components["schemas"]["SubmitResult"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/companies/{id}/workflow/choose-reviewers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ChooseReviewersRequest"];
+                    "text/json": components["schemas"]["ChooseReviewersRequest"];
+                    "application/*+json": components["schemas"]["ChooseReviewersRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/companies/{id}/workflow/rework": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ReworkRequest"];
+                    "text/json": components["schemas"]["ReworkRequest"];
+                    "application/*+json": components["schemas"]["ReworkRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/companies/{id}/workflow/discontinue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["DiscontinueRequest"];
+                    "text/json": components["schemas"]["DiscontinueRequest"];
+                    "application/*+json": components["schemas"]["DiscontinueRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/documents/company/{companyId}/kk0": {
         parameters: {
             query?: never;
@@ -1334,6 +1959,302 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/master/fuel-types": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["FuelTypeDto"][];
+                        "application/json": components["schemas"]["FuelTypeDto"][];
+                        "text/json": components["schemas"]["FuelTypeDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/master/units": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["UnitOfMeasureDto"][];
+                        "application/json": components["schemas"]["UnitOfMeasureDto"][];
+                        "text/json": components["schemas"]["UnitOfMeasureDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/master/countries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CountryDto"][];
+                        "application/json": components["schemas"]["CountryDto"][];
+                        "text/json": components["schemas"]["CountryDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/master/segments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["SegmentDto"][];
+                        "application/json": components["schemas"]["SegmentDto"][];
+                        "text/json": components["schemas"]["SegmentDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/master/reference-documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ReferenceDocumentDto"][];
+                        "application/json": components["schemas"]["ReferenceDocumentDto"][];
+                        "text/json": components["schemas"]["ReferenceDocumentDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/master/mrs-specs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MrsSpecDto"][];
+                        "application/json": components["schemas"]["MrsSpecDto"][];
+                        "text/json": components["schemas"]["MrsSpecDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/master/meter-sizes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MeterSizeDto"][];
+                        "application/json": components["schemas"]["MeterSizeDto"][];
+                        "text/json": components["schemas"]["MeterSizeDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/master/reviewers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ReviewerOptionDto"][];
+                        "application/json": components["schemas"]["ReviewerOptionDto"][];
+                        "text/json": components["schemas"]["ReviewerOptionDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/reports/export/funnel": {
         parameters: {
             query?: never;
@@ -1501,12 +2422,139 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/workflow/steps/{stepId}/act": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    stepId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ActOnStepRequest"];
+                    "text/json": components["schemas"]["ActOnStepRequest"];
+                    "application/*+json": components["schemas"]["ActOnStepRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        A1RegistrationDetail: {
+            /** Format: uuid */
+            companyId: string;
+            /** Format: date */
+            tanggalRegistrasi: null | string;
+            registrasiSource: components["schemas"]["RegistrasiSource"];
+            namaPenanggungJawab: null | string;
+            jabatan: null | string;
+            /** Format: date */
+            bulanDimulai: null | string;
+            basisKontrak: null | components["schemas"]["BasisKontrak"];
+            skemaHarga: null | components["schemas"]["SkemaHarga"];
+            /** Format: uuid */
+            segmentId: null | string;
+            kodeHarga: null | string;
+            /** Format: double */
+            hargaNilai: null | number | string;
+            hargaCurrency: null | components["schemas"]["HargaCurrency"];
+            hargaUnit: null | components["schemas"]["HargaUnit"];
+            /** Format: double */
+            capexAwal: null | number | string;
+            momSigasTersedia: boolean;
+            statusBangunan: null | components["schemas"]["StatusBangunan"];
+            sektor: null | components["schemas"]["Sektor"];
+            produksiUtama: null | string;
+            jenisPeralatanGas: null | string;
+            /** Format: double */
+            tekananOperasiBarg: null | number | string;
+            /** Format: uuid */
+            signedDocumentId: null | string;
+            signatureMethod: null | components["schemas"]["SignatureMethod"];
+            usagePeriods: components["schemas"]["A1UsagePeriodDetail"][];
+        };
+        A1UsagePeriodDetail: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date */
+            periodeMulai: string;
+            /** Format: date */
+            periodeSelesai: string;
+            /** Format: double */
+            rataRata: number | string;
+            /** Format: double */
+            minimum: number | string;
+            /** Format: double */
+            maksimum: number | string;
+            /** Format: int16 */
+            sortOrder: number | string;
+        };
         /** @enum {unknown} */
         AccessScope: "Area" | "Region" | "All";
+        ActOnStepRequest: {
+            action: components["schemas"]["WorkflowAction"];
+            comment: null | string;
+        };
         AreaDto: {
             /** Format: uuid */
             id: string;
@@ -1517,10 +2565,18 @@ export interface components {
             regionName: string;
         };
         /** @enum {unknown} */
+        Asal: "Impor" | "Lokal" | null;
+        BahanBakarEksisting: string;
+        /** @enum {unknown} */
+        BasisKontrak: "Harian" | "Bulanan" | "Tahunan" | null;
+        /** @enum {unknown} */
         Capability: "ViewCompanyRecords" | "CreateCompany" | "EditStages1To3" | "SoftDeleteCompany" | "DropMovePin" | "EditSurvey" | "EditA1" | "SignUploadSignedA1" | "EditNolRequest" | "EditEvaluation" | "ProduceResumeEvaluasi" | "RecordFeedCheckpoint" | "UploadAttachments" | "DownloadAttachments" | "GenerateDocuments" | "SubmitForApproval" | "ActOnApprovalStep" | "IssueNolRl" | "SetApprovedTerms" | "ChooseReviewers" | "ReassignWorkflowStep" | "ViewTimeline" | "ViewDashboardFunnel" | "ViewAgeingReport" | "ExportExcel" | "ExportContactDataPii" | "ManageMasterData" | "BreakGlassRecordRead" | "AssignRoles" | "ViewBreakGlassActivity";
         ChangePasswordRequest: {
             currentPassword: string;
             newPassword: string;
+        };
+        ChooseReviewersRequest: {
+            reviewerUserIds: string[];
         };
         CompanyListItem: {
             /** Format: uuid */
@@ -1635,6 +2691,12 @@ export interface components {
             /** Format: int16 */
             sortOrder: number | string;
         };
+        CountryDto: {
+            /** Format: uuid */
+            id: string;
+            isoCode: string;
+            name: string;
+        };
         CreateCompanyRequest: {
             namaPerusahaan: string;
             website: null | string;
@@ -1674,12 +2736,30 @@ export interface components {
             capabilities: components["schemas"]["Capability"][];
             mustChangePassword: boolean;
         };
+        /** @enum {unknown} */
+        DayOfWeek: "Sunday" | "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday" | "Saturday";
+        /** @enum {unknown} */
+        DiameterUnit: "Inch" | "Mm" | null;
+        DiscontinueRequest: {
+            comment: string;
+        };
+        /** @enum {unknown} */
+        FeedStatus: "Belum" | "DalamProses" | "Selesai";
+        FuelTypeDto: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+        };
         GeographyOption: {
             /** Format: uuid */
             id: string;
             name: string;
             bpsCode: string;
         };
+        /** @enum {unknown} */
+        HargaCurrency: "USD" | "IDR" | null;
+        /** @enum {unknown} */
+        HargaUnit: "MMBtu" | "M3" | null;
         IndustryTypeDto: {
             /** Format: uuid */
             id: string;
@@ -1688,9 +2768,182 @@ export interface components {
         };
         /** @enum {unknown} */
         Kawasan: "KawasanIndustri" | "NonKawasanIndustri" | null;
+        KebutuhanEnergiJenis: string;
         LoginRequest: {
             username: string;
             password: string;
+        };
+        MeterSizeDto: {
+            /** Format: uuid */
+            id: string;
+            gSize: string;
+            /** Format: double */
+            nominalFlow: number | string;
+            /** Format: double */
+            maxFlow: number | string;
+            /** Format: double */
+            pressureRating: number | string;
+        };
+        MrsSpecDto: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+        };
+        NolEvaluationDetail: {
+            /** Format: uuid */
+            nolRequestId: string;
+            feedStatus: components["schemas"]["FeedStatus"];
+            /** Format: date */
+            feedCompletedAt: null | string;
+            /** Format: double */
+            capexFinal: null | number | string;
+            /** Format: double */
+            pipaIndukPanjangM: null | number | string;
+            /** Format: double */
+            pipaIndukDiameter: null | number | string;
+            pipaIndukDiameterUnit: null | components["schemas"]["DiameterUnit"];
+            /** Format: double */
+            pipaServicePanjangM: null | number | string;
+            /** Format: double */
+            pipaServiceDiameter: null | number | string;
+            pipaServiceDiameterUnit: null | components["schemas"]["DiameterUnit"];
+            spesifikasiMrs: null | string;
+            gSize: null | string;
+            /** Format: double */
+            tekanan: null | number | string;
+            /** Format: double */
+            maksFlowrate: null | number | string;
+            /** Format: double */
+            maksKapasitasMeterM3Jam: null | number | string;
+            /** Format: int16 */
+            durasiPelaksanaanBulan: null | number | string;
+            statusRkap: null | components["schemas"]["StatusRkap"];
+            skemaPembayaran: null | components["schemas"]["SkemaPembayaran"];
+            jaminanStatus: null | string;
+            jaminanJenis: null | string;
+            jaminanMasaBerlaku: null | string;
+            jaminanPenerbit: null | string;
+            /** Format: double */
+            ketersediaanPasokanBbtud: null | number | string;
+            analisisKomersial: null | string;
+            analisisKompetitor: null | string;
+            kesimpulan: null | string;
+            /** Format: double */
+            radiusKompetitorKm: null | number | string;
+            /** Format: uuid */
+            evaluatedBy: null | string;
+            /** Format: date-time */
+            evaluatedAt: null | string;
+            scenarios: components["schemas"]["NolEvaluationScenarioDetail"][];
+        };
+        NolEvaluationScenarioDetail: {
+            /** Format: uuid */
+            id: string;
+            label: string;
+            /** Format: double */
+            irrPct: null | number | string;
+            /** Format: double */
+            npv: null | number | string;
+            /** Format: double */
+            paybackYears: null | number | string;
+            hasilAnalisis: null | string;
+        };
+        NolIssuanceApprovedTermDetail: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date */
+            periodeMulai: string;
+            /** Format: date */
+            periodeSelesai: string;
+            /** Format: double */
+            rataRata: number | string;
+            /** Format: double */
+            kontrakMinimum: number | string;
+            /** Format: double */
+            kontrakMaksimum: number | string;
+            /** Format: int16 */
+            sortOrder: number | string;
+        };
+        NolIssuanceDetail: {
+            /** Format: uuid */
+            nolRequestId: string;
+            outcome: components["schemas"]["NolOutcome"];
+            nomorNotaDinas: null | string;
+            kontrakBersyarat: string[];
+            /** Format: date */
+            berlakuSejak: null | string;
+            /** Format: date */
+            berlakuSampai: null | string;
+            /** Format: uuid */
+            signedByUserId: null | string;
+            /** Format: date-time */
+            signedAt: null | string;
+            /** Format: uuid */
+            documentId: null | string;
+            approvedTerms: components["schemas"]["NolIssuanceApprovedTermDetail"][];
+        };
+        /** @enum {unknown} */
+        NolOutcome: "Nol" | "Rl";
+        NolRequestDailyDetail: {
+            /** Format: uuid */
+            id: string;
+            hari: components["schemas"]["DayOfWeek"];
+            /** Format: double */
+            min: number | string;
+            /** Format: double */
+            max: number | string;
+        };
+        NolRequestDetail: {
+            /** Format: uuid */
+            companyId: string;
+            nomorNotaDinas: null | string;
+            registrationType: components["schemas"]["RegistrationType"];
+            samaDenganA1: boolean;
+            /** Format: date */
+            bulanDimulai: null | string;
+            basisKontrak: null | components["schemas"]["BasisKontrak"];
+            skemaHarga: null | components["schemas"]["SkemaHarga"];
+            /** Format: uuid */
+            segmentId: null | string;
+            kodeHarga: null | string;
+            /** Format: double */
+            hargaNilai: null | number | string;
+            hargaCurrency: null | components["schemas"]["HargaCurrency"];
+            hargaUnit: null | components["schemas"]["HargaUnit"];
+            alasanKontrakBersyarat: null | string;
+            namaPimpinanPerusahaan: null | string;
+            jangkaWaktuKontrak: null | string;
+            /** Format: double */
+            capexPreGr3: null | number | string;
+            /** Format: double */
+            biayaPenyambunganReguler: null | number | string;
+            /** Format: double */
+            biayaPenyambunganExtra: null | number | string;
+            /** Format: double */
+            biayaPenyambunganJumlah: number | string;
+            /** Format: uuid */
+            workflowInstanceId: null | string;
+            /** Format: date-time */
+            submittedAt: null | string;
+            periods: components["schemas"]["NolRequestPeriodDetail"][];
+            dailyBasisRows: components["schemas"]["NolRequestDailyDetail"][];
+            referenceDocumentIds: string[];
+        };
+        NolRequestPeriodDetail: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date */
+            periodeMulai: string;
+            /** Format: date */
+            periodeSelesai: string;
+            /** Format: double */
+            rataRata: number | string;
+            /** Format: double */
+            kontrakMinimum: number | string;
+            /** Format: double */
+            kontrakMaksimum: number | string;
+            /** Format: int16 */
+            sortOrder: number | string;
         };
         PagedResultOfCompanyListItem: {
             items: components["schemas"]["CompanyListItem"][];
@@ -1722,6 +2975,33 @@ export interface components {
         };
         /** @enum {unknown} */
         RecordStatus: "Draft" | "AreaHead" | "RegionalAdmin" | "Reviewer1" | "Reviewer2" | "Reviewer3" | "Approval" | "Rejected" | "IssuedNol" | "IssuedRl" | "Discontinued";
+        ReferenceDocumentDto: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** Format: int32 */
+            version: number | string;
+            /** Format: date */
+            effectiveFrom: string;
+            /** Format: date */
+            effectiveTo: null | string;
+        };
+        /** @enum {unknown} */
+        RegistrasiSource: "Online" | "Manual";
+        /** @enum {unknown} */
+        RegistrationType: "RegistrasiBaru" | "Amendemen" | "Perpanjangan";
+        RencanaPemanfaatanGas: string;
+        ReviewerOptionDto: {
+            /** Format: uuid */
+            id: string;
+            fullName: string;
+            username: string;
+            email: string;
+            role: components["schemas"]["Role"];
+        };
+        ReworkRequest: {
+            comment: null | string;
+        };
         /** @enum {unknown} */
         Role: "SalesArea" | "AreaHead" | "RegionalAdmin" | "Reviewer" | "DivisionHead" | "SystemAdmin";
         SalesUserDto: {
@@ -1730,6 +3010,36 @@ export interface components {
             fullName: string;
             username: string;
             email: string;
+        };
+        SaveA1RegistrationRequest: {
+            /** Format: date */
+            tanggalRegistrasi: null | string;
+            namaPenanggungJawab: null | string;
+            jabatan: null | string;
+            /** Format: date */
+            bulanDimulai: null | string;
+            basisKontrak: null | components["schemas"]["BasisKontrak"];
+            skemaHarga: null | components["schemas"]["SkemaHarga"];
+            /** Format: uuid */
+            segmentId: null | string;
+            kodeHarga: null | string;
+            /** Format: double */
+            hargaNilai: null | number | string;
+            hargaCurrency: null | components["schemas"]["HargaCurrency"];
+            hargaUnit: null | components["schemas"]["HargaUnit"];
+            /** Format: double */
+            capexAwal: null | number | string;
+            momSigasTersedia: boolean;
+            statusBangunan: null | components["schemas"]["StatusBangunan"];
+            sektor: null | components["schemas"]["Sektor"];
+            produksiUtama: null | string;
+            jenisPeralatanGas: null | string;
+            /** Format: double */
+            tekananOperasiBarg: null | number | string;
+            /** Format: uuid */
+            signedDocumentId: null | string;
+            signatureMethod: null | components["schemas"]["SignatureMethod"];
+            usagePeriods: components["schemas"]["A1UsagePeriodDetail"][];
         };
         SaveContactRequest: {
             nama: string;
@@ -1741,14 +3051,352 @@ export interface components {
             facebook: null | string;
             isPrimary: boolean;
         };
+        SaveNolEvaluationRequest: {
+            feedStatus: components["schemas"]["FeedStatus"];
+            /** Format: date */
+            feedCompletedAt: null | string;
+            /** Format: double */
+            capexFinal: null | number | string;
+            /** Format: double */
+            pipaIndukPanjangM: null | number | string;
+            /** Format: double */
+            pipaIndukDiameter: null | number | string;
+            pipaIndukDiameterUnit: null | components["schemas"]["DiameterUnit"];
+            /** Format: double */
+            pipaServicePanjangM: null | number | string;
+            /** Format: double */
+            pipaServiceDiameter: null | number | string;
+            pipaServiceDiameterUnit: null | components["schemas"]["DiameterUnit"];
+            spesifikasiMrs: null | string;
+            gSize: null | string;
+            /** Format: double */
+            tekanan: null | number | string;
+            /** Format: double */
+            maksFlowrate: null | number | string;
+            /** Format: double */
+            maksKapasitasMeterM3Jam: null | number | string;
+            /** Format: int16 */
+            durasiPelaksanaanBulan: null | number | string;
+            statusRkap: null | components["schemas"]["StatusRkap"];
+            skemaPembayaran: null | components["schemas"]["SkemaPembayaran"];
+            jaminanStatus: null | string;
+            jaminanJenis: null | string;
+            jaminanMasaBerlaku: null | string;
+            jaminanPenerbit: null | string;
+            /** Format: double */
+            ketersediaanPasokanBbtud: null | number | string;
+            analisisKomersial: null | string;
+            analisisKompetitor: null | string;
+            kesimpulan: null | string;
+            /** Format: double */
+            radiusKompetitorKm: null | number | string;
+            scenarios: components["schemas"]["NolEvaluationScenarioDetail"][];
+        };
+        SaveNolIssuanceRequest: {
+            outcome: components["schemas"]["NolOutcome"];
+            nomorNotaDinas: null | string;
+            kontrakBersyarat: string[];
+            /** Format: date */
+            berlakuSejak: null | string;
+            /** Format: date */
+            berlakuSampai: null | string;
+            /** Format: uuid */
+            documentId: null | string;
+            approvedTerms: components["schemas"]["NolIssuanceApprovedTermDetail"][];
+        };
+        SaveNolRequestRequest: {
+            nomorNotaDinas: null | string;
+            registrationType: components["schemas"]["RegistrationType"];
+            samaDenganA1: boolean;
+            /** Format: date */
+            bulanDimulai: null | string;
+            basisKontrak: null | components["schemas"]["BasisKontrak"];
+            skemaHarga: null | components["schemas"]["SkemaHarga"];
+            /** Format: uuid */
+            segmentId: null | string;
+            kodeHarga: null | string;
+            /** Format: double */
+            hargaNilai: null | number | string;
+            hargaCurrency: null | components["schemas"]["HargaCurrency"];
+            hargaUnit: null | components["schemas"]["HargaUnit"];
+            alasanKontrakBersyarat: null | string;
+            namaPimpinanPerusahaan: null | string;
+            jangkaWaktuKontrak: null | string;
+            /** Format: double */
+            capexPreGr3: null | number | string;
+            /** Format: double */
+            biayaPenyambunganReguler: null | number | string;
+            /** Format: double */
+            biayaPenyambunganExtra: null | number | string;
+            periods: components["schemas"]["NolRequestPeriodDetail"][];
+            dailyBasisRows: components["schemas"]["NolRequestDailyDetail"][];
+            referenceDocumentIds: string[];
+        };
         SavePlottingRequest: {
             /** Format: uuid */
             salesUserId: string;
             posisiPelanggan: components["schemas"]["PosisiPelanggan"];
             kawasan: components["schemas"]["Kawasan"];
         };
+        SaveSurveyEquipmentRequest: {
+            jenisPeralatan: string;
+            /** Format: double */
+            kapasitas: null | number | string;
+            /** Format: uuid */
+            kapasitasUnitId: null | string;
+            /** Format: double */
+            jamPerHari: null | number | string;
+            /** Format: int16 */
+            hariPerMinggu: null | number | string;
+            /** Format: uuid */
+            fuelTypeId: null | string;
+            /** Format: double */
+            hargaBahanBakar: null | number | string;
+            /** Format: double */
+            konsumsiPerBulan: null | number | string;
+            /** Format: uuid */
+            konsumsiUnitId: null | string;
+            /** Format: double */
+            konversiKeGas: number | string;
+        };
+        SaveSurveyFullPayload: {
+            request: components["schemas"]["SaveSurveyRequest"];
+            products: components["schemas"]["SaveSurveyProductRequest"][];
+            rawMaterials: components["schemas"]["SaveSurveyRawMaterialRequest"][];
+            markets: components["schemas"]["SaveSurveyMarketRequest"][];
+            equipment: components["schemas"]["SaveSurveyEquipmentRequest"][];
+        };
+        SaveSurveyMarketRequest: {
+            bahan: null | string;
+            asal: null | components["schemas"]["Asal"];
+            /** Format: uuid */
+            countryId: null | string;
+            /** Format: double */
+            volume: null | number | string;
+            /** Format: uuid */
+            satuanUnitId: null | string;
+        };
+        SaveSurveyProductRequest: {
+            produk: string;
+            /** Format: double */
+            kapasitas: null | number | string;
+            /** Format: double */
+            hargaProduk: null | number | string;
+            catatan: null | string;
+        };
+        SaveSurveyRawMaterialRequest: {
+            bahan: null | string;
+            asal: null | components["schemas"]["Asal"];
+            /** Format: uuid */
+            countryId: null | string;
+            /** Format: double */
+            volume: null | number | string;
+            /** Format: uuid */
+            satuanUnitId: null | string;
+        };
+        SaveSurveyRequest: {
+            /** Format: date */
+            tanggalSurvey: null | string;
+            /** Format: uuid */
+            surveyorUserId: null | string;
+            /** Format: int32 */
+            jumlahKaryawan: null | number | string;
+            /** Format: int16 */
+            jumlahShift: null | number | string;
+            /** Format: double */
+            jamKerjaPerHari: null | number | string;
+            /** Format: int16 */
+            hariPerMinggu: null | number | string;
+            /** Format: time */
+            bebanPuncak1Mulai: null | string;
+            /** Format: time */
+            bebanPuncak1Selesai: null | string;
+            /** Format: time */
+            bebanPuncak2Mulai: null | string;
+            /** Format: time */
+            bebanPuncak2Selesai: null | string;
+            kebutuhanEnergi: null | components["schemas"]["KebutuhanEnergiJenis"];
+            kebutuhanEnergiLainnya: null | string;
+            /** Format: double */
+            kapasitasNilai: null | number | string;
+            /** Format: uuid */
+            kapasitasUnitId: null | string;
+            /** Format: double */
+            pemakaianNilai: null | number | string;
+            /** Format: uuid */
+            pemakaianUnitId: null | string;
+            /** Format: double */
+            pipaTerdekatJarakM: null | number | string;
+            /** Format: double */
+            pipaTerdekatDiameter: null | number | string;
+            /** Format: double */
+            pipaTerdekatTekanan: null | number | string;
+            bahanBakarEksisting: null | components["schemas"]["BahanBakarEksisting"];
+            namaPemasok: null | string;
+            /** Format: double */
+            kapasitasListrikKw: null | number | string;
+            /** Format: double */
+            pemakaianListrikKwh: null | number | string;
+            rencanaPemanfaatanGas: null | components["schemas"]["RencanaPemanfaatanGas"];
+            deskripsiProsesProduksi: null | string;
+            /** Format: double */
+            minEfisiensiDiharapkanPct: null | number | string;
+            /** Format: double */
+            willingnessToPayUsdMmbtu: null | number | string;
+            keteranganLain: null | string;
+        };
+        SegmentDto: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** Format: int32 */
+            sortOrder: number | string;
+        };
+        /** @enum {unknown} */
+        Sektor: "Komersial" | "Industri" | "Transportasi" | null;
+        /** @enum {unknown} */
+        SignatureMethod: "Wet" | "Digital" | null;
+        /** @enum {unknown} */
+        SkemaHarga: "Reguler" | "Sigas" | "Bersyarat" | null;
+        /** @enum {unknown} */
+        SkemaPembayaran: "JaminanPembayaran" | "PembayaranDimuka" | null;
+        /** @enum {unknown} */
+        StatusBangunan: "DalamRencana" | "DalamPembangunan" | "Eksisting" | "ProsesEkspansi" | null;
         /** @enum {unknown} */
         StatusEventAction: "Create" | "Save" | "Submit" | "Setuju" | "Revisi" | "Tolak" | "Issue" | "BreakGlass" | "Reassign" | "Rework" | "Discontinue";
+        /** @enum {unknown} */
+        StatusRkap: "Rkap" | "NonRkap" | null;
+        SubmitResult: {
+            succeeded?: boolean;
+            error?: null | string;
+            /** Format: uuid */
+            workflowInstanceId?: null | string;
+        };
+        SurveyDetail: {
+            /** Format: uuid */
+            companyId: string;
+            /** Format: date */
+            tanggalSurvey: null | string;
+            /** Format: uuid */
+            surveyorUserId: null | string;
+            surveyorUserName: null | string;
+            /** Format: int32 */
+            jumlahKaryawan: null | number | string;
+            /** Format: int16 */
+            jumlahShift: null | number | string;
+            /** Format: double */
+            jamKerjaPerHari: null | number | string;
+            /** Format: int16 */
+            hariPerMinggu: null | number | string;
+            /** Format: time */
+            bebanPuncak1Mulai: null | string;
+            /** Format: time */
+            bebanPuncak1Selesai: null | string;
+            /** Format: time */
+            bebanPuncak2Mulai: null | string;
+            /** Format: time */
+            bebanPuncak2Selesai: null | string;
+            kebutuhanEnergi: null | components["schemas"]["KebutuhanEnergiJenis"];
+            kebutuhanEnergiLainnya: null | string;
+            /** Format: double */
+            kapasitasNilai: null | number | string;
+            /** Format: uuid */
+            kapasitasUnitId: null | string;
+            /** Format: double */
+            pemakaianNilai: null | number | string;
+            /** Format: uuid */
+            pemakaianUnitId: null | string;
+            /** Format: double */
+            pipaTerdekatJarakM: null | number | string;
+            /** Format: double */
+            pipaTerdekatDiameter: null | number | string;
+            /** Format: double */
+            pipaTerdekatTekanan: null | number | string;
+            bahanBakarEksisting: null | components["schemas"]["BahanBakarEksisting"];
+            namaPemasok: null | string;
+            /** Format: double */
+            kapasitasListrikKw: null | number | string;
+            /** Format: double */
+            pemakaianListrikKwh: null | number | string;
+            rencanaPemanfaatanGas: null | components["schemas"]["RencanaPemanfaatanGas"];
+            deskripsiProsesProduksi: null | string;
+            /** Format: double */
+            minEfisiensiDiharapkanPct: null | number | string;
+            /** Format: double */
+            willingnessToPayUsdMmbtu: null | number | string;
+            keteranganLain: null | string;
+            /** Format: double */
+            jumlahKebutuhanEnergi: number | string;
+            products: components["schemas"]["SurveyProductDetail"][];
+            rawMaterials: components["schemas"]["SurveyRawMaterialDetail"][];
+            markets: components["schemas"]["SurveyMarketDetail"][];
+            equipment: components["schemas"]["SurveyEquipmentDetail"][];
+        };
+        SurveyEquipmentDetail: {
+            /** Format: uuid */
+            id: string;
+            jenisPeralatan: string;
+            /** Format: double */
+            kapasitas: null | number | string;
+            /** Format: uuid */
+            kapasitasUnitId: null | string;
+            /** Format: double */
+            jamPerHari: null | number | string;
+            /** Format: int16 */
+            hariPerMinggu: null | number | string;
+            /** Format: uuid */
+            fuelTypeId: null | string;
+            /** Format: double */
+            hargaBahanBakar: null | number | string;
+            /** Format: double */
+            konsumsiPerBulan: null | number | string;
+            /** Format: uuid */
+            konsumsiUnitId: null | string;
+            /** Format: double */
+            konversiKeGas: number | string;
+            /** Format: int16 */
+            sortOrder: number | string;
+        };
+        SurveyMarketDetail: {
+            /** Format: uuid */
+            id: string;
+            bahan: null | string;
+            asal: null | components["schemas"]["Asal"];
+            /** Format: uuid */
+            countryId: null | string;
+            /** Format: double */
+            volume: null | number | string;
+            /** Format: uuid */
+            satuanUnitId: null | string;
+            /** Format: int16 */
+            sortOrder: number | string;
+        };
+        SurveyProductDetail: {
+            /** Format: uuid */
+            id: string;
+            produk: string;
+            /** Format: double */
+            kapasitas: null | number | string;
+            /** Format: double */
+            hargaProduk: null | number | string;
+            catatan: null | string;
+            /** Format: int16 */
+            sortOrder: number | string;
+        };
+        SurveyRawMaterialDetail: {
+            /** Format: uuid */
+            id: string;
+            bahan: null | string;
+            asal: null | components["schemas"]["Asal"];
+            /** Format: uuid */
+            countryId: null | string;
+            /** Format: double */
+            volume: null | number | string;
+            /** Format: uuid */
+            satuanUnitId: null | string;
+            /** Format: int16 */
+            sortOrder: number | string;
+        };
         TimelineEntry: {
             /** Format: uuid */
             id: string;
@@ -1759,6 +3407,15 @@ export interface components {
             comment: null | string;
             /** Format: date-time */
             occurredAt: string;
+        };
+        /** @enum {unknown} */
+        UnitDimension: "Mass" | "Volume" | "Energy" | "Power" | "Length" | "Area" | "Pressure" | "Flow" | "Ratio";
+        UnitOfMeasureDto: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            name: string;
+            dimension: components["schemas"]["UnitDimension"];
         };
         UpdateCompanyRequest: {
             namaPerusahaan: string;
@@ -1783,6 +3440,8 @@ export interface components {
             /** Format: double */
             longitude: number | string;
         };
+        /** @enum {unknown} */
+        WorkflowAction: "Setuju" | "Revisi" | "Tolak" | "TidakLayak";
         /** @enum {unknown} */
         WorkflowStepKind: "AreaHead" | "RegionalAdmin" | "Reviewer1" | "Reviewer2" | "Reviewer3" | "DivisionHead" | null;
     };

@@ -5,7 +5,10 @@ using Microsoft.EntityFrameworkCore;
 using NetTopologySuite.Geometries;
 using Simando.Application.Common;
 using Simando.Application.Directory;
+using Simando.Application.Nol;
 using Simando.Application.RecordHub;
+using Simando.Application.Registration;
+using Simando.Application.Workflow;
 using Simando.Domain.Directory;
 using Simando.Domain.Geography;
 using Simando.Domain.Security;
@@ -28,6 +31,19 @@ public sealed record UpdateCompanyRequest(
     string? KodePos,
     string? Telp,
     string? Npwp);
+
+public sealed record SaveSurveyFullPayload(
+    SaveSurveyRequest Request,
+    IReadOnlyList<SaveSurveyProductRequest> Products,
+    IReadOnlyList<SaveSurveyRawMaterialRequest> RawMaterials,
+    IReadOnlyList<SaveSurveyMarketRequest> Markets,
+    IReadOnlyList<SaveSurveyEquipmentRequest> Equipment);
+
+public sealed record ChooseReviewersRequest(IReadOnlyList<Guid> ReviewerUserIds);
+
+public sealed record ReworkRequest(string? Comment);
+
+public sealed record DiscontinueRequest(string Comment);
 
 public sealed record CompanyMapPinDto(
     Guid Id,
@@ -93,6 +109,7 @@ public sealed record CompanyRecordDto(
 public sealed class CompaniesController(
     ICompanyService companyService,
     ICompanyDetailService companyDetailService,
+    IWorkflowService workflowService,
     IDbContextFactory<SimandoDbContext> dbContextFactory) : ControllerBase
 {
     [HttpGet]
@@ -543,6 +560,339 @@ public sealed class CompaniesController(
         }
 
         return Ok(pins);
+    }
+
+    [HttpGet("{id:guid}/survey")]
+    [ProducesResponseType<SurveyDetail>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetSurvey(Guid id, CancellationToken ct)
+    {
+        var result = await companyService.GetSurveyAsync(id, ct);
+        return Ok(result);
+    }
+
+    [HttpPut("{id:guid}/survey")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> SaveSurvey(Guid id, [FromBody] SaveSurveyFullPayload payload, CancellationToken ct)
+    {
+        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
+        var actorContext = await ResolveActorContextAsync(db, ct);
+        if (actorContext is null)
+        {
+            return Unauthorized();
+        }
+
+        var result = await companyService.SaveSurveyFullAsync(
+            id,
+            payload.Request,
+            payload.Products,
+            payload.RawMaterials,
+            payload.Markets,
+            payload.Equipment,
+            actorContext.Value.UserId,
+            actorContext.Value.Permissions,
+            ct);
+
+        if (!result.Succeeded)
+        {
+            return BadRequest(new ProblemDetails { Detail = result.Error });
+        }
+
+        return Ok();
+    }
+
+    [HttpGet("{id:guid}/registration")]
+    [ProducesResponseType<A1RegistrationDetail>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetRegistration(Guid id, CancellationToken ct)
+    {
+        var result = await companyService.GetA1RegistrationAsync(id, ct);
+        if (result is null)
+        {
+            return NotFound();
+        }
+        return Ok(result);
+    }
+
+    [HttpPut("{id:guid}/registration")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> SaveRegistration(Guid id, [FromBody] SaveA1RegistrationRequest request, CancellationToken ct)
+    {
+        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
+        var actorContext = await ResolveActorContextAsync(db, ct);
+        if (actorContext is null)
+        {
+            return Unauthorized();
+        }
+
+        var result = await companyService.SaveA1RegistrationAsync(
+            id,
+            request,
+            actorContext.Value.UserId,
+            actorContext.Value.Permissions,
+            ct);
+
+        if (!result.Succeeded)
+        {
+            return BadRequest(new ProblemDetails { Detail = result.Error });
+        }
+
+        return Ok();
+    }
+
+    [HttpGet("{id:guid}/nol-request")]
+    [ProducesResponseType<NolRequestDetail>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetNolRequest(Guid id, CancellationToken ct)
+    {
+        var result = await companyService.GetNolRequestAsync(id, ct);
+        if (result is null)
+        {
+            return NotFound();
+        }
+        return Ok(result);
+    }
+
+    [HttpPut("{id:guid}/nol-request")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> SaveNolRequest(Guid id, [FromBody] SaveNolRequestRequest request, CancellationToken ct)
+    {
+        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
+        var actorContext = await ResolveActorContextAsync(db, ct);
+        if (actorContext is null)
+        {
+            return Unauthorized();
+        }
+
+        var result = await companyService.SaveNolRequestAsync(
+            id,
+            request,
+            actorContext.Value.UserId,
+            actorContext.Value.Permissions,
+            ct);
+
+        if (!result.Succeeded)
+        {
+            return BadRequest(new ProblemDetails { Detail = result.Error });
+        }
+
+        return Ok();
+    }
+
+    [HttpGet("{id:guid}/nol-evaluation")]
+    [ProducesResponseType<NolEvaluationDetail>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetNolEvaluation(Guid id, CancellationToken ct)
+    {
+        var result = await companyService.GetNolEvaluationAsync(id, ct);
+        if (result is null)
+        {
+            return NotFound();
+        }
+        return Ok(result);
+    }
+
+    [HttpPut("{id:guid}/nol-evaluation")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> SaveNolEvaluation(Guid id, [FromBody] SaveNolEvaluationRequest request, CancellationToken ct)
+    {
+        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
+        var actorContext = await ResolveActorContextAsync(db, ct);
+        if (actorContext is null)
+        {
+            return Unauthorized();
+        }
+
+        var result = await companyService.SaveNolEvaluationAsync(
+            id,
+            request,
+            actorContext.Value.UserId,
+            actorContext.Value.Permissions,
+            ct);
+
+        if (!result.Succeeded)
+        {
+            return BadRequest(new ProblemDetails { Detail = result.Error });
+        }
+
+        return Ok();
+    }
+
+    [HttpGet("{id:guid}/nol-issuance")]
+    [ProducesResponseType<NolIssuanceDetail>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetNolIssuance(Guid id, CancellationToken ct)
+    {
+        var result = await companyService.GetNolIssuanceAsync(id, ct);
+        if (result is null)
+        {
+            return NotFound();
+        }
+        return Ok(result);
+    }
+
+    [HttpPut("{id:guid}/nol-issuance")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> SaveNolIssuance(Guid id, [FromBody] SaveNolIssuanceRequest request, CancellationToken ct)
+    {
+        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
+        var actorContext = await ResolveActorContextAsync(db, ct);
+        if (actorContext is null)
+        {
+            return Unauthorized();
+        }
+
+        var result = await companyService.SaveNolIssuanceAsync(
+            id,
+            request,
+            actorContext.Value.UserId,
+            actorContext.Value.Permissions,
+            ct);
+
+        if (!result.Succeeded)
+        {
+            return BadRequest(new ProblemDetails { Detail = result.Error });
+        }
+
+        return Ok();
+    }
+
+    [HttpPost("{id:guid}/workflow/start")]
+    [ProducesResponseType<SubmitResult>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> StartWorkflow(Guid id, CancellationToken ct)
+    {
+        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
+        var actorContext = await ResolveActorContextAsync(db, ct);
+        if (actorContext is null)
+        {
+            return Unauthorized();
+        }
+
+        var result = await workflowService.StartAsync(
+            id,
+            actorContext.Value.UserId,
+            actorContext.Value.Permissions,
+            actorContext.Value.Roles,
+            ct);
+
+        if (!result.Succeeded)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Submit For Approval Failed",
+                Detail = result.Error
+            });
+        }
+
+        return Ok(result);
+    }
+
+    [HttpPost("{id:guid}/workflow/choose-reviewers")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ChooseReviewers(Guid id, [FromBody] ChooseReviewersRequest request, CancellationToken ct)
+    {
+        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
+        var actorContext = await ResolveActorContextAsync(db, ct);
+        if (actorContext is null)
+        {
+            return Unauthorized();
+        }
+
+        var instance = await db.WorkflowInstances
+            .AsNoTracking()
+            .FirstOrDefaultAsync(i => i.CompanyId == id, ct);
+
+        if (instance is null)
+        {
+            return BadRequest(new ProblemDetails { Detail = "Instance workflow tidak ditemukan." });
+        }
+
+        var result = await workflowService.ChooseReviewersAsync(
+            instance.Id,
+            request.ReviewerUserIds,
+            actorContext.Value.UserId,
+            actorContext.Value.Permissions,
+            actorContext.Value.Roles,
+            ct);
+
+        if (!result.Succeeded)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Pilihan Reviewer Ditolak",
+                Detail = result.Error
+            });
+        }
+
+        return Ok();
+    }
+
+    [HttpPost("{id:guid}/workflow/rework")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> Rework(Guid id, [FromBody] ReworkRequest request, CancellationToken ct)
+    {
+        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
+        var actorContext = await ResolveActorContextAsync(db, ct);
+        if (actorContext is null)
+        {
+            return Unauthorized();
+        }
+
+        var result = await workflowService.ReworkAsync(
+            id,
+            request.Comment,
+            actorContext.Value.UserId,
+            actorContext.Value.Permissions,
+            ct);
+
+        if (!result.Succeeded)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Rework Failed",
+                Detail = result.Error
+            });
+        }
+
+        return Ok();
+    }
+
+    [HttpPost("{id:guid}/workflow/discontinue")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> Discontinue(Guid id, [FromBody] DiscontinueRequest request, CancellationToken ct)
+    {
+        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
+        var actorContext = await ResolveActorContextAsync(db, ct);
+        if (actorContext is null)
+        {
+            return Unauthorized();
+        }
+
+        var result = await workflowService.DiscontinueAsync(
+            id,
+            request.Comment,
+            actorContext.Value.UserId,
+            actorContext.Value.Permissions,
+            ct);
+
+        if (!result.Succeeded)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Discontinue Failed",
+                Detail = result.Error
+            });
+        }
+
+        return Ok();
     }
 
     private async Task<(Guid UserId, EffectivePermissions Permissions, IReadOnlySet<Role> Roles)?> ResolveActorContextAsync(

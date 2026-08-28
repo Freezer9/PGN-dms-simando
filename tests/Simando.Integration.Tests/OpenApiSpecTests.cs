@@ -85,9 +85,25 @@ public class OpenApiSpecTests : IAsyncLifetime
         paths.TryGetProperty("/api/companies/{id}", out _).ShouldBeTrue();
         paths.TryGetProperty("/api/companies/{id}/contacts", out _).ShouldBeTrue();
         paths.TryGetProperty("/api/companies/{id}/plotting", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/companies/{id}/survey", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/companies/{id}/registration", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/companies/{id}/nol-request", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/companies/{id}/nol-evaluation", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/companies/{id}/nol-issuance", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/companies/{id}/workflow/start", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/companies/{id}/workflow/choose-reviewers", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/workflow/steps/{stepId}/act", out _).ShouldBeTrue();
         paths.TryGetProperty("/api/companies/map-pins", out _).ShouldBeTrue();
         paths.TryGetProperty("/api/geography/provinces", out _).ShouldBeTrue();
         paths.TryGetProperty("/api/master/industry-types", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/master/fuel-types", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/master/units", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/master/countries", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/master/segments", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/master/reference-documents", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/master/mrs-specs", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/master/meter-sizes", out _).ShouldBeTrue();
+        paths.TryGetProperty("/api/master/reviewers", out _).ShouldBeTrue();
     }
 
     [Fact(DisplayName = "Scalar interactive docs /scalar/v1 returns 200 OK HTML")]
