@@ -1,16 +1,11 @@
-# Windows twin of dev.sh. One-command local dev loop: `dotnet watch` +
-# Tailwind watcher, one terminal, Ctrl+C stops both. If either dies on its
-# own, the other is stopped too -- see dev.sh for why that matters.
+# Windows twin of dev.sh. One-command local dev loop: `dotnet watch` (ASP.NET Core Web API on port 5000) +
+# Vite dev server (React SPA on port 3000), one terminal, Ctrl+C stops both.
 #
-# Ordering: the CSS watcher starts only once the app is actually listening,
-# not at the same moment as `dotnet watch`. See dev.sh's header comment for
-# why -- the same wwwroot/app.css race applies on Windows too.
+# Ordering: the frontend dev server starts once the backend API is listening.
 #
-# Cleanup: `dotnet watch` and the JS package manager each spawn descendant
-# processes (dotnet-watch -> dotnet run -> the app itself; PM -> tailwindcss)
-# that Stop-Process does not reach -- Windows has no implicit process-group
-# kill. Use `taskkill /T /F` to terminate each tree, mirroring dev.sh's
-# explicit descendant walk.
+# Cleanup: `dotnet watch` and bun/vite each spawn descendant processes.
+# Use `taskkill /T /F` to terminate each tree, mirroring dev.sh's explicit descendant walk.
+
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
@@ -22,25 +17,29 @@ function Stop-Tree($proc) {
     }
 }
 
+Write-Host "scripts/dev.ps1: ensuring frontend dependencies are installed..."
 powershell -NoProfile -ExecutionPolicy Bypass -File "scripts\js.ps1" install
 
+Write-Host "scripts/dev.ps1: starting ASP.NET Core Web API (src\Simando.Api)..."
 $dotnetProc = Start-Process dotnet `
-    -ArgumentList "watch", "run", "--project", "src\Simando.Web" `
+    -ArgumentList "watch", "run", "--project", "src\Simando.Api" `
     -PassThru -NoNewWindow
 
-$cssProc = $null
+$frontendProc = $null
 
 try {
-    $port = 5100
-    $launchSettings = Get-Content "src\Simando.Web\Properties\launchSettings.json" -Raw
-    if ($launchSettings -match '"applicationUrl":\s*"http://localhost:(\d+)') {
-        $port = [int]$Matches[1]
+    $port = 5000
+    if (Test-Path "src\Simando.Api\Properties\launchSettings.json") {
+        $launchSettings = Get-Content "src\Simando.Api\Properties\launchSettings.json" -Raw
+        if ($launchSettings -match '"applicationUrl":\s*"http://localhost:(\d+)') {
+            $port = [int]$Matches[1]
+        }
     }
 
-    Write-Warning "scripts/dev.ps1: waiting for the app on port $port before starting the CSS watcher..."
+    Write-Host "scripts/dev.ps1: waiting for backend API on port $port before launching frontend..."
     while ($true) {
         if ($dotnetProc.HasExited) {
-            Write-Error "scripts/dev.ps1: dotnet watch exited before the app came up."
+            Write-Error "scripts/dev.ps1: dotnet watch exited before the backend API came up."
             exit 1
         }
         $client = New-Object System.Net.Sockets.TcpClient
@@ -55,20 +54,21 @@ try {
         Start-Sleep -Milliseconds 500
     }
 
-    $cssProc = Start-Process powershell `
-        -ArgumentList "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts\js.ps1", "watch" `
+    Write-Host "scripts/dev.ps1: backend is ready on port $port. Starting frontend dev server (Vite)..."
+    $frontendProc = Start-Process powershell `
+        -ArgumentList "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts\js.ps1", "dev" `
         -PassThru -NoNewWindow
 
-    while (-not $cssProc.HasExited -and -not $dotnetProc.HasExited) {
+    while (-not $frontendProc.HasExited -and -not $dotnetProc.HasExited) {
         Start-Sleep -Seconds 1
     }
     if ($dotnetProc.HasExited) {
-        Write-Warning "dotnet watch exited -- stopping the Tailwind watcher too."
+        Write-Warning "scripts/dev.ps1: backend API exited -- stopping frontend dev server too."
     } else {
-        Write-Warning "Tailwind watcher exited unexpectedly -- stopping dotnet watch too."
+        Write-Warning "scripts/dev.ps1: frontend dev server exited -- stopping backend API too."
     }
 }
 finally {
     Stop-Tree $dotnetProc
-    Stop-Tree $cssProc
+    Stop-Tree $frontendProc
 }

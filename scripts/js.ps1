@@ -1,10 +1,15 @@
-# Windows twin of js.sh. Same logic: detect bun>pnpm>npm, install|build|watch.
-param([Parameter(Mandatory)][ValidateSet("install","build","watch")][string]$Cmd)
+# Windows twin of js.sh. Same logic: detect bun>pnpm>npm, install|build|dev|check|test|codegen.
+param(
+    [Parameter(Position=0)]
+    [string]$Cmd = "install",
+    [Parameter(ValueFromRemainingArguments=$true)]
+    [string[]]$ArgsList
+)
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-Set-Location (Join-Path $PSScriptRoot "..\src\Simando.Web")
+Set-Location (Join-Path $PSScriptRoot "..\frontend")
 
 $PM = @("bun","pnpm","npm") | Where-Object { Get-Command $_ -ErrorAction SilentlyContinue } | Select-Object -First 1
 if (-not $PM) {
@@ -12,19 +17,53 @@ if (-not $PM) {
     exit 1
 }
 
-if ($Cmd -eq "install") {
-    & $PM install
-    exit $LASTEXITCODE
+switch ($Cmd) {
+    "install" {
+        & $PM install
+        exit $LASTEXITCODE
+    }
+    "build" {
+        & $PM run build
+        exit $LASTEXITCODE
+    }
+    "dev" {
+        & $PM run dev
+        exit $LASTEXITCODE
+    }
+    "check" {
+        & $PM run check
+        exit $LASTEXITCODE
+    }
+    "test" {
+        & $PM run test
+        exit $LASTEXITCODE
+    }
+    "test:watch" {
+        & $PM run test:watch
+        exit $LASTEXITCODE
+    }
+    "format" {
+        & $PM run format
+        exit $LASTEXITCODE
+    }
+    "lint" {
+        & $PM run lint
+        exit $LASTEXITCODE
+    }
+    "codegen" {
+        & $PM run codegen
+        exit $LASTEXITCODE
+    }
+    "generate-routes" {
+        & $PM run generate-routes
+        exit $LASTEXITCODE
+    }
+    default {
+        if ($ArgsList) {
+            & $PM $Cmd @ArgsList
+        } else {
+            & $PM $Cmd
+        }
+        exit $LASTEXITCODE
+    }
 }
-
-if ($Cmd -eq "watch") {
-    # Long-running; caller (scripts/dev.ps1) manages its lifetime.
-    & $PM run watch:css
-    exit $LASTEXITCODE
-}
-
-# build: installs first too, see js.sh comment on why (Restore hook unreliable on solution build)
-& $PM install
-if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-& $PM run build:css
-exit $LASTEXITCODE

@@ -1,24 +1,16 @@
 #!/usr/bin/env bash
-# One-command local dev loop: `dotnet watch` (C#/Razor hot reload) + Tailwind
-# watcher (CSS), one terminal, one Ctrl+C stops both.
+# One-command local dev loop: `dotnet watch` (ASP.NET Core Web API on port 5000) +
+# Vite dev server (React SPA on port 3000), one terminal, one Ctrl+C stops both.
 #
-# Ordering: the CSS watcher starts only once the app is actually listening,
-# not at the same moment as `dotnet watch`. Starting both together races the
-# watcher's first write against dotnet watch's own pre-build Tailwind step
-# (MSBuild's SimandoTailwindBuild target) over the same wwwroot/app.css --
-# see the DOTNET_WATCH guard on that target in Simando.Web.csproj, which
-# exists specifically so the two don't fight once both are running.
+# Ordering: the frontend dev server starts once the backend API is listening,
+# ensuring the proxy targets are immediately reachable.
 #
-# Cleanup: dotnet watch's descendants (dotnet-watch -> dotnet run -> the app
-# itself) share this script's process group -- they are not an isolated
-# group of their own, so a plain `kill` of just the top PID does not reach
-# them, and they linger holding the port for the next run. Walk each job's
-# full descendant tree explicitly instead. SIGINT first (mirrors Ctrl+C,
-# gives dotnet-watch a chance to shut down cleanly), SIGKILL fallback for
-# whatever survives.
+# Cleanup: dotnet watch and bun/vite spawn descendant processes that standard
+# kill does not reach without walking the tree. Walk each job's descendant tree
+# explicitly with SIGINT first, followed by SIGKILL for clean port release.
 #
-# Requires bash (`wait -n`, process-tree walk); js.sh/js.ps1 stay POSIX sh.
 # Windows twin: dev.ps1.
+
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -41,42 +33,46 @@ kill_tree() {
   kill -"$sig" "$root" 2>/dev/null || true
 }
 
+echo "scripts/dev.sh: ensuring frontend dependencies are installed..."
 scripts/js.sh install
 
-dotnet watch run --project src/Simando.Web &
+echo "scripts/dev.sh: starting ASP.NET Core Web API (src/Simando.Api)..."
+dotnet watch run --project src/Simando.Api &
 DOTNET_PID=$!
-CSS_PID=""
+FRONTEND_PID=""
 
 cleanup() {
+  echo "scripts/dev.sh: shutting down dev processes..."
   kill_tree "$DOTNET_PID" INT
-  [ -n "$CSS_PID" ] && kill_tree "$CSS_PID" INT
+  [ -n "$FRONTEND_PID" ] && kill_tree "$FRONTEND_PID" INT
   sleep 1
   kill_tree "$DOTNET_PID" KILL
-  [ -n "$CSS_PID" ] && kill_tree "$CSS_PID" KILL
+  [ -n "$FRONTEND_PID" ] && kill_tree "$FRONTEND_PID" KILL
 }
 trap cleanup EXIT INT TERM
 
 PORT="$(grep -oP '"applicationUrl":\s*"http://localhost:\K[0-9]+' \
-        src/Simando.Web/Properties/launchSettings.json | head -n1)"
-PORT="${PORT:-5100}"
+        src/Simando.Api/Properties/launchSettings.json 2>/dev/null | head -n1)"
+PORT="${PORT:-5000}"
 
-echo "scripts/dev.sh: waiting for the app on port $PORT before starting the CSS watcher..."
+echo "scripts/dev.sh: waiting for backend API on port $PORT before launching frontend..."
 while ! (exec 3<>"/dev/tcp/127.0.0.1/$PORT") 2>/dev/null; do
   if ! kill -0 "$DOTNET_PID" 2>/dev/null; then
-    echo "scripts/dev.sh: dotnet watch exited before the app came up." >&2
+    echo "scripts/dev.sh: dotnet watch exited before the backend API came up." >&2
     exit 1
   fi
   sleep 0.5
 done
 exec 3<&- 3>&- 2>/dev/null || true
 
-scripts/js.sh watch &
-CSS_PID=$!
+echo "scripts/dev.sh: backend is ready on port $PORT. Starting frontend dev server (Vite)..."
+scripts/js.sh dev &
+FRONTEND_PID=$!
 
-wait -n "$CSS_PID" "$DOTNET_PID" || true
+wait -n "$FRONTEND_PID" "$DOTNET_PID" || true
 
 if kill -0 "$DOTNET_PID" 2>/dev/null; then
-  echo "scripts/dev.sh: Tailwind watcher exited unexpectedly -- stopping dotnet watch too." >&2
+  echo "scripts/dev.sh: frontend dev server exited -- stopping backend API too." >&2
 else
-  echo "scripts/dev.sh: dotnet watch exited -- stopping the Tailwind watcher too." >&2
+  echo "scripts/dev.sh: backend API exited -- stopping frontend dev server too." >&2
 fi
