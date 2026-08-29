@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Simando.Application.Documents;
 using Simando.Domain.Nol;
 using Simando.Domain.Registration;
+using Simando.Domain.Security;
 using Simando.Domain.Survey;
 using Simando.Infrastructure.Persistence;
 
@@ -13,6 +14,105 @@ namespace Simando.Infrastructure.Documents;
 internal sealed class DocxDocumentGenerator(IDbContextFactory<SimandoDbContext> dbContextFactory)
     : IDocumentGenerator
 {
+    public async Task<GeneratedDocumentResult> GenerateKk0DocxAsync(Guid companyId, EffectivePermissions permissions, CancellationToken ct = default)
+    {
+        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
+        var company = await db.Companies
+            .IgnoreQueryFilters()
+            .Where(c => c.Id == companyId)
+            .Join(db.Areas, c => c.AreaId, a => a.Id, (c, a) => new { Company = c, a.RegionId })
+            .FirstOrDefaultAsync(ct);
+
+        if (company is null)
+            return GeneratedDocumentResult.NotFoundResult();
+
+        if (!PermissionEvaluator.CanViewRecord(permissions, company.Company.AreaId, company.RegionId))
+            return GeneratedDocumentResult.ForbiddenResult();
+
+        var bytes = await GenerateKk0DocxAsync(companyId, ct);
+        var filename = $"KK0_{company.Company.NomorSeq:D4}.docx";
+        return GeneratedDocumentResult.Success(bytes, filename);
+    }
+
+    public async Task<GeneratedDocumentResult> GenerateA1DocxAsync(Guid companyId, EffectivePermissions permissions, CancellationToken ct = default)
+    {
+        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
+        var company = await db.Companies
+            .IgnoreQueryFilters()
+            .Where(c => c.Id == companyId)
+            .Join(db.Areas, c => c.AreaId, a => a.Id, (c, a) => new { Company = c, a.RegionId })
+            .FirstOrDefaultAsync(ct);
+
+        if (company is null)
+            return GeneratedDocumentResult.NotFoundResult();
+
+        if (!PermissionEvaluator.CanViewRecord(permissions, company.Company.AreaId, company.RegionId))
+            return GeneratedDocumentResult.ForbiddenResult();
+
+        var bytes = await GenerateA1DocxAsync(companyId, ct);
+        var filename = $"Formulir_A1_{company.Company.NomorSeq:D4}.docx";
+        return GeneratedDocumentResult.Success(bytes, filename);
+    }
+
+    public async Task<GeneratedDocumentResult> GenerateNolRequestDocxAsync(Guid companyId, EffectivePermissions permissions, CancellationToken ct = default)
+    {
+        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
+        var company = await db.Companies
+            .IgnoreQueryFilters()
+            .Where(c => c.Id == companyId)
+            .Join(db.Areas, c => c.AreaId, a => a.Id, (c, a) => new { Company = c, a.RegionId })
+            .FirstOrDefaultAsync(ct);
+
+        if (company is null)
+            return GeneratedDocumentResult.NotFoundResult();
+
+        if (!PermissionEvaluator.CanViewRecord(permissions, company.Company.AreaId, company.RegionId))
+            return GeneratedDocumentResult.ForbiddenResult();
+
+        var bytes = await GenerateNolRequestDocxAsync(companyId, ct);
+        var filename = $"Permohonan_NOL_{company.Company.NomorSeq:D4}.docx";
+        return GeneratedDocumentResult.Success(bytes, filename);
+    }
+
+    public async Task<GeneratedDocumentResult> GenerateEvaluationResumeDocxAsync(Guid companyId, EffectivePermissions permissions, CancellationToken ct = default)
+    {
+        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
+        var company = await db.Companies
+            .IgnoreQueryFilters()
+            .Where(c => c.Id == companyId)
+            .Join(db.Areas, c => c.AreaId, a => a.Id, (c, a) => new { Company = c, a.RegionId })
+            .FirstOrDefaultAsync(ct);
+
+        if (company is null)
+            return GeneratedDocumentResult.NotFoundResult();
+
+        if (!PermissionEvaluator.CanViewRecord(permissions, company.Company.AreaId, company.RegionId))
+            return GeneratedDocumentResult.ForbiddenResult();
+
+        var bytes = await GenerateEvaluationResumeDocxAsync(companyId, ct);
+        var filename = $"Resume_Evaluasi_{company.Company.NomorSeq:D4}.docx";
+        return GeneratedDocumentResult.Success(bytes, filename);
+    }
+
+    public async Task<GeneratedDocumentResult> GenerateNolIssuanceDocxAsync(Guid companyId, EffectivePermissions permissions, CancellationToken ct = default)
+    {
+        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
+        var company = await db.Companies
+            .IgnoreQueryFilters()
+            .Where(c => c.Id == companyId)
+            .Join(db.Areas, c => c.AreaId, a => a.Id, (c, a) => new { Company = c, a.RegionId })
+            .FirstOrDefaultAsync(ct);
+
+        if (company is null)
+            return GeneratedDocumentResult.NotFoundResult();
+
+        if (!PermissionEvaluator.CanViewRecord(permissions, company.Company.AreaId, company.RegionId))
+            return GeneratedDocumentResult.ForbiddenResult();
+
+        var bytes = await GenerateNolIssuanceDocxAsync(companyId, ct);
+        var filename = $"Surat_Penerbitan_NOL_{company.Company.NomorSeq:D4}.docx";
+        return GeneratedDocumentResult.Success(bytes, filename);
+    }
     public async Task<byte[]> GenerateKk0DocxAsync(Guid companyId, CancellationToken ct = default)
     {
         await using var db = await dbContextFactory.CreateDbContextAsync(ct);

@@ -101,8 +101,8 @@ public sealed record SystemAdminDashboardDto(
 
 public interface IDashboardService
 {
-    Task<SalesAreaDashboardDto> GetSalesAreaDashboardAsync(Guid areaId, CancellationToken ct = default);
+    Task<SalesAreaDashboardDto?> GetSalesAreaDashboardAsync(Guid? areaId, CancellationToken ct = default);
     Task<ApproverDashboardDto> GetApproverDashboardAsync(Guid userId, EffectivePermissions actor, IReadOnlySet<Role> roles, CancellationToken ct = default);
-    Task<RegionalAdminDashboardDto> GetRegionalAdminDashboardAsync(Guid regionId, EffectivePermissions actor, CancellationToken ct = default);
+    Task<RegionalAdminDashboardDto?> GetRegionalAdminDashboardAsync(Guid? regionId, EffectivePermissions actor, CancellationToken ct = default);
     Task<SystemAdminDashboardDto> GetSystemAdminDashboardAsync(CancellationToken ct = default);
 }

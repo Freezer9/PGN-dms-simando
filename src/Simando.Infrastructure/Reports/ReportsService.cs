@@ -235,6 +235,28 @@ internal sealed class ReportsService(IDbContextFactory<SimandoDbContext> dbConte
         return new NolOutcomesReportDto(total, nolCount, rlCount, Math.Round(nolPct, 1), Math.Round(rlPct, 1), reasonsList);
     }
 
+    public async Task<IReadOnlyList<CompanyDirectoryRow>> GetCompanyDirectoryRowsAsync(CancellationToken ct = default)
+    {
+        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
+        var companies = await db.Companies.AsNoTracking().Take(100).ToListAsync(ct);
+        var areaLookup = await db.Areas.AsNoTracking().ToDictionaryAsync(a => a.Id, a => a.Name, ct);
+        var industryLookup = await db.IndustryTypes.AsNoTracking().ToDictionaryAsync(i => i.Id, i => i.Name, ct);
+
+        return companies.Select(c => new CompanyDirectoryRow(
+            c.Id,
+            c.Nomor,
+            c.NamaPerusahaan,
+            c.Alamat,
+            industryLookup.GetValueOrDefault(c.IndustryTypeId, "Industri"),
+            areaLookup.GetValueOrDefault(c.AreaId, "Area"),
+            c.CurrentStage,
+            CompanyLabels.StageLabel(c.CurrentStage),
+            "Kontak Utama",
+            c.Telp,
+            c.Email
+        )).ToList();
+    }
+
     private static string ActorLabel(WorkflowStepKind kind, Guid? assignedUserId, IReadOnlyDictionary<Guid, string> userNames)
     {
         var roleLabel = WorkflowLabels.StepKindLabel(kind);

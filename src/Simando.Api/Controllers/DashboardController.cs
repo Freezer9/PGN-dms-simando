@@ -1,10 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Simando.Api.Security;
 using Simando.Application.Dashboard;
 using Simando.Domain.Security;
-using Simando.Infrastructure.Persistence;
 
 namespace Simando.Api.Controllers;
 
@@ -21,8 +19,7 @@ public sealed record DashboardStatsResponse(
 [Authorize]
 public sealed class DashboardController(
     IDashboardService dashboardService,
-    ICurrentUser currentUser,
-    IDbContextFactory<SimandoDbContext> dbContextFactory) : ControllerBase
+    ICurrentUser currentUser) : ControllerBase
 {
     [HttpGet("stats")]
     [ProducesResponseType<DashboardStatsResponse>(StatusCodes.Status200OK)]
@@ -38,29 +35,13 @@ public sealed class DashboardController(
 
         if (currentUser.Roles.Contains(Role.RegionalAdmin) || currentUser.Permissions.Scope == AccessScope.Region)
         {
-            var regionId = currentUser.Permissions.RegionId;
-            if (!regionId.HasValue)
-            {
-                await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-                var firstRegion = await db.Regions.AsNoTracking().FirstOrDefaultAsync(ct);
-                regionId = firstRegion?.Id ?? Guid.Empty;
-            }
-
-            var regData = await dashboardService.GetRegionalAdminDashboardAsync(regionId.Value, currentUser.Permissions, ct);
+            var regData = await dashboardService.GetRegionalAdminDashboardAsync(currentUser.Permissions.RegionId, currentUser.Permissions, ct);
             return Ok(new DashboardStatsResponse("RegionalAdmin", RegionalAdmin: regData));
         }
 
         if (currentUser.Roles.Contains(Role.SalesArea))
         {
-            var areaId = currentUser.Permissions.AreaId;
-            if (!areaId.HasValue)
-            {
-                await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-                var firstArea = await db.Areas.AsNoTracking().FirstOrDefaultAsync(ct);
-                areaId = firstArea?.Id ?? Guid.Empty;
-            }
-
-            var salesData = await dashboardService.GetSalesAreaDashboardAsync(areaId.Value, ct);
+            var salesData = await dashboardService.GetSalesAreaDashboardAsync(currentUser.Permissions.AreaId, ct);
             return Ok(new DashboardStatsResponse("SalesArea", SalesArea: salesData));
         }
 
@@ -77,19 +58,12 @@ public sealed class DashboardController(
     public async Task<IActionResult> GetSalesDashboard([FromQuery] Guid? areaId = null, CancellationToken ct = default)
     {
         var targetAreaId = areaId ?? currentUser.Permissions.AreaId;
-        if (!targetAreaId.HasValue)
-        {
-            await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-            var firstArea = await db.Areas.AsNoTracking().FirstOrDefaultAsync(ct);
-            targetAreaId = firstArea?.Id;
-        }
-
-        if (!targetAreaId.HasValue)
+        var data = await dashboardService.GetSalesAreaDashboardAsync(targetAreaId, ct);
+        if (data is null)
         {
             return BadRequest("Area ID tidak ditemukan.");
         }
 
-        var data = await dashboardService.GetSalesAreaDashboardAsync(targetAreaId.Value, ct);
         return Ok(data);
     }
 
@@ -109,19 +83,12 @@ public sealed class DashboardController(
     public async Task<IActionResult> GetRegionalAdminDashboard([FromQuery] Guid? regionId = null, CancellationToken ct = default)
     {
         var targetRegionId = regionId ?? currentUser.Permissions.RegionId;
-        if (!targetRegionId.HasValue)
-        {
-            await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-            var firstRegion = await db.Regions.AsNoTracking().FirstOrDefaultAsync(ct);
-            targetRegionId = firstRegion?.Id;
-        }
-
-        if (!targetRegionId.HasValue)
+        var data = await dashboardService.GetRegionalAdminDashboardAsync(targetRegionId, currentUser.Permissions, ct);
+        if (data is null)
         {
             return BadRequest("Region ID tidak ditemukan.");
         }
 
-        var data = await dashboardService.GetRegionalAdminDashboardAsync(targetRegionId.Value, currentUser.Permissions, ct);
         return Ok(data);
     }
 

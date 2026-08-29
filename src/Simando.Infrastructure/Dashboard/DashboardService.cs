@@ -11,13 +11,27 @@ namespace Simando.Infrastructure.Dashboard;
 internal sealed class DashboardService(IDbContextFactory<SimandoDbContext> dbContextFactory)
     : IDashboardService
 {
-    public async Task<SalesAreaDashboardDto> GetSalesAreaDashboardAsync(Guid areaId, CancellationToken ct = default)
+    public async Task<SalesAreaDashboardDto?> GetSalesAreaDashboardAsync(Guid? areaId, CancellationToken ct = default)
     {
         await using var db = await dbContextFactory.CreateDbContextAsync(ct);
 
+        var targetAreaId = areaId;
+        if (!targetAreaId.HasValue || targetAreaId.Value == Guid.Empty)
+        {
+            var firstArea = await db.Areas.AsNoTracking().FirstOrDefaultAsync(ct);
+            targetAreaId = firstArea?.Id;
+        }
+
+        if (!targetAreaId.HasValue)
+        {
+            return null;
+        }
+
+        var resolvedAreaId = targetAreaId.Value;
+
         // 1. Returned Work Items (Status == Draft && Has Revisi/Tolak status events)
         var companyIdsInArea = await db.Companies.AsNoTracking()
-            .Where(c => c.AreaId == areaId)
+            .Where(c => c.AreaId == resolvedAreaId)
             .Select(c => c.Id)
             .ToListAsync(ct);
 
@@ -165,13 +179,27 @@ internal sealed class DashboardService(IDbContextFactory<SimandoDbContext> dbCon
         );
     }
 
-    public async Task<RegionalAdminDashboardDto> GetRegionalAdminDashboardAsync(
-        Guid regionId, EffectivePermissions actor, CancellationToken ct = default)
+    public async Task<RegionalAdminDashboardDto?> GetRegionalAdminDashboardAsync(
+        Guid? regionId, EffectivePermissions actor, CancellationToken ct = default)
     {
         await using var db = await dbContextFactory.CreateDbContextAsync(ct);
 
+        var targetRegionId = regionId;
+        if (!targetRegionId.HasValue || targetRegionId.Value == Guid.Empty)
+        {
+            var firstRegion = await db.Regions.AsNoTracking().FirstOrDefaultAsync(ct);
+            targetRegionId = firstRegion?.Id;
+        }
+
+        if (!targetRegionId.HasValue)
+        {
+            return null;
+        }
+
+        var resolvedRegionId = targetRegionId.Value;
+
         var areaIdsInRegion = await db.Areas.AsNoTracking()
-            .Where(a => a.RegionId == regionId)
+            .Where(a => a.RegionId == resolvedRegionId)
             .Select(a => a.Id)
             .ToListAsync(ct);
 

@@ -96,6 +96,7 @@ public static class DependencyInjection
         services.AddScoped<IGeographyService, GeographyService>();
         services.AddScoped<ICompanyService, CompanyService>();
         services.AddScoped<IUnitLookupService, UnitLookupService>();
+        services.AddScoped<IMasterDataLookupService, MasterDataLookupService>();
         services.AddScoped<IMasterDataAdminService, MasterDataAdminService>();
         services.AddScoped<IAttachmentService, AttachmentService>();
         services.AddScoped<IDocumentGenerator, DocxDocumentGenerator>();

@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Shouldly;
 using Simando.Api.Controllers;
+using Simando.Application.MasterData;
 using Simando.Domain.MasterData;
 using Simando.Domain.Organisation;
 using Simando.Domain.Security;

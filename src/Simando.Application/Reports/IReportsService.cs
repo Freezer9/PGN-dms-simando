@@ -12,4 +12,5 @@ public interface IReportsService
     Task<GasDemandReportDto> GetGasDemandAsync(EffectivePermissions actor, CancellationToken ct = default);
     Task<SurveyProductivityReportDto> GetSurveyProductivityAsync(EffectivePermissions actor, int? year = null, CancellationToken ct = default);
     Task<NolOutcomesReportDto> GetNolOutcomesAsync(EffectivePermissions actor, CancellationToken ct = default);
+    Task<IReadOnlyList<CompanyDirectoryRow>> GetCompanyDirectoryRowsAsync(CancellationToken ct = default);
 }

@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Simando.Application.Attachments;
 using Simando.Application.Storage;
 using Simando.Domain.Attachments;
+using Simando.Domain.Security;
 using Simando.Infrastructure.Persistence;
 
 namespace Simando.Infrastructure.Attachments;
@@ -10,9 +11,23 @@ internal sealed class AttachmentService(
     IDbContextFactory<SimandoDbContext> dbContextFactory,
     IAttachmentStore store) : IAttachmentService
 {
-    public async Task<IReadOnlyList<AttachmentDetail>> GetCompanyAttachmentsAsync(Guid companyId, CancellationToken ct = default)
+    public async Task<GetCompanyAttachmentsResult> GetCompanyAttachmentsAsync(
+        Guid companyId, EffectivePermissions permissions, CancellationToken ct = default)
     {
         await using var db = await dbContextFactory.CreateDbContextAsync(ct);
+
+        var company = await db.Companies
+            .IgnoreQueryFilters()
+            .Where(c => c.Id == companyId)
+            .Join(db.Areas, c => c.AreaId, a => a.Id,
+                (c, a) => new { c.AreaId, a.RegionId })
+            .FirstOrDefaultAsync(ct);
+
+        if (company is null)
+            return GetCompanyAttachmentsResult.NotFoundResult();
+
+        if (!PermissionEvaluator.CanViewRecord(permissions, company.AreaId, company.RegionId))
+            return GetCompanyAttachmentsResult.ForbiddenResult();
 
         var attachments = await db.Attachments.AsNoTracking()
             .Where(a => a.CompanyId == companyId)
@@ -24,30 +39,39 @@ internal sealed class AttachmentService(
             .Where(u => userIds.Contains(u.Id))
             .ToDictionaryAsync(u => u.Id, u => u.FullName, ct);
 
-        return attachments.Select(a => new AttachmentDetail(
+        var items = attachments.Select(a => new AttachmentDetail(
             a.Id,
             a.CompanyId,
             a.Kind,
             a.Filename,
             a.MimeType,
             a.SizeBytes,
-            null, // SignatureMethod is stored on A1Registration or derived
+            null,
             a.Version,
             a.UploadedAt,
             userNames.GetValueOrDefault(a.UploadedBy, "Unknown")
         )).ToList();
+
+        return GetCompanyAttachmentsResult.Success(items);
     }
 
     public async Task<UploadAttachmentResult> UploadAttachmentAsync(
-        Guid companyId, UploadAttachmentRequest request, Guid actorUserId, CancellationToken ct = default)
+        Guid companyId, UploadAttachmentRequest request, Guid actorUserId, EffectivePermissions permissions, CancellationToken ct = default)
     {
         await using var db = await dbContextFactory.CreateDbContextAsync(ct);
 
-        var company = await db.Companies.FirstOrDefaultAsync(c => c.Id == companyId, ct);
+        var company = await db.Companies
+            .IgnoreQueryFilters()
+            .Where(c => c.Id == companyId)
+            .Join(db.Areas, c => c.AreaId, a => a.Id,
+                (c, a) => new { c.AreaId, a.RegionId })
+            .FirstOrDefaultAsync(ct);
+
         if (company is null)
-        {
-            return UploadAttachmentResult.Failed("Berkas perusahaan tidak ditemukan.");
-        }
+            return UploadAttachmentResult.NotFoundResult();
+
+        if (!PermissionEvaluator.CanViewRecord(permissions, company.AreaId, company.RegionId))
+            return UploadAttachmentResult.ForbiddenResult();
 
         var existingCount = await db.Attachments
             .CountAsync(a => a.CompanyId == companyId && a.Kind == request.Kind, ct);
@@ -115,5 +139,99 @@ internal sealed class AttachmentService(
             uploaderName);
 
         return UploadAttachmentResult.Success(detail);
+    }
+
+    public async Task<AttachmentDownloadResult> DownloadAttachmentAsync(
+        Guid id, EffectivePermissions permissions, CancellationToken ct = default)
+    {
+        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
+
+        var attachment = await db.Attachments
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(a => a.Id == id, ct);
+
+        if (attachment is null)
+            return AttachmentDownloadResult.NotFoundResult();
+
+        if (attachment.CompanyId is Guid companyId)
+        {
+            var company = await db.Companies
+                .IgnoreQueryFilters()
+                .Where(c => c.Id == companyId)
+                .Join(db.Areas, c => c.AreaId, a => a.Id,
+                    (c, a) => new { c.AreaId, a.RegionId })
+                .FirstOrDefaultAsync(ct);
+
+            if (company is null)
+                return AttachmentDownloadResult.NotFoundResult();
+
+            if (!PermissionEvaluator.CanViewRecord(permissions, company.AreaId, company.RegionId))
+                return AttachmentDownloadResult.ForbiddenResult();
+        }
+
+        Stream stream;
+        try
+        {
+            stream = await store.OpenReadAsync(
+                new StoredBlobRef(attachment.StorageProvider, attachment.StorageKey), ct);
+        }
+        catch (BlobNotFoundException)
+        {
+            return AttachmentDownloadResult.NotFoundResult();
+        }
+
+        return AttachmentDownloadResult.Success(stream, attachment.MimeType, attachment.Filename);
+    }
+
+    public async Task<AttachmentDeleteResult> DeleteAttachmentAsync(
+        Guid id, EffectivePermissions permissions, CancellationToken ct = default)
+    {
+        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
+
+        var attachment = await db.Attachments
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(a => a.Id == id, ct);
+
+        if (attachment is null)
+            return AttachmentDeleteResult.NotFoundResult();
+
+        if (attachment.CompanyId is Guid companyId)
+        {
+            var company = await db.Companies
+                .IgnoreQueryFilters()
+                .Where(c => c.Id == companyId)
+                .Join(db.Areas, c => c.AreaId, a => a.Id,
+                    (c, a) => new { c.AreaId, a.RegionId })
+                .FirstOrDefaultAsync(ct);
+
+            if (company is null)
+                return AttachmentDeleteResult.NotFoundResult();
+
+            if (!PermissionEvaluator.CanViewRecord(permissions, company.AreaId, company.RegionId))
+                return AttachmentDeleteResult.ForbiddenResult();
+        }
+
+        var a1 = await db.A1Registrations.FirstOrDefaultAsync(a => a.SignedDocumentId == id, ct);
+        if (a1 is not null)
+        {
+            a1.SignedDocumentId = null;
+        }
+
+        var resumes = await db.EvaluationResumes.Where(r => r.AttachmentId == id).ToListAsync(ct);
+        if (resumes.Count > 0)
+        {
+            db.EvaluationResumes.RemoveRange(resumes);
+        }
+
+        var issuance = await db.NolIssuances.FirstOrDefaultAsync(i => i.DocumentId == id, ct);
+        if (issuance is not null)
+        {
+            issuance.DocumentId = null;
+        }
+
+        db.Attachments.Remove(attachment);
+        await db.SaveChangesAsync(ct);
+
+        return AttachmentDeleteResult.Success();
     }
 }

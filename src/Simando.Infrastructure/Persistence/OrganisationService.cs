@@ -10,6 +10,39 @@ namespace Simando.Infrastructure.Persistence;
 // SimandoDbContext via the factory.
 internal sealed class OrganisationService(IDbContextFactory<SimandoDbContext> dbContextFactory) : IOrganisationService
 {
+    public async Task<IReadOnlyList<RegionWithAreasDto>> GetOrganisationHierarchyAsync(CancellationToken ct = default)
+    {
+        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
+
+        var regions = await db.Regions.AsNoTracking().ToListAsync(ct);
+        var areas = await db.Areas.AsNoTracking().ToListAsync(ct);
+
+        var areaCounts = await db.Companies.IgnoreQueryFilters().AsNoTracking()
+            .GroupBy(c => c.AreaId)
+            .Select(g => new { AreaId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.AreaId, x => x.Count, ct);
+
+        var areasByRegion = areas.GroupBy(a => a.RegionId).ToDictionary(
+            g => g.Key,
+            g => g.Select(a => new AreaItemDto(
+                a.Id,
+                a.RegionId,
+                a.Code,
+                a.Name,
+                a.Active,
+                areaCounts.GetValueOrDefault(a.Id, 0)
+            )).OrderBy(a => a.Name).ToList()
+        );
+
+        return regions.Select(r => new RegionWithAreasDto(
+            r.Id,
+            r.Code,
+            r.Name,
+            r.Active,
+            areasByRegion.GetValueOrDefault(r.Id, [])
+        )).OrderBy(r => r.Name).ToList();
+    }
+
     public async Task<List<Region>> GetRegionsAsync(CancellationToken ct = default)
     {
         await using var db = await dbContextFactory.CreateDbContextAsync(ct);

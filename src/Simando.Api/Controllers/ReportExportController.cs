@@ -1,11 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Simando.Api.Security;
-using Simando.Application.Directory;
 using Simando.Application.Reports;
 using Simando.Domain.Security;
-using Simando.Infrastructure.Persistence;
 
 namespace Simando.Api.Controllers;
 
@@ -15,7 +12,6 @@ namespace Simando.Api.Controllers;
 [Authorize]
 [RequireCapability(Capability.ExportExcel)]
 public sealed class ReportExportController(
-    IDbContextFactory<SimandoDbContext> dbContextFactory,
     IReportsService reportsService,
     IExcelExportService excelExportService,
     ICurrentUser currentUser) : ControllerBase
@@ -100,25 +96,7 @@ public sealed class ReportExportController(
         // can request unmasked PII contact export.
         var allowPii = query.IncludePii && currentUser.Permissions.HasCapability(Capability.ExportContactDataPii);
 
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var companies = await db.Companies.AsNoTracking().Take(100).ToListAsync(ct);
-        var areaLookup = await db.Areas.AsNoTracking().ToDictionaryAsync(a => a.Id, a => a.Name, ct);
-        var industryLookup = await db.IndustryTypes.AsNoTracking().ToDictionaryAsync(i => i.Id, i => i.Name, ct);
-
-        var rows = companies.Select(c => new CompanyDirectoryRow(
-            c.Id,
-            c.Nomor,
-            c.NamaPerusahaan,
-            c.Alamat,
-            industryLookup.GetValueOrDefault(c.IndustryTypeId, "Industri"),
-            areaLookup.GetValueOrDefault(c.AreaId, "Area"),
-            c.CurrentStage,
-            CompanyLabels.StageLabel(c.CurrentStage),
-            "Kontak Utama",
-            c.Telp,
-            c.Email
-        )).ToList();
-
+        var rows = await reportsService.GetCompanyDirectoryRowsAsync(ct);
         var bytes = excelExportService.ExportCompanyDirectory(rows, allowPii);
         var fileName = allowPii
             ? $"Direktori_Perusahaan_PII_{DateTime.UtcNow:yyyyMMdd}.xlsx"
