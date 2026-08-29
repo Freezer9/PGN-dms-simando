@@ -65,7 +65,18 @@ This playbook defines mandatory rules and architectural patterns for all form co
   import { Label } from '@/components/ui/label';
 
   export function CreateCompanyDialog({ open, onOpenChange, onSuccess }: Props) {
-    const createMutation = $api.useMutation('post', '/api/companies');
+    const createMutation = $api.useMutation('post', '/api/companies', {
+      onSuccess: (data) => {
+        toast.success('Perusahaan berhasil ditambahkan', { description: data.namaPerusahaan });
+        onSuccess();
+        onOpenChange(false);
+      },
+      onError: (error) => {
+        toast.error('Gagal menambahkan perusahaan', {
+          description: error.detail ?? 'Terjadi kesalahan pada server',
+        });
+      },
+    });
 
     const form = useForm({
       defaultValues: {
@@ -80,16 +91,7 @@ This playbook defines mandatory rules and architectural patterns for all form co
         onChange: createCompanySchema,
       },
       onSubmit: async ({ value }) => {
-        try {
-          await createMutation.mutateAsync({ body: value });
-          toast.success('Perusahaan berhasil ditambahkan', { description: value.name });
-          onSuccess();
-          onOpenChange(false);
-        } catch (error) {
-          toast.error('Gagal menambahkan perusahaan', {
-            description: (error as Error).message ?? 'Terjadi kesalahan pada server',
-          });
-        }
+        await createMutation.mutateAsync({ body: value });
       },
     });
 
@@ -156,8 +158,9 @@ This playbook defines mandatory rules and architectural patterns for all form co
 
 ---
 
-## 6. Toast Notification Feedback
+## 6. Toast Notification & Mutation Feedback
 
 - **Toast System**: Use `sonner` (`toast.success`, `toast.error`, `toast.info`).
-- **Success Feedback**: Upon successful form submission, show `toast.success("Perusahaan berhasil disimpan.")`.
-- **Error Feedback**: On validation or mutation failure, show `toast.error("Gagal menyimpan data.", { description: err.message })`.
+- **Mutation Callbacks Pattern**: Always configure feedback and side effects (`toast`, modal closing, query invalidation) within the mutation options (`onSuccess`, `onError`) rather than manual `try ... catch` blocks inside `onSubmit`. This keeps the form's `onSubmit` concise (`await mutation.mutateAsync({ body: value })`).
+- **Success Feedback**: Upon successful mutation, show `toast.success("Perusahaan berhasil disimpan.")`.
+- **Error Feedback**: On mutation failure, show `toast.error("Gagal menyimpan data.", { description: error.detail })`.
