@@ -1,3 +1,4 @@
+import { useForm } from "@tanstack/react-form";
 import { useQueryClient } from "@tanstack/react-query";
 import {
 	Activity,
@@ -19,12 +20,13 @@ import type {
 	DiameterUnit,
 	FeedStatus,
 	NolEvaluationDetail,
-	NolEvaluationScenarioDetail,
 	SaveNolEvaluationRequest,
+	SaveNolEvaluationScenarioRequest,
 	SkemaPembayaran,
 	StatusRkap,
 } from "@/api/types";
 import { DocumentDownloadButton } from "@/components/documents/document-download-buttons";
+import { FormField } from "@/components/form/form-field";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -60,6 +62,10 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import {
+	type NolEvaluationFormValues,
+	nolEvaluationSchema,
+} from "@/lib/schemas";
 
 interface NolEvaluationFormProps {
 	companyId: string;
@@ -68,6 +74,82 @@ interface NolEvaluationFormProps {
 	canChooseReviewers?: boolean;
 	onSaved?: () => void;
 	onReviewersChosen?: () => void;
+}
+
+function getDefaultValues(
+	initialData?: NolEvaluationDetail | null,
+): NolEvaluationFormValues {
+	return {
+		feedStatus: initialData?.feedStatus || "Selesai",
+		feedCompletedAt: initialData?.feedCompletedAt || "",
+		statusRkap: initialData?.statusRkap || "Rkap",
+		pipaIndukPanjangM:
+			initialData?.pipaIndukPanjangM != null
+				? String(initialData.pipaIndukPanjangM)
+				: "",
+		pipaIndukDiameter:
+			initialData?.pipaIndukDiameter != null
+				? String(initialData.pipaIndukDiameter)
+				: "",
+		pipaIndukDiameterUnit: initialData?.pipaIndukDiameterUnit || "Inch",
+		pipaServicePanjangM:
+			initialData?.pipaServicePanjangM != null
+				? String(initialData.pipaServicePanjangM)
+				: "",
+		pipaServiceDiameter:
+			initialData?.pipaServiceDiameter != null
+				? String(initialData.pipaServiceDiameter)
+				: "",
+		pipaServiceDiameterUnit: initialData?.pipaServiceDiameterUnit || "Inch",
+		spesifikasiMrs: initialData?.spesifikasiMrs || "",
+		gSize: initialData?.gSize || "",
+		maksKapasitasMeterM3Jam:
+			initialData?.maksKapasitasMeterM3Jam != null
+				? String(initialData.maksKapasitasMeterM3Jam)
+				: "",
+		tekanan: initialData?.tekanan != null ? String(initialData.tekanan) : "",
+		maksFlowrate:
+			initialData?.maksFlowrate != null ? String(initialData.maksFlowrate) : "",
+		skemaPembayaran: initialData?.skemaPembayaran || "JaminanPembayaran",
+		jaminanStatus: initialData?.jaminanStatus || "",
+		jaminanJenis: initialData?.jaminanJenis || "",
+		jaminanMasaBerlaku: initialData?.jaminanMasaBerlaku || "",
+		jaminanPenerbit: initialData?.jaminanPenerbit || "",
+		ketersediaanPasokanBbtud:
+			initialData?.ketersediaanPasokanBbtud != null
+				? String(initialData.ketersediaanPasokanBbtud)
+				: "",
+		capexFinal:
+			initialData?.capexFinal != null ? String(initialData.capexFinal) : "",
+		durasiPelaksanaanBulan:
+			initialData?.durasiPelaksanaanBulan != null
+				? String(initialData.durasiPelaksanaanBulan)
+				: "",
+		analisisKomersial: initialData?.analisisKomersial || "",
+		analisisKompetitor: initialData?.analisisKompetitor || "",
+		radiusKompetitorKm:
+			initialData?.radiusKompetitorKm != null
+				? String(initialData.radiusKompetitorKm)
+				: "",
+		kesimpulan: initialData?.kesimpulan || "",
+		scenarios: initialData?.scenarios?.map((s) => ({
+			id: s.id || crypto.randomUUID(),
+			label: s.label,
+			irrPct: s.irrPct != null ? Number(s.irrPct) : null,
+			npv: s.npv != null ? Number(s.npv) : null,
+			paybackYears: s.paybackYears != null ? Number(s.paybackYears) : null,
+			hasilAnalisis: s.hasilAnalisis || null,
+		})) || [
+			{
+				id: crypto.randomUUID(),
+				label: "Skenario Moderat",
+				irrPct: 18.5,
+				npv: 120000,
+				paybackYears: 3.2,
+				hasilAnalisis: "Layak (Feasible)",
+			},
+		],
+	};
 }
 
 export function NolEvaluationForm({
@@ -94,221 +176,6 @@ export function NolEvaluationForm({
 	const [selectedReviewerIds, setSelectedReviewerIds] = React.useState<
 		string[]
 	>([]);
-
-	// Form State
-	const [feedStatus, setFeedStatus] = React.useState<FeedStatus>(
-		initialData?.feedStatus || "Selesai",
-	);
-	const [feedCompletedAt, setFeedCompletedAt] = React.useState<string>(
-		initialData?.feedCompletedAt || "",
-	);
-	const [statusRkap, setStatusRkap] = React.useState<StatusRkap | "">(
-		initialData?.statusRkap || "Rkap",
-	);
-
-	// Pipeline Specs
-	const [pipaIndukPanjangM, setPipaIndukPanjangM] = React.useState<string>(
-		initialData?.pipaIndukPanjangM != null
-			? String(initialData.pipaIndukPanjangM)
-			: "",
-	);
-	const [pipaIndukDiameter, setPipaIndukDiameter] = React.useState<string>(
-		initialData?.pipaIndukDiameter != null
-			? String(initialData.pipaIndukDiameter)
-			: "",
-	);
-	const [pipaIndukDiameterUnit, setPipaIndukDiameterUnit] = React.useState<
-		DiameterUnit | ""
-	>(initialData?.pipaIndukDiameterUnit || "Inch");
-
-	const [pipaServicePanjangM, setPipaServicePanjangM] = React.useState<string>(
-		initialData?.pipaServicePanjangM != null
-			? String(initialData.pipaServicePanjangM)
-			: "",
-	);
-	const [pipaServiceDiameter, setPipaServiceDiameter] = React.useState<string>(
-		initialData?.pipaServiceDiameter != null
-			? String(initialData.pipaServiceDiameter)
-			: "",
-	);
-	const [pipaServiceDiameterUnit, setPipaServiceDiameterUnit] = React.useState<
-		DiameterUnit | ""
-	>(initialData?.pipaServiceDiameterUnit || "Inch");
-
-	// Meter & MRS
-	const [spesifikasiMrs, setSpesifikasiMrs] = React.useState<string>(
-		initialData?.spesifikasiMrs || "",
-	);
-	const [gSize, setGSize] = React.useState<string>(initialData?.gSize || "");
-	const [maksKapasitasMeterM3Jam, setMaksKapasitasMeterM3Jam] =
-		React.useState<string>(
-			initialData?.maksKapasitasMeterM3Jam != null
-				? String(initialData.maksKapasitasMeterM3Jam)
-				: "",
-		);
-	const [tekanan, setTekanan] = React.useState<string>(
-		initialData?.tekanan != null ? String(initialData.tekanan) : "",
-	);
-	const [maksFlowrate, setMaksFlowrate] = React.useState<string>(
-		initialData?.maksFlowrate != null ? String(initialData.maksFlowrate) : "",
-	);
-
-	// Commercial & Financials
-	const [skemaPembayaran, setSkemaPembayaran] = React.useState<
-		SkemaPembayaran | ""
-	>(initialData?.skemaPembayaran || "JaminanPembayaran");
-	const [jaminanStatus, setJaminanStatus] = React.useState<string>(
-		initialData?.jaminanStatus || "",
-	);
-	const [jaminanJenis, setJaminanJenis] = React.useState<string>(
-		initialData?.jaminanJenis || "",
-	);
-	const [jaminanMasaBerlaku, setJaminanMasaBerlaku] = React.useState<string>(
-		initialData?.jaminanMasaBerlaku || "",
-	);
-	const [jaminanPenerbit, setJaminanPenerbit] = React.useState<string>(
-		initialData?.jaminanPenerbit || "",
-	);
-	const [ketersediaanPasokanBbtud, setKetersediaanPasokanBbtud] =
-		React.useState<string>(
-			initialData?.ketersediaanPasokanBbtud != null
-				? String(initialData.ketersediaanPasokanBbtud)
-				: "",
-		);
-	const [capexFinal, setCapexFinal] = React.useState<string>(
-		initialData?.capexFinal != null ? String(initialData.capexFinal) : "",
-	);
-	const [durasiPelaksanaanBulan, setDurasiPelaksanaanBulan] =
-		React.useState<string>(
-			initialData?.durasiPelaksanaanBulan != null
-				? String(initialData.durasiPelaksanaanBulan)
-				: "",
-		);
-
-	// Narrative & Competitor
-	const [analisisKomersial, setAnalisisKomersial] = React.useState<string>(
-		initialData?.analisisKomersial || "",
-	);
-	const [analisisKompetitor, setAnalisisKompetitor] = React.useState<string>(
-		initialData?.analisisKompetitor || "",
-	);
-	const [radiusKompetitorKm, setRadiusKompetitorKm] = React.useState<string>(
-		initialData?.radiusKompetitorKm != null
-			? String(initialData.radiusKompetitorKm)
-			: "",
-	);
-	const [kesimpulan, setKesimpulan] = React.useState<string>(
-		initialData?.kesimpulan || "",
-	);
-
-	// Repeating Evaluation Scenarios
-	const [scenarios, setScenarios] = React.useState<
-		NolEvaluationScenarioDetail[]
-	>(
-		initialData?.scenarios?.map((s) => ({
-			id: s.id || crypto.randomUUID(),
-			label: s.label,
-			irrPct: s.irrPct != null ? Number(s.irrPct) : null,
-			npv: s.npv != null ? Number(s.npv) : null,
-			paybackYears: s.paybackYears != null ? Number(s.paybackYears) : null,
-			hasilAnalisis: s.hasilAnalisis || null,
-		})) || [
-			{
-				id: crypto.randomUUID(),
-				label: "Skenario Moderat",
-				irrPct: 18.5,
-				npv: 120000,
-				paybackYears: 3.2,
-				hasilAnalisis: "Layak (Feasible)",
-			},
-		],
-	);
-
-	// Synchronize when initialData changes
-	React.useEffect(() => {
-		if (initialData) {
-			setFeedStatus(initialData.feedStatus || "Selesai");
-			setFeedCompletedAt(initialData.feedCompletedAt || "");
-			setStatusRkap(initialData.statusRkap || "Rkap");
-			setPipaIndukPanjangM(
-				initialData.pipaIndukPanjangM != null
-					? String(initialData.pipaIndukPanjangM)
-					: "",
-			);
-			setPipaIndukDiameter(
-				initialData.pipaIndukDiameter != null
-					? String(initialData.pipaIndukDiameter)
-					: "",
-			);
-			setPipaIndukDiameterUnit(initialData.pipaIndukDiameterUnit || "Inch");
-			setPipaServicePanjangM(
-				initialData.pipaServicePanjangM != null
-					? String(initialData.pipaServicePanjangM)
-					: "",
-			);
-			setPipaServiceDiameter(
-				initialData.pipaServiceDiameter != null
-					? String(initialData.pipaServiceDiameter)
-					: "",
-			);
-			setPipaServiceDiameterUnit(initialData.pipaServiceDiameterUnit || "Inch");
-			setSpesifikasiMrs(initialData.spesifikasiMrs || "");
-			setGSize(initialData.gSize || "");
-			setMaksKapasitasMeterM3Jam(
-				initialData.maksKapasitasMeterM3Jam != null
-					? String(initialData.maksKapasitasMeterM3Jam)
-					: "",
-			);
-			setTekanan(
-				initialData.tekanan != null ? String(initialData.tekanan) : "",
-			);
-			setMaksFlowrate(
-				initialData.maksFlowrate != null
-					? String(initialData.maksFlowrate)
-					: "",
-			);
-			setSkemaPembayaran(initialData.skemaPembayaran || "JaminanPembayaran");
-			setJaminanStatus(initialData.jaminanStatus || "");
-			setJaminanJenis(initialData.jaminanJenis || "");
-			setJaminanMasaBerlaku(initialData.jaminanMasaBerlaku || "");
-			setJaminanPenerbit(initialData.jaminanPenerbit || "");
-			setKetersediaanPasokanBbtud(
-				initialData.ketersediaanPasokanBbtud != null
-					? String(initialData.ketersediaanPasokanBbtud)
-					: "",
-			);
-			setCapexFinal(
-				initialData.capexFinal != null ? String(initialData.capexFinal) : "",
-			);
-			setDurasiPelaksanaanBulan(
-				initialData.durasiPelaksanaanBulan != null
-					? String(initialData.durasiPelaksanaanBulan)
-					: "",
-			);
-			setAnalisisKomersial(initialData.analisisKomersial || "");
-			setAnalisisKompetitor(initialData.analisisKompetitor || "");
-			setRadiusKompetitorKm(
-				initialData.radiusKompetitorKm != null
-					? String(initialData.radiusKompetitorKm)
-					: "",
-			);
-			setKesimpulan(initialData.kesimpulan || "");
-
-			if (initialData.scenarios && initialData.scenarios.length > 0) {
-				setScenarios(
-					initialData.scenarios.map((s) => ({
-						id: s.id || crypto.randomUUID(),
-						label: s.label,
-						irrPct: s.irrPct != null ? Number(s.irrPct) : null,
-						npv: s.npv != null ? Number(s.npv) : null,
-						paybackYears:
-							s.paybackYears != null ? Number(s.paybackYears) : null,
-						hasilAnalisis: s.hasilAnalisis || null,
-					})),
-				);
-			}
-		}
-	}, [initialData]);
 
 	// Save Mutation
 	const saveMutation = $api.useMutation(
@@ -368,87 +235,88 @@ export function NolEvaluationForm({
 		},
 	);
 
-	const handleSubmit = (e: React.FormEvent) => {
-		e.preventDefault();
-
-		const request: SaveNolEvaluationRequest = {
-			feedStatus,
-			feedCompletedAt: feedCompletedAt || null,
-			capexFinal: capexFinal ? Number(capexFinal) : null,
-			pipaIndukPanjangM: pipaIndukPanjangM ? Number(pipaIndukPanjangM) : null,
-			pipaIndukDiameter: pipaIndukDiameter ? Number(pipaIndukDiameter) : null,
-			pipaIndukDiameterUnit: pipaIndukDiameterUnit
-				? (pipaIndukDiameterUnit as DiameterUnit)
-				: null,
-			pipaServicePanjangM: pipaServicePanjangM
-				? Number(pipaServicePanjangM)
-				: null,
-			pipaServiceDiameter: pipaServiceDiameter
-				? Number(pipaServiceDiameter)
-				: null,
-			pipaServiceDiameterUnit: pipaServiceDiameterUnit
-				? (pipaServiceDiameterUnit as DiameterUnit)
-				: null,
-			spesifikasiMrs: spesifikasiMrs || null,
-			gSize: gSize || null,
-			tekanan: tekanan ? Number(tekanan) : null,
-			maksFlowrate: maksFlowrate ? Number(maksFlowrate) : null,
-			maksKapasitasMeterM3Jam: maksKapasitasMeterM3Jam
-				? Number(maksKapasitasMeterM3Jam)
-				: null,
-			durasiPelaksanaanBulan: durasiPelaksanaanBulan
-				? Number(durasiPelaksanaanBulan)
-				: null,
-			statusRkap: statusRkap ? (statusRkap as StatusRkap) : null,
-			skemaPembayaran: skemaPembayaran
-				? (skemaPembayaran as SkemaPembayaran)
-				: null,
-			jaminanStatus: jaminanStatus || null,
-			jaminanJenis: jaminanJenis || null,
-			jaminanMasaBerlaku: jaminanMasaBerlaku || null,
-			jaminanPenerbit: jaminanPenerbit || null,
-			ketersediaanPasokanBbtud: ketersediaanPasokanBbtud
-				? Number(ketersediaanPasokanBbtud)
-				: null,
-			analisisKomersial: analisisKomersial || null,
-			analisisKompetitor: analisisKompetitor || null,
-			kesimpulan: kesimpulan || null,
-			radiusKompetitorKm: radiusKompetitorKm
-				? Number(radiusKompetitorKm)
-				: null,
-			scenarios: scenarios.map((s) => ({
+	const form = useForm({
+		defaultValues: getDefaultValues(initialData),
+		validators: {
+			onChange: nolEvaluationSchema,
+		},
+		onSubmit: async ({ value }) => {
+			const scenarios: SaveNolEvaluationScenarioRequest[] = (
+				value.scenarios || []
+			).map((s) => ({
 				id: s.id || crypto.randomUUID(),
 				label: s.label,
 				irrPct: s.irrPct != null ? Number(s.irrPct) : null,
 				npv: s.npv != null ? Number(s.npv) : null,
 				paybackYears: s.paybackYears != null ? Number(s.paybackYears) : null,
 				hasilAnalisis: s.hasilAnalisis || null,
-			})),
-		};
+			}));
 
-		saveMutation.mutate({
-			params: { path: { id: companyId } },
-			body: request,
-		});
-	};
+			const request: SaveNolEvaluationRequest = {
+				feedStatus: (value.feedStatus as FeedStatus) || "Selesai",
+				feedCompletedAt: value.feedCompletedAt || null,
+				capexFinal: value.capexFinal ? Number(value.capexFinal) : null,
+				pipaIndukPanjangM: value.pipaIndukPanjangM
+					? Number(value.pipaIndukPanjangM)
+					: null,
+				pipaIndukDiameter: value.pipaIndukDiameter
+					? Number(value.pipaIndukDiameter)
+					: null,
+				pipaIndukDiameterUnit: value.pipaIndukDiameterUnit
+					? (value.pipaIndukDiameterUnit as DiameterUnit)
+					: null,
+				pipaServicePanjangM: value.pipaServicePanjangM
+					? Number(value.pipaServicePanjangM)
+					: null,
+				pipaServiceDiameter: value.pipaServiceDiameter
+					? Number(value.pipaServiceDiameter)
+					: null,
+				pipaServiceDiameterUnit: value.pipaServiceDiameterUnit
+					? (value.pipaServiceDiameterUnit as DiameterUnit)
+					: null,
+				spesifikasiMrs: value.spesifikasiMrs || null,
+				gSize: value.gSize || null,
+				tekanan: value.tekanan ? Number(value.tekanan) : null,
+				maksFlowrate: value.maksFlowrate ? Number(value.maksFlowrate) : null,
+				maksKapasitasMeterM3Jam: value.maksKapasitasMeterM3Jam
+					? Number(value.maksKapasitasMeterM3Jam)
+					: null,
+				durasiPelaksanaanBulan: value.durasiPelaksanaanBulan
+					? Number(value.durasiPelaksanaanBulan)
+					: null,
+				statusRkap: value.statusRkap ? (value.statusRkap as StatusRkap) : null,
+				skemaPembayaran: value.skemaPembayaran
+					? (value.skemaPembayaran as SkemaPembayaran)
+					: null,
+				jaminanStatus: value.jaminanStatus || null,
+				jaminanJenis: value.jaminanJenis || null,
+				jaminanMasaBerlaku: value.jaminanMasaBerlaku || null,
+				jaminanPenerbit: value.jaminanPenerbit || null,
+				ketersediaanPasokanBbtud: value.ketersediaanPasokanBbtud
+					? Number(value.ketersediaanPasokanBbtud)
+					: null,
+				analisisKomersial: value.analisisKomersial || null,
+				analisisKompetitor: value.analisisKompetitor || null,
+				kesimpulan: value.kesimpulan || null,
+				radiusKompetitorKm: value.radiusKompetitorKm
+					? Number(value.radiusKompetitorKm)
+					: null,
+				scenarios,
+			};
 
-	const addScenarioRow = () => {
-		setScenarios([
-			...scenarios,
-			{
-				id: crypto.randomUUID(),
-				label: `Skenario ${scenarios.length + 1}`,
-				irrPct: null,
-				npv: null,
-				paybackYears: null,
-				hasilAnalisis: "Layak",
-			},
-		]);
-	};
+			await saveMutation.mutateAsync({
+				params: { path: { id: companyId } },
+				body: request,
+			});
+		},
+	});
 
-	const removeScenarioRow = (index: number) => {
-		setScenarios(scenarios.filter((_, i) => i !== index));
-	};
+	// Synchronize when initialData changes
+	React.useEffect(() => {
+		if (initialData) {
+			form.reset(getDefaultValues(initialData));
+		}
+	}, [initialData, form]);
 
 	const toggleReviewer = (id: string) => {
 		if (selectedReviewerIds.includes(id)) {
@@ -458,19 +326,26 @@ export function NolEvaluationForm({
 		}
 	};
 
-	const handleAssignReviewers = () => {
+	const handleAssignReviewers = async () => {
 		if (selectedReviewerIds.length === 0) {
 			toast.error("Pilih minimal 1 reviewer.");
 			return;
 		}
-		chooseReviewersMutation.mutate({
+		await chooseReviewersMutation.mutateAsync({
 			params: { path: { id: companyId } },
 			body: { reviewerUserIds: selectedReviewerIds },
 		});
 	};
 
 	return (
-		<form onSubmit={handleSubmit} className="space-y-6">
+		<form
+			onSubmit={(e) => {
+				e.preventDefault();
+				e.stopPropagation();
+				form.handleSubmit();
+			}}
+			className="space-y-6"
+		>
 			{/* Top Bar Summary / Save */}
 			<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 bg-muted/40 rounded-lg border">
 				<div className="flex items-center gap-3">
@@ -507,19 +382,25 @@ export function NolEvaluationForm({
 						</Button>
 					)}
 					{canEdit && (
-						<Button
-							type="submit"
-							size="sm"
-							disabled={saveMutation.isPending}
-							className="h-9 text-xs flex items-center gap-1.5 bg-purple-600 hover:bg-purple-700 text-white"
+						<form.Subscribe
+							selector={(state) => [state.canSubmit, state.isSubmitting]}
 						>
-							{saveMutation.isPending ? (
-								<Loader2 className="size-3.5 animate-spin" />
-							) : (
-								<Save className="size-3.5" />
+							{([canSubmit, isSubmitting]) => (
+								<Button
+									type="submit"
+									size="sm"
+									disabled={!canSubmit || isSubmitting}
+									className="h-9 text-xs flex items-center gap-1.5 bg-purple-600 hover:bg-purple-700 text-white"
+								>
+									{isSubmitting ? (
+										<Loader2 className="size-3.5 animate-spin" />
+									) : (
+										<Save className="size-3.5" />
+									)}
+									Simpan Resume Evaluasi
+								</Button>
 							)}
-							Simpan Resume Evaluasi
-						</Button>
+						</form.Subscribe>
 					)}
 				</div>
 			</div>
@@ -535,72 +416,82 @@ export function NolEvaluationForm({
 				<CardContent className="space-y-4">
 					<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
 						{/* Status FEED */}
-						<div className="space-y-1.5">
-							<Label className="text-xs font-medium">Status FEED</Label>
-							<Select
-								value={feedStatus}
-								onValueChange={(val) => setFeedStatus(val as FeedStatus)}
-								disabled={!canEdit}
-							>
-								<SelectTrigger className="text-xs h-9">
-									<SelectValue />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="Belum">Belum Dimulai</SelectItem>
-									<SelectItem value="DalamProses">Dalam Proses</SelectItem>
-									<SelectItem value="Selesai">Selesai (Done)</SelectItem>
-								</SelectContent>
-							</Select>
-						</div>
+						<form.Field name="feedStatus">
+							{(field) => (
+								<FormField label="Status FEED">
+									<Select
+										value={field.state.value || "Selesai"}
+										onValueChange={(val) => field.handleChange(val)}
+										disabled={!canEdit}
+									>
+										<SelectTrigger className="text-xs h-9">
+											<SelectValue />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="Belum">Belum Dimulai</SelectItem>
+											<SelectItem value="DalamProses">Dalam Proses</SelectItem>
+											<SelectItem value="Selesai">Selesai (Done)</SelectItem>
+										</SelectContent>
+									</Select>
+								</FormField>
+							)}
+						</form.Field>
 
 						{/* Tanggal Selesai FEED */}
-						<div className="space-y-1.5">
-							<Label className="text-xs font-medium">
-								Tanggal Selesai FEED
-							</Label>
-							<Input
-								type="date"
-								value={feedCompletedAt}
-								onChange={(e) => setFeedCompletedAt(e.target.value)}
-								disabled={!canEdit}
-								className="text-xs h-9"
-							/>
-						</div>
+						<form.Field name="feedCompletedAt">
+							{(field) => (
+								<FormField label="Tanggal Selesai FEED">
+									<Input
+										type="date"
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										disabled={!canEdit}
+										className="text-xs h-9"
+									/>
+								</FormField>
+							)}
+						</form.Field>
 
 						{/* Status RKAP */}
-						<div className="space-y-1.5">
-							<Label className="text-xs font-medium">Status RKAP</Label>
-							<Select
-								value={statusRkap || "NONE"}
-								onValueChange={(val) =>
-									setStatusRkap(val === "NONE" ? "" : (val as StatusRkap))
-								}
-								disabled={!canEdit}
-							>
-								<SelectTrigger className="text-xs h-9">
-									<SelectValue placeholder="Pilih Status RKAP" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="NONE">Belum Dipilih</SelectItem>
-									<SelectItem value="Rkap">Masuk RKAP</SelectItem>
-									<SelectItem value="NonRkap">Non-RKAP</SelectItem>
-								</SelectContent>
-							</Select>
-						</div>
+						<form.Field name="statusRkap">
+							{(field) => (
+								<FormField label="Status RKAP">
+									<Select
+										value={field.state.value || "NONE"}
+										onValueChange={(val) =>
+											field.handleChange(val === "NONE" ? "" : val)
+										}
+										disabled={!canEdit}
+									>
+										<SelectTrigger className="text-xs h-9">
+											<SelectValue placeholder="Pilih Status RKAP" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="NONE">Belum Dipilih</SelectItem>
+											<SelectItem value="Rkap">Masuk RKAP</SelectItem>
+											<SelectItem value="NonRkap">Non-RKAP</SelectItem>
+										</SelectContent>
+									</Select>
+								</FormField>
+							)}
+						</form.Field>
 
 						{/* Capex Final */}
-						<div className="space-y-1.5">
-							<Label className="text-xs font-medium">Capex Final (USD)</Label>
-							<Input
-								type="number"
-								step="0.01"
-								value={capexFinal}
-								onChange={(e) => setCapexFinal(e.target.value)}
-								placeholder="contoh: 85000"
-								disabled={!canEdit}
-								className="text-xs h-9 font-mono"
-							/>
-						</div>
+						<form.Field name="capexFinal">
+							{(field) => (
+								<FormField label="Capex Final (USD)">
+									<Input
+										type="number"
+										step="0.01"
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										placeholder="contoh: 85000"
+										disabled={!canEdit}
+										className="text-xs h-9 font-mono"
+									/>
+								</FormField>
+							)}
+						</form.Field>
 					</div>
 				</CardContent>
 			</Card>
@@ -620,48 +511,57 @@ export function NolEvaluationForm({
 							<span className="text-xs font-semibold text-muted-foreground">
 								Pipa Induk / Distribusi
 							</span>
-							<div className="space-y-1.5">
-								<Label className="text-[11px]">Panjang Pipa (Meter)</Label>
-								<Input
-									type="number"
-									placeholder="contoh: 500"
-									value={pipaIndukPanjangM}
-									onChange={(e) => setPipaIndukPanjangM(e.target.value)}
-									disabled={!canEdit}
-									className="text-xs h-8"
-								/>
-							</div>
+							<form.Field name="pipaIndukPanjangM">
+								{(field) => (
+									<FormField label="Panjang Pipa (Meter)">
+										<Input
+											type="number"
+											placeholder="contoh: 500"
+											value={field.state.value}
+											onChange={(e) => field.handleChange(e.target.value)}
+											disabled={!canEdit}
+											className="text-xs h-8"
+										/>
+									</FormField>
+								)}
+							</form.Field>
+
 							<div className="grid grid-cols-2 gap-2">
-								<div className="space-y-1.5">
-									<Label className="text-[11px]">Diameter</Label>
-									<Input
-										type="number"
-										step="0.5"
-										placeholder="contoh: 4"
-										value={pipaIndukDiameter}
-										onChange={(e) => setPipaIndukDiameter(e.target.value)}
-										disabled={!canEdit}
-										className="text-xs h-8"
-									/>
-								</div>
-								<div className="space-y-1.5">
-									<Label className="text-[11px]">Satuan</Label>
-									<Select
-										value={pipaIndukDiameterUnit || "Inch"}
-										onValueChange={(val) =>
-											setPipaIndukDiameterUnit(val as DiameterUnit)
-										}
-										disabled={!canEdit}
-									>
-										<SelectTrigger className="text-xs h-8">
-											<SelectValue />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value="Inch">Inch</SelectItem>
-											<SelectItem value="Mm">mm</SelectItem>
-										</SelectContent>
-									</Select>
-								</div>
+								<form.Field name="pipaIndukDiameter">
+									{(field) => (
+										<FormField label="Diameter">
+											<Input
+												type="number"
+												step="0.5"
+												placeholder="contoh: 4"
+												value={field.state.value}
+												onChange={(e) => field.handleChange(e.target.value)}
+												disabled={!canEdit}
+												className="text-xs h-8"
+											/>
+										</FormField>
+									)}
+								</form.Field>
+
+								<form.Field name="pipaIndukDiameterUnit">
+									{(field) => (
+										<FormField label="Satuan">
+											<Select
+												value={field.state.value || "Inch"}
+												onValueChange={(val) => field.handleChange(val)}
+												disabled={!canEdit}
+											>
+												<SelectTrigger className="text-xs h-8">
+													<SelectValue />
+												</SelectTrigger>
+												<SelectContent>
+													<SelectItem value="Inch">Inch</SelectItem>
+													<SelectItem value="Mm">mm</SelectItem>
+												</SelectContent>
+											</Select>
+										</FormField>
+									)}
+								</form.Field>
 							</div>
 						</div>
 
@@ -670,48 +570,57 @@ export function NolEvaluationForm({
 							<span className="text-xs font-semibold text-muted-foreground">
 								Pipa Servis Pelanggan
 							</span>
-							<div className="space-y-1.5">
-								<Label className="text-[11px]">Panjang Pipa (Meter)</Label>
-								<Input
-									type="number"
-									placeholder="contoh: 25"
-									value={pipaServicePanjangM}
-									onChange={(e) => setPipaServicePanjangM(e.target.value)}
-									disabled={!canEdit}
-									className="text-xs h-8"
-								/>
-							</div>
+							<form.Field name="pipaServicePanjangM">
+								{(field) => (
+									<FormField label="Panjang Pipa (Meter)">
+										<Input
+											type="number"
+											placeholder="contoh: 25"
+											value={field.state.value}
+											onChange={(e) => field.handleChange(e.target.value)}
+											disabled={!canEdit}
+											className="text-xs h-8"
+										/>
+									</FormField>
+								)}
+							</form.Field>
+
 							<div className="grid grid-cols-2 gap-2">
-								<div className="space-y-1.5">
-									<Label className="text-[11px]">Diameter</Label>
-									<Input
-										type="number"
-										step="0.5"
-										placeholder="contoh: 2"
-										value={pipaServiceDiameter}
-										onChange={(e) => setPipaServiceDiameter(e.target.value)}
-										disabled={!canEdit}
-										className="text-xs h-8"
-									/>
-								</div>
-								<div className="space-y-1.5">
-									<Label className="text-[11px]">Satuan</Label>
-									<Select
-										value={pipaServiceDiameterUnit || "Inch"}
-										onValueChange={(val) =>
-											setPipaServiceDiameterUnit(val as DiameterUnit)
-										}
-										disabled={!canEdit}
-									>
-										<SelectTrigger className="text-xs h-8">
-											<SelectValue />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value="Inch">Inch</SelectItem>
-											<SelectItem value="Mm">mm</SelectItem>
-										</SelectContent>
-									</Select>
-								</div>
+								<form.Field name="pipaServiceDiameter">
+									{(field) => (
+										<FormField label="Diameter">
+											<Input
+												type="number"
+												step="0.5"
+												placeholder="contoh: 2"
+												value={field.state.value}
+												onChange={(e) => field.handleChange(e.target.value)}
+												disabled={!canEdit}
+												className="text-xs h-8"
+											/>
+										</FormField>
+									)}
+								</form.Field>
+
+								<form.Field name="pipaServiceDiameterUnit">
+									{(field) => (
+										<FormField label="Satuan">
+											<Select
+												value={field.state.value || "Inch"}
+												onValueChange={(val) => field.handleChange(val)}
+												disabled={!canEdit}
+											>
+												<SelectTrigger className="text-xs h-8">
+													<SelectValue />
+												</SelectTrigger>
+												<SelectContent>
+													<SelectItem value="Inch">Inch</SelectItem>
+													<SelectItem value="Mm">mm</SelectItem>
+												</SelectContent>
+											</Select>
+										</FormField>
+									)}
+								</form.Field>
 							</div>
 						</div>
 
@@ -720,108 +629,126 @@ export function NolEvaluationForm({
 							<span className="text-xs font-semibold text-muted-foreground">
 								Spesifikasi MRS & Meter
 							</span>
-							<div className="space-y-1.5">
-								<Label className="text-[11px]">Tipe / Spesifikasi MRS</Label>
-								<Select
-									value={spesifikasiMrs || "NONE"}
-									onValueChange={(val) =>
-										setSpesifikasiMrs(val === "NONE" ? "" : val)
-									}
-									disabled={!canEdit}
-								>
-									<SelectTrigger className="text-xs h-8">
-										<SelectValue placeholder="Pilih Spesifikasi MRS" />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value="NONE">Belum Dipilih</SelectItem>
-										{mrsSpecs?.map((m) => (
-											<SelectItem key={m.id} value={m.name}>
-												{m.name}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-							</div>
+							<form.Field name="spesifikasiMrs">
+								{(field) => (
+									<FormField label="Tipe / Spesifikasi MRS">
+										<Select
+											value={field.state.value || "NONE"}
+											onValueChange={(val) =>
+												field.handleChange(val === "NONE" ? "" : val)
+											}
+											disabled={!canEdit}
+										>
+											<SelectTrigger className="text-xs h-8">
+												<SelectValue placeholder="Pilih Spesifikasi MRS" />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="NONE">Belum Dipilih</SelectItem>
+												{mrsSpecs?.map((m) => (
+													<SelectItem key={m.id} value={m.name}>
+														{m.name}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									</FormField>
+								)}
+							</form.Field>
+
 							<div className="grid grid-cols-2 gap-2">
-								<div className="space-y-1.5">
-									<Label className="text-[11px]">Ukuran Meter</Label>
-									<Select
-										value={gSize || "NONE"}
-										onValueChange={(val) => setGSize(val === "NONE" ? "" : val)}
-										disabled={!canEdit}
-									>
-										<SelectTrigger className="text-xs h-8">
-											<SelectValue placeholder="Pilih G-Size" />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value="NONE">Belum Dipilih</SelectItem>
-											{meterSizes?.map((m) => (
-												<SelectItem key={m.id} value={m.gSize}>
-													{m.gSize}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-								</div>
-								<div className="space-y-1.5">
-									<Label className="text-[11px]">Kapasitas (m3/jam)</Label>
-									<Input
-										type="number"
-										placeholder="contoh: 250"
-										value={maksKapasitasMeterM3Jam}
-										onChange={(e) => setMaksKapasitasMeterM3Jam(e.target.value)}
-										disabled={!canEdit}
-										className="text-xs h-8"
-									/>
-								</div>
+								<form.Field name="gSize">
+									{(field) => (
+										<FormField label="Ukuran Meter">
+											<Select
+												value={field.state.value || "NONE"}
+												onValueChange={(val) =>
+													field.handleChange(val === "NONE" ? "" : val)
+												}
+												disabled={!canEdit}
+											>
+												<SelectTrigger className="text-xs h-8">
+													<SelectValue placeholder="Pilih G-Size" />
+												</SelectTrigger>
+												<SelectContent>
+													<SelectItem value="NONE">Belum Dipilih</SelectItem>
+													{meterSizes?.map((m) => (
+														<SelectItem key={m.id} value={m.gSize}>
+															{m.gSize}
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+										</FormField>
+									)}
+								</form.Field>
+
+								<form.Field name="maksKapasitasMeterM3Jam">
+									{(field) => (
+										<FormField label="Kapasitas (m3/jam)">
+											<Input
+												type="number"
+												placeholder="contoh: 250"
+												value={field.state.value}
+												onChange={(e) => field.handleChange(e.target.value)}
+												disabled={!canEdit}
+												className="text-xs h-8"
+											/>
+										</FormField>
+									)}
+								</form.Field>
 							</div>
 						</div>
 					</div>
 
 					<div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t">
 						{/* Tekanan */}
-						<div className="space-y-1.5">
-							<Label className="text-xs font-medium">Tekanan (Barg)</Label>
-							<Input
-								type="number"
-								step="0.1"
-								placeholder="contoh: 3.0"
-								value={tekanan}
-								onChange={(e) => setTekanan(e.target.value)}
-								disabled={!canEdit}
-								className="text-xs h-9"
-							/>
-						</div>
+						<form.Field name="tekanan">
+							{(field) => (
+								<FormField label="Tekanan (Barg)">
+									<Input
+										type="number"
+										step="0.1"
+										placeholder="contoh: 3.0"
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										disabled={!canEdit}
+										className="text-xs h-9"
+									/>
+								</FormField>
+							)}
+						</form.Field>
 
 						{/* Maks Flowrate */}
-						<div className="space-y-1.5">
-							<Label className="text-xs font-medium">
-								Maksimum Flowrate (m3/jam)
-							</Label>
-							<Input
-								type="number"
-								placeholder="contoh: 180"
-								value={maksFlowrate}
-								onChange={(e) => setMaksFlowrate(e.target.value)}
-								disabled={!canEdit}
-								className="text-xs h-9"
-							/>
-						</div>
+						<form.Field name="maksFlowrate">
+							{(field) => (
+								<FormField label="Maksimum Flowrate (m3/jam)">
+									<Input
+										type="number"
+										placeholder="contoh: 180"
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										disabled={!canEdit}
+										className="text-xs h-9"
+									/>
+								</FormField>
+							)}
+						</form.Field>
 
 						{/* Durasi Pelaksanaan */}
-						<div className="space-y-1.5">
-							<Label className="text-xs font-medium">
-								Durasi Pelaksanaan (Bulan)
-							</Label>
-							<Input
-								type="number"
-								placeholder="contoh: 3"
-								value={durasiPelaksanaanBulan}
-								onChange={(e) => setDurasiPelaksanaanBulan(e.target.value)}
-								disabled={!canEdit}
-								className="text-xs h-9"
-							/>
-						</div>
+						<form.Field name="durasiPelaksanaanBulan">
+							{(field) => (
+								<FormField label="Durasi Pelaksanaan (Bulan)">
+									<Input
+										type="number"
+										placeholder="contoh: 3"
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										disabled={!canEdit}
+										className="text-xs h-9"
+									/>
+								</FormField>
+							)}
+						</form.Field>
 					</div>
 				</CardContent>
 			</Card>
@@ -843,7 +770,20 @@ export function NolEvaluationForm({
 							type="button"
 							variant="outline"
 							size="sm"
-							onClick={addScenarioRow}
+							onClick={() => {
+								const current = form.getFieldValue("scenarios") || [];
+								form.setFieldValue("scenarios", [
+									...current,
+									{
+										id: crypto.randomUUID(),
+										label: `Skenario ${current.length + 1}`,
+										irrPct: null,
+										npv: null,
+										paybackYears: null,
+										hasilAnalisis: "Layak",
+									},
+								]);
+							}}
 							className="h-8 text-xs flex items-center gap-1"
 						>
 							<Plus className="size-3.5" />
@@ -852,119 +792,151 @@ export function NolEvaluationForm({
 					)}
 				</CardHeader>
 				<CardContent>
-					<div className="rounded-lg border overflow-hidden">
-						<Table>
-							<TableHeader className="bg-muted/40">
-								<TableRow>
-									<TableHead className="text-xs">Nama Skenario</TableHead>
-									<TableHead className="text-xs">IRR (%)</TableHead>
-									<TableHead className="text-xs">NPV (USD)</TableHead>
-									<TableHead className="text-xs">Payback (Tahun)</TableHead>
-									<TableHead className="text-xs">Kesimpulan / Status</TableHead>
-									{canEdit && (
-										<TableHead className="text-xs text-center w-12">
-											Hapus
-										</TableHead>
-									)}
-								</TableRow>
-							</TableHeader>
-							<TableBody>
-								{scenarios.map((row, idx) => (
-									// biome-ignore lint/suspicious/noArrayIndexKey: dynamic form rows
-									<TableRow key={idx}>
-										<TableCell>
-											<Input
-												value={row.label}
-												onChange={(e) => {
-													const next = [...scenarios];
-													next[idx].label = e.target.value;
-													setScenarios(next);
-												}}
-												disabled={!canEdit}
-												className="text-xs h-8 font-medium"
-											/>
-										</TableCell>
-										<TableCell>
-											<Input
-												type="number"
-												step="0.1"
-												value={row.irrPct ?? ""}
-												onChange={(e) => {
-													const next = [...scenarios];
-													next[idx].irrPct = e.target.value
-														? Number(e.target.value)
-														: null;
-													setScenarios(next);
-												}}
-												placeholder="18.5"
-												disabled={!canEdit}
-												className="text-xs h-8 font-mono"
-											/>
-										</TableCell>
-										<TableCell>
-											<Input
-												type="number"
-												value={row.npv ?? ""}
-												onChange={(e) => {
-													const next = [...scenarios];
-													next[idx].npv = e.target.value
-														? Number(e.target.value)
-														: null;
-													setScenarios(next);
-												}}
-												placeholder="150000"
-												disabled={!canEdit}
-												className="text-xs h-8 font-mono"
-											/>
-										</TableCell>
-										<TableCell>
-											<Input
-												type="number"
-												step="0.1"
-												value={row.paybackYears ?? ""}
-												onChange={(e) => {
-													const next = [...scenarios];
-													next[idx].paybackYears = e.target.value
-														? Number(e.target.value)
-														: null;
-													setScenarios(next);
-												}}
-												placeholder="3.5"
-												disabled={!canEdit}
-												className="text-xs h-8 font-mono"
-											/>
-										</TableCell>
-										<TableCell>
-											<Input
-												value={row.hasilAnalisis || ""}
-												onChange={(e) => {
-													const next = [...scenarios];
-													next[idx].hasilAnalisis = e.target.value || null;
-													setScenarios(next);
-												}}
-												placeholder="Layak"
-												disabled={!canEdit}
-												className="text-xs h-8"
-											/>
-										</TableCell>
-										{canEdit && (
-											<TableCell className="text-center">
-												<Button
-													type="button"
-													variant="ghost"
-													size="icon"
-													onClick={() => removeScenarioRow(idx)}
-													className="size-7 text-destructive hover:text-destructive"
-												>
-													<Trash2 className="size-3.5" />
-												</Button>
-											</TableCell>
-										)}
-									</TableRow>
-								))}
-							</TableBody>
-						</Table>
-					</div>
+					<form.Field name="scenarios">
+						{(field) => {
+							const scenarioList = field.state.value || [];
+							return (
+								<div className="rounded-lg border overflow-hidden">
+									<Table>
+										<TableHeader className="bg-muted/40">
+											<TableRow>
+												<TableHead className="text-xs">Nama Skenario</TableHead>
+												<TableHead className="text-xs">IRR (%)</TableHead>
+												<TableHead className="text-xs">NPV (USD)</TableHead>
+												<TableHead className="text-xs">
+													Payback (Tahun)
+												</TableHead>
+												<TableHead className="text-xs">
+													Kesimpulan / Status
+												</TableHead>
+												{canEdit && (
+													<TableHead className="text-xs text-center w-12">
+														Hapus
+													</TableHead>
+												)}
+											</TableRow>
+										</TableHeader>
+										<TableBody>
+											{scenarioList.map((row, idx) => (
+												<TableRow key={row.id || `scenario-${idx}`}>
+													<TableCell>
+														<Input
+															value={row.label}
+															onChange={(e) => {
+																const next = [...scenarioList];
+																next[idx] = { ...row, label: e.target.value };
+																field.handleChange(next);
+															}}
+															disabled={!canEdit}
+															className="text-xs h-8 font-medium"
+														/>
+													</TableCell>
+													<TableCell>
+														<Input
+															type="number"
+															step="0.1"
+															value={
+																row.irrPct != null ? String(row.irrPct) : ""
+															}
+															onChange={(e) => {
+																const next = [...scenarioList];
+																next[idx] = {
+																	...row,
+																	irrPct: e.target.value
+																		? Number(e.target.value)
+																		: null,
+																};
+																field.handleChange(next);
+															}}
+															placeholder="18.5"
+															disabled={!canEdit}
+															className="text-xs h-8 font-mono"
+														/>
+													</TableCell>
+													<TableCell>
+														<Input
+															type="number"
+															value={row.npv != null ? String(row.npv) : ""}
+															onChange={(e) => {
+																const next = [...scenarioList];
+																next[idx] = {
+																	...row,
+																	npv: e.target.value
+																		? Number(e.target.value)
+																		: null,
+																};
+																field.handleChange(next);
+															}}
+															placeholder="150000"
+															disabled={!canEdit}
+															className="text-xs h-8 font-mono"
+														/>
+													</TableCell>
+													<TableCell>
+														<Input
+															type="number"
+															step="0.1"
+															value={
+																row.paybackYears != null
+																	? String(row.paybackYears)
+																	: ""
+															}
+															onChange={(e) => {
+																const next = [...scenarioList];
+																next[idx] = {
+																	...row,
+																	paybackYears: e.target.value
+																		? Number(e.target.value)
+																		: null,
+																};
+																field.handleChange(next);
+															}}
+															placeholder="3.5"
+															disabled={!canEdit}
+															className="text-xs h-8 font-mono"
+														/>
+													</TableCell>
+													<TableCell>
+														<Input
+															value={row.hasilAnalisis || ""}
+															onChange={(e) => {
+																const next = [...scenarioList];
+																next[idx] = {
+																	...row,
+																	hasilAnalisis: e.target.value || null,
+																};
+																field.handleChange(next);
+															}}
+															placeholder="Layak"
+															disabled={!canEdit}
+															className="text-xs h-8"
+														/>
+													</TableCell>
+													{canEdit && (
+														<TableCell className="text-center">
+															<Button
+																type="button"
+																variant="ghost"
+																size="icon"
+																onClick={() => {
+																	field.handleChange(
+																		scenarioList.filter((_, i) => i !== idx),
+																	);
+																}}
+																className="size-7 text-destructive hover:text-destructive"
+															>
+																<Trash2 className="size-3.5" />
+															</Button>
+														</TableCell>
+													)}
+												</TableRow>
+											))}
+										</TableBody>
+									</Table>
+								</div>
+							);
+						}}
+					</form.Field>
 				</CardContent>
 			</Card>
 
@@ -979,106 +951,124 @@ export function NolEvaluationForm({
 				<CardContent className="space-y-4">
 					<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
 						{/* Skema Pembayaran */}
-						<div className="space-y-1.5">
-							<Label className="text-xs font-medium">Skema Pembayaran</Label>
-							<Select
-								value={skemaPembayaran || "NONE"}
-								onValueChange={(val) =>
-									setSkemaPembayaran(
-										val === "NONE" ? "" : (val as SkemaPembayaran),
-									)
-								}
-								disabled={!canEdit}
-							>
-								<SelectTrigger className="text-xs h-9">
-									<SelectValue placeholder="Pilih Skema Pembayaran" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="NONE">Belum Dipilih</SelectItem>
-									<SelectItem value="JaminanPembayaran">
-										Jaminan Pembayaran (Bank Garansi)
-									</SelectItem>
-									<SelectItem value="PembayaranDimuka">
-										Pembayaran Dimuka (Advance Payment)
-									</SelectItem>
-								</SelectContent>
-							</Select>
-						</div>
+						<form.Field name="skemaPembayaran">
+							{(field) => (
+								<FormField label="Skema Pembayaran">
+									<Select
+										value={field.state.value || "NONE"}
+										onValueChange={(val) =>
+											field.handleChange(val === "NONE" ? "" : val)
+										}
+										disabled={!canEdit}
+									>
+										<SelectTrigger className="text-xs h-9">
+											<SelectValue placeholder="Pilih Skema Pembayaran" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="NONE">Belum Dipilih</SelectItem>
+											<SelectItem value="JaminanPembayaran">
+												Jaminan Pembayaran (Bank Garansi)
+											</SelectItem>
+											<SelectItem value="PembayaranDimuka">
+												Pembayaran Dimuka (Advance Payment)
+											</SelectItem>
+										</SelectContent>
+									</Select>
+								</FormField>
+							)}
+						</form.Field>
 
 						{/* Ketersediaan Pasokan (BBTUD) */}
-						<div className="space-y-1.5">
-							<Label className="text-xs font-medium">
-								Ketersediaan Pasokan Gas (BBTUD)
-							</Label>
-							<Input
-								type="number"
-								step="0.01"
-								value={ketersediaanPasokanBbtud}
-								onChange={(e) => setKetersediaanPasokanBbtud(e.target.value)}
-								placeholder="contoh: 1.5"
-								disabled={!canEdit}
-								className="text-xs h-9 font-mono"
-							/>
-						</div>
+						<form.Field name="ketersediaanPasokanBbtud">
+							{(field) => (
+								<FormField label="Ketersediaan Pasokan Gas (BBTUD)">
+									<Input
+										type="number"
+										step="0.01"
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										placeholder="contoh: 1.5"
+										disabled={!canEdit}
+										className="text-xs h-9 font-mono"
+									/>
+								</FormField>
+							)}
+						</form.Field>
 
 						{/* Radius Kompetitor (km) */}
-						<div className="space-y-1.5">
-							<Label className="text-xs font-medium">
-								Jarak Kompetitor Terdekat (Km)
-							</Label>
-							<Input
-								type="number"
-								step="0.1"
-								value={radiusKompetitorKm}
-								onChange={(e) => setRadiusKompetitorKm(e.target.value)}
-								placeholder="contoh: 2.5"
-								disabled={!canEdit}
-								className="text-xs h-9 font-mono"
-							/>
-						</div>
+						<form.Field name="radiusKompetitorKm">
+							{(field) => (
+								<FormField label="Jarak Kompetitor Terdekat (Km)">
+									<Input
+										type="number"
+										step="0.1"
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										placeholder="contoh: 2.5"
+										disabled={!canEdit}
+										className="text-xs h-9 font-mono"
+									/>
+								</FormField>
+							)}
+						</form.Field>
 					</div>
 
 					<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 pt-2 border-t">
-						<div className="space-y-1.5">
-							<Label className="text-[11px]">Status Jaminan</Label>
-							<Input
-								value={jaminanStatus}
-								onChange={(e) => setJaminanStatus(e.target.value)}
-								placeholder="contoh: Siap diterbitkan"
-								disabled={!canEdit}
-								className="text-xs h-8"
-							/>
-						</div>
-						<div className="space-y-1.5">
-							<Label className="text-[11px]">Jenis Jaminan</Label>
-							<Input
-								value={jaminanJenis}
-								onChange={(e) => setJaminanJenis(e.target.value)}
-								placeholder="contoh: Bank Garansi"
-								disabled={!canEdit}
-								className="text-xs h-8"
-							/>
-						</div>
-						<div className="space-y-1.5">
-							<Label className="text-[11px]">Masa Berlaku</Label>
-							<Input
-								value={jaminanMasaBerlaku}
-								onChange={(e) => setJaminanMasaBerlaku(e.target.value)}
-								placeholder="contoh: 12 Bulan"
-								disabled={!canEdit}
-								className="text-xs h-8"
-							/>
-						</div>
-						<div className="space-y-1.5">
-							<Label className="text-[11px]">Bank / Penerbit Jaminan</Label>
-							<Input
-								value={jaminanPenerbit}
-								onChange={(e) => setJaminanPenerbit(e.target.value)}
-								placeholder="contoh: Bank Mandiri"
-								disabled={!canEdit}
-								className="text-xs h-8"
-							/>
-						</div>
+						<form.Field name="jaminanStatus">
+							{(field) => (
+								<FormField label="Status Jaminan">
+									<Input
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										placeholder="contoh: Siap diterbitkan"
+										disabled={!canEdit}
+										className="text-xs h-8"
+									/>
+								</FormField>
+							)}
+						</form.Field>
+
+						<form.Field name="jaminanJenis">
+							{(field) => (
+								<FormField label="Jenis Jaminan">
+									<Input
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										placeholder="contoh: Bank Garansi"
+										disabled={!canEdit}
+										className="text-xs h-8"
+									/>
+								</FormField>
+							)}
+						</form.Field>
+
+						<form.Field name="jaminanMasaBerlaku">
+							{(field) => (
+								<FormField label="Masa Berlaku">
+									<Input
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										placeholder="contoh: 12 Bulan"
+										disabled={!canEdit}
+										className="text-xs h-8"
+									/>
+								</FormField>
+							)}
+						</form.Field>
+
+						<form.Field name="jaminanPenerbit">
+							{(field) => (
+								<FormField label="Bank / Penerbit Jaminan">
+									<Input
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										placeholder="contoh: Bank Mandiri"
+										disabled={!canEdit}
+										className="text-xs h-8"
+									/>
+								</FormField>
+							)}
+						</form.Field>
 					</div>
 				</CardContent>
 			</Card>
@@ -1091,63 +1081,52 @@ export function NolEvaluationForm({
 					</CardTitle>
 				</CardHeader>
 				<CardContent className="space-y-4">
-					<div className="space-y-1.5">
-						<Label className="text-xs font-medium">
-							Analisis Komersial & Pasar
-						</Label>
-						<Textarea
-							value={analisisKomersial}
-							onChange={(e) => setAnalisisKomersial(e.target.value)}
-							placeholder="Evaluasi profil kebutuhan gas, proyeksi pertumbuhan, dan kepatuhan tarif..."
-							disabled={!canEdit}
-							className="text-xs min-h-[60px]"
-						/>
-					</div>
+					<form.Field name="analisisKomersial">
+						{(field) => (
+							<FormField label="Analisis Komersial & Pasar">
+								<Textarea
+									value={field.state.value}
+									onChange={(e) => field.handleChange(e.target.value)}
+									placeholder="Evaluasi profil kebutuhan gas, proyeksi pertumbuhan, dan kepatuhan tarif..."
+									disabled={!canEdit}
+									className="text-xs min-h-[60px]"
+								/>
+							</FormField>
+						)}
+					</form.Field>
 
-					<div className="space-y-1.5">
-						<Label className="text-xs font-medium">
-							Analisis Kompetitor & Ancaman Bahan Bakar Alternatif
-						</Label>
-						<Textarea
-							value={analisisKompetitor}
-							onChange={(e) => setAnalisisKompetitor(e.target.value)}
-							placeholder="Analisis harga energi kompetitor (CNG, LPG, Batubara)..."
-							disabled={!canEdit}
-							className="text-xs min-h-[60px]"
-						/>
-					</div>
+					<form.Field name="analisisKompetitor">
+						{(field) => (
+							<FormField label="Analisis Kompetitor & Ancaman Bahan Bakar Alternatif">
+								<Textarea
+									value={field.state.value}
+									onChange={(e) => field.handleChange(e.target.value)}
+									placeholder="Analisis harga energi kompetitor (CNG, LPG, Batubara)..."
+									disabled={!canEdit}
+									className="text-xs min-h-[60px]"
+								/>
+							</FormField>
+						)}
+					</form.Field>
 
-					<div className="space-y-1.5">
-						<Label className="text-xs font-medium font-semibold text-primary">
-							Kesimpulan & Rekomendasi Tim Evaluator
-						</Label>
-						<Textarea
-							value={kesimpulan}
-							onChange={(e) => setKesimpulan(e.target.value)}
-							placeholder="Rekomendasi penerbitan Surat NOL atau RL bersyarat..."
-							disabled={!canEdit}
-							className="text-xs min-h-[70px]"
-						/>
-					</div>
+					<form.Field name="kesimpulan">
+						{(field) => (
+							<FormField
+								label="Kesimpulan & Rekomendasi Tim Evaluator"
+								className="text-primary font-semibold"
+							>
+								<Textarea
+									value={field.state.value}
+									onChange={(e) => field.handleChange(e.target.value)}
+									placeholder="Rekomendasi penerbitan Surat NOL atau RL bersyarat..."
+									disabled={!canEdit}
+									className="text-xs min-h-[70px]"
+								/>
+							</FormField>
+						)}
+					</form.Field>
 				</CardContent>
 			</Card>
-
-			{canEdit && (
-				<div className="flex justify-end pt-2">
-					<Button
-						type="submit"
-						disabled={saveMutation.isPending}
-						className="h-9 text-xs flex items-center gap-1.5 bg-purple-600 hover:bg-purple-700 text-white"
-					>
-						{saveMutation.isPending ? (
-							<Loader2 className="size-3.5 animate-spin" />
-						) : (
-							<Save className="size-3.5" />
-						)}
-						Simpan Resume Evaluasi
-					</Button>
-				</div>
-			)}
 
 			{/* Reviewer Choice Modal Dialog */}
 			<Dialog

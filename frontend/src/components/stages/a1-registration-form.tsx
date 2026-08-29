@@ -1,3 +1,4 @@
+import { useForm } from "@tanstack/react-form";
 import { useQueryClient } from "@tanstack/react-query";
 import {
 	Building2,
@@ -13,18 +14,19 @@ import { toast } from "sonner";
 import { $api } from "@/api/client";
 import type {
 	A1RegistrationDetail,
-	A1UsagePeriodDetail,
 	BasisKontrak,
 	HargaCurrency,
 	HargaUnit,
 	RegistrasiSource,
 	SaveA1RegistrationRequest,
+	SaveA1UsagePeriodRequest,
 	Sektor,
 	SignatureMethod,
 	SkemaHarga,
 	StatusBangunan,
 } from "@/api/types";
 import { DocumentDownloadButton } from "@/components/documents/document-download-buttons";
+import { FormField } from "@/components/form/form-field";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -52,12 +54,58 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import {
+	type A1RegistrationFormValues,
+	a1RegistrationSchema,
+} from "@/lib/schemas";
 
 interface A1RegistrationFormProps {
 	companyId: string;
 	initialData?: A1RegistrationDetail | null;
 	canEdit?: boolean;
 	onSaved?: () => void;
+}
+
+function getDefaultValues(
+	initialData?: A1RegistrationDetail | null,
+): A1RegistrationFormValues {
+	return {
+		tanggalRegistrasi: initialData?.tanggalRegistrasi || "",
+		registrasiSource: initialData?.registrasiSource || "Manual",
+		namaPenanggungJawab: initialData?.namaPenanggungJawab || "",
+		jabatan: initialData?.jabatan || "",
+		bulanDimulai: initialData?.bulanDimulai || "",
+		basisKontrak: initialData?.basisKontrak || "Bulanan",
+		skemaHarga: initialData?.skemaHarga || "Reguler",
+		segmentId: initialData?.segmentId || "",
+		kodeHarga: initialData?.kodeHarga || "",
+		hargaCurrency: initialData?.hargaCurrency || "USD",
+		hargaUnit: initialData?.hargaUnit || "MMBtu",
+		hargaNilai:
+			initialData?.hargaNilai != null ? String(initialData.hargaNilai) : "",
+		capexAwal:
+			initialData?.capexAwal != null ? String(initialData.capexAwal) : "",
+		momSigasTersedia: initialData?.momSigasTersedia ?? false,
+		statusBangunan: initialData?.statusBangunan || "Eksisting",
+		sektor: initialData?.sektor || "Industri",
+		produksiUtama: initialData?.produksiUtama || "",
+		jenisPeralatanGas: initialData?.jenisPeralatanGas || "",
+		tekananOperasiBarg:
+			initialData?.tekananOperasiBarg != null
+				? String(initialData.tekananOperasiBarg)
+				: "",
+		signatureMethod: initialData?.signatureMethod || "Wet",
+		usagePeriods:
+			initialData?.usagePeriods?.map((p, idx) => ({
+				id: p.id || crypto.randomUUID(),
+				periodeMulai: p.periodeMulai || "",
+				periodeSelesai: p.periodeSelesai || "",
+				rataRata: p.rataRata != null ? Number(p.rataRata) : 0,
+				minimum: p.minimum != null ? Number(p.minimum) : 0,
+				maksimum: p.maksimum != null ? Number(p.maksimum) : 0,
+				sortOrder: p.sortOrder != null ? Number(p.sortOrder) : idx + 1,
+			})) || [],
+	};
 }
 
 export function A1RegistrationForm({
@@ -68,130 +116,6 @@ export function A1RegistrationForm({
 }: A1RegistrationFormProps) {
 	const queryClient = useQueryClient();
 	const { data: segments } = $api.useQuery("get", "/api/master/segments");
-
-	// Form State
-	const [tanggalRegistrasi, setTanggalRegistrasi] = React.useState<string>(
-		initialData?.tanggalRegistrasi || "",
-	);
-	const [registrasiSource, setRegistrasiSource] =
-		React.useState<RegistrasiSource>(initialData?.registrasiSource || "Manual");
-	const [namaPenanggungJawab, setNamaPenanggungJawab] = React.useState<string>(
-		initialData?.namaPenanggungJawab || "",
-	);
-	const [jabatan, setJabatan] = React.useState<string>(
-		initialData?.jabatan || "",
-	);
-	const [bulanDimulai, setBulanDimulai] = React.useState<string>(
-		initialData?.bulanDimulai || "",
-	);
-	const [basisKontrak, setBasisKontrak] = React.useState<BasisKontrak | "">(
-		initialData?.basisKontrak || "Bulanan",
-	);
-	const [skemaHarga, setSkemaHarga] = React.useState<SkemaHarga | "">(
-		initialData?.skemaHarga || "Reguler",
-	);
-	const [segmentId, setSegmentId] = React.useState<string>(
-		initialData?.segmentId || "",
-	);
-	const [kodeHarga, setKodeHarga] = React.useState<string>(
-		initialData?.kodeHarga || "",
-	);
-	const [hargaCurrency, setHargaCurrency] = React.useState<HargaCurrency | "">(
-		initialData?.hargaCurrency || "USD",
-	);
-	const [hargaUnit, setHargaUnit] = React.useState<HargaUnit | "">(
-		initialData?.hargaUnit || "MMBtu",
-	);
-	const [hargaNilai, setHargaNilai] = React.useState<string>(
-		initialData?.hargaNilai != null ? String(initialData.hargaNilai) : "",
-	);
-	const [capexAwal, setCapexAwal] = React.useState<string>(
-		initialData?.capexAwal != null ? String(initialData.capexAwal) : "",
-	);
-	const [momSigasTersedia, setMomSigasTersedia] = React.useState<boolean>(
-		initialData?.momSigasTersedia ?? false,
-	);
-	const [statusBangunan, setStatusBangunan] = React.useState<
-		StatusBangunan | ""
-	>(initialData?.statusBangunan || "Eksisting");
-	const [sektor, setSektor] = React.useState<Sektor | "">(
-		initialData?.sektor || "Industri",
-	);
-	const [produksiUtama, setProduksiUtama] = React.useState<string>(
-		initialData?.produksiUtama || "",
-	);
-	const [jenisPeralatanGas, setJenisPeralatanGas] = React.useState<string>(
-		initialData?.jenisPeralatanGas || "",
-	);
-	const [tekananOperasiBarg, setTekananOperasiBarg] = React.useState<string>(
-		initialData?.tekananOperasiBarg != null
-			? String(initialData.tekananOperasiBarg)
-			: "",
-	);
-	const [signatureMethod, setSignatureMethod] = React.useState<
-		SignatureMethod | ""
-	>(initialData?.signatureMethod || "Wet");
-
-	// Repeating usage periods
-	const [usagePeriods, setUsagePeriods] = React.useState<A1UsagePeriodDetail[]>(
-		initialData?.usagePeriods?.map((p, idx) => ({
-			id: p.id || crypto.randomUUID(),
-			periodeMulai: p.periodeMulai || "",
-			periodeSelesai: p.periodeSelesai || "",
-			rataRata: p.rataRata != null ? Number(p.rataRata) : 0,
-			minimum: p.minimum != null ? Number(p.minimum) : 0,
-			maksimum: p.maksimum != null ? Number(p.maksimum) : 0,
-			sortOrder: p.sortOrder != null ? Number(p.sortOrder) : idx + 1,
-		})) || [],
-	);
-
-	// Synchronize when initialData changes
-	React.useEffect(() => {
-		if (initialData) {
-			setTanggalRegistrasi(initialData.tanggalRegistrasi || "");
-			setRegistrasiSource(initialData.registrasiSource || "Manual");
-			setNamaPenanggungJawab(initialData.namaPenanggungJawab || "");
-			setJabatan(initialData.jabatan || "");
-			setBulanDimulai(initialData.bulanDimulai || "");
-			setBasisKontrak(initialData.basisKontrak || "Bulanan");
-			setSkemaHarga(initialData.skemaHarga || "Reguler");
-			setSegmentId(initialData.segmentId || "");
-			setKodeHarga(initialData.kodeHarga || "");
-			setHargaCurrency(initialData.hargaCurrency || "USD");
-			setHargaUnit(initialData.hargaUnit || "MMBtu");
-			setHargaNilai(
-				initialData.hargaNilai != null ? String(initialData.hargaNilai) : "",
-			);
-			setCapexAwal(
-				initialData.capexAwal != null ? String(initialData.capexAwal) : "",
-			);
-			setMomSigasTersedia(initialData.momSigasTersedia ?? false);
-			setStatusBangunan(initialData.statusBangunan || "Eksisting");
-			setSektor(initialData.sektor || "Industri");
-			setProduksiUtama(initialData.produksiUtama || "");
-			setJenisPeralatanGas(initialData.jenisPeralatanGas || "");
-			setTekananOperasiBarg(
-				initialData.tekananOperasiBarg != null
-					? String(initialData.tekananOperasiBarg)
-					: "",
-			);
-			setSignatureMethod(initialData.signatureMethod || "Wet");
-
-			if (initialData.usagePeriods) {
-				setUsagePeriods(
-					initialData.usagePeriods.map((p, idx) => ({
-						id: p.id || crypto.randomUUID(),
-						periodeMulai: p.periodeMulai || "",
-						periodeSelesai: p.periodeSelesai || "",
-						rataRata: p.rataRata != null ? Number(p.rataRata) : 0,
-						minimum: p.minimum != null ? Number(p.minimum) : 0,
-						maksimum: p.maksimum != null ? Number(p.maksimum) : 0,
-						sortOrder: p.sortOrder != null ? Number(p.sortOrder) : idx + 1,
-					})),
-				);
-			}
-		}
-	}, [initialData]);
 
 	// Save Registration Mutation
 	const saveMutation = $api.useMutation(
@@ -226,74 +150,81 @@ export function A1RegistrationForm({
 		},
 	);
 
-	const handleSubmit = (e: React.FormEvent) => {
-		e.preventDefault();
-
-		const request: SaveA1RegistrationRequest = {
-			tanggalRegistrasi: tanggalRegistrasi || null,
-			namaPenanggungJawab: namaPenanggungJawab || null,
-			jabatan: jabatan || null,
-			bulanDimulai: bulanDimulai || null,
-			basisKontrak: basisKontrak ? (basisKontrak as BasisKontrak) : null,
-			skemaHarga: skemaHarga ? (skemaHarga as SkemaHarga) : null,
-			segmentId: segmentId || null,
-			kodeHarga: kodeHarga || null,
-			hargaNilai: hargaNilai ? Number(hargaNilai) : null,
-			hargaCurrency: hargaCurrency ? (hargaCurrency as HargaCurrency) : null,
-			hargaUnit: hargaUnit ? (hargaUnit as HargaUnit) : null,
-			capexAwal: capexAwal ? Number(capexAwal) : null,
-			momSigasTersedia,
-			statusBangunan: statusBangunan
-				? (statusBangunan as StatusBangunan)
-				: null,
-			sektor: sektor ? (sektor as Sektor) : null,
-			produksiUtama: produksiUtama || null,
-			jenisPeralatanGas: jenisPeralatanGas || null,
-			tekananOperasiBarg: tekananOperasiBarg
-				? Number(tekananOperasiBarg)
-				: null,
-			signedDocumentId: initialData?.signedDocumentId || null,
-			signatureMethod: signatureMethod
-				? (signatureMethod as SignatureMethod)
-				: null,
-			usagePeriods: usagePeriods.map((p, idx) => ({
+	const form = useForm({
+		defaultValues: getDefaultValues(initialData),
+		validators: {
+			onChange: a1RegistrationSchema,
+		},
+		onSubmit: async ({ value }) => {
+			const usagePeriods: SaveA1UsagePeriodRequest[] = (
+				value.usagePeriods || []
+			).map((p, idx) => ({
 				id: p.id || crypto.randomUUID(),
-				periodeMulai: p.periodeMulai,
-				periodeSelesai: p.periodeSelesai,
+				periodeMulai: p.periodeMulai || "",
+				periodeSelesai: p.periodeSelesai || "",
 				rataRata: Number(p.rataRata) || 0,
 				minimum: Number(p.minimum) || 0,
 				maksimum: Number(p.maksimum) || 0,
 				sortOrder: idx + 1,
-			})),
-		};
+			}));
 
-		saveMutation.mutate({
-			params: { path: { id: companyId } },
-			body: request,
-		});
-	};
+			const request: SaveA1RegistrationRequest = {
+				tanggalRegistrasi: value.tanggalRegistrasi || null,
+				namaPenanggungJawab: value.namaPenanggungJawab || null,
+				jabatan: value.jabatan || null,
+				bulanDimulai: value.bulanDimulai || null,
+				basisKontrak: value.basisKontrak
+					? (value.basisKontrak as BasisKontrak)
+					: null,
+				skemaHarga: value.skemaHarga ? (value.skemaHarga as SkemaHarga) : null,
+				segmentId: value.segmentId || null,
+				kodeHarga: value.kodeHarga || null,
+				hargaNilai: value.hargaNilai ? Number(value.hargaNilai) : null,
+				hargaCurrency: value.hargaCurrency
+					? (value.hargaCurrency as HargaCurrency)
+					: null,
+				hargaUnit: value.hargaUnit ? (value.hargaUnit as HargaUnit) : null,
+				capexAwal: value.capexAwal ? Number(value.capexAwal) : null,
+				momSigasTersedia: value.momSigasTersedia ?? false,
+				statusBangunan: value.statusBangunan
+					? (value.statusBangunan as StatusBangunan)
+					: null,
+				sektor: value.sektor ? (value.sektor as Sektor) : null,
+				produksiUtama: value.produksiUtama || null,
+				jenisPeralatanGas: value.jenisPeralatanGas || null,
+				tekananOperasiBarg: value.tekananOperasiBarg
+					? Number(value.tekananOperasiBarg)
+					: null,
+				signedDocumentId: initialData?.signedDocumentId || null,
+				signatureMethod: value.signatureMethod
+					? (value.signatureMethod as SignatureMethod)
+					: null,
+				usagePeriods,
+			};
 
-	const addPeriodRow = () => {
-		setUsagePeriods([
-			...usagePeriods,
-			{
-				id: crypto.randomUUID(),
-				periodeMulai: "",
-				periodeSelesai: "",
-				rataRata: 0,
-				minimum: 0,
-				maksimum: 0,
-				sortOrder: usagePeriods.length + 1,
-			},
-		]);
-	};
+			await saveMutation.mutateAsync({
+				params: { path: { id: companyId } },
+				body: request,
+			});
+		},
+	});
 
-	const removePeriodRow = (index: number) => {
-		setUsagePeriods(usagePeriods.filter((_, i) => i !== index));
-	};
+	// Synchronize when initialData changes
+	React.useEffect(() => {
+		if (initialData) {
+			form.reset(getDefaultValues(initialData));
+		}
+	}, [initialData, form]);
 
 	return (
-		<form onSubmit={handleSubmit} className="space-y-6">
+		<form
+			onSubmit={(e) => {
+				e.preventDefault();
+				e.stopPropagation();
+				form.handleSubmit();
+			}}
+			className="space-y-6"
+		>
 			{/* Top Bar Summary / Save */}
 			<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 bg-muted/40 rounded-lg border">
 				<div className="flex items-center gap-3">
@@ -318,19 +249,25 @@ export function A1RegistrationForm({
 						label="Unduh Formulir A1 (.docx)"
 					/>
 					{canEdit && (
-						<Button
-							type="submit"
-							size="sm"
-							disabled={saveMutation.isPending}
-							className="h-9 text-xs flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white"
+						<form.Subscribe
+							selector={(state) => [state.canSubmit, state.isSubmitting]}
 						>
-							{saveMutation.isPending ? (
-								<Loader2 className="size-3.5 animate-spin" />
-							) : (
-								<Save className="size-3.5" />
+							{([canSubmit, isSubmitting]) => (
+								<Button
+									type="submit"
+									size="sm"
+									disabled={!canSubmit || isSubmitting}
+									className="h-9 text-xs flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white"
+								>
+									{isSubmitting ? (
+										<Loader2 className="size-3.5 animate-spin" />
+									) : (
+										<Save className="size-3.5" />
+									)}
+									Simpan Formulir A1
+								</Button>
 							)}
-							Simpan Formulir A1
-						</Button>
+						</form.Subscribe>
 					)}
 				</div>
 			</div>
@@ -350,103 +287,120 @@ export function A1RegistrationForm({
 				<CardContent className="space-y-4">
 					<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
 						{/* Tanggal Registrasi */}
-						<div className="space-y-1.5">
-							<Label className="text-xs font-medium">Tanggal Registrasi</Label>
-							<Input
-								type="date"
-								value={tanggalRegistrasi}
-								onChange={(e) => setTanggalRegistrasi(e.target.value)}
-								disabled={!canEdit}
-								className="text-xs h-9"
-							/>
-						</div>
+						<form.Field name="tanggalRegistrasi">
+							{(field) => (
+								<FormField label="Tanggal Registrasi">
+									<Input
+										type="date"
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										disabled={!canEdit}
+										className="text-xs h-9"
+									/>
+								</FormField>
+							)}
+						</form.Field>
 
 						{/* Kanal Pendaftaran */}
-						<div className="space-y-1.5">
-							<Label className="text-xs font-medium">Kanal Pendaftaran</Label>
-							<Select
-								value={registrasiSource}
-								onValueChange={(val) =>
-									setRegistrasiSource(val as RegistrasiSource)
-								}
-								disabled={!canEdit}
-							>
-								<SelectTrigger className="text-xs h-9">
-									<SelectValue />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="Manual">Manual / Tatap Muka</SelectItem>
-									<SelectItem value="Online">Online / Portal</SelectItem>
-								</SelectContent>
-							</Select>
-						</div>
+						<form.Field name="registrasiSource">
+							{(field) => (
+								<FormField label="Kanal Pendaftaran">
+									<Select
+										value={field.state.value || "Manual"}
+										onValueChange={(val) =>
+											field.handleChange(val as RegistrasiSource)
+										}
+										disabled={!canEdit}
+									>
+										<SelectTrigger className="text-xs h-9">
+											<SelectValue />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="Manual">
+												Manual / Tatap Muka
+											</SelectItem>
+											<SelectItem value="Online">Online / Portal</SelectItem>
+										</SelectContent>
+									</Select>
+								</FormField>
+							)}
+						</form.Field>
 
 						{/* Nama Penanggung Jawab */}
-						<div className="space-y-1.5">
-							<Label className="text-xs font-medium">
-								Nama Penanggung Jawab
-							</Label>
-							<Input
-								value={namaPenanggungJawab}
-								onChange={(e) => setNamaPenanggungJawab(e.target.value)}
-								placeholder="contoh: Hendra Gunawan"
-								disabled={!canEdit}
-								className="text-xs h-9"
-							/>
-						</div>
+						<form.Field name="namaPenanggungJawab">
+							{(field) => (
+								<FormField label="Nama Penanggung Jawab">
+									<Input
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										placeholder="contoh: Hendra Gunawan"
+										disabled={!canEdit}
+										className="text-xs h-9"
+									/>
+								</FormField>
+							)}
+						</form.Field>
 
 						{/* Jabatan */}
-						<div className="space-y-1.5">
-							<Label className="text-xs font-medium">Jabatan</Label>
-							<Input
-								value={jabatan}
-								onChange={(e) => setJabatan(e.target.value)}
-								placeholder="contoh: Direktur Operasional"
-								disabled={!canEdit}
-								className="text-xs h-9"
-							/>
-						</div>
+						<form.Field name="jabatan">
+							{(field) => (
+								<FormField label="Jabatan">
+									<Input
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										placeholder="contoh: Direktur Operasional"
+										disabled={!canEdit}
+										className="text-xs h-9"
+									/>
+								</FormField>
+							)}
+						</form.Field>
 
 						{/* Metode Tanda Tangan */}
-						<div className="space-y-1.5">
-							<Label className="text-xs font-medium">Metode Tanda Tangan</Label>
-							<Select
-								value={signatureMethod || "NONE"}
-								onValueChange={(val) =>
-									setSignatureMethod(
-										val === "NONE" ? "" : (val as SignatureMethod),
-									)
-								}
-								disabled={!canEdit}
-							>
-								<SelectTrigger className="text-xs h-9">
-									<SelectValue placeholder="Pilih Metode" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="NONE">Belum Dipilih</SelectItem>
-									<SelectItem value="Wet">Tanda Tangan Basah</SelectItem>
-									<SelectItem value="Digital">Digital / E-Sign</SelectItem>
-								</SelectContent>
-							</Select>
-						</div>
+						<form.Field name="signatureMethod">
+							{(field) => (
+								<FormField label="Metode Tanda Tangan">
+									<Select
+										value={field.state.value || "NONE"}
+										onValueChange={(val) =>
+											field.handleChange(val === "NONE" ? "" : val)
+										}
+										disabled={!canEdit}
+									>
+										<SelectTrigger className="text-xs h-9">
+											<SelectValue placeholder="Pilih Metode" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="NONE">Belum Dipilih</SelectItem>
+											<SelectItem value="Wet">Tanda Tangan Basah</SelectItem>
+											<SelectItem value="Digital">Digital / E-Sign</SelectItem>
+										</SelectContent>
+									</Select>
+								</FormField>
+							)}
+						</form.Field>
 
 						{/* MoM SiGas */}
-						<div className="space-y-1.5 flex flex-col justify-end">
-							<div className="flex items-center space-x-2 pb-2">
-								<Switch
-									id="momSigas"
-									checked={momSigasTersedia}
-									onCheckedChange={setMomSigasTersedia}
-									disabled={!canEdit}
-								/>
-								<Label
-									htmlFor="momSigas"
-									className="text-xs font-medium cursor-pointer"
-								>
-									MoM SiGas Tersedia
-								</Label>
-							</div>
-						</div>
+						<form.Field name="momSigasTersedia">
+							{(field) => (
+								<div className="space-y-1.5 flex flex-col justify-end">
+									<div className="flex items-center space-x-2 pb-2">
+										<Switch
+											id="momSigas"
+											checked={field.state.value ?? false}
+											onCheckedChange={(checked) => field.handleChange(checked)}
+											disabled={!canEdit}
+										/>
+										<Label
+											htmlFor="momSigas"
+											className="text-xs font-medium cursor-pointer"
+										>
+											MoM SiGas Tersedia
+										</Label>
+									</div>
+								</div>
+							)}
+						</form.Field>
 					</div>
 				</CardContent>
 			</Card>
@@ -466,256 +420,293 @@ export function A1RegistrationForm({
 				<CardContent className="space-y-4">
 					<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
 						{/* Bulan Dimulai */}
-						<div className="space-y-1.5">
-							<Label className="text-xs font-medium">
-								Rencana Mulai Penyaluran Gas
-							</Label>
-							<Input
-								type="date"
-								value={bulanDimulai}
-								onChange={(e) => setBulanDimulai(e.target.value)}
-								disabled={!canEdit}
-								className="text-xs h-9"
-							/>
-						</div>
+						<form.Field name="bulanDimulai">
+							{(field) => (
+								<FormField label="Rencana Mulai Penyaluran Gas">
+									<Input
+										type="date"
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										disabled={!canEdit}
+										className="text-xs h-9"
+									/>
+								</FormField>
+							)}
+						</form.Field>
 
 						{/* Basis Kontrak */}
-						<div className="space-y-1.5">
-							<Label className="text-xs font-medium">Basis Kontrak</Label>
-							<Select
-								value={basisKontrak || "NONE"}
-								onValueChange={(val) =>
-									setBasisKontrak(val === "NONE" ? "" : (val as BasisKontrak))
-								}
-								disabled={!canEdit}
-							>
-								<SelectTrigger className="text-xs h-9">
-									<SelectValue placeholder="Pilih Basis Kontrak" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="NONE">Belum Dipilih</SelectItem>
-									<SelectItem value="Bulanan">Bulanan</SelectItem>
-									<SelectItem value="Harian">Harian</SelectItem>
-									<SelectItem value="Tahunan">Tahunan</SelectItem>
-								</SelectContent>
-							</Select>
-						</div>
+						<form.Field name="basisKontrak">
+							{(field) => (
+								<FormField label="Basis Kontrak">
+									<Select
+										value={field.state.value || "NONE"}
+										onValueChange={(val) =>
+											field.handleChange(val === "NONE" ? "" : val)
+										}
+										disabled={!canEdit}
+									>
+										<SelectTrigger className="text-xs h-9">
+											<SelectValue placeholder="Pilih Basis Kontrak" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="NONE">Belum Dipilih</SelectItem>
+											<SelectItem value="Bulanan">Bulanan</SelectItem>
+											<SelectItem value="Harian">Harian</SelectItem>
+											<SelectItem value="Tahunan">Tahunan</SelectItem>
+										</SelectContent>
+									</Select>
+								</FormField>
+							)}
+						</form.Field>
 
 						{/* Skema Harga */}
-						<div className="space-y-1.5">
-							<Label className="text-xs font-medium">Skema Harga</Label>
-							<Select
-								value={skemaHarga || "NONE"}
-								onValueChange={(val) =>
-									setSkemaHarga(val === "NONE" ? "" : (val as SkemaHarga))
-								}
-								disabled={!canEdit}
-							>
-								<SelectTrigger className="text-xs h-9">
-									<SelectValue placeholder="Pilih Skema Harga" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="NONE">Belum Dipilih</SelectItem>
-									<SelectItem value="Reguler">Reguler</SelectItem>
-									<SelectItem value="Sigas">SiGas</SelectItem>
-									<SelectItem value="Bersyarat">Bersyarat</SelectItem>
-								</SelectContent>
-							</Select>
-						</div>
+						<form.Field name="skemaHarga">
+							{(field) => (
+								<FormField label="Skema Harga">
+									<Select
+										value={field.state.value || "NONE"}
+										onValueChange={(val) =>
+											field.handleChange(val === "NONE" ? "" : val)
+										}
+										disabled={!canEdit}
+									>
+										<SelectTrigger className="text-xs h-9">
+											<SelectValue placeholder="Pilih Skema Harga" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="NONE">Belum Dipilih</SelectItem>
+											<SelectItem value="Reguler">Reguler</SelectItem>
+											<SelectItem value="Sigas">SiGas</SelectItem>
+											<SelectItem value="Bersyarat">Bersyarat</SelectItem>
+										</SelectContent>
+									</Select>
+								</FormField>
+							)}
+						</form.Field>
 
 						{/* Segment */}
-						<div className="space-y-1.5">
-							<Label className="text-xs font-medium">Segmen Pelanggan</Label>
-							<Select
-								value={segmentId || "NONE"}
-								onValueChange={(val) => setSegmentId(val === "NONE" ? "" : val)}
-								disabled={!canEdit}
-							>
-								<SelectTrigger className="text-xs h-9">
-									<SelectValue placeholder="Pilih Segmen" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="NONE">Belum Dipilih</SelectItem>
-									{segments?.map((s) => (
-										<SelectItem key={s.id} value={s.id}>
-											{s.name}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</div>
+						<form.Field name="segmentId">
+							{(field) => (
+								<FormField label="Segmen Pelanggan">
+									<Select
+										value={field.state.value || "NONE"}
+										onValueChange={(val) =>
+											field.handleChange(val === "NONE" ? "" : val)
+										}
+										disabled={!canEdit}
+									>
+										<SelectTrigger className="text-xs h-9">
+											<SelectValue placeholder="Pilih Segmen" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="NONE">Belum Dipilih</SelectItem>
+											{segments?.map((s) => (
+												<SelectItem key={s.id} value={s.id}>
+													{s.name}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								</FormField>
+							)}
+						</form.Field>
 
 						{/* Kode Harga */}
-						<div className="space-y-1.5">
-							<Label className="text-xs font-medium">Kode Harga</Label>
-							<Input
-								value={kodeHarga}
-								onChange={(e) => setKodeHarga(e.target.value)}
-								placeholder="contoh: IND-1"
-								disabled={!canEdit}
-								className="text-xs h-9"
-							/>
-						</div>
+						<form.Field name="kodeHarga">
+							{(field) => (
+								<FormField label="Kode Harga">
+									<Input
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										placeholder="contoh: IND-1"
+										disabled={!canEdit}
+										className="text-xs h-9"
+									/>
+								</FormField>
+							)}
+						</form.Field>
 
-						{/* Harga Nilai */}
+						{/* Harga Nilai & Currency & Unit */}
 						<div className="space-y-1.5">
 							<Label className="text-xs font-medium">
 								Tarif / Harga Jual Gas
 							</Label>
 							<div className="flex gap-2">
-								<Input
-									type="number"
-									step="0.01"
-									value={hargaNilai}
-									onChange={(e) => setHargaNilai(e.target.value)}
-									placeholder="contoh: 9.85"
-									disabled={!canEdit}
-									className="text-xs h-9 font-mono"
-								/>
-								<Select
-									value={hargaCurrency || "USD"}
-									onValueChange={(val) =>
-										setHargaCurrency(val as HargaCurrency)
-									}
-									disabled={!canEdit}
-								>
-									<SelectTrigger className="text-xs h-9 w-20">
-										<SelectValue />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value="USD">USD</SelectItem>
-										<SelectItem value="IDR">IDR</SelectItem>
-									</SelectContent>
-								</Select>
-								<Select
-									value={hargaUnit || "MMBtu"}
-									onValueChange={(val) => setHargaUnit(val as HargaUnit)}
-									disabled={!canEdit}
-								>
-									<SelectTrigger className="text-xs h-9 w-24">
-										<SelectValue />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value="MMBtu">/ MMBTU</SelectItem>
-										<SelectItem value="M3">/ M3</SelectItem>
-									</SelectContent>
-								</Select>
+								<form.Field name="hargaNilai">
+									{(field) => (
+										<Input
+											type="number"
+											step="0.01"
+											value={field.state.value}
+											onChange={(e) => field.handleChange(e.target.value)}
+											placeholder="contoh: 9.85"
+											disabled={!canEdit}
+											className="text-xs h-9 font-mono"
+										/>
+									)}
+								</form.Field>
+
+								<form.Field name="hargaCurrency">
+									{(field) => (
+										<Select
+											value={field.state.value || "USD"}
+											onValueChange={(val) => field.handleChange(val)}
+											disabled={!canEdit}
+										>
+											<SelectTrigger className="text-xs h-9 w-20">
+												<SelectValue />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="USD">USD</SelectItem>
+												<SelectItem value="IDR">IDR</SelectItem>
+											</SelectContent>
+										</Select>
+									)}
+								</form.Field>
+
+								<form.Field name="hargaUnit">
+									{(field) => (
+										<Select
+											value={field.state.value || "MMBtu"}
+											onValueChange={(val) => field.handleChange(val)}
+											disabled={!canEdit}
+										>
+											<SelectTrigger className="text-xs h-9 w-24">
+												<SelectValue />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="MMBtu">/ MMBTU</SelectItem>
+												<SelectItem value="M3">/ M3</SelectItem>
+											</SelectContent>
+										</Select>
+									)}
+								</form.Field>
 							</div>
 						</div>
 
 						{/* Capex Awal */}
-						<div className="space-y-1.5">
-							<Label className="text-xs font-medium">
-								Capex Awal / Estimasi (USD)
-							</Label>
-							<Input
-								type="number"
-								step="0.01"
-								value={capexAwal}
-								onChange={(e) => setCapexAwal(e.target.value)}
-								placeholder="contoh: 75000"
-								disabled={!canEdit}
-								className="text-xs h-9"
-							/>
-						</div>
+						<form.Field name="capexAwal">
+							{(field) => (
+								<FormField label="Capex Awal / Estimasi (USD)">
+									<Input
+										type="number"
+										step="0.01"
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										placeholder="contoh: 75000"
+										disabled={!canEdit}
+										className="text-xs h-9"
+									/>
+								</FormField>
+							)}
+						</form.Field>
 
 						{/* Status Bangunan */}
-						<div className="space-y-1.5">
-							<Label className="text-xs font-medium">Status Bangunan</Label>
-							<Select
-								value={statusBangunan || "NONE"}
-								onValueChange={(val) =>
-									setStatusBangunan(
-										val === "NONE" ? "" : (val as StatusBangunan),
-									)
-								}
-								disabled={!canEdit}
-							>
-								<SelectTrigger className="text-xs h-9">
-									<SelectValue placeholder="Pilih Status Bangunan" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="NONE">Belum Dipilih</SelectItem>
-									<SelectItem value="Eksisting">Eksisting</SelectItem>
-									<SelectItem value="DalamPembangunan">
-										Dalam Pembangunan
-									</SelectItem>
-									<SelectItem value="DalamRencana">Dalam Rencana</SelectItem>
-									<SelectItem value="ProsesEkspansi">
-										Proses Ekspansi
-									</SelectItem>
-								</SelectContent>
-							</Select>
-						</div>
+						<form.Field name="statusBangunan">
+							{(field) => (
+								<FormField label="Status Bangunan">
+									<Select
+										value={field.state.value || "NONE"}
+										onValueChange={(val) =>
+											field.handleChange(val === "NONE" ? "" : val)
+										}
+										disabled={!canEdit}
+									>
+										<SelectTrigger className="text-xs h-9">
+											<SelectValue placeholder="Pilih Status Bangunan" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="NONE">Belum Dipilih</SelectItem>
+											<SelectItem value="Eksisting">Eksisting</SelectItem>
+											<SelectItem value="DalamPembangunan">
+												Dalam Pembangunan
+											</SelectItem>
+											<SelectItem value="DalamRencana">
+												Dalam Rencana
+											</SelectItem>
+											<SelectItem value="ProsesEkspansi">
+												Proses Ekspansi
+											</SelectItem>
+										</SelectContent>
+									</Select>
+								</FormField>
+							)}
+						</form.Field>
 
 						{/* Sektor */}
-						<div className="space-y-1.5">
-							<Label className="text-xs font-medium">Sektor</Label>
-							<Select
-								value={sektor || "NONE"}
-								onValueChange={(val) =>
-									setSektor(val === "NONE" ? "" : (val as Sektor))
-								}
-								disabled={!canEdit}
-							>
-								<SelectTrigger className="text-xs h-9">
-									<SelectValue placeholder="Pilih Sektor" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="NONE">Belum Dipilih</SelectItem>
-									<SelectItem value="Industri">Industri</SelectItem>
-									<SelectItem value="Komersial">Komersial</SelectItem>
-									<SelectItem value="Transportasi">Transportasi</SelectItem>
-								</SelectContent>
-							</Select>
-						</div>
+						<form.Field name="sektor">
+							{(field) => (
+								<FormField label="Sektor">
+									<Select
+										value={field.state.value || "NONE"}
+										onValueChange={(val) =>
+											field.handleChange(val === "NONE" ? "" : val)
+										}
+										disabled={!canEdit}
+									>
+										<SelectTrigger className="text-xs h-9">
+											<SelectValue placeholder="Pilih Sektor" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="NONE">Belum Dipilih</SelectItem>
+											<SelectItem value="Industri">Industri</SelectItem>
+											<SelectItem value="Komersial">Komersial</SelectItem>
+											<SelectItem value="Transportasi">Transportasi</SelectItem>
+										</SelectContent>
+									</Select>
+								</FormField>
+							)}
+						</form.Field>
 					</div>
 
 					<div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t">
 						{/* Produksi Utama */}
-						<div className="space-y-1.5">
-							<Label className="text-xs font-medium">
-								Produksi / Hasil Utama
-							</Label>
-							<Input
-								value={produksiUtama}
-								onChange={(e) => setProduksiUtama(e.target.value)}
-								placeholder="contoh: Keramik Ubin Lantai"
-								disabled={!canEdit}
-								className="text-xs h-9"
-							/>
-						</div>
+						<form.Field name="produksiUtama">
+							{(field) => (
+								<FormField label="Produksi / Hasil Utama">
+									<Input
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										placeholder="contoh: Keramik Ubin Lantai"
+										disabled={!canEdit}
+										className="text-xs h-9"
+									/>
+								</FormField>
+							)}
+						</form.Field>
 
 						{/* Tekanan Operasi (Barg) */}
-						<div className="space-y-1.5">
-							<Label className="text-xs font-medium">
-								Tekanan Operasi yang Dibutuhkan (Barg)
-							</Label>
-							<Input
-								type="number"
-								step="0.1"
-								value={tekananOperasiBarg}
-								onChange={(e) => setTekananOperasiBarg(e.target.value)}
-								placeholder="contoh: 2.0"
-								disabled={!canEdit}
-								className="text-xs h-9"
-							/>
-						</div>
+						<form.Field name="tekananOperasiBarg">
+							{(field) => (
+								<FormField label="Tekanan Operasi yang Dibutuhkan (Barg)">
+									<Input
+										type="number"
+										step="0.1"
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										placeholder="contoh: 2.0"
+										disabled={!canEdit}
+										className="text-xs h-9"
+									/>
+								</FormField>
+							)}
+						</form.Field>
 					</div>
 
 					{/* Jenis Peralatan Gas */}
-					<div className="space-y-1.5">
-						<Label className="text-xs font-medium">
-							Jenis Peralatan Gas yang Digunakan
-						</Label>
-						<Textarea
-							value={jenisPeralatanGas}
-							onChange={(e) => setJenisPeralatanGas(e.target.value)}
-							placeholder="contoh: 2 unit Boiler Miura 5 Ton, 1 unit Burner Riello"
-							disabled={!canEdit}
-							className="text-xs min-h-[60px]"
-						/>
-					</div>
+					<form.Field name="jenisPeralatanGas">
+						{(field) => (
+							<FormField label="Jenis Peralatan Gas yang Digunakan">
+								<Textarea
+									value={field.state.value}
+									onChange={(e) => field.handleChange(e.target.value)}
+									placeholder="contoh: 2 unit Boiler Miura 5 Ton, 1 unit Burner Riello"
+									disabled={!canEdit}
+									className="text-xs min-h-[60px]"
+								/>
+							</FormField>
+						)}
+					</form.Field>
 				</CardContent>
 			</Card>
 
@@ -736,7 +727,21 @@ export function A1RegistrationForm({
 							type="button"
 							variant="outline"
 							size="sm"
-							onClick={addPeriodRow}
+							onClick={() => {
+								const current = form.getFieldValue("usagePeriods") || [];
+								form.setFieldValue("usagePeriods", [
+									...current,
+									{
+										id: crypto.randomUUID(),
+										periodeMulai: "",
+										periodeSelesai: "",
+										rataRata: 0,
+										minimum: 0,
+										maksimum: 0,
+										sortOrder: current.length + 1,
+									},
+								]);
+							}}
 							className="h-8 text-xs flex items-center gap-1"
 						>
 							<Plus className="size-3.5" />
@@ -745,146 +750,163 @@ export function A1RegistrationForm({
 					)}
 				</CardHeader>
 				<CardContent>
-					<div className="rounded-lg border overflow-hidden">
-						<Table>
-							<TableHeader className="bg-muted/40">
-								<TableRow>
-									<TableHead className="text-xs">Periode Mulai</TableHead>
-									<TableHead className="text-xs">Periode Selesai</TableHead>
-									<TableHead className="text-xs">Rata-rata</TableHead>
-									<TableHead className="text-xs">Minimum</TableHead>
-									<TableHead className="text-xs">Maksimum</TableHead>
-									{canEdit && (
-										<TableHead className="text-xs text-center w-12">
-											Hapus
-										</TableHead>
-									)}
-								</TableRow>
-							</TableHeader>
-							<TableBody>
-								{usagePeriods.length === 0 ? (
-									<TableRow>
-										<TableCell
-											colSpan={canEdit ? 6 : 5}
-											className="text-center text-xs py-6 text-muted-foreground"
-										>
-											Belum ada data periode penggunaan gas. Klik "+ Tambah
-											Periode" untuk menambahkan.
-										</TableCell>
-									</TableRow>
-								) : (
-									usagePeriods.map((row, idx) => (
-										// biome-ignore lint/suspicious/noArrayIndexKey: dynamic form rows
-										<TableRow key={idx}>
-											<TableCell>
-												<Input
-													type="date"
-													value={row.periodeMulai}
-													onChange={(e) => {
-														const next = [...usagePeriods];
-														next[idx].periodeMulai = e.target.value;
-														setUsagePeriods(next);
-													}}
-													disabled={!canEdit}
-													className="text-xs h-8"
-												/>
-											</TableCell>
-											<TableCell>
-												<Input
-													type="date"
-													value={row.periodeSelesai}
-													onChange={(e) => {
-														const next = [...usagePeriods];
-														next[idx].periodeSelesai = e.target.value;
-														setUsagePeriods(next);
-													}}
-													disabled={!canEdit}
-													className="text-xs h-8"
-												/>
-											</TableCell>
-											<TableCell>
-												<Input
-													type="number"
-													step="0.01"
-													value={row.rataRata}
-													onChange={(e) => {
-														const next = [...usagePeriods];
-														next[idx].rataRata = Number(e.target.value) || 0;
-														setUsagePeriods(next);
-													}}
-													placeholder="0"
-													disabled={!canEdit}
-													className="text-xs h-8"
-												/>
-											</TableCell>
-											<TableCell>
-												<Input
-													type="number"
-													step="0.01"
-													value={row.minimum}
-													onChange={(e) => {
-														const next = [...usagePeriods];
-														next[idx].minimum = Number(e.target.value) || 0;
-														setUsagePeriods(next);
-													}}
-													placeholder="0"
-													disabled={!canEdit}
-													className="text-xs h-8"
-												/>
-											</TableCell>
-											<TableCell>
-												<Input
-													type="number"
-													step="0.01"
-													value={row.maksimum}
-													onChange={(e) => {
-														const next = [...usagePeriods];
-														next[idx].maksimum = Number(e.target.value) || 0;
-														setUsagePeriods(next);
-													}}
-													placeholder="0"
-													disabled={!canEdit}
-													className="text-xs h-8"
-												/>
-											</TableCell>
-											{canEdit && (
-												<TableCell className="text-center">
-													<Button
-														type="button"
-														variant="ghost"
-														size="icon"
-														onClick={() => removePeriodRow(idx)}
-														className="size-7 text-destructive hover:text-destructive"
+					<form.Field name="usagePeriods">
+						{(field) => {
+							const periods = field.state.value || [];
+							return (
+								<div className="rounded-lg border overflow-hidden">
+									<Table>
+										<TableHeader className="bg-muted/40">
+											<TableRow>
+												<TableHead className="text-xs">Periode Mulai</TableHead>
+												<TableHead className="text-xs">
+													Periode Selesai
+												</TableHead>
+												<TableHead className="text-xs">Rata-rata</TableHead>
+												<TableHead className="text-xs">Minimum</TableHead>
+												<TableHead className="text-xs">Maksimum</TableHead>
+												{canEdit && (
+													<TableHead className="text-xs text-center w-12">
+														Hapus
+													</TableHead>
+												)}
+											</TableRow>
+										</TableHeader>
+										<TableBody>
+											{periods.length === 0 ? (
+												<TableRow>
+													<TableCell
+														colSpan={canEdit ? 6 : 5}
+														className="text-center text-xs py-6 text-muted-foreground"
 													>
-														<Trash2 className="size-3.5" />
-													</Button>
-												</TableCell>
+														Belum ada data periode penggunaan gas. Klik &quot;+
+														Tambah Periode&quot; untuk menambahkan.
+													</TableCell>
+												</TableRow>
+											) : (
+												periods.map((row, idx) => (
+													<TableRow key={row.id || `period-${idx}`}>
+														<TableCell>
+															<Input
+																type="date"
+																value={row.periodeMulai || ""}
+																onChange={(e) => {
+																	const next = [...periods];
+																	next[idx] = {
+																		...row,
+																		periodeMulai: e.target.value,
+																	};
+																	field.handleChange(next);
+																}}
+																disabled={!canEdit}
+																className="text-xs h-8"
+															/>
+														</TableCell>
+														<TableCell>
+															<Input
+																type="date"
+																value={row.periodeSelesai || ""}
+																onChange={(e) => {
+																	const next = [...periods];
+																	next[idx] = {
+																		...row,
+																		periodeSelesai: e.target.value,
+																	};
+																	field.handleChange(next);
+																}}
+																disabled={!canEdit}
+																className="text-xs h-8"
+															/>
+														</TableCell>
+														<TableCell>
+															<Input
+																type="number"
+																step="0.01"
+																value={
+																	row.rataRata != null
+																		? String(row.rataRata)
+																		: ""
+																}
+																onChange={(e) => {
+																	const next = [...periods];
+																	next[idx] = {
+																		...row,
+																		rataRata: Number(e.target.value) || 0,
+																	};
+																	field.handleChange(next);
+																}}
+																disabled={!canEdit}
+																className="text-xs h-8 font-mono"
+															/>
+														</TableCell>
+														<TableCell>
+															<Input
+																type="number"
+																step="0.01"
+																value={
+																	row.minimum != null ? String(row.minimum) : ""
+																}
+																onChange={(e) => {
+																	const next = [...periods];
+																	next[idx] = {
+																		...row,
+																		minimum: Number(e.target.value) || 0,
+																	};
+																	field.handleChange(next);
+																}}
+																disabled={!canEdit}
+																className="text-xs h-8 font-mono"
+															/>
+														</TableCell>
+														<TableCell>
+															<Input
+																type="number"
+																step="0.01"
+																value={
+																	row.maksimum != null
+																		? String(row.maksimum)
+																		: ""
+																}
+																onChange={(e) => {
+																	const next = [...periods];
+																	next[idx] = {
+																		...row,
+																		maksimum: Number(e.target.value) || 0,
+																	};
+																	field.handleChange(next);
+																}}
+																disabled={!canEdit}
+																className="text-xs h-8 font-mono"
+															/>
+														</TableCell>
+														{canEdit && (
+															<TableCell className="text-center">
+																<Button
+																	type="button"
+																	variant="ghost"
+																	size="icon"
+																	onClick={() => {
+																		field.handleChange(
+																			periods.filter((_, i) => i !== idx),
+																		);
+																	}}
+																	className="size-7 text-destructive hover:bg-destructive/10"
+																>
+																	<Trash2 className="size-3.5" />
+																</Button>
+															</TableCell>
+														)}
+													</TableRow>
+												))
 											)}
-										</TableRow>
-									))
-								)}
-							</TableBody>
-						</Table>
-					</div>
+										</TableBody>
+									</Table>
+								</div>
+							);
+						}}
+					</form.Field>
 				</CardContent>
 			</Card>
-
-			{canEdit && (
-				<div className="flex justify-end pt-2">
-					<Button
-						type="submit"
-						disabled={saveMutation.isPending}
-						className="h-9 text-xs flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white"
-					>
-						{saveMutation.isPending ? (
-							<Loader2 className="size-3.5 animate-spin" />
-						) : (
-							<Save className="size-3.5" />
-						)}
-						Simpan Formulir A1
-					</Button>
-				</div>
-			)}
 		</form>
 	);
 }
