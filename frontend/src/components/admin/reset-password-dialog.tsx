@@ -47,12 +47,9 @@ export function ResetPasswordDialog({
 				setError(null);
 				onSuccess();
 			},
-			onError: (err: unknown) => {
-				const errorObj = err as { error?: string; errors?: string[] };
+			onError: (error) => {
 				const msg =
-					errorObj?.error ||
-					errorObj?.errors?.[0] ||
-					"Gagal mengatur ulang kata sandi.";
+					error.detail || error.title || "Gagal mengatur ulang kata sandi.";
 				setError(msg);
 			},
 		},

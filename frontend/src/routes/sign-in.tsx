@@ -1,8 +1,10 @@
 import { useForm } from "@tanstack/react-form";
+import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AlertCircle, Lock, ShieldCheck, User } from "lucide-react";
 import * as React from "react";
 import { z } from "zod";
+import { $api } from "@/api/client";
 import { FormField } from "@/components/form/form-field";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,7 +16,6 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { useAuth } from "@/lib/auth";
 import { guestOnly } from "@/lib/auth-middleware";
 
 const searchSchema = z.object({
@@ -33,10 +34,39 @@ const loginSchema = z.object({
 });
 
 function SignInPage() {
-	const { login } = useAuth();
+	const queryClient = useQueryClient();
 	const navigate = useNavigate();
 	const search = Route.useSearch();
 	const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
+
+	const loginMutation = $api.useMutation("post", "/api/auth/login", {
+		onSuccess: (data) => {
+			queryClient.setQueryData(
+				$api.queryOptions("get", "/api/auth/me").queryKey,
+				data,
+			);
+			if (data.mustChangePassword) {
+				navigate({ to: "/change-password" });
+			} else {
+				navigate({ to: search.redirect || "/" });
+			}
+		},
+		onError: (error) => {
+			if (error.status === 423) {
+				setErrorMessage(
+					"Akun terkunci karena terlalu banyak percobaan masuk yang gagal. Silakan coba lagi beberapa saat lagi.",
+				);
+			} else if (error.status === 401) {
+				setErrorMessage("Nama pengguna atau kata sandi tidak valid.");
+			} else if (error.detail) {
+				setErrorMessage(error.detail);
+			} else {
+				setErrorMessage(
+					"Gagal masuk ke sistem. Periksa kembali kredensial Anda.",
+				);
+			}
+		},
+	});
 
 	const form = useForm({
 		defaultValues: {
@@ -48,37 +78,7 @@ function SignInPage() {
 		},
 		onSubmit: async ({ value }) => {
 			setErrorMessage(null);
-			try {
-				const user = await login({
-					username: value.username,
-					password: value.password,
-				});
-
-				if (user.mustChangePassword) {
-					navigate({ to: "/change-password" });
-				} else {
-					navigate({ to: search.redirect || "/" });
-				}
-			} catch (err: unknown) {
-				const errorObj = err as {
-					status?: number;
-					data?: { detail?: string; title?: string };
-					message?: string;
-				};
-				if (errorObj?.status === 423) {
-					setErrorMessage(
-						"Akun terkunci karena terlalu banyak percobaan masuk yang gagal. Silakan coba lagi beberapa saat lagi.",
-					);
-				} else if (errorObj?.status === 401) {
-					setErrorMessage("Nama pengguna atau kata sandi tidak valid.");
-				} else if (errorObj?.data?.detail) {
-					setErrorMessage(errorObj.data.detail);
-				} else {
-					setErrorMessage(
-						"Gagal masuk ke sistem. Periksa kembali kredensial Anda.",
-					);
-				}
-			}
+			await loginMutation.mutateAsync({ body: value });
 		},
 	});
 

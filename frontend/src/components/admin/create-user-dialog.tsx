@@ -108,11 +108,10 @@ export function CreateUserDialog({
 			setCreatedResult(data);
 			onSuccess();
 		},
-		onError: (err: unknown) => {
-			const errorObj = err as { error?: string; errors?: string[] };
+		onError: (error) => {
 			const msg =
-				errorObj?.error ||
-				errorObj?.errors?.[0] ||
+				error.detail ||
+				error.title ||
 				"Gagal membuat pengguna. Pastikan nama pengguna belum digunakan.";
 			setError(msg);
 		},

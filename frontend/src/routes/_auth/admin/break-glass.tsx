@@ -86,11 +86,10 @@ function BreakGlassPage() {
 				setError(null);
 				refetch();
 			},
-			onError: (err: unknown) => {
-				const errorObj = err as { error?: string; errors?: string[] };
+			onError: (error) => {
 				setError(
-					errorObj?.error ||
-						errorObj?.errors?.[0] ||
+					error.detail ||
+						error.title ||
 						"Gagal mengajukan permintaan akses darurat.",
 				);
 			},

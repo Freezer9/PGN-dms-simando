@@ -1,9 +1,11 @@
 import { useForm } from "@tanstack/react-form";
+import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AlertCircle, CheckCircle2, KeyRound, Lock } from "lucide-react";
 import * as React from "react";
 import { toast } from "sonner";
 import { z } from "zod";
+import { $api } from "@/api/client";
 import { FormField } from "@/components/form/form-field";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,11 +42,36 @@ const changePasswordSchema = z
 	});
 
 function ChangePasswordPage() {
-	const { user, changePassword } = useAuth();
+	const { user } = useAuth();
+	const queryClient = useQueryClient();
 	const navigate = useNavigate();
 	const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
 
 	const isForced = user?.mustChangePassword;
+
+	const changePasswordMutation = $api.useMutation(
+		"post",
+		"/api/auth/change-password",
+		{
+			onSuccess: (data) => {
+				queryClient.setQueryData(
+					$api.queryOptions("get", "/api/auth/me").queryKey,
+					data,
+				);
+				toast.success("Kata sandi berhasil diperbarui!");
+				navigate({ to: "/" });
+			},
+			onError: (error) => {
+				if (error.detail) {
+					setErrorMessage(error.detail);
+				} else {
+					setErrorMessage(
+						"Gagal memperbarui kata sandi. Periksa kembali input Anda.",
+					);
+				}
+			},
+		},
+	);
 
 	const form = useForm({
 		defaultValues: {
@@ -57,28 +84,7 @@ function ChangePasswordPage() {
 		},
 		onSubmit: async ({ value }) => {
 			setErrorMessage(null);
-			try {
-				await changePassword({
-					currentPassword: value.currentPassword,
-					newPassword: value.newPassword,
-				});
-
-				toast.success("Kata sandi berhasil diperbarui!");
-				navigate({ to: "/" });
-			} catch (err: unknown) {
-				const errorObj = err as {
-					status?: number;
-					data?: { detail?: string; title?: string };
-					message?: string;
-				};
-				if (errorObj?.data?.detail) {
-					setErrorMessage(errorObj.data.detail);
-				} else {
-					setErrorMessage(
-						"Gagal memperbarui kata sandi. Periksa kembali input Anda.",
-					);
-				}
-			}
+			await changePasswordMutation.mutateAsync({ body: value });
 		},
 	});
 

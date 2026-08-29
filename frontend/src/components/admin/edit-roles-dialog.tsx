@@ -104,12 +104,9 @@ export function EditRolesDialog({
 				setError(null);
 				onSuccess();
 			},
-			onError: (err: unknown) => {
-				const errorObj = err as { error?: string; errors?: string[] };
+			onError: (error) => {
 				const msg =
-					errorObj?.error ||
-					errorObj?.errors?.[0] ||
-					"Gagal menambahkan peran pengguna.";
+					error.detail || error.title || "Gagal menambahkan peran pengguna.";
 				setError(msg);
 			},
 		},
@@ -123,12 +120,9 @@ export function EditRolesDialog({
 				setError(null);
 				onSuccess();
 			},
-			onError: (err: unknown) => {
-				const errorObj = err as { error?: string; errors?: string[] };
+			onError: (error) => {
 				const msg =
-					errorObj?.error ||
-					errorObj?.errors?.[0] ||
-					"Gagal menonaktifkan peran pengguna.";
+					error.detail || error.title || "Gagal menonaktifkan peran pengguna.";
 				setError(msg);
 			},
 		},

@@ -64,12 +64,9 @@ export function OrganisationView() {
 				setError(null);
 				refetch();
 			},
-			onError: (err: unknown) => {
-				const errorObj = err as { error?: string; errors?: string[] };
+			onError: (error) => {
 				setError(
-					errorObj?.error ||
-						errorObj?.errors?.[0] ||
-						"Gagal menyimpan data wilayah.",
+					error.detail || error.title || "Gagal menyimpan data wilayah.",
 				);
 			},
 		},
@@ -85,12 +82,9 @@ export function OrganisationView() {
 				setError(null);
 				refetch();
 			},
-			onError: (err: unknown) => {
-				const errorObj = err as { error?: string; errors?: string[] };
+			onError: (error) => {
 				setError(
-					errorObj?.error ||
-						errorObj?.errors?.[0] ||
-						"Gagal memperbarui data wilayah.",
+					error.detail || error.title || "Gagal memperbarui data wilayah.",
 				);
 			},
 		},
@@ -105,11 +99,10 @@ export function OrganisationView() {
 				setError(null);
 				refetch();
 			},
-			onError: (err: unknown) => {
-				const errorObj = err as { error?: string; errors?: string[] };
+			onError: (error) => {
 				setError(
-					errorObj?.error ||
-						errorObj?.errors?.[0] ||
+					error.detail ||
+						error.title ||
 						"Gagal menghapus wilayah. Pastikan wilayah tidak memiliki sales area atau data terkait.",
 				);
 			},
@@ -126,12 +119,9 @@ export function OrganisationView() {
 				setError(null);
 				refetch();
 			},
-			onError: (err: unknown) => {
-				const errorObj = err as { error?: string; errors?: string[] };
+			onError: (error) => {
 				setError(
-					errorObj?.error ||
-						errorObj?.errors?.[0] ||
-						"Gagal menyimpan data sales area.",
+					error.detail || error.title || "Gagal menyimpan data sales area.",
 				);
 			},
 		},
@@ -147,12 +137,9 @@ export function OrganisationView() {
 				setError(null);
 				refetch();
 			},
-			onError: (err: unknown) => {
-				const errorObj = err as { error?: string; errors?: string[] };
+			onError: (error) => {
 				setError(
-					errorObj?.error ||
-						errorObj?.errors?.[0] ||
-						"Gagal memperbarui data sales area.",
+					error.detail || error.title || "Gagal memperbarui data sales area.",
 				);
 			},
 		},
@@ -167,11 +154,10 @@ export function OrganisationView() {
 				setError(null);
 				refetch();
 			},
-			onError: (err: unknown) => {
-				const errorObj = err as { error?: string; errors?: string[] };
+			onError: (error) => {
 				setError(
-					errorObj?.error ||
-						errorObj?.errors?.[0] ||
+					error.detail ||
+						error.title ||
 						"Gagal menghapus sales area. Pastikan sales area tidak memiliki berkas pelanggan aktif.",
 				);
 			},

@@ -64,13 +64,8 @@ function StuckStepsPage() {
 				setError(null);
 				refetch();
 			},
-			onError: (err: unknown) => {
-				const errorObj = err as { error?: string; errors?: string[] };
-				setError(
-					errorObj?.error ||
-						errorObj?.errors?.[0] ||
-						"Gagal mengalihkan penugasan.",
-				);
+			onError: (error) => {
+				setError(error.detail || error.title || "Gagal mengalihkan penugasan.");
 			},
 		},
 	);
