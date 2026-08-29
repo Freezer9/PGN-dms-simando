@@ -15,8 +15,8 @@ permissions:
   contents: read
 
 jobs:
-  build-and-test:
-    name: Build & test
+  backend:
+    name: Backend (.NET 10)
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
@@ -36,14 +36,6 @@ jobs:
             Directory.Packages.props
             **/*.csproj
 
-      # Simando.Web's build pulls in Tailwind CSS via an MSBuild target
-      # (scripts/js.sh) that shells out to bun/pnpm/npm; bun is primary
-      # and its lockfile is committed (src/Simando.Web/bun.lock).
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
       - name: Restore
         run: dotnet restore Simando.slnx
 
@@ -55,3 +47,33 @@ jobs:
       # which GitHub-hosted ubuntu runners provide out of the box.
       - name: Test
         run: dotnet test Simando.slnx --no-build --configuration Release
+
+  frontend:
+    name: Frontend (React / Bun)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Lint and typecheck
+        run: bun run check
+
+      - name: Test
+        run: bun run test
+
+      - name: Build
+        run: bun run build
