@@ -1,5 +1,3 @@
-using Simando.Domain.Common;
-
 namespace Simando.Application.Common;
 
 // Mints repositories bound to the transaction IUnitOfWork.ExecuteInTransactionAsync
@@ -7,5 +5,5 @@ namespace Simando.Application.Common;
 // connection/transaction, so their writes commit or roll back together.
 public interface IUnitOfWorkScope
 {
-    IRepository<TEntity> Repository<TEntity>() where TEntity : AuditableEntity;
+    IRepository<TEntity> Repository<TEntity>() where TEntity : class;
 }

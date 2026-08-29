@@ -6,7 +6,7 @@ using Simando.Domain.Common;
 namespace Simando.Infrastructure.Persistence;
 
 internal sealed class Repository<TEntity> : IRepository<TEntity>
-    where TEntity : AuditableEntity
+    where TEntity : class
 {
     private readonly IDbContextFactory<SimandoDbContext>? _dbContextFactory;
     private readonly SimandoDbContext? _boundContext;
@@ -16,6 +16,13 @@ internal sealed class Repository<TEntity> : IRepository<TEntity>
     // Used only by UnitOfWork's transaction scope — boundContext is owned
     // by the caller (the transaction), not created/disposed here.
     internal Repository(SimandoDbContext boundContext) => _boundContext = boundContext;
+
+    public Task<TEntity?> GetByIdAsync(Guid id, bool includeDeleted = false, CancellationToken ct = default) =>
+        RunAsync(async db =>
+        {
+            var query = includeDeleted ? db.Set<TEntity>().IgnoreQueryFilters() : db.Set<TEntity>();
+            return await query.AsNoTracking().FirstOrDefaultAsync(e => EF.Property<Guid>(e, "Id") == id, ct);
+        }, ct);
 
     public Task<List<TEntity>> GetAllAsync(
         Expression<Func<TEntity, bool>>? filter = null,
@@ -51,35 +58,72 @@ internal sealed class Repository<TEntity> : IRepository<TEntity>
             return new PagedResult<TEntity>(items, totalCount, page, pageSize);
         }, ct);
 
-    public Task AddAsync(TEntity entity, CancellationToken ct = default) =>
+    public Task<bool> ExistsAsync(
+        Expression<Func<TEntity, bool>> predicate,
+        bool includeDeleted = false,
+        CancellationToken ct = default) =>
+        RunAsync(async db =>
+        {
+            var query = includeDeleted ? db.Set<TEntity>().IgnoreQueryFilters() : db.Set<TEntity>();
+            return await query.AnyAsync(predicate, ct);
+        }, ct);
+
+    public Task<TEntity> AddAsync(TEntity entity, CancellationToken ct = default) =>
         RunAsync(async db =>
         {
             db.Set<TEntity>().Add(entity);
             await SaveChangesCoreAsync(db, ct);
+            return entity;
         }, ct);
 
-    public Task UpdateAsync(Guid id, Action<TEntity> mutate, CancellationToken ct = default) =>
+    public Task<bool> UpdateAsync(Guid id, Action<TEntity> mutate, CancellationToken ct = default) =>
         RunAsync(async db =>
         {
-            var entity = await db.Set<TEntity>().IgnoreQueryFilters().FirstAsync(e => e.Id == id, ct);
+            var entity = await db.Set<TEntity>().IgnoreQueryFilters().FirstOrDefaultAsync(e => EF.Property<Guid>(e, "Id") == id, ct);
+            if (entity is null) return false;
             mutate(entity);
             await SaveChangesCoreAsync(db, ct);
+            return true;
         }, ct);
 
-    public Task SoftDeleteAsync(Guid id, CancellationToken ct = default) =>
+    public Task<bool> SoftDeleteAsync(Guid id, CancellationToken ct = default) =>
         RunAsync(async db =>
         {
-            var entity = await db.Set<TEntity>().IgnoreQueryFilters().FirstAsync(e => e.Id == id, ct);
-            entity.DeletedAt = DateTimeOffset.UtcNow;
+            var entity = await db.Set<TEntity>().IgnoreQueryFilters().FirstOrDefaultAsync(e => EF.Property<Guid>(e, "Id") == id, ct);
+            if (entity is null) return false;
+            if (entity is AuditableEntity auditable)
+            {
+                auditable.DeletedAt = DateTimeOffset.UtcNow;
+            }
+            else
+            {
+                db.Set<TEntity>().Remove(entity);
+            }
             await SaveChangesCoreAsync(db, ct);
+            return true;
         }, ct);
 
-    public Task RestoreAsync(Guid id, CancellationToken ct = default) =>
+    public Task<bool> DeleteAsync(Guid id, CancellationToken ct = default) =>
         RunAsync(async db =>
         {
-            var entity = await db.Set<TEntity>().IgnoreQueryFilters().FirstAsync(e => e.Id == id, ct);
-            entity.DeletedAt = null;
+            var entity = await db.Set<TEntity>().IgnoreQueryFilters().FirstOrDefaultAsync(e => EF.Property<Guid>(e, "Id") == id, ct);
+            if (entity is null) return false;
+            db.Set<TEntity>().Remove(entity);
             await SaveChangesCoreAsync(db, ct);
+            return true;
+        }, ct);
+
+    public Task<bool> RestoreAsync(Guid id, CancellationToken ct = default) =>
+        RunAsync(async db =>
+        {
+            var entity = await db.Set<TEntity>().IgnoreQueryFilters().FirstOrDefaultAsync(e => EF.Property<Guid>(e, "Id") == id, ct);
+            if (entity is null) return false;
+            if (entity is AuditableEntity auditable)
+            {
+                auditable.DeletedAt = null;
+                await SaveChangesCoreAsync(db, ct);
+            }
+            return true;
         }, ct);
 
     // Opens the bound context (transaction path, not owned/disposed here)

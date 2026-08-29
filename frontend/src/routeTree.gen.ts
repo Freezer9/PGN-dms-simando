@@ -18,7 +18,6 @@ import { Route as AuthMapRouteImport } from './routes/_auth/map'
 import { Route as AuthTasksRouteImport } from './routes/_auth/tasks'
 import { Route as AuthAdminBreakGlassRouteImport } from './routes/_auth/admin/break-glass'
 import { Route as AuthAdminStuckStepsRouteImport } from './routes/_auth/admin/stuck-steps'
-import { Route as AuthAdminUsersRouteImport } from './routes/_auth/admin/users'
 import { Route as AuthDirectoryIndexRouteImport } from './routes/_auth/directory/index'
 import { Route as AuthDirectoryCompanyIdRouteImport } from './routes/_auth/directory/$companyId'
 import { Route as AuthDirectoryNewRouteImport } from './routes/_auth/directory/new'
@@ -85,11 +84,6 @@ const AuthAdminBreakGlassRoute = AuthAdminBreakGlassRouteImport.update({
 const AuthAdminStuckStepsRoute = AuthAdminStuckStepsRouteImport.update({
   id: '/admin/stuck-steps',
   path: '/admin/stuck-steps',
-  getParentRoute: () => AuthRoute,
-} as any)
-const AuthAdminUsersRoute = AuthAdminUsersRouteImport.update({
-  id: '/admin/users',
-  path: '/admin/users',
   getParentRoute: () => AuthRoute,
 } as any)
 const AuthDirectoryIndexRoute = AuthDirectoryIndexRouteImport.update({
@@ -220,7 +214,6 @@ export interface FileRoutesByFullPath {
   '/tasks': typeof AuthTasksRouteWithChildren
   '/admin/break-glass': typeof AuthAdminBreakGlassRoute
   '/admin/stuck-steps': typeof AuthAdminStuckStepsRoute
-  '/admin/users': typeof AuthAdminUsersRoute
   '/directory/$companyId': typeof AuthDirectoryCompanyIdRoute
   '/directory/new': typeof AuthDirectoryNewRoute
   '/master/countries': typeof AuthMasterCountriesRoute
@@ -253,7 +246,6 @@ export interface FileRoutesByTo {
   '/': typeof AuthIndexRoute
   '/admin/break-glass': typeof AuthAdminBreakGlassRoute
   '/admin/stuck-steps': typeof AuthAdminStuckStepsRoute
-  '/admin/users': typeof AuthAdminUsersRoute
   '/directory/$companyId': typeof AuthDirectoryCompanyIdRoute
   '/directory/new': typeof AuthDirectoryNewRoute
   '/master/countries': typeof AuthMasterCountriesRoute
@@ -289,7 +281,6 @@ export interface FileRoutesById {
   '/_auth/': typeof AuthIndexRoute
   '/_auth/admin/break-glass': typeof AuthAdminBreakGlassRoute
   '/_auth/admin/stuck-steps': typeof AuthAdminStuckStepsRoute
-  '/_auth/admin/users': typeof AuthAdminUsersRoute
   '/_auth/directory/$companyId': typeof AuthDirectoryCompanyIdRoute
   '/_auth/directory/new': typeof AuthDirectoryNewRoute
   '/_auth/master/countries': typeof AuthMasterCountriesRoute
@@ -325,7 +316,6 @@ export interface FileRouteTypes {
     | '/tasks'
     | '/admin/break-glass'
     | '/admin/stuck-steps'
-    | '/admin/users'
     | '/directory/$companyId'
     | '/directory/new'
     | '/master/countries'
@@ -358,7 +348,6 @@ export interface FileRouteTypes {
     | '/'
     | '/admin/break-glass'
     | '/admin/stuck-steps'
-    | '/admin/users'
     | '/directory/$companyId'
     | '/directory/new'
     | '/master/countries'
@@ -393,7 +382,6 @@ export interface FileRouteTypes {
     | '/_auth/'
     | '/_auth/admin/break-glass'
     | '/_auth/admin/stuck-steps'
-    | '/_auth/admin/users'
     | '/_auth/directory/$companyId'
     | '/_auth/directory/new'
     | '/_auth/master/countries'
@@ -489,13 +477,6 @@ declare module '@tanstack/react-router' {
       path: '/admin/stuck-steps'
       fullPath: '/admin/stuck-steps'
       preLoaderRoute: typeof AuthAdminStuckStepsRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/_auth/admin/users': {
-      id: '/_auth/admin/users'
-      path: '/admin/users'
-      fullPath: '/admin/users'
-      preLoaderRoute: typeof AuthAdminUsersRouteImport
       parentRoute: typeof AuthRoute
     }
     '/_auth/directory/': {
@@ -684,7 +665,6 @@ interface AuthRouteChildren {
   AuthIndexRoute: typeof AuthIndexRoute
   AuthAdminBreakGlassRoute: typeof AuthAdminBreakGlassRoute
   AuthAdminStuckStepsRoute: typeof AuthAdminStuckStepsRoute
-  AuthAdminUsersRoute: typeof AuthAdminUsersRoute
   AuthDirectoryCompanyIdRoute: typeof AuthDirectoryCompanyIdRoute
   AuthDirectoryNewRoute: typeof AuthDirectoryNewRoute
   AuthMasterCountriesRoute: typeof AuthMasterCountriesRoute
@@ -713,7 +693,6 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthIndexRoute: AuthIndexRoute,
   AuthAdminBreakGlassRoute: AuthAdminBreakGlassRoute,
   AuthAdminStuckStepsRoute: AuthAdminStuckStepsRoute,
-  AuthAdminUsersRoute: AuthAdminUsersRoute,
   AuthDirectoryCompanyIdRoute: AuthDirectoryCompanyIdRoute,
   AuthDirectoryNewRoute: AuthDirectoryNewRoute,
   AuthMasterCountriesRoute: AuthMasterCountriesRoute,

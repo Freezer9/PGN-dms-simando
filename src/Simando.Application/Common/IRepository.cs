@@ -1,10 +1,11 @@
 using System.Linq.Expressions;
-using Simando.Domain.Common;
 
 namespace Simando.Application.Common;
 
-public interface IRepository<TEntity> where TEntity : AuditableEntity
+public interface IRepository<TEntity> where TEntity : class
 {
+    Task<TEntity?> GetByIdAsync(Guid id, bool includeDeleted = false, CancellationToken ct = default);
+
     Task<List<TEntity>> GetAllAsync(
         Expression<Func<TEntity, bool>>? filter = null,
         bool includeDeleted = false,
@@ -22,15 +23,21 @@ public interface IRepository<TEntity> where TEntity : AuditableEntity
         bool includeDeleted = false,
         CancellationToken ct = default);
 
-    Task AddAsync(TEntity entity, CancellationToken ct = default);
+    Task<bool> ExistsAsync(
+        Expression<Func<TEntity, bool>> predicate,
+        bool includeDeleted = false,
+        CancellationToken ct = default);
 
-    // Fetch-mutate-save as one call, not GetForEditAsync + a separate
-    // SaveChangesAsync: each repository call opens its own short-lived
-    // DbContext (see Repository<T>), so the fetch and the save must happen
-    // inside the same call to act on the same context.
-    Task UpdateAsync(Guid id, Action<TEntity> mutate, CancellationToken ct = default);
+    Task<TEntity> AddAsync(TEntity entity, CancellationToken ct = default);
 
-    Task SoftDeleteAsync(Guid id, CancellationToken ct = default);
+    // Fetch-mutate-save as one call: each repository call opens its own short-lived
+    // DbContext (see Repository<T>), so the fetch and the save happen inside the
+    // same call to act on the same context with translated persistence exceptions.
+    Task<bool> UpdateAsync(Guid id, Action<TEntity> mutate, CancellationToken ct = default);
 
-    Task RestoreAsync(Guid id, CancellationToken ct = default);
+    Task<bool> SoftDeleteAsync(Guid id, CancellationToken ct = default);
+
+    Task<bool> DeleteAsync(Guid id, CancellationToken ct = default);
+
+    Task<bool> RestoreAsync(Guid id, CancellationToken ct = default);
 }

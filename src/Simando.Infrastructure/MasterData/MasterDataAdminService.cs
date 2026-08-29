@@ -1,265 +1,140 @@
 using Mapster;
-using Microsoft.EntityFrameworkCore;
+using Simando.Application.Common;
 using Simando.Application.MasterData;
 using Simando.Domain.MasterData;
-using Simando.Infrastructure.Persistence;
 
 namespace Simando.Infrastructure.MasterData;
 
-internal sealed class MasterDataAdminService(IDbContextFactory<SimandoDbContext> dbContextFactory) : IMasterDataAdminService
+internal sealed class MasterDataAdminService(
+    IEntityService<IndustryType> industryTypes,
+    IEntityService<Segment> segments,
+    IEntityService<FuelType> fuelTypes,
+    IEntityService<UnitOfMeasure> unitsOfMeasure,
+    IEntityService<MeterSize> meterSizes,
+    IEntityService<MrsSpec> mrsSpecs,
+    IEntityService<ReasonCategory> reasonCategories,
+    IEntityService<ReferenceDocument> referenceDocuments) : IMasterDataAdminService
 {
+    // Industry Type
     public async Task<IndustryTypeResult> CreateIndustryTypeAsync(CreateIndustryTypeRequest request, CancellationToken ct = default)
     {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var entity = request.Adapt<IndustryType>();
-        db.IndustryTypes.Add(entity);
-        await db.SaveChangesAsync(ct);
+        var entity = await industryTypes.AddAsync(request.Adapt<IndustryType>(), ct);
         return entity.Adapt<IndustryTypeResult>();
     }
 
-    public async Task<bool> UpdateIndustryTypeAsync(Guid id, UpdateIndustryTypeRequest request, CancellationToken ct = default)
-    {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var entity = await db.IndustryTypes.FirstOrDefaultAsync(i => i.Id == id, ct);
-        if (entity is null) return false;
+    public Task<bool> UpdateIndustryTypeAsync(Guid id, UpdateIndustryTypeRequest request, CancellationToken ct = default) =>
+        industryTypes.UpdateAsync(id, e =>
+        {
+            e.Name = request.Name.Trim();
+            e.ContohProduk = request.ContohProduk?.Trim();
+        }, ct);
 
-        entity.Name = request.Name.Trim();
-        entity.ContohProduk = request.ContohProduk?.Trim();
-        await db.SaveChangesAsync(ct);
-        return true;
-    }
+    public Task<bool> DeleteIndustryTypeAsync(Guid id, CancellationToken ct = default) =>
+        industryTypes.SoftDeleteAsync(id, ct);
 
-    public async Task<bool> DeleteIndustryTypeAsync(Guid id, CancellationToken ct = default)
-    {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var entity = await db.IndustryTypes.FirstOrDefaultAsync(i => i.Id == id, ct);
-        if (entity is null) return false;
-
-        entity.DeletedAt = DateTimeOffset.UtcNow;
-        await db.SaveChangesAsync(ct);
-        return true;
-    }
-
+    // Segment
     public async Task<SegmentResult> CreateSegmentAsync(CreateSegmentRequest request, CancellationToken ct = default)
     {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var entity = request.Adapt<Segment>();
-        db.Segments.Add(entity);
-        await db.SaveChangesAsync(ct);
+        var entity = await segments.AddAsync(request.Adapt<Segment>(), ct);
         return entity.Adapt<SegmentResult>();
     }
 
-    public async Task<bool> UpdateSegmentAsync(Guid id, UpdateSegmentRequest request, CancellationToken ct = default)
-    {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var entity = await db.Segments.FirstOrDefaultAsync(s => s.Id == id, ct);
-        if (entity is null) return false;
+    public Task<bool> UpdateSegmentAsync(Guid id, UpdateSegmentRequest request, CancellationToken ct = default) =>
+        segments.UpdateAsync(id, e =>
+        {
+            e.Name = request.Name.Trim();
+            e.SortOrder = request.SortOrder;
+        }, ct);
 
-        entity.Name = request.Name.Trim();
-        entity.SortOrder = request.SortOrder;
-        await db.SaveChangesAsync(ct);
-        return true;
-    }
+    public Task<bool> DeleteSegmentAsync(Guid id, CancellationToken ct = default) =>
+        segments.SoftDeleteAsync(id, ct);
 
-    public async Task<bool> DeleteSegmentAsync(Guid id, CancellationToken ct = default)
-    {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var entity = await db.Segments.FirstOrDefaultAsync(s => s.Id == id, ct);
-        if (entity is null) return false;
-
-        entity.DeletedAt = DateTimeOffset.UtcNow;
-        await db.SaveChangesAsync(ct);
-        return true;
-    }
-
+    // Fuel Type
     public async Task<FuelTypeResult> CreateFuelTypeAsync(CreateFuelTypeRequest request, CancellationToken ct = default)
     {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var entity = request.Adapt<FuelType>();
-        db.FuelTypes.Add(entity);
-        await db.SaveChangesAsync(ct);
+        var entity = await fuelTypes.AddAsync(request.Adapt<FuelType>(), ct);
         return entity.Adapt<FuelTypeResult>();
     }
 
-    public async Task<bool> UpdateFuelTypeAsync(Guid id, UpdateFuelTypeRequest request, CancellationToken ct = default)
-    {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var entity = await db.FuelTypes.FirstOrDefaultAsync(f => f.Id == id, ct);
-        if (entity is null) return false;
+    public Task<bool> UpdateFuelTypeAsync(Guid id, UpdateFuelTypeRequest request, CancellationToken ct = default) =>
+        fuelTypes.UpdateAsync(id, e => e.Name = request.Name.Trim(), ct);
 
-        entity.Name = request.Name.Trim();
-        await db.SaveChangesAsync(ct);
-        return true;
-    }
+    public Task<bool> DeleteFuelTypeAsync(Guid id, CancellationToken ct = default) =>
+        fuelTypes.SoftDeleteAsync(id, ct);
 
-    public async Task<bool> DeleteFuelTypeAsync(Guid id, CancellationToken ct = default)
-    {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var entity = await db.FuelTypes.FirstOrDefaultAsync(f => f.Id == id, ct);
-        if (entity is null) return false;
-
-        entity.DeletedAt = DateTimeOffset.UtcNow;
-        await db.SaveChangesAsync(ct);
-        return true;
-    }
-
+    // Unit Of Measure
     public async Task<UnitResult> CreateUnitAsync(CreateUnitRequest request, CancellationToken ct = default)
     {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var entity = request.Adapt<UnitOfMeasure>();
-        db.UnitsOfMeasure.Add(entity);
-        await db.SaveChangesAsync(ct);
+        var entity = await unitsOfMeasure.AddAsync(request.Adapt<UnitOfMeasure>(), ct);
         return entity.Adapt<UnitResult>();
     }
 
-    public async Task<bool> UpdateUnitAsync(Guid id, UpdateUnitRequest request, CancellationToken ct = default)
-    {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var entity = await db.UnitsOfMeasure.FirstOrDefaultAsync(u => u.Id == id, ct);
-        if (entity is null) return false;
+    public Task<bool> UpdateUnitAsync(Guid id, UpdateUnitRequest request, CancellationToken ct = default) =>
+        unitsOfMeasure.UpdateAsync(id, e =>
+        {
+            e.Code = request.Code.Trim();
+            e.Name = request.Name.Trim();
+            e.Dimension = request.Dimension;
+        }, ct);
 
-        entity.Code = request.Code.Trim();
-        entity.Name = request.Name.Trim();
-        entity.Dimension = request.Dimension;
-        await db.SaveChangesAsync(ct);
-        return true;
-    }
+    public Task<bool> DeleteUnitAsync(Guid id, CancellationToken ct = default) =>
+        unitsOfMeasure.SoftDeleteAsync(id, ct);
 
-    public async Task<bool> DeleteUnitAsync(Guid id, CancellationToken ct = default)
-    {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var entity = await db.UnitsOfMeasure.FirstOrDefaultAsync(u => u.Id == id, ct);
-        if (entity is null) return false;
-
-        entity.DeletedAt = DateTimeOffset.UtcNow;
-        await db.SaveChangesAsync(ct);
-        return true;
-    }
-
+    // Meter Size
     public async Task<MeterSizeResult> CreateMeterSizeAsync(CreateMeterSizeRequest request, CancellationToken ct = default)
     {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var entity = request.Adapt<MeterSize>();
-        db.MeterSizes.Add(entity);
-        await db.SaveChangesAsync(ct);
+        var entity = await meterSizes.AddAsync(request.Adapt<MeterSize>(), ct);
         return entity.Adapt<MeterSizeResult>();
     }
 
-    public async Task<bool> UpdateMeterSizeAsync(Guid id, UpdateMeterSizeRequest request, CancellationToken ct = default)
-    {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var entity = await db.MeterSizes.FirstOrDefaultAsync(m => m.Id == id, ct);
-        if (entity is null) return false;
+    public Task<bool> UpdateMeterSizeAsync(Guid id, UpdateMeterSizeRequest request, CancellationToken ct = default) =>
+        meterSizes.UpdateAsync(id, e =>
+        {
+            e.GSize = request.GSize.Trim();
+            e.NominalFlow = request.NominalFlow;
+            e.MaxFlow = request.MaxFlow;
+            e.PressureRating = request.PressureRating;
+        }, ct);
 
-        entity.GSize = request.GSize.Trim();
-        entity.NominalFlow = request.NominalFlow;
-        entity.MaxFlow = request.MaxFlow;
-        entity.PressureRating = request.PressureRating;
-        await db.SaveChangesAsync(ct);
-        return true;
-    }
+    public Task<bool> DeleteMeterSizeAsync(Guid id, CancellationToken ct = default) =>
+        meterSizes.SoftDeleteAsync(id, ct);
 
-    public async Task<bool> DeleteMeterSizeAsync(Guid id, CancellationToken ct = default)
-    {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var entity = await db.MeterSizes.FirstOrDefaultAsync(m => m.Id == id, ct);
-        if (entity is null) return false;
-
-        entity.DeletedAt = DateTimeOffset.UtcNow;
-        await db.SaveChangesAsync(ct);
-        return true;
-    }
-
+    // MRS Spec
     public async Task<MrsSpecResult> CreateMrsSpecAsync(CreateMrsSpecRequest request, CancellationToken ct = default)
     {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var entity = request.Adapt<MrsSpec>();
-        db.MrsSpecs.Add(entity);
-        await db.SaveChangesAsync(ct);
+        var entity = await mrsSpecs.AddAsync(request.Adapt<MrsSpec>(), ct);
         return entity.Adapt<MrsSpecResult>();
     }
 
-    public async Task<bool> UpdateMrsSpecAsync(Guid id, UpdateMrsSpecRequest request, CancellationToken ct = default)
-    {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var entity = await db.MrsSpecs.FirstOrDefaultAsync(m => m.Id == id, ct);
-        if (entity is null) return false;
+    public Task<bool> UpdateMrsSpecAsync(Guid id, UpdateMrsSpecRequest request, CancellationToken ct = default) =>
+        mrsSpecs.UpdateAsync(id, e => e.Name = request.Name.Trim(), ct);
 
-        entity.Name = request.Name.Trim();
-        await db.SaveChangesAsync(ct);
-        return true;
-    }
+    public Task<bool> DeleteMrsSpecAsync(Guid id, CancellationToken ct = default) =>
+        mrsSpecs.SoftDeleteAsync(id, ct);
 
-    public async Task<bool> DeleteMrsSpecAsync(Guid id, CancellationToken ct = default)
-    {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var entity = await db.MrsSpecs.FirstOrDefaultAsync(m => m.Id == id, ct);
-        if (entity is null) return false;
-
-        entity.DeletedAt = DateTimeOffset.UtcNow;
-        await db.SaveChangesAsync(ct);
-        return true;
-    }
-
+    // Reason Category
     public async Task<ReasonCategoryResult> CreateReasonCategoryAsync(CreateReasonCategoryRequest request, CancellationToken ct = default)
     {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var entity = request.Adapt<ReasonCategory>();
-        db.ReasonCategories.Add(entity);
-        await db.SaveChangesAsync(ct);
+        var entity = await reasonCategories.AddAsync(request.Adapt<ReasonCategory>(), ct);
         return entity.Adapt<ReasonCategoryResult>();
     }
 
-    public async Task<bool> UpdateReasonCategoryAsync(Guid id, UpdateReasonCategoryRequest request, CancellationToken ct = default)
-    {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var entity = await db.ReasonCategories.FirstOrDefaultAsync(r => r.Id == id, ct);
-        if (entity is null) return false;
+    public Task<bool> UpdateReasonCategoryAsync(Guid id, UpdateReasonCategoryRequest request, CancellationToken ct = default) =>
+        reasonCategories.UpdateAsync(id, e => e.Name = request.Name.Trim(), ct);
 
-        entity.Name = request.Name.Trim();
-        await db.SaveChangesAsync(ct);
-        return true;
-    }
+    public Task<bool> DeleteReasonCategoryAsync(Guid id, CancellationToken ct = default) =>
+        reasonCategories.SoftDeleteAsync(id, ct);
 
-    public async Task<bool> DeleteReasonCategoryAsync(Guid id, CancellationToken ct = default)
-    {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var entity = await db.ReasonCategories.FirstOrDefaultAsync(r => r.Id == id, ct);
-        if (entity is null) return false;
-
-        entity.DeletedAt = DateTimeOffset.UtcNow;
-        await db.SaveChangesAsync(ct);
-        return true;
-    }
-
+    // Reference Document
     public async Task<ReferenceDocumentResult> CreateReferenceDocumentAsync(CreateReferenceDocumentRequest request, CancellationToken ct = default)
     {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var entity = request.Adapt<ReferenceDocument>();
-        db.ReferenceDocuments.Add(entity);
-        await db.SaveChangesAsync(ct);
+        var entity = await referenceDocuments.AddAsync(request.Adapt<ReferenceDocument>(), ct);
         return entity.Adapt<ReferenceDocumentResult>();
     }
 
-    public async Task<bool> UpdateReferenceDocumentAsync(Guid id, UpdateReferenceDocumentRequest request, CancellationToken ct = default)
-    {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var entity = await db.ReferenceDocuments.FirstOrDefaultAsync(r => r.Id == id, ct);
-        if (entity is null) return false;
+    public Task<bool> UpdateReferenceDocumentAsync(Guid id, UpdateReferenceDocumentRequest request, CancellationToken ct = default) =>
+        referenceDocuments.UpdateAsync(id, e => e.EffectiveTo = request.EffectiveTo, ct);
 
-        entity.EffectiveTo = request.EffectiveTo;
-        await db.SaveChangesAsync(ct);
-        return true;
-    }
-
-    public async Task<bool> DeleteReferenceDocumentAsync(Guid id, CancellationToken ct = default)
-    {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var entity = await db.ReferenceDocuments.FirstOrDefaultAsync(r => r.Id == id, ct);
-        if (entity is null) return false;
-
-        entity.EffectiveTo = DateOnly.FromDateTime(DateTime.UtcNow);
-        await db.SaveChangesAsync(ct);
-        return true;
-    }
+    public Task<bool> DeleteReferenceDocumentAsync(Guid id, CancellationToken ct = default) =>
+        referenceDocuments.UpdateAsync(id, e => e.EffectiveTo = DateOnly.FromDateTime(DateTime.UtcNow), ct);
 }

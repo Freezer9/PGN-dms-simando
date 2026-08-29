@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using Simando.Application.Common;
-using Simando.Domain.Common;
 
 namespace Simando.Infrastructure.Persistence;
 
@@ -38,6 +37,6 @@ internal sealed class UnitOfWork(IDbContextFactory<SimandoDbContext> dbContextFa
 
     private sealed class UnitOfWorkScope(SimandoDbContext db) : IUnitOfWorkScope
     {
-        public IRepository<TEntity> Repository<TEntity>() where TEntity : AuditableEntity => new Repository<TEntity>(db);
+        public IRepository<TEntity> Repository<TEntity>() where TEntity : class => new Repository<TEntity>(db);
     }
 }
