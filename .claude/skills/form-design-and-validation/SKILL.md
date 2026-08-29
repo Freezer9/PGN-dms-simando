@@ -54,10 +54,10 @@ This playbook defines mandatory rules and architectural patterns for all form co
   export type CreateCompanyFormValues = z.infer<typeof createCompanySchema>;
   ```
 
-- **Standard Form Hook Setup**:
+- **Standard Form Hook Setup (Standard Schema)**:
+  TanStack Form v1 natively supports Standard Schema (`~standard`). Zod schemas can be passed directly to `validators.onChange`, `validators.onBlur`, `validators.onSubmit`, or field-level `validators` without requiring any adapter packages (`@tanstack/zod-form-adapter` is obsolete and not needed):
   ```tsx
   import { useForm } from '@tanstack/react-form';
-  import { zodValidator } from '@tanstack/zod-form-adapter';
   import { toast } from 'sonner';
   import { $api } from '@/api/client';
   import { Button } from '@/components/ui/button';
@@ -76,7 +76,6 @@ This playbook defines mandatory rules and architectural patterns for all form co
         picPhone: '',
         estimatedGasDemand: 0,
       } as CreateCompanyFormValues,
-      validatorAdapter: zodValidator(),
       validators: {
         onChange: createCompanySchema,
       },
