@@ -203,6 +203,126 @@ internal sealed class CompanyService(IDbContextFactory<SimandoDbContext> dbConte
         return SoftDeleteResult.Success();
     }
 
+    public async Task<StageEditResult> UpdateBasicInfoAsync(
+        Guid companyId, UpdateCompanyRequest request, Guid actorUserId, EffectivePermissions actor, CancellationToken ct = default)
+    {
+        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
+
+        var company = await db.Companies.FirstOrDefaultAsync(c => c.Id == companyId, ct);
+        if (company is null)
+        {
+            return StageEditResult.Rejected("Berkas tidak ditemukan.");
+        }
+
+        if (company.Status != RecordStatus.Draft)
+        {
+            return StageEditResult.Rejected("Hanya berkas berstatus Draft yang dapat diperbarui informasinya.");
+        }
+
+        var editCheck = await CanEditAsync(db, company, actor, Capability.EditStages1To3, ct);
+        if (editCheck is { } rejection)
+        {
+            return rejection;
+        }
+
+        var village = await db.Villages.AsNoTracking().FirstOrDefaultAsync(v => v.Id == request.VillageId, ct);
+        if (village is null)
+        {
+            return StageEditResult.Rejected("Data Kelurahan/Desa tidak valid.");
+        }
+
+        var geometryFactory = NetTopologySuite.NtsGeometryServices.Instance.CreateGeometryFactory(srid: 4326);
+        var location = geometryFactory.CreatePoint(new Coordinate(request.Longitude, request.Latitude));
+
+        company.NamaPerusahaan = request.NamaPerusahaan.Trim();
+        company.Website = request.Website?.Trim();
+        company.VillageId = request.VillageId;
+        company.Alamat = request.Alamat.Trim();
+        company.Location = location;
+        company.IndustryTypeId = request.IndustryTypeId;
+        company.Email = request.Email?.Trim();
+        company.KodePos = request.KodePos?.Trim();
+        company.Telp = request.Telp?.Trim();
+        company.Npwp = request.Npwp?.Trim();
+        company.UpdatedAt = DateTimeOffset.UtcNow;
+
+        await db.SaveChangesAsync(ct);
+        return StageEditResult.Success();
+    }
+
+    public async Task<IReadOnlyList<CompanyMapPinDto>> GetMapPinsAsync(CancellationToken ct = default)
+    {
+        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
+
+        var companies = await db.Companies.AsNoTracking()
+            .Where(c => c.Location != null)
+            .ToListAsync(ct);
+
+        var industryTypeIds = companies.Select(c => c.IndustryTypeId).Distinct().ToList();
+        var industryTypes = await db.IndustryTypes.AsNoTracking()
+            .Where(it => industryTypeIds.Contains(it.Id))
+            .ToDictionaryAsync(it => it.Id, it => it.Name, ct);
+
+        var companyIds = companies.Select(c => c.Id).ToList();
+        var plottings = await db.Plottings.AsNoTracking()
+            .Where(p => companyIds.Contains(p.CompanyId))
+            .ToDictionaryAsync(p => p.CompanyId, ct);
+
+        var villageIds = companies.Select(c => c.VillageId).Distinct().ToList();
+        var villages = await db.Villages.AsNoTracking()
+            .Where(v => villageIds.Contains(v.Id))
+            .ToDictionaryAsync(v => v.Id, ct);
+
+        var districtIds = villages.Values.Select(v => v.DistrictId).Distinct().ToList();
+        var districts = await db.Districts.AsNoTracking()
+            .Where(d => districtIds.Contains(d.Id))
+            .ToDictionaryAsync(d => d.Id, ct);
+
+        var regencyIds = districts.Values.Select(d => d.RegencyId).Distinct().ToList();
+        var regencies = await db.Regencies.AsNoTracking()
+            .Where(r => regencyIds.Contains(r.Id))
+            .ToDictionaryAsync(r => r.Id, ct);
+
+        var userIds = companies.Select(c => c.CreatedBy).Distinct().ToList();
+        var users = await db.Users.AsNoTracking()
+            .Where(u => userIds.Contains(u.Id))
+            .ToDictionaryAsync(u => u.Id, u => u.FullName, ct);
+
+        var pins = new List<CompanyMapPinDto>();
+        foreach (var c in companies)
+        {
+            if (c.Location is null) continue;
+
+            string locationLabel = "Lokasi";
+            if (villages.TryGetValue(c.VillageId, out var v) &&
+                districts.TryGetValue(v.DistrictId, out var d) &&
+                regencies.TryGetValue(d.RegencyId, out var r))
+            {
+                locationLabel = $"{(r.Type == RegencyType.Kota ? "Kota" : "Kabupaten")} {r.Name}";
+            }
+
+            plottings.TryGetValue(c.Id, out var plotting);
+            users.TryGetValue(c.CreatedBy, out var salesName);
+            industryTypes.TryGetValue(c.IndustryTypeId, out var industryName);
+
+            pins.Add(new CompanyMapPinDto(
+                c.Id,
+                c.Nomor,
+                c.NamaPerusahaan,
+                c.Location.Y,
+                c.Location.X,
+                c.CurrentStage,
+                c.Status,
+                industryName ?? "Industri",
+                locationLabel,
+                plotting?.PosisiPelanggan,
+                plotting?.Kawasan,
+                salesName));
+        }
+
+        return pins;
+    }
+
     public async Task<PlottingDetail?> GetPlottingAsync(Guid companyId, CancellationToken ct = default)
     {
         await using var db = await dbContextFactory.CreateDbContextAsync(ct);

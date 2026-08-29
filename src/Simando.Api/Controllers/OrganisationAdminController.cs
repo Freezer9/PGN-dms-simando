@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -55,27 +54,26 @@ public sealed record UpdateAreaRequest(
 [Authorize]
 public sealed class OrganisationAdminController(
     IOrganisationService organisationService,
+    ICurrentUser currentUser,
     IDbContextFactory<SimandoDbContext> dbContextFactory) : ControllerBase
 {
+    private bool IsAuthorizedAdmin() =>
+        currentUser.IsAuthenticated &&
+        (currentUser.Scope == AccessScope.All || currentUser.HasCapability(Capability.ManageMasterData));
+
     [HttpGet]
     [ProducesResponseType<IReadOnlyList<RegionWithAreasDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> GetOrganisation(CancellationToken ct)
     {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var actor = await ResolveActorContextAsync(db, ct);
-        if (actor is null) return Unauthorized();
-
-        var (userId, permissions, _) = actor.Value;
-        if (!permissions.HasCapability(Capability.ManageMasterData) && permissions.Scope != AccessScope.All)
-        {
-            return Forbid();
-        }
+        if (!currentUser.IsAuthenticated) return Unauthorized();
+        if (!IsAuthorizedAdmin()) return Forbid();
 
         var regions = await organisationService.GetRegionsAsync(ct);
         var areas = await organisationService.GetAreasAsync(ct);
 
+        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
         var areaCounts = await db.Companies.IgnoreQueryFilters().AsNoTracking()
             .GroupBy(c => c.AreaId)
             .Select(g => new { AreaId = g.Key, Count = g.Count() })
@@ -111,15 +109,8 @@ public sealed class OrganisationAdminController(
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> CreateRegion([FromBody] CreateRegionRequest request, CancellationToken ct)
     {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var actor = await ResolveActorContextAsync(db, ct);
-        if (actor is null) return Unauthorized();
-
-        var (_, permissions, _) = actor.Value;
-        if (!permissions.HasCapability(Capability.ManageMasterData))
-        {
-            return Forbid();
-        }
+        if (!currentUser.IsAuthenticated) return Unauthorized();
+        if (!currentUser.HasCapability(Capability.ManageMasterData)) return Forbid();
 
         var region = new Region
         {
@@ -139,15 +130,8 @@ public sealed class OrganisationAdminController(
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> UpdateRegion(Guid id, [FromBody] UpdateRegionRequest request, CancellationToken ct)
     {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var actor = await ResolveActorContextAsync(db, ct);
-        if (actor is null) return Unauthorized();
-
-        var (_, permissions, _) = actor.Value;
-        if (!permissions.HasCapability(Capability.ManageMasterData))
-        {
-            return Forbid();
-        }
+        if (!currentUser.IsAuthenticated) return Unauthorized();
+        if (!currentUser.HasCapability(Capability.ManageMasterData)) return Forbid();
 
         await organisationService.UpdateRegionAsync(id, r =>
         {
@@ -166,15 +150,8 @@ public sealed class OrganisationAdminController(
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> DeleteRegion(Guid id, CancellationToken ct)
     {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var actor = await ResolveActorContextAsync(db, ct);
-        if (actor is null) return Unauthorized();
-
-        var (_, permissions, _) = actor.Value;
-        if (!permissions.HasCapability(Capability.ManageMasterData))
-        {
-            return Forbid();
-        }
+        if (!currentUser.IsAuthenticated) return Unauthorized();
+        if (!currentUser.HasCapability(Capability.ManageMasterData)) return Forbid();
 
         await organisationService.DeleteRegionAsync(id, ct);
         return NoContent();
@@ -187,15 +164,8 @@ public sealed class OrganisationAdminController(
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> CreateArea([FromBody] CreateAreaRequest request, CancellationToken ct)
     {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var actor = await ResolveActorContextAsync(db, ct);
-        if (actor is null) return Unauthorized();
-
-        var (_, permissions, _) = actor.Value;
-        if (!permissions.HasCapability(Capability.ManageMasterData))
-        {
-            return Forbid();
-        }
+        if (!currentUser.IsAuthenticated) return Unauthorized();
+        if (!currentUser.HasCapability(Capability.ManageMasterData)) return Forbid();
 
         var area = new Area
         {
@@ -216,15 +186,8 @@ public sealed class OrganisationAdminController(
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> UpdateArea(Guid id, [FromBody] UpdateAreaRequest request, CancellationToken ct)
     {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var actor = await ResolveActorContextAsync(db, ct);
-        if (actor is null) return Unauthorized();
-
-        var (_, permissions, _) = actor.Value;
-        if (!permissions.HasCapability(Capability.ManageMasterData))
-        {
-            return Forbid();
-        }
+        if (!currentUser.IsAuthenticated) return Unauthorized();
+        if (!currentUser.HasCapability(Capability.ManageMasterData)) return Forbid();
 
         await organisationService.UpdateAreaAsync(id, a =>
         {
@@ -244,38 +207,10 @@ public sealed class OrganisationAdminController(
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> DeleteArea(Guid id, CancellationToken ct)
     {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var actor = await ResolveActorContextAsync(db, ct);
-        if (actor is null) return Unauthorized();
-
-        var (_, permissions, _) = actor.Value;
-        if (!permissions.HasCapability(Capability.ManageMasterData))
-        {
-            return Forbid();
-        }
+        if (!currentUser.IsAuthenticated) return Unauthorized();
+        if (!currentUser.HasCapability(Capability.ManageMasterData)) return Forbid();
 
         await organisationService.DeleteAreaAsync(id, ct);
         return NoContent();
-    }
-
-    private async Task<(Guid UserId, EffectivePermissions Permissions, IReadOnlySet<Role> Roles)?> ResolveActorContextAsync(
-        SimandoDbContext db,
-        CancellationToken ct)
-    {
-        var idClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (idClaim is null || !Guid.TryParse(idClaim, out var userId))
-        {
-            return null;
-        }
-
-        var assignments = await db.RoleAssignments
-            .AsNoTracking()
-            .Where(a => a.UserId == userId && a.Active)
-            .ToListAsync(ct);
-
-        var permissions = PermissionEvaluator.Resolve(assignments);
-        var roles = assignments.Select(a => a.Role).ToHashSet();
-
-        return (userId, permissions, roles);
     }
 }

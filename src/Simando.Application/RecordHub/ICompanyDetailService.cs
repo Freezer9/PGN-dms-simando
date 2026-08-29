@@ -1,3 +1,4 @@
+using Simando.Application.Directory;
 using Simando.Domain.Security;
 
 namespace Simando.Application.RecordHub;
@@ -9,6 +10,13 @@ namespace Simando.Application.RecordHub;
 public interface ICompanyDetailService
 {
     Task<CompanyDetail?> GetDetailAsync(
+        Guid companyId,
+        Guid actorUserId,
+        EffectivePermissions actor,
+        IReadOnlySet<Role> actorRoles,
+        CancellationToken ct = default);
+
+    Task<CompanyRecordDto?> GetCompanyRecordAsync(
         Guid companyId,
         Guid actorUserId,
         EffectivePermissions actor,

@@ -57,4 +57,8 @@ public interface IWorkflowService
         Guid actorUserId,
         EffectivePermissions actor,
         CancellationToken ct = default);
+
+    Task<IReadOnlyList<StuckStepItemDto>> GetStuckStepsAsync(
+        EffectivePermissions actor,
+        CancellationToken ct = default);
 }

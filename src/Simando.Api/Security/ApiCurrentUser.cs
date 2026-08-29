@@ -39,9 +39,19 @@ public sealed class ApiCurrentUser(IHttpContextAccessor httpContextAccessor) : I
     public bool MustChangePassword =>
         User?.HasClaim(SimandoUserClaimsPrincipalFactory.MustChangePasswordClaimType, "true") == true;
 
-    public IReadOnlySet<string> Roles =>
-        User?.FindAll(ClaimTypes.Role).Select(c => c.Value).ToHashSet() ?? [];
+    public IReadOnlySet<Role> Roles =>
+        User?.FindAll(ClaimTypes.Role)
+            .Select(c => Enum.TryParse<Role>(c.Value, out var r) ? (Role?)r : null)
+            .Where(r => r.HasValue)
+            .Select(r => r!.Value)
+            .ToHashSet() ?? [];
 
-    public IReadOnlySet<string> Capabilities =>
-        User?.FindAll(SimandoUserClaimsPrincipalFactory.CapabilityClaimType).Select(c => c.Value).ToHashSet() ?? [];
+    public IReadOnlySet<Capability> Capabilities =>
+        User?.FindAll(SimandoUserClaimsPrincipalFactory.CapabilityClaimType)
+            .Select(c => Enum.TryParse<Capability>(c.Value, out var cap) ? (Capability?)cap : null)
+            .Where(cap => cap.HasValue)
+            .Select(cap => cap!.Value)
+            .ToHashSet() ?? [];
+
+    public EffectivePermissions Permissions => new(Scope, AreaId, RegionId, Capabilities);
 }

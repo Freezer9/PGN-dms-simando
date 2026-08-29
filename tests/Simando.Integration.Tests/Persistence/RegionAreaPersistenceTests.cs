@@ -116,16 +116,4 @@ public class RegionAreaPersistenceTests : IAsyncLifetime
 
         return new SimandoDbContext(options, new UnrestrictedCurrentUser());
     }
-
-    // Region/Area carry no row-level-security query filter, but
-    // SimandoDbContext's constructor still needs an ICurrentUser for the
-    // Company/Plotting/CompanyContact filters it also defines.
-    private sealed class UnrestrictedCurrentUser : ICurrentUser
-    {
-        public Guid UserId => Guid.Empty;
-        public AccessScope Scope => AccessScope.All;
-        public Guid? AreaId => null;
-        public Guid? RegionId => null;
-        public bool HasCapability(Capability capability) => true;
-    }
 }

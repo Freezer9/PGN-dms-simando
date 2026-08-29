@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Simando.Application.Directory;
 using Simando.Application.RecordHub;
 using Simando.Application.Workflow;
 using Simando.Domain.Audit;
@@ -137,6 +138,83 @@ internal sealed class CompanyDetailService(IDbContextFactory<SimandoDbContext> d
             canSubmit,
             canAct,
             canChooseReviewers,
+            contacts);
+    }
+
+    public async Task<CompanyRecordDto?> GetCompanyRecordAsync(
+        Guid companyId,
+        Guid actorUserId,
+        EffectivePermissions actor,
+        IReadOnlySet<Role> actorRoles,
+        CancellationToken ct = default)
+    {
+        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
+
+        var company = await db.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.Id == companyId, ct);
+        if (company is null)
+        {
+            return null;
+        }
+
+        var detail = await GetDetailAsync(companyId, actorUserId, actor, actorRoles, ct);
+        if (detail is null)
+        {
+            return null;
+        }
+
+        var village = await db.Villages.AsNoTracking().FirstOrDefaultAsync(v => v.Id == company.VillageId, ct);
+        var district = village is not null ? await db.Districts.AsNoTracking().FirstOrDefaultAsync(d => d.Id == village.DistrictId, ct) : null;
+        var regency = district is not null ? await db.Regencies.AsNoTracking().FirstOrDefaultAsync(r => r.Id == district.RegencyId, ct) : null;
+        var province = regency is not null ? await db.Provinces.AsNoTracking().FirstOrDefaultAsync(p => p.Id == regency.ProvinceId, ct) : null;
+
+        var contacts = await db.CompanyContacts.AsNoTracking()
+            .Where(c => c.CompanyId == companyId)
+            .OrderByDescending(c => c.IsPrimary).ThenBy(c => c.SortOrder)
+            .Select(c => new ContactDetail(c.Id, c.Nama, c.Jabatan, c.Email, c.NoHp, c.LinkedIn, c.Instagram, c.Facebook, c.IsPrimary, c.SortOrder))
+            .ToListAsync(ct);
+
+        return new CompanyRecordDto(
+            company.Id,
+            company.Nomor,
+            company.NamaPerusahaan,
+            company.Website,
+            company.Alamat,
+            company.VillageId,
+            village?.Name ?? "Desa/Kelurahan",
+            district?.Id ?? Guid.Empty,
+            district?.Name ?? "Kecamatan",
+            regency?.Id ?? Guid.Empty,
+            regency?.Name ?? "Kota/Kabupaten",
+            province?.Id ?? Guid.Empty,
+            province?.Name ?? "Provinsi",
+            detail.LocationLabel,
+            company.IndustryTypeId,
+            detail.IndustryTypeName,
+            company.Npwp,
+            company.Email,
+            company.KodePos,
+            company.Telp,
+            company.AreaId,
+            detail.AreaName,
+            detail.RegionId,
+            detail.RegionName,
+            company.CurrentStage,
+            company.Status,
+            company.CreatedBy,
+            detail.SalesRepName,
+            company.CreatedAt,
+            company.UpdatedAt,
+            company.Location?.Y,
+            company.Location?.X,
+            detail.HolderLabel,
+            detail.HolderName,
+            detail.StatusSince,
+            detail.CurrentStepId,
+            detail.CurrentStepKind,
+            detail.WorkflowInstanceId,
+            detail.CanSubmit,
+            detail.CanAct,
+            detail.CanChooseReviewers,
             contacts);
     }
 

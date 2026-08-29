@@ -29,18 +29,9 @@ public class MailKitEmailNotificationChannelTests
         public SimandoDbContext CreateDbContext()
         {
             var options = new DbContextOptionsBuilder<SimandoDbContext>().Options;
-            return new SimandoDbContext(options, new DummyCurrentUser());
+            return new SimandoDbContext(options, new UnrestrictedCurrentUser());
         }
 
         public Task<SimandoDbContext> CreateDbContextAsync(CancellationToken ct = default) => Task.FromResult(CreateDbContext());
-    }
-
-    private sealed class DummyCurrentUser : ICurrentUser
-    {
-        public Guid UserId => Guid.NewGuid();
-        public AccessScope Scope => AccessScope.All;
-        public Guid? AreaId => null;
-        public Guid? RegionId => null;
-        public bool HasCapability(Capability capability) => true;
     }
 }

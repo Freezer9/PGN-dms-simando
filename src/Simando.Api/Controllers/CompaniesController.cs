@@ -1,107 +1,12 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using NetTopologySuite.Geometries;
 using Simando.Application.Common;
 using Simando.Application.Directory;
-using Simando.Application.Nol;
 using Simando.Application.RecordHub;
-using Simando.Application.Registration;
-using Simando.Application.Workflow;
 using Simando.Domain.Directory;
-using Simando.Domain.Geography;
 using Simando.Domain.Security;
-using Simando.Domain.Workflow;
-using Simando.Infrastructure.Persistence;
 
 namespace Simando.Api.Controllers;
-
-public sealed record UpdateLocationRequest(double Latitude, double Longitude);
-
-public sealed record UpdateCompanyRequest(
-    string NamaPerusahaan,
-    string? Website,
-    Guid VillageId,
-    string Alamat,
-    double Latitude,
-    double Longitude,
-    Guid IndustryTypeId,
-    string? Email,
-    string? KodePos,
-    string? Telp,
-    string? Npwp);
-
-public sealed record SaveSurveyFullPayload(
-    SaveSurveyRequest Request,
-    IReadOnlyList<SaveSurveyProductRequest> Products,
-    IReadOnlyList<SaveSurveyRawMaterialRequest> RawMaterials,
-    IReadOnlyList<SaveSurveyMarketRequest> Markets,
-    IReadOnlyList<SaveSurveyEquipmentRequest> Equipment);
-
-public sealed record ChooseReviewersRequest(IReadOnlyList<Guid> ReviewerUserIds);
-
-public sealed record ReworkRequest(string? Comment);
-
-public sealed record DiscontinueRequest(string Comment);
-
-public sealed record CompanyMapPinDto(
-    Guid Id,
-    string Nomor,
-    string NamaPerusahaan,
-    double Latitude,
-    double Longitude,
-    byte CurrentStage,
-    RecordStatus Status,
-    string IndustryTypeName,
-    string LocationLabel,
-    PosisiPelanggan? PosisiPelanggan,
-    Kawasan? Kawasan,
-    string? SalesUserName);
-
-public sealed record CompanyRecordDto(
-    Guid Id,
-    string Nomor,
-    string NamaPerusahaan,
-    string? Website,
-    string Alamat,
-    Guid VillageId,
-    string VillageName,
-    Guid DistrictId,
-    string DistrictName,
-    Guid RegencyId,
-    string RegencyName,
-    Guid ProvinceId,
-    string ProvinceName,
-    string LocationLabel,
-    Guid IndustryTypeId,
-    string IndustryTypeName,
-    string? Npwp,
-    string? Email,
-    string? KodePos,
-    string? Telp,
-    Guid AreaId,
-    string AreaName,
-    Guid RegionId,
-    string RegionName,
-    byte CurrentStage,
-    RecordStatus Status,
-    Guid CreatedBy,
-    string SalesRepName,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset? UpdatedAt,
-    double? Latitude,
-    double? Longitude,
-    string? HolderLabel,
-    string? HolderName,
-    DateTimeOffset StatusSince,
-    Guid? CurrentStepId,
-    WorkflowStepKind? CurrentStepKind,
-    Guid? WorkflowInstanceId,
-    bool CanSubmit,
-    bool CanAct,
-    bool CanChooseReviewers,
-    IReadOnlyList<ContactDetail> Contacts);
 
 [ApiController]
 [Route("api/companies")]
@@ -109,8 +14,7 @@ public sealed record CompanyRecordDto(
 public sealed class CompaniesController(
     ICompanyService companyService,
     ICompanyDetailService companyDetailService,
-    IWorkflowService workflowService,
-    IDbContextFactory<SimandoDbContext> dbContextFactory) : ControllerBase
+    ICurrentUser currentUser) : ControllerBase
 {
     [HttpGet]
     [ProducesResponseType<PagedResult<CompanyListItem>>(StatusCodes.Status200OK)]
@@ -151,25 +55,23 @@ public sealed class CompaniesController(
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> Create([FromBody] CreateCompanyRequest request, CancellationToken ct)
     {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var actorContext = await ResolveActorContextAsync(db, ct);
-        if (actorContext is null)
+        if (!currentUser.IsAuthenticated)
         {
             return Unauthorized();
         }
 
-        if (!actorContext.Value.Permissions.HasCapability(Capability.CreateCompany))
+        if (!currentUser.HasCapability(Capability.CreateCompany))
         {
             return Forbid();
         }
 
         // If actor is Area-scoped, ensure company belongs to their Area
-        if (actorContext.Value.Permissions.Scope == AccessScope.Area && actorContext.Value.Permissions.AreaId is { } actorAreaId)
+        if (currentUser.Scope == AccessScope.Area && currentUser.AreaId is { } actorAreaId)
         {
             request = request with { AreaId = actorAreaId };
         }
 
-        var result = await companyService.CreateAsync(request, actorContext.Value.UserId, actorContext.Value.Permissions, ct);
+        var result = await companyService.CreateAsync(request, currentUser.UserId, currentUser.Permissions, ct);
         return CreatedAtAction(nameof(GetById), new { id = result.CompanyId }, result);
     }
 
@@ -179,81 +81,22 @@ public sealed class CompaniesController(
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
     {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var actorContext = await ResolveActorContextAsync(db, ct);
-        if (actorContext is null)
+        if (!currentUser.IsAuthenticated)
         {
             return Unauthorized();
         }
 
-        var detail = await companyDetailService.GetDetailAsync(
+        var record = await companyDetailService.GetCompanyRecordAsync(
             id,
-            actorContext.Value.UserId,
-            actorContext.Value.Permissions,
-            actorContext.Value.Roles,
+            currentUser.UserId,
+            currentUser.Permissions,
+            currentUser.Roles,
             ct);
 
-        if (detail is null)
+        if (record is null)
         {
             return NotFound();
         }
-
-        var company = await db.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.Id == id, ct);
-        if (company is null)
-        {
-            return NotFound();
-        }
-
-        var village = await db.Villages.AsNoTracking().FirstOrDefaultAsync(v => v.Id == company.VillageId, ct);
-        var district = village is not null ? await db.Districts.AsNoTracking().FirstOrDefaultAsync(d => d.Id == village.DistrictId, ct) : null;
-        var regency = district is not null ? await db.Regencies.AsNoTracking().FirstOrDefaultAsync(r => r.Id == district.RegencyId, ct) : null;
-        var province = regency is not null ? await db.Provinces.AsNoTracking().FirstOrDefaultAsync(p => p.Id == regency.ProvinceId, ct) : null;
-
-        var contacts = await companyService.GetContactsAsync(id, ct);
-
-        var record = new CompanyRecordDto(
-            company.Id,
-            company.Nomor,
-            company.NamaPerusahaan,
-            company.Website,
-            company.Alamat,
-            company.VillageId,
-            village?.Name ?? "Desa/Kelurahan",
-            district?.Id ?? Guid.Empty,
-            district?.Name ?? "Kecamatan",
-            regency?.Id ?? Guid.Empty,
-            regency?.Name ?? "Kota/Kabupaten",
-            province?.Id ?? Guid.Empty,
-            province?.Name ?? "Provinsi",
-            detail.LocationLabel,
-            company.IndustryTypeId,
-            detail.IndustryTypeName,
-            company.Npwp,
-            company.Email,
-            company.KodePos,
-            company.Telp,
-            company.AreaId,
-            detail.AreaName,
-            detail.RegionId,
-            detail.RegionName,
-            company.CurrentStage,
-            company.Status,
-            company.CreatedBy,
-            detail.SalesRepName,
-            company.CreatedAt,
-            company.UpdatedAt,
-            company.Location?.Y,
-            company.Location?.X,
-            detail.HolderLabel,
-            detail.HolderName,
-            detail.StatusSince,
-            detail.CurrentStepId,
-            detail.CurrentStepKind,
-            detail.WorkflowInstanceId,
-            detail.CanSubmit,
-            detail.CanAct,
-            detail.CanChooseReviewers,
-            contacts);
 
         return Ok(record);
     }
@@ -264,76 +107,52 @@ public sealed class CompaniesController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateCompanyRequest request, CancellationToken ct)
     {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var actorContext = await ResolveActorContextAsync(db, ct);
-        if (actorContext is null)
+        if (!currentUser.IsAuthenticated)
         {
             return Unauthorized();
         }
 
-        var company = await db.Companies.FirstOrDefaultAsync(c => c.Id == id, ct);
-        if (company is null)
-        {
-            return NotFound();
-        }
+        var result = await companyService.UpdateBasicInfoAsync(
+            id,
+            request,
+            currentUser.UserId,
+            currentUser.Permissions,
+            ct);
 
-        if (company.Status != RecordStatus.Draft)
+        if (!result.Succeeded)
         {
+            if (result.Error == "Berkas tidak ditemukan.")
+            {
+                return NotFound();
+            }
+
             return BadRequest(new ProblemDetails
             {
                 Title = "Edit Rejected",
-                Detail = "Hanya berkas berstatus Draft yang dapat diperbarui informasinya."
+                Detail = result.Error
             });
         }
 
-        if (!actorContext.Value.Permissions.HasCapability(Capability.EditStages1To3))
-        {
-            return Forbid();
-        }
-
-        var village = await db.Villages.AsNoTracking().FirstOrDefaultAsync(v => v.Id == request.VillageId, ct);
-        if (village is null)
-        {
-            return BadRequest(new ProblemDetails { Detail = "Data Kelurahan/Desa tidak valid." });
-        }
-        var district = await db.Districts.AsNoTracking().FirstOrDefaultAsync(d => d.Id == village.DistrictId, ct);
-        var regency = district is not null ? await db.Regencies.AsNoTracking().FirstOrDefaultAsync(r => r.Id == district.RegencyId, ct) : null;
-        var province = regency is not null ? await db.Provinces.AsNoTracking().FirstOrDefaultAsync(p => p.Id == regency.ProvinceId, ct) : null;
-
-        company.NamaPerusahaan = request.NamaPerusahaan;
-        company.Website = request.Website;
-        company.VillageId = request.VillageId;
-        company.Alamat = request.Alamat;
-        company.Location = new Point(request.Longitude, request.Latitude) { SRID = 4326 };
-        company.IndustryTypeId = request.IndustryTypeId;
-        company.Email = request.Email;
-        company.KodePos = request.KodePos;
-        company.Telp = request.Telp;
-        company.Npwp = request.Npwp;
-        company.UpdatedAt = DateTimeOffset.UtcNow;
-
-        if (province is not null && regency is not null)
-        {
-            company.Nomor = $"{company.NomorSeq:0000000}-{province.BpsCode}-{regency.BpsCode}";
-        }
-
-        await db.SaveChangesAsync(ct);
         return Ok();
     }
 
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var actorContext = await ResolveActorContextAsync(db, ct);
-        if (actorContext is null)
+        if (!currentUser.IsAuthenticated)
         {
             return Unauthorized();
         }
 
-        var result = await companyService.SoftDeleteAsync(id, actorContext.Value.UserId, ct);
+        if (!currentUser.HasCapability(Capability.SoftDeleteCompany))
+        {
+            return Forbid();
+        }
+
+        var result = await companyService.SoftDeleteAsync(id, currentUser.UserId, ct);
         if (!result.Succeeded)
         {
             return BadRequest(new ProblemDetails
@@ -346,143 +165,31 @@ public sealed class CompaniesController(
         return NoContent();
     }
 
-    [HttpGet("{id:guid}/contacts")]
-    [ProducesResponseType<IReadOnlyList<ContactDetail>>(StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetContacts(Guid id, CancellationToken ct)
-    {
-        var result = await companyService.GetContactsAsync(id, ct);
-        return Ok(result);
-    }
-
-    [HttpPost("{id:guid}/contacts")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> AddContact(Guid id, [FromBody] SaveContactRequest request, CancellationToken ct)
-    {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var actorContext = await ResolveActorContextAsync(db, ct);
-        if (actorContext is null)
-        {
-            return Unauthorized();
-        }
-
-        var result = await companyService.AddContactAsync(id, request, actorContext.Value.UserId, actorContext.Value.Permissions, ct);
-        if (!result.Succeeded)
-        {
-            return BadRequest(new ProblemDetails { Detail = result.Error });
-        }
-
-        return Ok();
-    }
-
-    [HttpPut("{id:guid}/contacts/{contactId:guid}")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> UpdateContact(Guid id, Guid contactId, [FromBody] SaveContactRequest request, CancellationToken ct)
-    {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var actorContext = await ResolveActorContextAsync(db, ct);
-        if (actorContext is null)
-        {
-            return Unauthorized();
-        }
-
-        var result = await companyService.UpdateContactAsync(id, contactId, request, actorContext.Value.UserId, actorContext.Value.Permissions, ct);
-        if (!result.Succeeded)
-        {
-            return BadRequest(new ProblemDetails { Detail = result.Error });
-        }
-
-        return Ok();
-    }
-
-    [HttpDelete("{id:guid}/contacts/{contactId:guid}")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> DeleteContact(Guid id, Guid contactId, CancellationToken ct)
-    {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var actorContext = await ResolveActorContextAsync(db, ct);
-        if (actorContext is null)
-        {
-            return Unauthorized();
-        }
-
-        var result = await companyService.DeleteContactAsync(id, contactId, actorContext.Value.UserId, actorContext.Value.Permissions, ct);
-        if (!result.Succeeded)
-        {
-            return BadRequest(new ProblemDetails { Detail = result.Error });
-        }
-
-        return Ok();
-    }
-
-    [HttpGet("{id:guid}/plotting")]
-    [ProducesResponseType<PlottingDetail>(StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetPlotting(Guid id, CancellationToken ct)
-    {
-        var result = await companyService.GetPlottingAsync(id, ct);
-        return Ok(result);
-    }
-
-    [HttpPut("{id:guid}/plotting")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> SavePlotting(Guid id, [FromBody] SavePlottingRequest request, CancellationToken ct)
-    {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var actorContext = await ResolveActorContextAsync(db, ct);
-        if (actorContext is null)
-        {
-            return Unauthorized();
-        }
-
-        var result = await companyService.SavePlottingAsync(id, request, actorContext.Value.UserId, actorContext.Value.Permissions, ct);
-        if (!result.Succeeded)
-        {
-            return BadRequest(new ProblemDetails { Detail = result.Error });
-        }
-
-        return Ok();
-    }
-
-    [HttpPost("{id:guid}/promote-to-prospek")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> PromoteToProspek(Guid id, CancellationToken ct)
-    {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var actorContext = await ResolveActorContextAsync(db, ct);
-        if (actorContext is null)
-        {
-            return Unauthorized();
-        }
-
-        var result = await companyService.PromoteToProspekAsync(id, actorContext.Value.UserId, actorContext.Value.Permissions, ct);
-        if (!result.Succeeded)
-        {
-            return BadRequest(new ProblemDetails { Detail = result.Error });
-        }
-
-        return Ok();
-    }
-
     [HttpPut("{id:guid}/location")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> UpdateLocation(Guid id, [FromBody] UpdateLocationRequest request, CancellationToken ct)
     {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var actorContext = await ResolveActorContextAsync(db, ct);
-        if (actorContext is null)
+        if (!currentUser.IsAuthenticated)
         {
             return Unauthorized();
         }
 
-        var result = await companyService.UpdateLocationAsync(id, request.Latitude, request.Longitude, actorContext.Value.UserId, actorContext.Value.Permissions, ct);
+        var result = await companyService.UpdateLocationAsync(
+            id,
+            request.Latitude,
+            request.Longitude,
+            currentUser.UserId,
+            currentUser.Permissions,
+            ct);
+
         if (!result.Succeeded)
         {
-            return BadRequest(new ProblemDetails { Detail = result.Error });
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Update Location Failed",
+                Detail = result.Error
+            });
         }
 
         return Ok();
@@ -492,427 +199,15 @@ public sealed class CompaniesController(
     [ProducesResponseType<IReadOnlyList<TimelineEntry>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetTimeline(Guid id, CancellationToken ct)
     {
-        var result = await companyDetailService.GetTimelineAsync(id, ct);
-        return Ok(result);
+        var timeline = await companyDetailService.GetTimelineAsync(id, ct);
+        return Ok(timeline);
     }
 
     [HttpGet("map-pins")]
     [ProducesResponseType<IReadOnlyList<CompanyMapPinDto>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetMapPins(CancellationToken ct)
     {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-
-        var companies = await db.Companies
-            .AsNoTracking()
-            .Where(c => c.Location != null)
-            .ToListAsync(ct);
-
-        var villageIds = companies.Select(c => c.VillageId).ToHashSet();
-        var villages = await db.Villages.AsNoTracking().Where(v => villageIds.Contains(v.Id)).ToDictionaryAsync(v => v.Id, ct);
-        var districtIds = villages.Values.Select(v => v.DistrictId).ToHashSet();
-        var districts = await db.Districts.AsNoTracking().Where(d => districtIds.Contains(d.Id)).ToDictionaryAsync(d => d.Id, ct);
-        var regencyIds = districts.Values.Select(d => d.RegencyId).ToHashSet();
-        var regencies = await db.Regencies.AsNoTracking().Where(r => regencyIds.Contains(r.Id)).ToDictionaryAsync(r => r.Id, ct);
-
-        var industryTypeIds = companies.Select(c => c.IndustryTypeId).ToHashSet();
-        var industryTypeNames = await db.IndustryTypes.AsNoTracking()
-            .Where(t => industryTypeIds.Contains(t.Id))
-            .ToDictionaryAsync(t => t.Id, t => t.Name, ct);
-
-        var companyIds = companies.Select(c => c.Id).ToHashSet();
-        var plottings = await db.Plottings.AsNoTracking()
-            .Where(p => companyIds.Contains(p.CompanyId))
-            .ToDictionaryAsync(p => p.CompanyId, ct);
-
-        var salesUserIds = plottings.Values.Select(p => p.SalesUserId).ToHashSet();
-        var salesUserNames = await db.Users.AsNoTracking()
-            .Where(u => salesUserIds.Contains(u.Id))
-            .ToDictionaryAsync(u => u.Id, u => u.FullName, ct);
-
-        var pins = new List<CompanyMapPinDto>();
-        foreach (var c in companies)
-        {
-            if (c.Location is null) continue;
-
-            var village = villages.GetValueOrDefault(c.VillageId);
-            var district = village is not null ? districts.GetValueOrDefault(village.DistrictId) : null;
-            var regency = district is not null ? regencies.GetValueOrDefault(district.RegencyId) : null;
-            var locationLabel = regency is not null
-                ? $"{(regency.Type == RegencyType.Kota ? "Kota" : "Kabupaten")} {regency.Name}"
-                : "Lokasi";
-
-            var plotting = plottings.GetValueOrDefault(c.Id);
-
-            pins.Add(new CompanyMapPinDto(
-                c.Id,
-                c.Nomor,
-                c.NamaPerusahaan,
-                c.Location.Y,
-                c.Location.X,
-                c.CurrentStage,
-                c.Status,
-                industryTypeNames.GetValueOrDefault(c.IndustryTypeId, "Industri"),
-                locationLabel,
-                plotting?.PosisiPelanggan,
-                plotting?.Kawasan,
-                plotting is null ? null : salesUserNames.GetValueOrDefault(plotting.SalesUserId)
-            ));
-        }
-
+        var pins = await companyService.GetMapPinsAsync(ct);
         return Ok(pins);
-    }
-
-    [HttpGet("{id:guid}/survey")]
-    [ProducesResponseType<SurveyDetail>(StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetSurvey(Guid id, CancellationToken ct)
-    {
-        var result = await companyService.GetSurveyAsync(id, ct);
-        return Ok(result);
-    }
-
-    [HttpPut("{id:guid}/survey")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> SaveSurvey(Guid id, [FromBody] SaveSurveyFullPayload payload, CancellationToken ct)
-    {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var actorContext = await ResolveActorContextAsync(db, ct);
-        if (actorContext is null)
-        {
-            return Unauthorized();
-        }
-
-        var result = await companyService.SaveSurveyFullAsync(
-            id,
-            payload.Request,
-            payload.Products,
-            payload.RawMaterials,
-            payload.Markets,
-            payload.Equipment,
-            actorContext.Value.UserId,
-            actorContext.Value.Permissions,
-            ct);
-
-        if (!result.Succeeded)
-        {
-            return BadRequest(new ProblemDetails { Detail = result.Error });
-        }
-
-        return Ok();
-    }
-
-    [HttpGet("{id:guid}/registration")]
-    [ProducesResponseType<A1RegistrationDetail>(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetRegistration(Guid id, CancellationToken ct)
-    {
-        var result = await companyService.GetA1RegistrationAsync(id, ct);
-        if (result is null)
-        {
-            return NotFound();
-        }
-        return Ok(result);
-    }
-
-    [HttpPut("{id:guid}/registration")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> SaveRegistration(Guid id, [FromBody] SaveA1RegistrationRequest request, CancellationToken ct)
-    {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var actorContext = await ResolveActorContextAsync(db, ct);
-        if (actorContext is null)
-        {
-            return Unauthorized();
-        }
-
-        var result = await companyService.SaveA1RegistrationAsync(
-            id,
-            request,
-            actorContext.Value.UserId,
-            actorContext.Value.Permissions,
-            ct);
-
-        if (!result.Succeeded)
-        {
-            return BadRequest(new ProblemDetails { Detail = result.Error });
-        }
-
-        return Ok();
-    }
-
-    [HttpGet("{id:guid}/nol-request")]
-    [ProducesResponseType<NolRequestDetail>(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetNolRequest(Guid id, CancellationToken ct)
-    {
-        var result = await companyService.GetNolRequestAsync(id, ct);
-        if (result is null)
-        {
-            return NotFound();
-        }
-        return Ok(result);
-    }
-
-    [HttpPut("{id:guid}/nol-request")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> SaveNolRequest(Guid id, [FromBody] SaveNolRequestRequest request, CancellationToken ct)
-    {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var actorContext = await ResolveActorContextAsync(db, ct);
-        if (actorContext is null)
-        {
-            return Unauthorized();
-        }
-
-        var result = await companyService.SaveNolRequestAsync(
-            id,
-            request,
-            actorContext.Value.UserId,
-            actorContext.Value.Permissions,
-            ct);
-
-        if (!result.Succeeded)
-        {
-            return BadRequest(new ProblemDetails { Detail = result.Error });
-        }
-
-        return Ok();
-    }
-
-    [HttpGet("{id:guid}/nol-evaluation")]
-    [ProducesResponseType<NolEvaluationDetail>(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetNolEvaluation(Guid id, CancellationToken ct)
-    {
-        var result = await companyService.GetNolEvaluationAsync(id, ct);
-        if (result is null)
-        {
-            return NotFound();
-        }
-        return Ok(result);
-    }
-
-    [HttpPut("{id:guid}/nol-evaluation")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> SaveNolEvaluation(Guid id, [FromBody] SaveNolEvaluationRequest request, CancellationToken ct)
-    {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var actorContext = await ResolveActorContextAsync(db, ct);
-        if (actorContext is null)
-        {
-            return Unauthorized();
-        }
-
-        var result = await companyService.SaveNolEvaluationAsync(
-            id,
-            request,
-            actorContext.Value.UserId,
-            actorContext.Value.Permissions,
-            ct);
-
-        if (!result.Succeeded)
-        {
-            return BadRequest(new ProblemDetails { Detail = result.Error });
-        }
-
-        return Ok();
-    }
-
-    [HttpGet("{id:guid}/nol-issuance")]
-    [ProducesResponseType<NolIssuanceDetail>(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetNolIssuance(Guid id, CancellationToken ct)
-    {
-        var result = await companyService.GetNolIssuanceAsync(id, ct);
-        if (result is null)
-        {
-            return NotFound();
-        }
-        return Ok(result);
-    }
-
-    [HttpPut("{id:guid}/nol-issuance")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> SaveNolIssuance(Guid id, [FromBody] SaveNolIssuanceRequest request, CancellationToken ct)
-    {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var actorContext = await ResolveActorContextAsync(db, ct);
-        if (actorContext is null)
-        {
-            return Unauthorized();
-        }
-
-        var result = await companyService.SaveNolIssuanceAsync(
-            id,
-            request,
-            actorContext.Value.UserId,
-            actorContext.Value.Permissions,
-            ct);
-
-        if (!result.Succeeded)
-        {
-            return BadRequest(new ProblemDetails { Detail = result.Error });
-        }
-
-        return Ok();
-    }
-
-    [HttpPost("{id:guid}/workflow/start")]
-    [ProducesResponseType<SubmitResult>(StatusCodes.Status200OK)]
-    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> StartWorkflow(Guid id, CancellationToken ct)
-    {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var actorContext = await ResolveActorContextAsync(db, ct);
-        if (actorContext is null)
-        {
-            return Unauthorized();
-        }
-
-        var result = await workflowService.StartAsync(
-            id,
-            actorContext.Value.UserId,
-            actorContext.Value.Permissions,
-            actorContext.Value.Roles,
-            ct);
-
-        if (!result.Succeeded)
-        {
-            return BadRequest(new ProblemDetails
-            {
-                Title = "Submit For Approval Failed",
-                Detail = result.Error
-            });
-        }
-
-        return Ok(result);
-    }
-
-    [HttpPost("{id:guid}/workflow/choose-reviewers")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> ChooseReviewers(Guid id, [FromBody] ChooseReviewersRequest request, CancellationToken ct)
-    {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var actorContext = await ResolveActorContextAsync(db, ct);
-        if (actorContext is null)
-        {
-            return Unauthorized();
-        }
-
-        var instance = await db.WorkflowInstances
-            .AsNoTracking()
-            .FirstOrDefaultAsync(i => i.CompanyId == id, ct);
-
-        if (instance is null)
-        {
-            return BadRequest(new ProblemDetails { Detail = "Instance workflow tidak ditemukan." });
-        }
-
-        var result = await workflowService.ChooseReviewersAsync(
-            instance.Id,
-            request.ReviewerUserIds,
-            actorContext.Value.UserId,
-            actorContext.Value.Permissions,
-            actorContext.Value.Roles,
-            ct);
-
-        if (!result.Succeeded)
-        {
-            return BadRequest(new ProblemDetails
-            {
-                Title = "Pilihan Reviewer Ditolak",
-                Detail = result.Error
-            });
-        }
-
-        return Ok();
-    }
-
-    [HttpPost("{id:guid}/workflow/rework")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> Rework(Guid id, [FromBody] ReworkRequest request, CancellationToken ct)
-    {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var actorContext = await ResolveActorContextAsync(db, ct);
-        if (actorContext is null)
-        {
-            return Unauthorized();
-        }
-
-        var result = await workflowService.ReworkAsync(
-            id,
-            request.Comment,
-            actorContext.Value.UserId,
-            actorContext.Value.Permissions,
-            ct);
-
-        if (!result.Succeeded)
-        {
-            return BadRequest(new ProblemDetails
-            {
-                Title = "Rework Failed",
-                Detail = result.Error
-            });
-        }
-
-        return Ok();
-    }
-
-    [HttpPost("{id:guid}/workflow/discontinue")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> Discontinue(Guid id, [FromBody] DiscontinueRequest request, CancellationToken ct)
-    {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var actorContext = await ResolveActorContextAsync(db, ct);
-        if (actorContext is null)
-        {
-            return Unauthorized();
-        }
-
-        var result = await workflowService.DiscontinueAsync(
-            id,
-            request.Comment,
-            actorContext.Value.UserId,
-            actorContext.Value.Permissions,
-            ct);
-
-        if (!result.Succeeded)
-        {
-            return BadRequest(new ProblemDetails
-            {
-                Title = "Discontinue Failed",
-                Detail = result.Error
-            });
-        }
-
-        return Ok();
-    }
-
-    private async Task<(Guid UserId, EffectivePermissions Permissions, IReadOnlySet<Role> Roles)?> ResolveActorContextAsync(
-        SimandoDbContext db,
-        CancellationToken ct)
-    {
-        var idClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (idClaim is null || !Guid.TryParse(idClaim, out var userId))
-        {
-            return null;
-        }
-
-        var assignments = await db.RoleAssignments
-            .AsNoTracking()
-            .Where(a => a.UserId == userId && a.Active)
-            .ToListAsync(ct);
-
-        var permissions = PermissionEvaluator.Resolve(assignments);
-        var roles = assignments.Select(a => a.Role).ToHashSet();
-
-        return (userId, permissions, roles);
     }
 }

@@ -148,13 +148,4 @@ public class OrganisationServiceTests : IAsyncLifetime
             return new SimandoDbContext(options, new UnrestrictedCurrentUser());
         }
     }
-
-    private sealed class UnrestrictedCurrentUser : ICurrentUser
-    {
-        public Guid UserId => Guid.Empty;
-        public AccessScope Scope => AccessScope.All;
-        public Guid? AreaId => null;
-        public Guid? RegionId => null;
-        public bool HasCapability(Capability capability) => true;
-    }
 }

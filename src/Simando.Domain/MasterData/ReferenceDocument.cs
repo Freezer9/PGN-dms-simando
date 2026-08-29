@@ -13,6 +13,6 @@ public sealed class ReferenceDocument
     public required string Name { get; init; }
     public required int Version { get; init; }
     public required DateOnly EffectiveFrom { get; init; }
-    public DateOnly? EffectiveTo { get; init; }
+    public DateOnly? EffectiveTo { get; set; }
     public string? BlobKey { get; init; }
 }

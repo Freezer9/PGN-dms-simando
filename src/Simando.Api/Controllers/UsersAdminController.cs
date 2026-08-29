@@ -1,10 +1,7 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Simando.Application.Security;
 using Simando.Domain.Security;
-using Simando.Infrastructure.Persistence;
 
 namespace Simando.Api.Controllers;
 
@@ -58,7 +55,7 @@ public sealed record RoleAssignmentDto(
 [Authorize]
 public sealed class UsersAdminController(
     IUserService userService,
-    IDbContextFactory<SimandoDbContext> dbContextFactory) : ControllerBase
+    ICurrentUser currentUser) : ControllerBase
 {
     [HttpGet]
     [ProducesResponseType<IReadOnlyList<UserListItemDto>>(StatusCodes.Status200OK)]
@@ -66,17 +63,14 @@ public sealed class UsersAdminController(
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> GetUsers(CancellationToken ct)
     {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var actor = await ResolveActorContextAsync(db, ct);
-        if (actor is null) return Unauthorized();
+        if (!currentUser.IsAuthenticated) return Unauthorized();
 
-        var (userId, permissions, _) = actor.Value;
-        if (!permissions.HasCapability(Capability.AssignRoles) && permissions.Scope != AccessScope.All)
+        if (!currentUser.Permissions.HasCapability(Capability.AssignRoles) && currentUser.Scope != AccessScope.All)
         {
             return Forbid();
         }
 
-        var users = await userService.GetUsersAsync(permissions, ct);
+        var users = await userService.GetUsersAsync(currentUser.Permissions, ct);
         var dtos = users.Select(u => new UserListItemDto(
             u.Id,
             u.FullName,
@@ -98,12 +92,9 @@ public sealed class UsersAdminController(
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> CreateUser([FromBody] CreateUserRequest request, CancellationToken ct)
     {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var actor = await ResolveActorContextAsync(db, ct);
-        if (actor is null) return Unauthorized();
+        if (!currentUser.IsAuthenticated) return Unauthorized();
 
-        var (userId, permissions, _) = actor.Value;
-        if (!permissions.HasCapability(Capability.AssignRoles))
+        if (!currentUser.Permissions.HasCapability(Capability.AssignRoles))
         {
             return Forbid();
         }
@@ -115,8 +106,8 @@ public sealed class UsersAdminController(
             request.Role,
             request.AreaId,
             request.RegionId,
-            userId,
-            permissions,
+            currentUser.UserId,
+            currentUser.Permissions,
             ct);
 
         if (!result.Succeeded)
@@ -134,12 +125,9 @@ public sealed class UsersAdminController(
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> AddRole(Guid id, [FromBody] AddRoleAssignmentRequest request, CancellationToken ct)
     {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var actor = await ResolveActorContextAsync(db, ct);
-        if (actor is null) return Unauthorized();
+        if (!currentUser.IsAuthenticated) return Unauthorized();
 
-        var (userId, permissions, _) = actor.Value;
-        if (!permissions.HasCapability(Capability.AssignRoles))
+        if (!currentUser.Permissions.HasCapability(Capability.AssignRoles))
         {
             return Forbid();
         }
@@ -149,8 +137,8 @@ public sealed class UsersAdminController(
             request.Role,
             request.AreaId,
             request.RegionId,
-            userId,
-            permissions,
+            currentUser.UserId,
+            currentUser.Permissions,
             ct);
 
         if (!result.Succeeded)
@@ -167,17 +155,14 @@ public sealed class UsersAdminController(
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> DeactivateRole(Guid id, Guid assignmentId, CancellationToken ct)
     {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var actor = await ResolveActorContextAsync(db, ct);
-        if (actor is null) return Unauthorized();
+        if (!currentUser.IsAuthenticated) return Unauthorized();
 
-        var (userId, permissions, _) = actor.Value;
-        if (!permissions.HasCapability(Capability.AssignRoles))
+        if (!currentUser.Permissions.HasCapability(Capability.AssignRoles))
         {
             return Forbid();
         }
 
-        await userService.DeactivateRoleAssignmentAsync(assignmentId, userId, id, ct);
+        await userService.DeactivateRoleAssignmentAsync(assignmentId, currentUser.UserId, id, ct);
         return NoContent();
     }
 
@@ -187,12 +172,9 @@ public sealed class UsersAdminController(
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> ResetPassword(Guid id, CancellationToken ct)
     {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var actor = await ResolveActorContextAsync(db, ct);
-        if (actor is null) return Unauthorized();
+        if (!currentUser.IsAuthenticated) return Unauthorized();
 
-        var (userId, permissions, _) = actor.Value;
-        if (!permissions.HasCapability(Capability.AssignRoles))
+        if (!currentUser.Permissions.HasCapability(Capability.AssignRoles))
         {
             return Forbid();
         }
@@ -207,38 +189,14 @@ public sealed class UsersAdminController(
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> SetStatus(Guid id, [FromBody] SetUserStatusRequest request, CancellationToken ct)
     {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var actor = await ResolveActorContextAsync(db, ct);
-        if (actor is null) return Unauthorized();
+        if (!currentUser.IsAuthenticated) return Unauthorized();
 
-        var (userId, permissions, _) = actor.Value;
-        if (!permissions.HasCapability(Capability.AssignRoles))
+        if (!currentUser.Permissions.HasCapability(Capability.AssignRoles))
         {
             return Forbid();
         }
 
         await userService.SetUserActiveAsync(id, request.Active, ct);
         return NoContent();
-    }
-
-    private async Task<(Guid UserId, EffectivePermissions Permissions, IReadOnlySet<Role> Roles)?> ResolveActorContextAsync(
-        SimandoDbContext db,
-        CancellationToken ct)
-    {
-        var idClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (idClaim is null || !Guid.TryParse(idClaim, out var userId))
-        {
-            return null;
-        }
-
-        var assignments = await db.RoleAssignments
-            .AsNoTracking()
-            .Where(a => a.UserId == userId && a.Active)
-            .ToListAsync(ct);
-
-        var permissions = PermissionEvaluator.Resolve(assignments);
-        var roles = assignments.Select(a => a.Role).ToHashSet();
-
-        return (userId, permissions, roles);
     }
 }

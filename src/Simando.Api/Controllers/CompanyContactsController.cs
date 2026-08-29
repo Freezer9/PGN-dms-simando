@@ -1,0 +1,98 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Simando.Application.Directory;
+using Simando.Domain.Security;
+
+namespace Simando.Api.Controllers;
+
+[ApiController]
+[Route("api/companies")]
+[Authorize]
+public sealed class CompanyContactsController(
+    ICompanyService companyService,
+    ICurrentUser currentUser) : ControllerBase
+{
+    [HttpGet("{id:guid}/contacts")]
+    [ProducesResponseType<IReadOnlyList<ContactDetail>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetContacts(Guid id, CancellationToken ct)
+    {
+        var contacts = await companyService.GetContactsAsync(id, ct);
+        return Ok(contacts);
+    }
+
+    [HttpPost("{id:guid}/contacts")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> AddContact(Guid id, [FromBody] SaveContactRequest request, CancellationToken ct)
+    {
+        if (!currentUser.IsAuthenticated)
+        {
+            return Unauthorized();
+        }
+
+        var result = await companyService.AddContactAsync(
+            id,
+            request,
+            currentUser.UserId,
+            currentUser.Permissions,
+            ct);
+
+        if (!result.Succeeded)
+        {
+            return BadRequest(new ProblemDetails { Detail = result.Error });
+        }
+
+        return Ok();
+    }
+
+    [HttpPut("{id:guid}/contacts/{contactId:guid}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> UpdateContact(Guid id, Guid contactId, [FromBody] SaveContactRequest request, CancellationToken ct)
+    {
+        if (!currentUser.IsAuthenticated)
+        {
+            return Unauthorized();
+        }
+
+        var result = await companyService.UpdateContactAsync(
+            id,
+            contactId,
+            request,
+            currentUser.UserId,
+            currentUser.Permissions,
+            ct);
+
+        if (!result.Succeeded)
+        {
+            return BadRequest(new ProblemDetails { Detail = result.Error });
+        }
+
+        return Ok();
+    }
+
+    [HttpDelete("{id:guid}/contacts/{contactId:guid}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> DeleteContact(Guid id, Guid contactId, CancellationToken ct)
+    {
+        if (!currentUser.IsAuthenticated)
+        {
+            return Unauthorized();
+        }
+
+        var result = await companyService.DeleteContactAsync(
+            id,
+            contactId,
+            currentUser.UserId,
+            currentUser.Permissions,
+            ct);
+
+        if (!result.Succeeded)
+        {
+            return BadRequest(new ProblemDetails { Detail = result.Error });
+        }
+
+        return Ok();
+    }
+}

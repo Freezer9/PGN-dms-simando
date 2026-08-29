@@ -14,7 +14,12 @@ public interface ICompanyService
     Task<CreateCompanyResult> CreateAsync(
         CreateCompanyRequest request, Guid actorUserId, EffectivePermissions actor, CancellationToken ct = default);
 
+    Task<StageEditResult> UpdateBasicInfoAsync(
+        Guid companyId, UpdateCompanyRequest request, Guid actorUserId, EffectivePermissions actor, CancellationToken ct = default);
+
     Task<SoftDeleteResult> SoftDeleteAsync(Guid companyId, Guid actorUserId, CancellationToken ct = default);
+
+    Task<IReadOnlyList<CompanyMapPinDto>> GetMapPinsAsync(CancellationToken ct = default);
 
     Task<PlottingDetail?> GetPlottingAsync(Guid companyId, CancellationToken ct = default);
 

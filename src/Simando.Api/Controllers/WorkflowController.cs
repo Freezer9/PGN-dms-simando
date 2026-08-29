@@ -1,11 +1,8 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Simando.Application.Workflow;
 using Simando.Domain.Security;
 using Simando.Domain.Workflow;
-using Simando.Infrastructure.Persistence;
 
 namespace Simando.Api.Controllers;
 
@@ -17,7 +14,7 @@ public sealed record ReassignStepRequest(Guid NewUserId, string? Reason);
 [Authorize]
 public sealed class WorkflowController(
     IWorkflowService workflowService,
-    IDbContextFactory<SimandoDbContext> dbContextFactory) : ControllerBase
+    ICurrentUser currentUser) : ControllerBase
 {
     [HttpPost("steps/{stepId:guid}/act")]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -26,9 +23,7 @@ public sealed class WorkflowController(
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> Act(Guid stepId, [FromBody] ActOnStepRequest request, CancellationToken ct)
     {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var actorContext = await ResolveActorContextAsync(db, ct);
-        if (actorContext is null)
+        if (!currentUser.IsAuthenticated)
         {
             return Unauthorized();
         }
@@ -37,9 +32,9 @@ public sealed class WorkflowController(
             stepId,
             request.Action,
             request.Comment,
-            actorContext.Value.UserId,
-            actorContext.Value.Permissions,
-            actorContext.Value.Roles,
+            currentUser.UserId,
+            currentUser.Permissions,
+            currentUser.Roles,
             ct);
 
         if (!result.Succeeded)
@@ -61,9 +56,7 @@ public sealed class WorkflowController(
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> Reassign(Guid stepId, [FromBody] ReassignStepRequest request, CancellationToken ct)
     {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var actorContext = await ResolveActorContextAsync(db, ct);
-        if (actorContext is null)
+        if (!currentUser.IsAuthenticated)
         {
             return Unauthorized();
         }
@@ -71,8 +64,8 @@ public sealed class WorkflowController(
         var result = await workflowService.ReassignStepAsync(
             stepId,
             request.NewUserId,
-            actorContext.Value.UserId,
-            actorContext.Value.Permissions,
+            currentUser.UserId,
+            currentUser.Permissions,
             ct);
 
         if (!result.Succeeded)
@@ -85,26 +78,5 @@ public sealed class WorkflowController(
         }
 
         return Ok();
-    }
-
-    private async Task<(Guid UserId, EffectivePermissions Permissions, IReadOnlySet<Role> Roles)?> ResolveActorContextAsync(
-        SimandoDbContext db,
-        CancellationToken ct)
-    {
-        var idClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (idClaim is null || !Guid.TryParse(idClaim, out var userId))
-        {
-            return null;
-        }
-
-        var assignments = await db.RoleAssignments
-            .AsNoTracking()
-            .Where(a => a.UserId == userId && a.Active)
-            .ToListAsync(ct);
-
-        var permissions = PermissionEvaluator.Resolve(assignments);
-        var roles = assignments.Select(a => a.Role).ToHashSet();
-
-        return (userId, permissions, roles);
     }
 }

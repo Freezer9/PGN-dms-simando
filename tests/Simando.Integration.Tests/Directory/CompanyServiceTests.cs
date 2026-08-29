@@ -349,5 +349,10 @@ public class CompanyServiceTests : IAsyncLifetime
         public Guid? AreaId => areaId;
         public Guid? RegionId => regionId;
         public bool HasCapability(Capability capability) => true;
+        public EffectivePermissions Permissions => new(scope, areaId, regionId, Enum.GetValues<Capability>().ToHashSet());
+        public IReadOnlySet<Role> Roles => new HashSet<Role> { Role.SystemAdmin };
+        public bool IsAuthenticated => true;
+        public string FullName => "Scoped User";
+        public string Email => "user@pgn.co.id";
     }
 }

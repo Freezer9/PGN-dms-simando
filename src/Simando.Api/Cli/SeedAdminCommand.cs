@@ -20,6 +20,11 @@ internal sealed class SystemCurrentUser : ICurrentUser
     public Guid? AreaId => null;
     public Guid? RegionId => null;
     public bool HasCapability(Capability capability) => true;
+    public EffectivePermissions Permissions => new(AccessScope.All, null, null, Enum.GetValues<Capability>().ToHashSet());
+    public IReadOnlySet<Role> Roles => new HashSet<Role> { Role.SystemAdmin };
+    public bool IsAuthenticated => true;
+    public string FullName => "System Admin";
+    public string Email => "admin@pgn.co.id";
 }
 
 // Admin seed CLI command per docs/design/roles-permissions.md §2.6.

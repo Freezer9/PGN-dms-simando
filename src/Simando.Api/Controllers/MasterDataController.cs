@@ -30,6 +30,8 @@ public sealed record MeterSizeDto(Guid Id, string GSize, decimal NominalFlow, de
 
 public sealed record ReviewerOptionDto(Guid Id, string FullName, string Username, string Email, Role Role);
 
+public sealed record ReasonCategoryDto(Guid Id, string Name);
+
 [ApiController]
 [Route("api/master")]
 [Authorize]

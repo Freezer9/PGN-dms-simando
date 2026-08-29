@@ -123,8 +123,20 @@ internal sealed class WorkflowService(
     {
         await using var db = await dbContextFactory.CreateDbContextAsync(ct);
 
-        var instance = await db.WorkflowInstances.IgnoreQueryFilters().FirstAsync(i => i.Id == workflowInstanceId, ct);
-        var company = await db.Companies.IgnoreQueryFilters().FirstAsync(c => c.Id == instance.CompanyId, ct);
+        var instance = await db.WorkflowInstances.IgnoreQueryFilters()
+            .FirstOrDefaultAsync(i => (i.Id == workflowInstanceId || i.CompanyId == workflowInstanceId) && i.CompletedAt == null, ct)
+            ?? await db.WorkflowInstances.IgnoreQueryFilters().FirstOrDefaultAsync(i => i.Id == workflowInstanceId, ct);
+
+        if (instance is null)
+        {
+            return RoleAssignmentResult.Rejected("Alur kerja tidak ditemukan.");
+        }
+
+        var company = await db.Companies.IgnoreQueryFilters().FirstOrDefaultAsync(c => c.Id == instance.CompanyId, ct);
+        if (company is null)
+        {
+            return RoleAssignmentResult.Rejected("Berkas tidak ditemukan.");
+        }
 
         if (company.Status != RecordStatus.RegionalAdmin)
         {
@@ -460,6 +472,83 @@ internal sealed class WorkflowService(
         await notifications.SendAsync(company.CreatedBy, company.Id, $"Berkas {company.NamaPerusahaan} telah dihentikan.", ct);
 
         return WorkflowActResult.Ok(company.Status);
+    }
+
+    public async Task<IReadOnlyList<StuckStepItemDto>> GetStuckStepsAsync(
+        EffectivePermissions actor,
+        CancellationToken ct = default)
+    {
+        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
+
+        var instances = await db.WorkflowInstances.AsNoTracking()
+            .Where(i => i.CompletedAt == null)
+            .ToListAsync(ct);
+
+        var instanceIds = instances.Select(i => i.Id).ToHashSet();
+        var companyIds = instances.Select(i => i.CompanyId).ToHashSet();
+
+        var steps = await db.WorkflowSteps.AsNoTracking()
+            .Where(s => instanceIds.Contains(s.WorkflowInstanceId) && s.ActedAt == null)
+            .ToListAsync(ct);
+
+        var companies = await db.Companies.IgnoreQueryFilters().AsNoTracking()
+            .Where(c => companyIds.Contains(c.Id))
+            .ToDictionaryAsync(c => c.Id, ct);
+
+        var areaIds = companies.Values.Select(c => c.AreaId).ToHashSet();
+        var areas = await db.Areas.AsNoTracking()
+            .Where(a => areaIds.Contains(a.Id))
+            .ToDictionaryAsync(a => a.Id, ct);
+
+        var regionIds = areas.Values.Select(a => a.RegionId).ToHashSet();
+        var regions = await db.Regions.AsNoTracking()
+            .Where(r => regionIds.Contains(r.Id))
+            .ToDictionaryAsync(r => r.Id, r => r.Name, ct);
+
+        var assignedUserIds = steps.Where(s => s.AssignedUserId.HasValue).Select(s => s.AssignedUserId!.Value).ToHashSet();
+        var users = await db.Users.AsNoTracking()
+            .Where(u => assignedUserIds.Contains(u.Id))
+            .ToDictionaryAsync(u => u.Id, u => u.FullName, ct);
+
+        var instanceDict = instances.ToDictionary(i => i.Id);
+        var now = DateTimeOffset.UtcNow;
+
+        var result = new List<StuckStepItemDto>();
+        foreach (var step in steps)
+        {
+            if (!instanceDict.TryGetValue(step.WorkflowInstanceId, out var inst)) continue;
+            if (!companies.TryGetValue(inst.CompanyId, out var comp)) continue;
+
+            var area = areas.GetValueOrDefault(comp.AreaId);
+            var regionName = area is not null ? regions.GetValueOrDefault(area.RegionId, "-") : "-";
+            var areaName = area?.Name ?? "-";
+            var regionId = area?.RegionId ?? Guid.Empty;
+
+            var startedAt = inst.StartedAt;
+            var elapsedDays = Math.Max(0, (int)(now - startedAt).TotalDays);
+
+            var assignedName = step.AssignedUserId.HasValue
+                ? users.GetValueOrDefault(step.AssignedUserId.Value, "Ditugaskan")
+                : $"Peran: {step.Kind}";
+
+            result.Add(new StuckStepItemDto(
+                step.Id,
+                inst.Id,
+                comp.Id,
+                comp.Nomor,
+                comp.NamaPerusahaan,
+                regionId,
+                regionName,
+                comp.AreaId,
+                areaName,
+                step.Kind,
+                step.AssignedUserId,
+                assignedName,
+                startedAt,
+                elapsedDays));
+        }
+
+        return result;
     }
 
     private async Task NotifyTransitionAsync(SimandoDbContext db, Company company, Guid instanceId, CancellationToken ct)

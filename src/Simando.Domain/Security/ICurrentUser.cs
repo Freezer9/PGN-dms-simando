@@ -8,4 +8,9 @@ public interface ICurrentUser
     Guid? AreaId { get; }
     Guid? RegionId { get; }
     bool HasCapability(Capability capability);
+    EffectivePermissions Permissions { get; }
+    IReadOnlySet<Role> Roles { get; }
+    bool IsAuthenticated { get; }
+    string FullName { get; }
+    string Email { get; }
 }
