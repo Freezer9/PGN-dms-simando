@@ -31,39 +31,98 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 
-export interface ColumnDef<T> {
-	key: string;
+export interface ColumnDef<TItem> {
+	key: Extract<keyof TItem, string> | string;
 	header: string;
-	render?: (row: T) => React.ReactNode;
+	render?: (row: TItem) => React.ReactNode;
 	className?: string;
 }
 
-export interface FieldDef {
-	name: string;
+export type FieldInputType =
+	| "text"
+	| "number"
+	| "textarea"
+	| "checkbox"
+	| "select";
+
+export interface FieldOption<TValue = string | number> {
+	value: TValue;
 	label: string;
-	type: "text" | "number" | "textarea" | "checkbox" | "select";
-	required?: boolean;
-	placeholder?: string;
-	options?: { value: string | number; label: string }[];
 }
 
-export interface MasterDataTableProps<T extends { id: string }> {
+export interface FieldDef<
+	TFormData extends object = Record<string, unknown>,
+	TKey extends Extract<keyof TFormData, string> = Extract<
+		keyof TFormData,
+		string
+	>,
+> {
+	name: TKey;
+	label: string;
+	type: FieldInputType;
+	required?: boolean;
+	placeholder?: string;
+	options?: FieldOption<
+		TFormData[TKey] extends string | number ? TFormData[TKey] : string | number
+	>[];
+}
+
+export interface MasterDataTableProps<
+	TItem extends { id: string },
+	TFormData extends object = Record<string, unknown>,
+> {
 	title: string;
 	description: string;
 	icon?: React.ComponentType<{ className?: string }>;
-	data: T[];
+	data: TItem[];
 	isLoading: boolean;
-	columns: ColumnDef<T>[];
-	fields: FieldDef[];
-	onSave: (
-		formData: Record<string, unknown>,
-		editingId?: string,
-	) => Promise<void>;
+	columns: ColumnDef<TItem>[];
+	fields: FieldDef<TFormData>[];
+	onSave: (formData: TFormData, editingId?: string) => Promise<void>;
 	onDelete?: (id: string) => Promise<void>;
-	searchKeys?: (keyof T)[];
+	searchKeys?: (keyof TItem)[];
 }
 
-export function MasterDataTable<T extends { id: string }>({
+interface ApiErrorShape {
+	detail?: string;
+	error?: string;
+	errors?: string[] | Record<string, string[]>;
+	message?: string;
+	title?: string;
+}
+
+function extractErrorMessage(err: unknown, defaultMessage: string): string {
+	if (typeof err === "object" && err !== null) {
+		const apiErr = err as ApiErrorShape;
+		if (apiErr.detail) return apiErr.detail;
+		if (apiErr.error) return apiErr.error;
+		if (Array.isArray(apiErr.errors) && apiErr.errors.length > 0) {
+			return String(apiErr.errors[0]);
+		}
+		if (
+			apiErr.errors &&
+			typeof apiErr.errors === "object" &&
+			!Array.isArray(apiErr.errors)
+		) {
+			const errorsObj = apiErr.errors as Record<string, string[]>;
+			const firstKey = Object.keys(errorsObj)[0];
+			if (firstKey && errorsObj[firstKey]?.length) {
+				return errorsObj[firstKey][0];
+			}
+		}
+		if (apiErr.title) return apiErr.title;
+		if (apiErr.message) return apiErr.message;
+	}
+	if (err instanceof Error) {
+		return err.message;
+	}
+	return defaultMessage;
+}
+
+export function MasterDataTable<
+	TItem extends { id: string },
+	TFormData extends object = Record<string, unknown>,
+>({
 	title,
 	description,
 	icon: Icon = FolderKanban,
@@ -73,12 +132,12 @@ export function MasterDataTable<T extends { id: string }>({
 	fields,
 	onSave,
 	onDelete,
-	searchKeys = ["name" as keyof T],
-}: MasterDataTableProps<T>) {
+	searchKeys = ["name" as keyof TItem],
+}: MasterDataTableProps<TItem, TFormData>) {
 	const [searchTerm, setSearchTerm] = React.useState("");
 	const [dialogOpen, setDialogOpen] = React.useState(false);
-	const [editingItem, setEditingItem] = React.useState<T | null>(null);
-	const [deleteConfirm, setDeleteConfirm] = React.useState<T | null>(null);
+	const [editingItem, setEditingItem] = React.useState<TItem | null>(null);
+	const [deleteConfirm, setDeleteConfirm] = React.useState<TItem | null>(null);
 	const [error, setError] = React.useState<string | null>(null);
 	const [isDeleting, setIsDeleting] = React.useState(false);
 
@@ -89,7 +148,7 @@ export function MasterDataTable<T extends { id: string }>({
 			else if (f.type === "number") init[f.name] = 0;
 			else init[f.name] = "";
 		}
-		return init;
+		return init as unknown as TFormData;
 	}, [fields]);
 
 	const form = useForm({
@@ -101,19 +160,7 @@ export function MasterDataTable<T extends { id: string }>({
 				setDialogOpen(false);
 				setEditingItem(null);
 			} catch (err: unknown) {
-				const errorObj = err as {
-					detail?: string;
-					error?: string;
-					errors?: string[];
-					message?: string;
-				};
-				setError(
-					errorObj?.detail ||
-						errorObj?.error ||
-						errorObj?.errors?.[0] ||
-						errorObj?.message ||
-						"Gagal menyimpan data master.",
-				);
+				setError(extractErrorMessage(err, "Gagal menyimpan data master."));
 			}
 		},
 	});
@@ -139,13 +186,21 @@ export function MasterDataTable<T extends { id: string }>({
 		setDialogOpen(true);
 	};
 
-	const handleOpenEdit = (item: T) => {
+	const handleOpenEdit = (item: TItem) => {
 		setEditingItem(item);
 		const current: Record<string, unknown> = {};
+		const itemRecord = item as unknown as Record<string, unknown>;
 		for (const f of fields) {
-			current[f.name] = (item as Record<string, unknown>)[f.name] ?? "";
+			const val = itemRecord[f.name];
+			if (f.type === "checkbox") {
+				current[f.name] = Boolean(val ?? true);
+			} else if (f.type === "number") {
+				current[f.name] = typeof val === "number" ? val : Number(val) || 0;
+			} else {
+				current[f.name] = val != null ? String(val) : "";
+			}
 		}
-		form.reset(current);
+		form.reset(current as unknown as TFormData);
 		setError(null);
 		setDialogOpen(true);
 	};
@@ -158,19 +213,7 @@ export function MasterDataTable<T extends { id: string }>({
 			await onDelete(deleteConfirm.id);
 			setDeleteConfirm(null);
 		} catch (err: unknown) {
-			const errorObj = err as {
-				detail?: string;
-				error?: string;
-				errors?: string[];
-				message?: string;
-			};
-			setError(
-				errorObj?.detail ||
-					errorObj?.error ||
-					errorObj?.errors?.[0] ||
-					errorObj?.message ||
-					"Gagal menghapus data master.",
-			);
+			setError(extractErrorMessage(err, "Gagal menghapus data master."));
 		} finally {
 			setIsDeleting(false);
 		}
@@ -259,49 +302,55 @@ export function MasterDataTable<T extends { id: string }>({
 								</TableCell>
 							</TableRow>
 						) : (
-							filteredData.map((row) => (
-								<TableRow
-									key={row.id}
-									className="hover:bg-muted/30 transition-colors"
-								>
-									{columns.map((col) => (
-										<TableCell
-											key={`${row.id}-${col.key}`}
-											className={`py-3 text-xs ${col.className || ""}`}
-										>
-											{col.render
-												? col.render(row)
-												: String(
-														(row as Record<string, unknown>)[col.key] ?? "-",
-													)}
-										</TableCell>
-									))}
-									<TableCell className="py-3 text-right pr-4">
-										<div className="flex items-center justify-end gap-1">
-											<Button
-												variant="ghost"
-												size="icon"
-												onClick={() => handleOpenEdit(row)}
-												className="h-7 w-7 text-muted-foreground hover:text-foreground"
-												title="Ubah Data"
-											>
-												<Edit2 className="h-3.5 w-3.5" />
-											</Button>
-											{onDelete && (
+							filteredData.map((row) => {
+								const rowRecord = row as unknown as Record<string, unknown>;
+								return (
+									<TableRow
+										key={row.id}
+										className="hover:bg-muted/30 transition-colors"
+									>
+										{columns.map((col) => {
+											const cellVal = rowRecord[col.key];
+											return (
+												<TableCell
+													key={`${row.id}-${col.key}`}
+													className={`py-3 text-xs ${col.className || ""}`}
+												>
+													{col.render
+														? col.render(row)
+														: cellVal != null
+															? String(cellVal)
+															: "-"}
+												</TableCell>
+											);
+										})}
+										<TableCell className="py-3 text-right pr-4">
+											<div className="flex items-center justify-end gap-1">
 												<Button
 													variant="ghost"
 													size="icon"
-													onClick={() => setDeleteConfirm(row)}
-													className="h-7 w-7 text-muted-foreground hover:text-destructive"
-													title="Hapus Data"
+													onClick={() => handleOpenEdit(row)}
+													className="h-7 w-7 text-muted-foreground hover:text-foreground"
+													title="Ubah Data"
 												>
-													<Trash2 className="h-3.5 w-3.5" />
+													<Edit2 className="h-3.5 w-3.5" />
 												</Button>
-											)}
-										</div>
-									</TableCell>
-								</TableRow>
-							))
+												{onDelete && (
+													<Button
+														variant="ghost"
+														size="icon"
+														onClick={() => setDeleteConfirm(row)}
+														className="h-7 w-7 text-muted-foreground hover:text-destructive"
+														title="Hapus Data"
+													>
+														<Trash2 className="h-3.5 w-3.5" />
+													</Button>
+												)}
+											</div>
+										</TableCell>
+									</TableRow>
+								);
+							})
 						)}
 					</TableBody>
 				</Table>
@@ -335,7 +384,7 @@ export function MasterDataTable<T extends { id: string }>({
 						)}
 
 						{fields.map((f) => (
-							<form.Field key={f.name} name={f.name}>
+							<form.Field key={f.name} name={f.name as never}>
 								{(field) => {
 									const fieldError = field.state.meta.errors.length
 										? String(field.state.meta.errors[0])
@@ -343,6 +392,7 @@ export function MasterDataTable<T extends { id: string }>({
 									return (
 										<FormField
 											label={f.label}
+											htmlFor={f.name}
 											required={f.required}
 											error={fieldError}
 										>
@@ -352,7 +402,9 @@ export function MasterDataTable<T extends { id: string }>({
 													placeholder={f.placeholder}
 													value={String(field.state.value ?? "")}
 													onBlur={field.handleBlur}
-													onChange={(e) => field.handleChange(e.target.value)}
+													onChange={(e) =>
+														field.handleChange(e.target.value as never)
+													}
 													className="text-xs min-h-[70px]"
 													required={f.required}
 												/>
@@ -361,13 +413,15 @@ export function MasterDataTable<T extends { id: string }>({
 													id={f.name}
 													value={String(field.state.value ?? "")}
 													onBlur={field.handleBlur}
-													onChange={(e) => field.handleChange(e.target.value)}
+													onChange={(e) =>
+														field.handleChange(e.target.value as never)
+													}
 													className="w-full h-8 px-2.5 rounded-md border bg-background text-xs"
 													required={f.required}
 												>
 													<option value="">-- Pilih --</option>
 													{f.options?.map((opt) => (
-														<option key={opt.value} value={opt.value}>
+														<option key={String(opt.value)} value={opt.value}>
 															{opt.label}
 														</option>
 													))}
@@ -380,7 +434,7 @@ export function MasterDataTable<T extends { id: string }>({
 														checked={Boolean(field.state.value)}
 														onBlur={field.handleBlur}
 														onChange={(e) =>
-															field.handleChange(e.target.checked)
+															field.handleChange(e.target.checked as never)
 														}
 														className="rounded border-gray-300 size-4 text-primary"
 													/>
@@ -396,13 +450,19 @@ export function MasterDataTable<T extends { id: string }>({
 													id={f.name}
 													type={f.type === "number" ? "number" : "text"}
 													placeholder={f.placeholder}
-													value={String(field.state.value ?? "")}
+													value={
+														f.type === "number"
+															? ((field.state.value as unknown as number) ?? 0)
+															: String(field.state.value ?? "")
+													}
 													onBlur={field.handleBlur}
 													onChange={(e) =>
 														field.handleChange(
-															f.type === "number"
-																? Number(e.target.value)
-																: e.target.value,
+															(f.type === "number"
+																? e.target.value === ""
+																	? 0
+																	: Number(e.target.value)
+																: e.target.value) as never,
 														)
 													}
 													className="h-8 text-xs"

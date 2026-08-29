@@ -12,6 +12,11 @@ export const Route = createFileRoute("/_auth/master/countries")({
 	component: CountriesPage,
 });
 
+export interface CountryFormData {
+	isoCode: string;
+	name: string;
+}
+
 function CountriesPage() {
 	const { data, isLoading, refetch } = $api.useQuery(
 		"get",
@@ -37,7 +42,7 @@ function CountriesPage() {
 		},
 	];
 
-	const fields: FieldDef[] = [
+	const fields: FieldDef<CountryFormData>[] = [
 		{
 			name: "isoCode",
 			label: "Kode Negara (2-3 Karakter)",
@@ -54,13 +59,13 @@ function CountriesPage() {
 		},
 	];
 
-	const handleSave = async (_formData: Record<string, unknown>) => {
+	const handleSave = async (_formData: CountryFormData) => {
 		// Country list is standard ISO
 		refetch();
 	};
 
 	return (
-		<MasterDataTable
+		<MasterDataTable<CountryDto, CountryFormData>
 			title="Daftar Negara"
 			description="Referensi daftar negara asal dan kepemilikan modal badan usaha."
 			icon={Globe}

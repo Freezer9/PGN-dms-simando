@@ -16,6 +16,11 @@ export const Route = createFileRoute("/_auth/master/industry-types")({
 	component: IndustryTypesPage,
 });
 
+export interface IndustryTypeFormData {
+	name: string;
+	contohProduk: string;
+}
+
 function IndustryTypesPage() {
 	const { data, isLoading, refetch } = $api.useQuery(
 		"get",
@@ -63,7 +68,7 @@ function IndustryTypesPage() {
 		},
 	];
 
-	const fields: FieldDef[] = [
+	const fields: FieldDef<IndustryTypeFormData>[] = [
 		{
 			name: "name",
 			label: "Nama Jenis Industri",
@@ -79,12 +84,10 @@ function IndustryTypesPage() {
 		},
 	];
 
-	const handleSave = async (formData: Record<string, unknown>, id?: string) => {
+	const handleSave = async (formData: IndustryTypeFormData, id?: string) => {
 		const payload: CreateIndustryTypeRequest | UpdateIndustryTypeRequest = {
-			name: String(formData.name),
-			contohProduk: formData.contohProduk
-				? String(formData.contohProduk)
-				: null,
+			name: formData.name.trim(),
+			contohProduk: formData.contohProduk ? formData.contohProduk.trim() : null,
 		};
 
 		if (id) {
@@ -106,7 +109,7 @@ function IndustryTypesPage() {
 	};
 
 	return (
-		<MasterDataTable
+		<MasterDataTable<IndustryTypeDto, IndustryTypeFormData>
 			title="Jenis Industri"
 			description="Daftar klasifikasi industri pelanggan gas bumi PGN."
 			icon={Factory}

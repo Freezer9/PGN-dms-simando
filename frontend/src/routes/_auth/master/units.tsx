@@ -12,6 +12,12 @@ export const Route = createFileRoute("/_auth/master/units")({
 	component: UnitsPage,
 });
 
+export interface UnitOfMeasureFormData {
+	code: string;
+	name: string;
+	dimension: "Energy" | "Volume" | "Pressure" | "Mass" | string;
+}
+
 function UnitsPage() {
 	const { data, isLoading, refetch } = $api.useQuery(
 		"get",
@@ -62,7 +68,7 @@ function UnitsPage() {
 		},
 	];
 
-	const fields: FieldDef[] = [
+	const fields: FieldDef<UnitOfMeasureFormData>[] = [
 		{
 			name: "code",
 			label: "Kode Satuan",
@@ -85,7 +91,7 @@ function UnitsPage() {
 		},
 	];
 
-	const handleSave = async (formData: Record<string, unknown>, id?: string) => {
+	const handleSave = async (formData: UnitOfMeasureFormData, id?: string) => {
 		const dimensionVal = (
 			formData.dimension ? String(formData.dimension) : "Energy"
 		) as "Energy" | "Volume" | "Pressure" | "Mass";
@@ -94,16 +100,16 @@ function UnitsPage() {
 			await updateMutation.mutateAsync({
 				params: { path: { id } },
 				body: {
-					code: String(formData.code),
-					name: String(formData.name),
+					code: formData.code.trim(),
+					name: formData.name.trim(),
 					dimension: dimensionVal,
 				},
 			});
 		} else {
 			await createMutation.mutateAsync({
 				body: {
-					code: String(formData.code),
-					name: String(formData.name),
+					code: formData.code.trim(),
+					name: formData.name.trim(),
 					dimension: dimensionVal,
 				},
 			});
@@ -117,7 +123,7 @@ function UnitsPage() {
 	};
 
 	return (
-		<MasterDataTable
+		<MasterDataTable<UnitOfMeasureDto, UnitOfMeasureFormData>
 			title="Satuan Pengukuran (Units)"
 			description="Daftar satuan ukuran untuk energi, volume, tekanan, massa, dan laju alir gas."
 			icon={Ruler}

@@ -16,6 +16,10 @@ export const Route = createFileRoute("/_auth/master/reason-categories")({
 	component: ReasonCategoriesPage,
 });
 
+export interface ReasonCategoryFormData {
+	name: string;
+}
+
 function ReasonCategoriesPage() {
 	const { data, isLoading, refetch } = $api.useQuery(
 		"get",
@@ -56,7 +60,7 @@ function ReasonCategoriesPage() {
 		},
 	];
 
-	const fields: FieldDef[] = [
+	const fields: FieldDef<ReasonCategoryFormData>[] = [
 		{
 			name: "name",
 			label: "Nama Kategori Alasan",
@@ -66,9 +70,9 @@ function ReasonCategoriesPage() {
 		},
 	];
 
-	const handleSave = async (formData: Record<string, unknown>, id?: string) => {
+	const handleSave = async (formData: ReasonCategoryFormData, id?: string) => {
 		const payload: CreateReasonCategoryRequest | UpdateReasonCategoryRequest = {
-			name: String(formData.name),
+			name: formData.name.trim(),
 		};
 
 		if (id) {
@@ -90,7 +94,7 @@ function ReasonCategoriesPage() {
 	};
 
 	return (
-		<MasterDataTable
+		<MasterDataTable<ReasonCategoryDto, ReasonCategoryFormData>
 			title="Kategori Alasan Revisi & Penolakan"
 			description="Pengelompokan opsi alasan saat reviewer atau approver meminta revisi atau menolak berkas."
 			icon={Tags}

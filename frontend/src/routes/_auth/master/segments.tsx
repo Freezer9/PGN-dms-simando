@@ -12,6 +12,11 @@ export const Route = createFileRoute("/_auth/master/segments")({
 	component: SegmentsPage,
 });
 
+export interface SegmentFormData {
+	name: string;
+	sortOrder: number;
+}
+
 function SegmentsPage() {
 	const { data, isLoading, refetch } = $api.useQuery(
 		"get",
@@ -59,7 +64,7 @@ function SegmentsPage() {
 		},
 	];
 
-	const fields: FieldDef[] = [
+	const fields: FieldDef<SegmentFormData>[] = [
 		{
 			name: "name",
 			label: "Nama Segmen",
@@ -76,19 +81,19 @@ function SegmentsPage() {
 		},
 	];
 
-	const handleSave = async (formData: Record<string, unknown>, id?: string) => {
+	const handleSave = async (formData: SegmentFormData, id?: string) => {
 		if (id) {
 			await updateMutation.mutateAsync({
 				params: { path: { id } },
 				body: {
-					name: String(formData.name),
+					name: formData.name.trim(),
 					sortOrder: Number(formData.sortOrder) || 0,
 				},
 			});
 		} else {
 			await createMutation.mutateAsync({
 				body: {
-					name: String(formData.name),
+					name: formData.name.trim(),
 					sortOrder: Number(formData.sortOrder) || 0,
 				},
 			});
@@ -102,7 +107,7 @@ function SegmentsPage() {
 	};
 
 	return (
-		<MasterDataTable
+		<MasterDataTable<SegmentDto, SegmentFormData>
 			title="Segmen Pelanggan"
 			description="Daftar hierarki segmen komersial pelanggan gas (Bronze, Silver, Gold, Platinum)."
 			icon={Tag}

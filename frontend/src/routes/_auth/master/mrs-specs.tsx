@@ -12,6 +12,10 @@ export const Route = createFileRoute("/_auth/master/mrs-specs")({
 	component: MrsSpecsPage,
 });
 
+export interface MrsSpecFormData {
+	name: string;
+}
+
 function MrsSpecsPage() {
 	const { data, isLoading, refetch } = $api.useQuery(
 		"get",
@@ -52,7 +56,7 @@ function MrsSpecsPage() {
 		},
 	];
 
-	const fields: FieldDef[] = [
+	const fields: FieldDef<MrsSpecFormData>[] = [
 		{
 			name: "name",
 			label: "Nama Spesifikasi MRS",
@@ -62,15 +66,15 @@ function MrsSpecsPage() {
 		},
 	];
 
-	const handleSave = async (formData: Record<string, unknown>, id?: string) => {
+	const handleSave = async (formData: MrsSpecFormData, id?: string) => {
 		if (id) {
 			await updateMutation.mutateAsync({
 				params: { path: { id } },
-				body: { name: String(formData.name) },
+				body: { name: formData.name.trim() },
 			});
 		} else {
 			await createMutation.mutateAsync({
-				body: { name: String(formData.name) },
+				body: { name: formData.name.trim() },
 			});
 		}
 	};
@@ -82,7 +86,7 @@ function MrsSpecsPage() {
 	};
 
 	return (
-		<MasterDataTable
+		<MasterDataTable<MrsSpecDto, MrsSpecFormData>
 			title="Spesifikasi Metering & Regulating Station (MRS)"
 			description="Daftar konfigurasi baku stasiun pengukur dan pengatur tekanan gas pelanggan."
 			icon={Settings2}

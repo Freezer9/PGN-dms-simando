@@ -12,6 +12,10 @@ export const Route = createFileRoute("/_auth/master/fuel-types")({
 	component: FuelTypesPage,
 });
 
+export interface FuelTypeFormData {
+	name: string;
+}
+
 function FuelTypesPage() {
 	const { data, isLoading, refetch } = $api.useQuery(
 		"get",
@@ -52,7 +56,7 @@ function FuelTypesPage() {
 		},
 	];
 
-	const fields: FieldDef[] = [
+	const fields: FieldDef<FuelTypeFormData>[] = [
 		{
 			name: "name",
 			label: "Nama Jenis Bahan Bakar",
@@ -62,15 +66,15 @@ function FuelTypesPage() {
 		},
 	];
 
-	const handleSave = async (formData: Record<string, unknown>, id?: string) => {
+	const handleSave = async (formData: FuelTypeFormData, id?: string) => {
 		if (id) {
 			await updateMutation.mutateAsync({
 				params: { path: { id } },
-				body: { name: String(formData.name) },
+				body: { name: formData.name.trim() },
 			});
 		} else {
 			await createMutation.mutateAsync({
-				body: { name: String(formData.name) },
+				body: { name: formData.name.trim() },
 			});
 		}
 	};
@@ -82,7 +86,7 @@ function FuelTypesPage() {
 	};
 
 	return (
-		<MasterDataTable
+		<MasterDataTable<FuelTypeDto, FuelTypeFormData>
 			title="Jenis Bahan Bakar"
 			description="Daftar bahan bakar eksisting yang digunakan calon pelanggan sebelum beralih ke gas bumi."
 			icon={Flame}

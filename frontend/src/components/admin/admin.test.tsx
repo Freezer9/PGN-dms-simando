@@ -66,6 +66,11 @@ interface TestItem {
 	sortOrder: number;
 }
 
+interface TestItemFormData {
+	name: string;
+	sortOrder: number;
+}
+
 const mockTestItems: TestItem[] = [
 	{ id: "1", name: "Gold", sortOrder: 1 },
 	{ id: "2", name: "Platinum", sortOrder: 2 },
@@ -76,7 +81,7 @@ const mockColumns: ColumnDef<TestItem>[] = [
 	{ key: "sortOrder", header: "Urutan" },
 ];
 
-const mockFields: FieldDef[] = [
+const mockFields: FieldDef<TestItemFormData>[] = [
 	{ name: "name", label: "Nama Segmen", type: "text", required: true },
 	{ name: "sortOrder", label: "Urutan", type: "number", required: true },
 ];
@@ -101,7 +106,7 @@ describe("Admin and Master Data Frontend Components", () => {
 	describe("MasterDataTable", () => {
 		it("renders master data title, description, and columns", () => {
 			renderWithClient(
-				<MasterDataTable
+				<MasterDataTable<TestItem, TestItemFormData>
 					title="Segmen Pelanggan"
 					description="Daftar hierarki segmen komersial."
 					icon={Tag}
@@ -127,7 +132,7 @@ describe("Admin and Master Data Frontend Components", () => {
 
 		it("renders empty state when data array is empty", () => {
 			renderWithClient(
-				<MasterDataTable
+				<MasterDataTable<TestItem, TestItemFormData>
 					title="Segmen Pelanggan"
 					description="Daftar hierarki segmen komersial."
 					icon={Tag}

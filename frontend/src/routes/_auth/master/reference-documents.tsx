@@ -16,6 +16,13 @@ export const Route = createFileRoute("/_auth/master/reference-documents")({
 	component: ReferenceDocumentsPage,
 });
 
+export interface ReferenceDocumentFormData {
+	name: string;
+	version: number;
+	effectiveFrom: string;
+	effectiveTo?: string;
+}
+
 function ReferenceDocumentsPage() {
 	const { data, isLoading, refetch } = $api.useQuery(
 		"get",
@@ -85,7 +92,7 @@ function ReferenceDocumentsPage() {
 		},
 	];
 
-	const fields: FieldDef[] = [
+	const fields: FieldDef<ReferenceDocumentFormData>[] = [
 		{
 			name: "name",
 			label: "Nama Dokumen Acuan",
@@ -115,14 +122,17 @@ function ReferenceDocumentsPage() {
 		},
 	];
 
-	const handleSave = async (formData: Record<string, unknown>, id?: string) => {
+	const handleSave = async (
+		formData: ReferenceDocumentFormData,
+		id?: string,
+	) => {
 		const payload:
 			| CreateReferenceDocumentRequest
 			| UpdateReferenceDocumentRequest = {
-			name: String(formData.name),
+			name: formData.name.trim(),
 			version: Number(formData.version) || 1,
-			effectiveFrom: String(formData.effectiveFrom),
-			effectiveTo: formData.effectiveTo ? String(formData.effectiveTo) : null,
+			effectiveFrom: formData.effectiveFrom.trim(),
+			effectiveTo: formData.effectiveTo ? formData.effectiveTo.trim() : null,
 		};
 
 		if (id) {
@@ -144,7 +154,7 @@ function ReferenceDocumentsPage() {
 	};
 
 	return (
-		<MasterDataTable
+		<MasterDataTable<ReferenceDocumentDto, ReferenceDocumentFormData>
 			title="Dokumen Acuan & Ketentuan Kerja"
 			description="Daftar ketentuan operasional, tata cara teknis, dan dokumen legal acuan kerja proses bisnis DMS."
 			icon={FileText}

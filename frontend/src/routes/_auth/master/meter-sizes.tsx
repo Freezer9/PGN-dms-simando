@@ -16,6 +16,13 @@ export const Route = createFileRoute("/_auth/master/meter-sizes")({
 	component: MeterSizesPage,
 });
 
+export interface MeterSizeFormData {
+	gSize: string;
+	nominalFlow: number;
+	maxFlow: number;
+	pressureRating: number;
+}
+
 function MeterSizesPage() {
 	const { data, isLoading, refetch } = $api.useQuery(
 		"get",
@@ -89,7 +96,7 @@ function MeterSizesPage() {
 		},
 	];
 
-	const fields: FieldDef[] = [
+	const fields: FieldDef<MeterSizeFormData>[] = [
 		{
 			name: "gSize",
 			label: "Ukuran G-Size",
@@ -120,9 +127,9 @@ function MeterSizesPage() {
 		},
 	];
 
-	const handleSave = async (formData: Record<string, unknown>, id?: string) => {
+	const handleSave = async (formData: MeterSizeFormData, id?: string) => {
 		const payload: CreateMeterSizeRequest | UpdateMeterSizeRequest = {
-			gSize: String(formData.gSize),
+			gSize: formData.gSize.trim(),
 			nominalFlow: Number(formData.nominalFlow) || 0,
 			maxFlow: Number(formData.maxFlow) || 0,
 			pressureRating: Number(formData.pressureRating) || 0,
@@ -147,7 +154,7 @@ function MeterSizesPage() {
 	};
 
 	return (
-		<MasterDataTable
+		<MasterDataTable<MeterSizeDto, MeterSizeFormData>
 			title="Ukuran Meter & Laju Alir (Meter Sizes)"
 			description="Daftar kapasitas G-Size meter gas untuk penentuan batas laju alir (Qmax / Qnom) pada stasiun pengukur."
 			icon={Gauge}
