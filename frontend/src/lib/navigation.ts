@@ -99,7 +99,7 @@ export function buildNavigationMenu(
 		caseWorkNodes.push({
 			type: "item",
 			title: "Plotting",
-			href: "/plotting",
+			href: "/directory?stage=2",
 			icon: "map-pin",
 		});
 	}

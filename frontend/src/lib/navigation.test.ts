@@ -35,7 +35,7 @@ describe("Navigation Menu Engine", () => {
 
 		expect(hrefs).toContain("/");
 		expect(hrefs).toContain("/directory");
-		expect(hrefs).toContain("/plotting");
+		expect(hrefs).toContain("/directory?stage=2");
 		expect(hrefs).toContain("/map");
 		expect(hrefs).toContain("/reports");
 		expect(hrefs).not.toContain("/tasks"); // SalesArea doesn't have ActOnApprovalStep
