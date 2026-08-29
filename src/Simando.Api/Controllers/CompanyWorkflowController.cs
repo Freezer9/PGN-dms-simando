@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Simando.Api.Security;
 using Simando.Application.Directory;
 using Simando.Application.Workflow;
 using Simando.Domain.Security;
@@ -14,15 +15,13 @@ public sealed class CompanyWorkflowController(
     ICurrentUser currentUser) : ControllerBase
 {
     [HttpPost("{id:guid}/workflow/start")]
+    [RequireCapability(Capability.SubmitForApproval)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> StartWorkflow(Guid id, CancellationToken ct)
     {
-        if (!currentUser.IsAuthenticated)
-        {
-            return Unauthorized();
-        }
-
         var result = await workflowService.StartAsync(
             id,
             currentUser.UserId,
@@ -43,15 +42,13 @@ public sealed class CompanyWorkflowController(
     }
 
     [HttpPost("{id:guid}/workflow/choose-reviewers")]
+    [RequireCapability(Capability.ChooseReviewers)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> ChooseReviewers(Guid id, [FromBody] ChooseReviewersRequest request, CancellationToken ct)
     {
-        if (!currentUser.IsAuthenticated)
-        {
-            return Unauthorized();
-        }
-
         var result = await workflowService.ChooseReviewersAsync(
             id,
             request.ReviewerUserIds,
@@ -73,15 +70,13 @@ public sealed class CompanyWorkflowController(
     }
 
     [HttpPost("{id:guid}/workflow/rework")]
+    [RequireCapability(Capability.ActOnApprovalStep)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> Rework(Guid id, [FromBody] ReworkRequest request, CancellationToken ct)
     {
-        if (!currentUser.IsAuthenticated)
-        {
-            return Unauthorized();
-        }
-
         var result = await workflowService.ReworkAsync(
             id,
             request.Comment,
@@ -102,15 +97,13 @@ public sealed class CompanyWorkflowController(
     }
 
     [HttpPost("{id:guid}/workflow/discontinue")]
+    [RequireCapability(Capability.ActOnApprovalStep)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> Discontinue(Guid id, [FromBody] DiscontinueRequest request, CancellationToken ct)
     {
-        if (!currentUser.IsAuthenticated)
-        {
-            return Unauthorized();
-        }
-
         var result = await workflowService.DiscontinueAsync(
             id,
             request.Comment,

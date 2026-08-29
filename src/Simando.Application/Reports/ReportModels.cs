@@ -69,3 +69,19 @@ public sealed record NolOutcomesReportDto(
     double RlPercentage,
     IReadOnlyList<NolOutcomeReasonRow> RejectionReasons
 );
+
+public sealed record TerritoryReportQuery(
+    Guid? AreaId = null,
+    Guid? RegionId = null
+);
+
+public sealed record SurveyProductivityReportQuery(
+    int? Year = null,
+    Guid? AreaId = null,
+    Guid? RegionId = null
+);
+
+public sealed record DirectoryExportQuery(
+    bool IncludePii = false
+);
+

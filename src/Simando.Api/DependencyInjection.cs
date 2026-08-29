@@ -13,6 +13,7 @@ public static class ApiDependencyInjection
     public static IServiceCollection AddApiServices(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddHttpContextAccessor();
+        services.AddSingleton<IAuthorizationPolicyProvider, CapabilityAuthorizationPolicyProvider>();
         services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>, SimandoUserClaimsPrincipalFactory>();
         services.AddScoped<SignInManager<ApplicationUser>>();
         services.AddScoped<ICurrentUser, ApiCurrentUser>();
@@ -42,13 +43,6 @@ public static class ApiDependencyInjection
 
         services.AddAuthorization(options =>
         {
-            // Register capability policies dynamically
-            foreach (var capability in Enum.GetValues<Capability>())
-            {
-                options.AddPolicy($"Capability_{capability}", policy =>
-                    policy.RequireClaim(SimandoUserClaimsPrincipalFactory.CapabilityClaimType, capability.ToString()));
-            }
-
             // Fallback policy: require authentication by default except OpenAPI/Scalar endpoints
             options.FallbackPolicy = new AuthorizationPolicyBuilder()
                 .RequireAssertion(context =>

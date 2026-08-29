@@ -1,3 +1,4 @@
+using Mapster;
 using Microsoft.EntityFrameworkCore;
 using Simando.Application.MasterData;
 using Simando.Domain.MasterData;
@@ -10,15 +11,10 @@ internal sealed class MasterDataAdminService(IDbContextFactory<SimandoDbContext>
     public async Task<IndustryTypeResult> CreateIndustryTypeAsync(CreateIndustryTypeRequest request, CancellationToken ct = default)
     {
         await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var entity = new IndustryType
-        {
-            Id = Guid.NewGuid(),
-            Name = request.Name.Trim(),
-            ContohProduk = request.ContohProduk?.Trim()
-        };
+        var entity = request.Adapt<IndustryType>();
         db.IndustryTypes.Add(entity);
         await db.SaveChangesAsync(ct);
-        return new IndustryTypeResult(entity.Id, entity.Name, entity.ContohProduk);
+        return entity.Adapt<IndustryTypeResult>();
     }
 
     public async Task<bool> UpdateIndustryTypeAsync(Guid id, UpdateIndustryTypeRequest request, CancellationToken ct = default)
@@ -47,15 +43,10 @@ internal sealed class MasterDataAdminService(IDbContextFactory<SimandoDbContext>
     public async Task<SegmentResult> CreateSegmentAsync(CreateSegmentRequest request, CancellationToken ct = default)
     {
         await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var entity = new Segment
-        {
-            Id = Guid.NewGuid(),
-            Name = request.Name.Trim(),
-            SortOrder = request.SortOrder
-        };
+        var entity = request.Adapt<Segment>();
         db.Segments.Add(entity);
         await db.SaveChangesAsync(ct);
-        return new SegmentResult(entity.Id, entity.Name, entity.SortOrder);
+        return entity.Adapt<SegmentResult>();
     }
 
     public async Task<bool> UpdateSegmentAsync(Guid id, UpdateSegmentRequest request, CancellationToken ct = default)
@@ -84,14 +75,10 @@ internal sealed class MasterDataAdminService(IDbContextFactory<SimandoDbContext>
     public async Task<FuelTypeResult> CreateFuelTypeAsync(CreateFuelTypeRequest request, CancellationToken ct = default)
     {
         await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var entity = new FuelType
-        {
-            Id = Guid.NewGuid(),
-            Name = request.Name.Trim()
-        };
+        var entity = request.Adapt<FuelType>();
         db.FuelTypes.Add(entity);
         await db.SaveChangesAsync(ct);
-        return new FuelTypeResult(entity.Id, entity.Name);
+        return entity.Adapt<FuelTypeResult>();
     }
 
     public async Task<bool> UpdateFuelTypeAsync(Guid id, UpdateFuelTypeRequest request, CancellationToken ct = default)
@@ -119,16 +106,10 @@ internal sealed class MasterDataAdminService(IDbContextFactory<SimandoDbContext>
     public async Task<UnitResult> CreateUnitAsync(CreateUnitRequest request, CancellationToken ct = default)
     {
         await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var entity = new UnitOfMeasure
-        {
-            Id = Guid.NewGuid(),
-            Code = request.Code.Trim(),
-            Name = request.Name.Trim(),
-            Dimension = request.Dimension
-        };
+        var entity = request.Adapt<UnitOfMeasure>();
         db.UnitsOfMeasure.Add(entity);
         await db.SaveChangesAsync(ct);
-        return new UnitResult(entity.Id, entity.Code, entity.Name, entity.Dimension);
+        return entity.Adapt<UnitResult>();
     }
 
     public async Task<bool> UpdateUnitAsync(Guid id, UpdateUnitRequest request, CancellationToken ct = default)
@@ -158,17 +139,10 @@ internal sealed class MasterDataAdminService(IDbContextFactory<SimandoDbContext>
     public async Task<MeterSizeResult> CreateMeterSizeAsync(CreateMeterSizeRequest request, CancellationToken ct = default)
     {
         await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var entity = new MeterSize
-        {
-            Id = Guid.NewGuid(),
-            GSize = request.GSize.Trim(),
-            NominalFlow = request.NominalFlow,
-            MaxFlow = request.MaxFlow,
-            PressureRating = request.PressureRating
-        };
+        var entity = request.Adapt<MeterSize>();
         db.MeterSizes.Add(entity);
         await db.SaveChangesAsync(ct);
-        return new MeterSizeResult(entity.Id, entity.GSize, entity.NominalFlow, entity.MaxFlow, entity.PressureRating);
+        return entity.Adapt<MeterSizeResult>();
     }
 
     public async Task<bool> UpdateMeterSizeAsync(Guid id, UpdateMeterSizeRequest request, CancellationToken ct = default)
@@ -199,14 +173,10 @@ internal sealed class MasterDataAdminService(IDbContextFactory<SimandoDbContext>
     public async Task<MrsSpecResult> CreateMrsSpecAsync(CreateMrsSpecRequest request, CancellationToken ct = default)
     {
         await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var entity = new MrsSpec
-        {
-            Id = Guid.NewGuid(),
-            Name = request.Name.Trim()
-        };
+        var entity = request.Adapt<MrsSpec>();
         db.MrsSpecs.Add(entity);
         await db.SaveChangesAsync(ct);
-        return new MrsSpecResult(entity.Id, entity.Name);
+        return entity.Adapt<MrsSpecResult>();
     }
 
     public async Task<bool> UpdateMrsSpecAsync(Guid id, UpdateMrsSpecRequest request, CancellationToken ct = default)
@@ -234,14 +204,10 @@ internal sealed class MasterDataAdminService(IDbContextFactory<SimandoDbContext>
     public async Task<ReasonCategoryResult> CreateReasonCategoryAsync(CreateReasonCategoryRequest request, CancellationToken ct = default)
     {
         await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var entity = new ReasonCategory
-        {
-            Id = Guid.NewGuid(),
-            Name = request.Name.Trim()
-        };
+        var entity = request.Adapt<ReasonCategory>();
         db.ReasonCategories.Add(entity);
         await db.SaveChangesAsync(ct);
-        return new ReasonCategoryResult(entity.Id, entity.Name);
+        return entity.Adapt<ReasonCategoryResult>();
     }
 
     public async Task<bool> UpdateReasonCategoryAsync(Guid id, UpdateReasonCategoryRequest request, CancellationToken ct = default)
@@ -269,18 +235,10 @@ internal sealed class MasterDataAdminService(IDbContextFactory<SimandoDbContext>
     public async Task<ReferenceDocumentResult> CreateReferenceDocumentAsync(CreateReferenceDocumentRequest request, CancellationToken ct = default)
     {
         await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var entity = new ReferenceDocument
-        {
-            Id = Guid.NewGuid(),
-            Name = request.Name.Trim(),
-            Version = request.Version,
-            EffectiveFrom = request.EffectiveFrom,
-            EffectiveTo = request.EffectiveTo,
-            BlobKey = request.BlobKey
-        };
+        var entity = request.Adapt<ReferenceDocument>();
         db.ReferenceDocuments.Add(entity);
         await db.SaveChangesAsync(ct);
-        return new ReferenceDocumentResult(entity.Id, entity.Name, entity.Version, entity.EffectiveFrom, entity.EffectiveTo, entity.BlobKey);
+        return entity.Adapt<ReferenceDocumentResult>();
     }
 
     public async Task<bool> UpdateReferenceDocumentAsync(Guid id, UpdateReferenceDocumentRequest request, CancellationToken ct = default)

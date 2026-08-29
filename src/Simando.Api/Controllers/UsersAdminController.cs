@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Simando.Api.Security;
 using Simando.Application.Security;
 using Simando.Domain.Security;
 
@@ -53,6 +54,7 @@ public sealed record RoleAssignmentDto(
 [ApiController]
 [Route("api/admin/users")]
 [Authorize]
+[RequireCapability(Capability.AssignRoles)]
 public sealed class UsersAdminController(
     IUserService userService,
     ICurrentUser currentUser) : ControllerBase
@@ -63,13 +65,6 @@ public sealed class UsersAdminController(
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> GetUsers(CancellationToken ct)
     {
-        if (!currentUser.IsAuthenticated) return Unauthorized();
-
-        if (!currentUser.Permissions.HasCapability(Capability.AssignRoles) && currentUser.Scope != AccessScope.All)
-        {
-            return Forbid();
-        }
-
         var users = await userService.GetUsersAsync(currentUser.Permissions, ct);
         var dtos = users.Select(u => new UserListItemDto(
             u.Id,
@@ -92,13 +87,6 @@ public sealed class UsersAdminController(
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> CreateUser([FromBody] CreateUserRequest request, CancellationToken ct)
     {
-        if (!currentUser.IsAuthenticated) return Unauthorized();
-
-        if (!currentUser.Permissions.HasCapability(Capability.AssignRoles))
-        {
-            return Forbid();
-        }
-
         var result = await userService.CreateUserAsync(
             request.FullName,
             request.Username,
@@ -125,13 +113,6 @@ public sealed class UsersAdminController(
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> AddRole(Guid id, [FromBody] AddRoleAssignmentRequest request, CancellationToken ct)
     {
-        if (!currentUser.IsAuthenticated) return Unauthorized();
-
-        if (!currentUser.Permissions.HasCapability(Capability.AssignRoles))
-        {
-            return Forbid();
-        }
-
         var result = await userService.AddRoleAssignmentAsync(
             id,
             request.Role,
@@ -155,13 +136,6 @@ public sealed class UsersAdminController(
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> DeactivateRole(Guid id, Guid assignmentId, CancellationToken ct)
     {
-        if (!currentUser.IsAuthenticated) return Unauthorized();
-
-        if (!currentUser.Permissions.HasCapability(Capability.AssignRoles))
-        {
-            return Forbid();
-        }
-
         await userService.DeactivateRoleAssignmentAsync(assignmentId, currentUser.UserId, id, ct);
         return NoContent();
     }
@@ -172,13 +146,6 @@ public sealed class UsersAdminController(
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> ResetPassword(Guid id, CancellationToken ct)
     {
-        if (!currentUser.IsAuthenticated) return Unauthorized();
-
-        if (!currentUser.Permissions.HasCapability(Capability.AssignRoles))
-        {
-            return Forbid();
-        }
-
         var newTempPassword = await userService.ResetPasswordAsync(id, ct);
         return Ok(new ResetPasswordResponse(newTempPassword));
     }
@@ -189,13 +156,6 @@ public sealed class UsersAdminController(
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> SetStatus(Guid id, [FromBody] SetUserStatusRequest request, CancellationToken ct)
     {
-        if (!currentUser.IsAuthenticated) return Unauthorized();
-
-        if (!currentUser.Permissions.HasCapability(Capability.AssignRoles))
-        {
-            return Forbid();
-        }
-
         await userService.SetUserActiveAsync(id, request.Active, ct);
         return NoContent();
     }

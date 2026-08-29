@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Simando.Api.Security;
 using Simando.Application.Organisation;
 using Simando.Domain.Organisation;
 using Simando.Domain.Security;
@@ -52,24 +53,17 @@ public sealed record UpdateAreaRequest(
 [ApiController]
 [Route("api/admin/organisation")]
 [Authorize]
+[RequireCapability(Capability.ManageMasterData)]
 public sealed class OrganisationAdminController(
     IOrganisationService organisationService,
-    ICurrentUser currentUser,
     IDbContextFactory<SimandoDbContext> dbContextFactory) : ControllerBase
 {
-    private bool IsAuthorizedAdmin() =>
-        currentUser.IsAuthenticated &&
-        (currentUser.Scope == AccessScope.All || currentUser.HasCapability(Capability.ManageMasterData));
-
     [HttpGet]
     [ProducesResponseType<IReadOnlyList<RegionWithAreasDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> GetOrganisation(CancellationToken ct)
     {
-        if (!currentUser.IsAuthenticated) return Unauthorized();
-        if (!IsAuthorizedAdmin()) return Forbid();
-
         var regions = await organisationService.GetRegionsAsync(ct);
         var areas = await organisationService.GetAreasAsync(ct);
 
@@ -109,9 +103,6 @@ public sealed class OrganisationAdminController(
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> CreateRegion([FromBody] CreateRegionRequest request, CancellationToken ct)
     {
-        if (!currentUser.IsAuthenticated) return Unauthorized();
-        if (!currentUser.HasCapability(Capability.ManageMasterData)) return Forbid();
-
         var region = new Region
         {
             Id = Guid.NewGuid(),
@@ -130,9 +121,6 @@ public sealed class OrganisationAdminController(
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> UpdateRegion(Guid id, [FromBody] UpdateRegionRequest request, CancellationToken ct)
     {
-        if (!currentUser.IsAuthenticated) return Unauthorized();
-        if (!currentUser.HasCapability(Capability.ManageMasterData)) return Forbid();
-
         await organisationService.UpdateRegionAsync(id, r =>
         {
             r.Code = request.Code.Trim();
@@ -150,9 +138,6 @@ public sealed class OrganisationAdminController(
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> DeleteRegion(Guid id, CancellationToken ct)
     {
-        if (!currentUser.IsAuthenticated) return Unauthorized();
-        if (!currentUser.HasCapability(Capability.ManageMasterData)) return Forbid();
-
         await organisationService.DeleteRegionAsync(id, ct);
         return NoContent();
     }
@@ -164,9 +149,6 @@ public sealed class OrganisationAdminController(
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> CreateArea([FromBody] CreateAreaRequest request, CancellationToken ct)
     {
-        if (!currentUser.IsAuthenticated) return Unauthorized();
-        if (!currentUser.HasCapability(Capability.ManageMasterData)) return Forbid();
-
         var area = new Area
         {
             Id = Guid.NewGuid(),
@@ -186,9 +168,6 @@ public sealed class OrganisationAdminController(
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> UpdateArea(Guid id, [FromBody] UpdateAreaRequest request, CancellationToken ct)
     {
-        if (!currentUser.IsAuthenticated) return Unauthorized();
-        if (!currentUser.HasCapability(Capability.ManageMasterData)) return Forbid();
-
         await organisationService.UpdateAreaAsync(id, a =>
         {
             a.RegionId = request.RegionId;
@@ -207,9 +186,6 @@ public sealed class OrganisationAdminController(
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> DeleteArea(Guid id, CancellationToken ct)
     {
-        if (!currentUser.IsAuthenticated) return Unauthorized();
-        if (!currentUser.HasCapability(Capability.ManageMasterData)) return Forbid();
-
         await organisationService.DeleteAreaAsync(id, ct);
         return NoContent();
     }

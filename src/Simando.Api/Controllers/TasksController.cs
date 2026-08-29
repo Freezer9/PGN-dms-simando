@@ -20,11 +20,6 @@ public sealed class TasksController(
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetInbox(CancellationToken ct)
     {
-        if (!currentUser.IsAuthenticated)
-        {
-            return Unauthorized();
-        }
-
         var tasks = await tasksService.GetMyTasksAsync(
             currentUser.UserId,
             currentUser.Permissions,
@@ -39,11 +34,6 @@ public sealed class TasksController(
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetRegion(CancellationToken ct)
     {
-        if (!currentUser.IsAuthenticated)
-        {
-            return Unauthorized();
-        }
-
         var tasks = await tasksService.GetRegionTasksAsync(
             currentUser.Permissions,
             ct);
@@ -56,11 +46,6 @@ public sealed class TasksController(
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetBlocked(CancellationToken ct)
     {
-        if (!currentUser.IsAuthenticated)
-        {
-            return Unauthorized();
-        }
-
         var tasks = await tasksService.GetBlockedTasksAsync(
             currentUser.Permissions,
             ct);
@@ -72,18 +57,11 @@ public sealed class TasksController(
     [ProducesResponseType<PagedResult<TaskHistoryItem>>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetHistory(
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 25,
+        [FromQuery] PaginationQuery query,
         CancellationToken ct = default)
     {
-        if (!currentUser.IsAuthenticated)
-        {
-            return Unauthorized();
-        }
-
-        if (page < 1) page = 1;
-        if (pageSize < 1) pageSize = 10;
-        if (pageSize > 100) pageSize = 100;
+        var page = query.Page < 1 ? 1 : query.Page;
+        var pageSize = query.PageSize < 1 ? 10 : (query.PageSize > 100 ? 100 : query.PageSize);
 
         var history = await tasksService.GetPagedHistoryAsync(
             currentUser.UserId,
@@ -99,11 +77,6 @@ public sealed class TasksController(
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetSummary(CancellationToken ct)
     {
-        if (!currentUser.IsAuthenticated)
-        {
-            return Unauthorized();
-        }
-
         var myTasks = await tasksService.GetMyTasksAsync(
             currentUser.UserId,
             currentUser.Permissions,

@@ -91,9 +91,8 @@ app.UseHttpsRedirection();
 app.UseCors(ApiDependencyInjection.CorsPolicyName);
 
 app.UseAuthentication();
-app.UseAuthorization();
-
 app.UseMiddleware<MustChangePasswordMiddleware>();
+app.UseAuthorization();
 
 app.MapOpenApi();
 app.MapScalarApiReference(options =>

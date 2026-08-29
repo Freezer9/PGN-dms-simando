@@ -1,7 +1,7 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Simando.Api.Security;
 using Simando.Application.Documents;
 using Simando.Domain.Security;
 using Simando.Infrastructure.Persistence;
@@ -12,9 +12,11 @@ namespace Simando.Api.Controllers;
 [Route("api/documents")]
 [Route("documents")]
 [Authorize]
+[RequireCapability(Capability.GenerateDocuments)]
 public sealed class DocumentDownloadController(
     IDbContextFactory<SimandoDbContext> dbContextFactory,
-    IDocumentGenerator documentGenerator) : ControllerBase
+    IDocumentGenerator documentGenerator,
+    ICurrentUser currentUser) : ControllerBase
 {
     private const string DocxMimeType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
@@ -32,11 +34,7 @@ public sealed class DocumentDownloadController(
         if (company is null)
             return NotFound();
 
-        var permissions = await ResolvePermissionsAsync(db, ct);
-        if (permissions is null)
-            return Unauthorized();
-
-        if (!PermissionEvaluator.CanViewRecord(permissions, company.Company.AreaId, company.RegionId))
+        if (!PermissionEvaluator.CanViewRecord(currentUser.Permissions, company.Company.AreaId, company.RegionId))
             return Forbid();
 
         var bytes = await documentGenerator.GenerateKk0DocxAsync(companyId, ct);
@@ -59,11 +57,7 @@ public sealed class DocumentDownloadController(
         if (company is null)
             return NotFound();
 
-        var permissions = await ResolvePermissionsAsync(db, ct);
-        if (permissions is null)
-            return Unauthorized();
-
-        if (!PermissionEvaluator.CanViewRecord(permissions, company.Company.AreaId, company.RegionId))
+        if (!PermissionEvaluator.CanViewRecord(currentUser.Permissions, company.Company.AreaId, company.RegionId))
             return Forbid();
 
         var bytes = await documentGenerator.GenerateA1DocxAsync(companyId, ct);
@@ -86,11 +80,7 @@ public sealed class DocumentDownloadController(
         if (company is null)
             return NotFound();
 
-        var permissions = await ResolvePermissionsAsync(db, ct);
-        if (permissions is null)
-            return Unauthorized();
-
-        if (!PermissionEvaluator.CanViewRecord(permissions, company.Company.AreaId, company.RegionId))
+        if (!PermissionEvaluator.CanViewRecord(currentUser.Permissions, company.Company.AreaId, company.RegionId))
             return Forbid();
 
         var bytes = await documentGenerator.GenerateNolRequestDocxAsync(companyId, ct);
@@ -113,11 +103,7 @@ public sealed class DocumentDownloadController(
         if (company is null)
             return NotFound();
 
-        var permissions = await ResolvePermissionsAsync(db, ct);
-        if (permissions is null)
-            return Unauthorized();
-
-        if (!PermissionEvaluator.CanViewRecord(permissions, company.Company.AreaId, company.RegionId))
+        if (!PermissionEvaluator.CanViewRecord(currentUser.Permissions, company.Company.AreaId, company.RegionId))
             return Forbid();
 
         var bytes = await documentGenerator.GenerateEvaluationResumeDocxAsync(companyId, ct);
@@ -140,30 +126,12 @@ public sealed class DocumentDownloadController(
         if (company is null)
             return NotFound();
 
-        var permissions = await ResolvePermissionsAsync(db, ct);
-        if (permissions is null)
-            return Unauthorized();
-
-        if (!PermissionEvaluator.CanViewRecord(permissions, company.Company.AreaId, company.RegionId))
+        if (!PermissionEvaluator.CanViewRecord(currentUser.Permissions, company.Company.AreaId, company.RegionId))
             return Forbid();
 
         var bytes = await documentGenerator.GenerateNolIssuanceDocxAsync(companyId, ct);
         var filename = $"Surat_Penerbitan_NOL_{company.Company.NomorSeq:D4}.docx";
 
         return File(bytes, DocxMimeType, filename);
-    }
-
-    private async Task<EffectivePermissions?> ResolvePermissionsAsync(SimandoDbContext db, CancellationToken ct)
-    {
-        var idClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (idClaim is null || !Guid.TryParse(idClaim, out var userId))
-            return null;
-
-        var assignments = await db.RoleAssignments
-            .AsNoTracking()
-            .Where(a => a.UserId == userId && a.Active)
-            .ToListAsync(ct);
-
-        return PermissionEvaluator.Resolve(assignments);
     }
 }

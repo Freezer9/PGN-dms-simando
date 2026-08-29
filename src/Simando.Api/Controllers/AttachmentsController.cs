@@ -1,8 +1,8 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Simando.Api.Security;
 using Simando.Application.Attachments;
 using Simando.Application.Storage;
 using Simando.Domain.Attachments;
@@ -14,11 +14,6 @@ namespace Simando.Api.Controllers;
 
 // Authorised attachment download & management — docs/build/storage.md §2, docs/build/web-conventions.md.
 // Every download streams through this action; no pre-signed URLs, no Graph downloadUrl.
-//
-// Permissions are resolved inline from HttpContext.User + DB rather than through the
-// circuit-scoped CurrentUser (which LoadAsync is never called on an HTTP request).
-// IgnoreQueryFilters() is used so out-of-scope attachments return an explicit 403 rather
-// than silently 404-ing through the RLS filter — matching the test cases in testing.md.
 [ApiController]
 [Route("api/attachments")]
 [Route("attachments")]
@@ -26,7 +21,8 @@ namespace Simando.Api.Controllers;
 public sealed class AttachmentsController(
     IDbContextFactory<SimandoDbContext> dbContextFactory,
     IAttachmentStore attachmentStore,
-    IAttachmentService attachmentService) : ControllerBase
+    IAttachmentService attachmentService,
+    ICurrentUser currentUser) : ControllerBase
 {
     private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -53,11 +49,7 @@ public sealed class AttachmentsController(
         if (company is null)
             return NotFound();
 
-        var permissions = await ResolvePermissionsAsync(db, ct);
-        if (permissions is null)
-            return Unauthorized();
-
-        if (!PermissionEvaluator.CanViewRecord(permissions, company.AreaId, company.RegionId))
+        if (!PermissionEvaluator.CanViewRecord(currentUser.Permissions, company.AreaId, company.RegionId))
             return Forbid();
 
         var attachments = await attachmentService.GetCompanyAttachmentsAsync(companyId, ct);
@@ -66,6 +58,7 @@ public sealed class AttachmentsController(
 
     [HttpPost("/api/companies/{companyId:guid}/attachments")]
     [HttpPost("/companies/{companyId:guid}/attachments")]
+    [RequireCapability(Capability.UploadAttachments)]
     [ProducesResponseType<AttachmentDetail>(StatusCodes.Status201Created)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -107,16 +100,8 @@ public sealed class AttachmentsController(
         if (company is null)
             return NotFound();
 
-        var permissions = await ResolvePermissionsAsync(db, ct);
-        if (permissions is null)
-            return Unauthorized();
-
-        if (!permissions.HasCapability(Capability.UploadAttachments) || !PermissionEvaluator.CanViewRecord(permissions, company.AreaId, company.RegionId))
+        if (!PermissionEvaluator.CanViewRecord(currentUser.Permissions, company.AreaId, company.RegionId))
             return Forbid();
-
-        var idClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (idClaim is null || !Guid.TryParse(idClaim, out var userId))
-            return Unauthorized();
 
         await using var stream = file.OpenReadStream();
         var request = new UploadAttachmentRequest(
@@ -127,7 +112,7 @@ public sealed class AttachmentsController(
             signatureMethod,
             stream);
 
-        var result = await attachmentService.UploadAttachmentAsync(companyId, request, userId, ct);
+        var result = await attachmentService.UploadAttachmentAsync(companyId, request, currentUser.UserId, ct);
         if (!result.Succeeded || result.Attachment is null)
         {
             return BadRequest(new ProblemDetails { Detail = result.Error ?? "Gagal mengunggah berkas." });
@@ -137,6 +122,11 @@ public sealed class AttachmentsController(
     }
 
     [HttpGet("{id:guid}/download")]
+    [RequireCapability(Capability.DownloadAttachments)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Download(Guid id, CancellationToken ct)
     {
         await using var db = await dbContextFactory.CreateDbContextAsync(ct);
@@ -148,13 +138,6 @@ public sealed class AttachmentsController(
         if (attachment is null)
             return NotFound();
 
-        var permissions = await ResolvePermissionsAsync(db, ct);
-        if (permissions is null)
-            return Unauthorized();
-
-        if (!permissions.HasCapability(Capability.DownloadAttachments))
-            return Forbid();
-
         if (attachment.CompanyId is Guid companyId)
         {
             var company = await db.Companies
@@ -164,7 +147,7 @@ public sealed class AttachmentsController(
                     (c, a) => new { c.AreaId, a.RegionId })
                 .FirstOrDefaultAsync(ct);
 
-            if (company is null || !PermissionEvaluator.CanViewRecord(permissions, company.AreaId, company.RegionId))
+            if (company is null || !PermissionEvaluator.CanViewRecord(currentUser.Permissions, company.AreaId, company.RegionId))
                 return Forbid();
         }
 
@@ -183,6 +166,7 @@ public sealed class AttachmentsController(
     }
 
     [HttpDelete("{id:guid}")]
+    [RequireCapability(Capability.UploadAttachments)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -198,13 +182,6 @@ public sealed class AttachmentsController(
         if (attachment is null)
             return NotFound();
 
-        var permissions = await ResolvePermissionsAsync(db, ct);
-        if (permissions is null)
-            return Unauthorized();
-
-        if (!permissions.HasCapability(Capability.UploadAttachments))
-            return Forbid();
-
         if (attachment.CompanyId is Guid companyId)
         {
             var company = await db.Companies
@@ -214,7 +191,7 @@ public sealed class AttachmentsController(
                     (c, a) => new { c.AreaId, a.RegionId })
                 .FirstOrDefaultAsync(ct);
 
-            if (company is null || !PermissionEvaluator.CanViewRecord(permissions, company.AreaId, company.RegionId))
+            if (company is null || !PermissionEvaluator.CanViewRecord(currentUser.Permissions, company.AreaId, company.RegionId))
                 return Forbid();
         }
 
@@ -240,19 +217,5 @@ public sealed class AttachmentsController(
         await db.SaveChangesAsync(ct);
 
         return NoContent();
-    }
-
-    private async Task<EffectivePermissions?> ResolvePermissionsAsync(SimandoDbContext db, CancellationToken ct)
-    {
-        var idClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (idClaim is null || !Guid.TryParse(idClaim, out var userId))
-            return null;
-
-        var assignments = await db.RoleAssignments
-            .AsNoTracking()
-            .Where(a => a.UserId == userId && a.Active)
-            .ToListAsync(ct);
-
-        return PermissionEvaluator.Resolve(assignments);
     }
 }

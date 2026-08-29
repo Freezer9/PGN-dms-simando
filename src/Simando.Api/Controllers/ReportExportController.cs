@@ -1,7 +1,7 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Simando.Api.Security;
 using Simando.Application.Directory;
 using Simando.Application.Reports;
 using Simando.Domain.Security;
@@ -13,10 +13,12 @@ namespace Simando.Api.Controllers;
 [Route("api/reports/export")]
 [Route("reports/export")]
 [Authorize]
+[RequireCapability(Capability.ExportExcel)]
 public sealed class ReportExportController(
     IDbContextFactory<SimandoDbContext> dbContextFactory,
     IReportsService reportsService,
-    IExcelExportService excelExportService) : ControllerBase
+    IExcelExportService excelExportService,
+    ICurrentUser currentUser) : ControllerBase
 {
     private const string XlsxMimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
@@ -24,16 +26,12 @@ public sealed class ReportExportController(
     [Produces(XlsxMimeType)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> ExportFunnel(
-        [FromQuery] Guid? areaId = null,
-        [FromQuery] Guid? regionId = null,
+        [FromQuery] TerritoryReportQuery query,
         CancellationToken ct = default)
     {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var permissions = await ResolvePermissionsAsync(db, ct);
-        if (permissions is null) return Unauthorized();
-
-        var data = await reportsService.GetFunnelAsync(permissions, areaId, regionId, ct);
+        var data = await reportsService.GetFunnelAsync(currentUser.Permissions, query.AreaId, query.RegionId, ct);
         var bytes = excelExportService.ExportFunnelReport(data);
 
         return File(bytes, XlsxMimeType, $"Laporan_Corong_Penjualan_{DateTime.UtcNow:yyyyMMdd}.xlsx");
@@ -43,13 +41,10 @@ public sealed class ReportExportController(
     [Produces(XlsxMimeType)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> ExportGasDemand(CancellationToken ct)
     {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var permissions = await ResolvePermissionsAsync(db, ct);
-        if (permissions is null) return Unauthorized();
-
-        var data = await reportsService.GetGasDemandAsync(permissions, ct);
+        var data = await reportsService.GetGasDemandAsync(currentUser.Permissions, ct);
         var bytes = excelExportService.ExportGasDemandReport(data);
 
         return File(bytes, XlsxMimeType, $"Laporan_Potensi_Kebutuhan_Gas_{DateTime.UtcNow:yyyyMMdd}.xlsx");
@@ -59,13 +54,10 @@ public sealed class ReportExportController(
     [Produces(XlsxMimeType)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> ExportSurveyProductivity([FromQuery] int? year = null, CancellationToken ct = default)
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> ExportSurveyProductivity([FromQuery] SurveyProductivityReportQuery query, CancellationToken ct = default)
     {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var permissions = await ResolvePermissionsAsync(db, ct);
-        if (permissions is null) return Unauthorized();
-
-        var data = await reportsService.GetSurveyProductivityAsync(permissions, year, ct);
+        var data = await reportsService.GetSurveyProductivityAsync(currentUser.Permissions, query.Year, ct);
         var bytes = excelExportService.ExportSurveyProductivityReport(data);
 
         return File(bytes, XlsxMimeType, $"Laporan_Produktivitas_Survei_{DateTime.UtcNow:yyyyMMdd}.xlsx");
@@ -75,13 +67,10 @@ public sealed class ReportExportController(
     [Produces(XlsxMimeType)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> ExportNolOutcomes(CancellationToken ct)
     {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var permissions = await ResolvePermissionsAsync(db, ct);
-        if (permissions is null) return Unauthorized();
-
-        var data = await reportsService.GetNolOutcomesAsync(permissions, ct);
+        var data = await reportsService.GetNolOutcomesAsync(currentUser.Permissions, ct);
         var bytes = excelExportService.ExportNolOutcomesReport(data);
 
         return File(bytes, XlsxMimeType, $"Laporan_Hasil_NOL_RL_{DateTime.UtcNow:yyyyMMdd}.xlsx");
@@ -91,13 +80,10 @@ public sealed class ReportExportController(
     [Produces(XlsxMimeType)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> ExportAgeing(CancellationToken ct)
     {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var permissions = await ResolvePermissionsAsync(db, ct);
-        if (permissions is null) return Unauthorized();
-
-        var data = await reportsService.GetAgeingAsync(permissions, ct);
+        var data = await reportsService.GetAgeingAsync(currentUser.Permissions, ct);
         var bytes = excelExportService.ExportAgeingReport(data);
 
         return File(bytes, XlsxMimeType, $"Laporan_Penuaan_Workflow_{DateTime.UtcNow:yyyyMMdd}.xlsx");
@@ -107,16 +93,14 @@ public sealed class ReportExportController(
     [Produces(XlsxMimeType)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> ExportDirectory([FromQuery] bool includePii = false, CancellationToken ct = default)
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> ExportDirectory([FromQuery] DirectoryExportQuery query, CancellationToken ct = default)
     {
-        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        var permissions = await ResolvePermissionsAsync(db, ct);
-        if (permissions is null) return Unauthorized();
-
         // PDP Law (UU 27/2022) compliance check: Only authorized roles with Capability.ExportContactDataPii
         // can request unmasked PII contact export.
-        var allowPii = includePii && permissions.HasCapability(Capability.ExportContactDataPii);
+        var allowPii = query.IncludePii && currentUser.Permissions.HasCapability(Capability.ExportContactDataPii);
 
+        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
         var companies = await db.Companies.AsNoTracking().Take(100).ToListAsync(ct);
         var areaLookup = await db.Areas.AsNoTracking().ToDictionaryAsync(a => a.Id, a => a.Name, ct);
         var industryLookup = await db.IndustryTypes.AsNoTracking().ToDictionaryAsync(i => i.Id, i => i.Name, ct);
@@ -141,19 +125,5 @@ public sealed class ReportExportController(
             : $"Direktori_Perusahaan_{DateTime.UtcNow:yyyyMMdd}.xlsx";
 
         return File(bytes, XlsxMimeType, fileName);
-    }
-
-    private async Task<EffectivePermissions?> ResolvePermissionsAsync(SimandoDbContext db, CancellationToken ct)
-    {
-        var idClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (idClaim is null || !Guid.TryParse(idClaim, out var userId))
-            return null;
-
-        var assignments = await db.RoleAssignments
-            .AsNoTracking()
-            .Where(a => a.UserId == userId && a.Active)
-            .ToListAsync(ct);
-
-        return PermissionEvaluator.Resolve(assignments);
     }
 }

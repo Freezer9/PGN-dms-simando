@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Simando.Api.Security;
 using Simando.Application.Directory;
 using Simando.Application.Nol;
 using Simando.Application.Registration;
@@ -33,15 +34,13 @@ public sealed class CompanyStagesController(
     }
 
     [HttpPut("{id:guid}/survey")]
+    [RequireCapability(Capability.EditSurvey)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> SaveSurvey(Guid id, [FromBody] SaveSurveyFullPayload payload, CancellationToken ct)
     {
-        if (!currentUser.IsAuthenticated)
-        {
-            return Unauthorized();
-        }
-
         var result = await companyService.SaveSurveyFullAsync(
             id,
             payload.Request,
@@ -73,15 +72,13 @@ public sealed class CompanyStagesController(
     }
 
     [HttpPut("{id:guid}/plotting")]
+    [RequireCapability(Capability.EditStages1To3)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> SavePlotting(Guid id, [FromBody] SavePlottingRequest request, CancellationToken ct)
     {
-        if (!currentUser.IsAuthenticated)
-        {
-            return Unauthorized();
-        }
-
         var result = await companyService.SavePlottingAsync(
             id,
             request,
@@ -98,15 +95,13 @@ public sealed class CompanyStagesController(
     }
 
     [HttpPost("{id:guid}/promote-to-prospek")]
+    [RequireCapability(Capability.EditStages1To3)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> PromoteToProspek(Guid id, CancellationToken ct)
     {
-        if (!currentUser.IsAuthenticated)
-        {
-            return Unauthorized();
-        }
-
         var result = await companyService.PromoteToProspekAsync(
             id,
             currentUser.UserId,
@@ -138,15 +133,13 @@ public sealed class CompanyStagesController(
     }
 
     [HttpPut("{id:guid}/registration")]
+    [RequireCapability(Capability.EditA1)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> SaveRegistration(Guid id, [FromBody] SaveA1RegistrationRequest request, CancellationToken ct)
     {
-        if (!currentUser.IsAuthenticated)
-        {
-            return Unauthorized();
-        }
-
         var result = await companyService.SaveA1RegistrationAsync(
             id,
             request,
@@ -179,15 +172,13 @@ public sealed class CompanyStagesController(
     }
 
     [HttpPut("{id:guid}/nol-request")]
+    [RequireCapability(Capability.EditNolRequest)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> SaveNolRequest(Guid id, [FromBody] SaveNolRequestRequest request, CancellationToken ct)
     {
-        if (!currentUser.IsAuthenticated)
-        {
-            return Unauthorized();
-        }
-
         var result = await companyService.SaveNolRequestAsync(
             id,
             request,
@@ -217,15 +208,13 @@ public sealed class CompanyStagesController(
     }
 
     [HttpPut("{id:guid}/nol-evaluation")]
+    [RequireCapability(Capability.EditEvaluation)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> SaveNolEvaluation(Guid id, [FromBody] SaveNolEvaluationRequest request, CancellationToken ct)
     {
-        if (!currentUser.IsAuthenticated)
-        {
-            return Unauthorized();
-        }
-
         var result = await companyService.SaveNolEvaluationAsync(
             id,
             request,
@@ -255,15 +244,13 @@ public sealed class CompanyStagesController(
     }
 
     [HttpPut("{id:guid}/nol-issuance")]
+    [RequireCapability(Capability.IssueNolRl)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> SaveNolIssuance(Guid id, [FromBody] SaveNolIssuanceRequest request, CancellationToken ct)
     {
-        if (!currentUser.IsAuthenticated)
-        {
-            return Unauthorized();
-        }
-
         var result = await companyService.SaveNolIssuanceAsync(
             id,
             request,

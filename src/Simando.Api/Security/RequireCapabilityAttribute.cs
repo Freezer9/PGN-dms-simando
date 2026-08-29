@@ -10,4 +10,16 @@ public sealed class RequireCapabilityAttribute : AuthorizeAttribute
     {
         Policy = $"Capability_{capability}";
     }
+
+    public RequireCapabilityAttribute(params Capability[] capabilities)
+    {
+        if (capabilities.Length == 1)
+        {
+            Policy = $"Capability_{capabilities[0]}";
+        }
+        else if (capabilities.Length > 1)
+        {
+            Policy = $"CapabilityAny_{string.Join("_", capabilities)}";
+        }
+    }
 }

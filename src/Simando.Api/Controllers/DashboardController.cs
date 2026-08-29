@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Simando.Api.Security;
 using Simando.Application.Dashboard;
 using Simando.Domain.Security;
 using Simando.Infrastructure.Persistence;
@@ -28,8 +29,6 @@ public sealed class DashboardController(
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetDashboardStats(CancellationToken ct)
     {
-        if (!currentUser.IsAuthenticated) return Unauthorized();
-
         // Determine primary role priority
         if (currentUser.Roles.Contains(Role.SystemAdmin) || currentUser.Permissions.HasCapability(Capability.ManageMasterData))
         {
@@ -77,8 +76,6 @@ public sealed class DashboardController(
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetSalesDashboard([FromQuery] Guid? areaId = null, CancellationToken ct = default)
     {
-        if (!currentUser.IsAuthenticated) return Unauthorized();
-
         var targetAreaId = areaId ?? currentUser.Permissions.AreaId;
         if (!targetAreaId.HasValue)
         {
@@ -101,8 +98,6 @@ public sealed class DashboardController(
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetApproverDashboard(CancellationToken ct)
     {
-        if (!currentUser.IsAuthenticated) return Unauthorized();
-
         var data = await dashboardService.GetApproverDashboardAsync(currentUser.UserId, currentUser.Permissions, currentUser.Roles, ct);
         return Ok(data);
     }
@@ -113,8 +108,6 @@ public sealed class DashboardController(
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetRegionalAdminDashboard([FromQuery] Guid? regionId = null, CancellationToken ct = default)
     {
-        if (!currentUser.IsAuthenticated) return Unauthorized();
-
         var targetRegionId = regionId ?? currentUser.Permissions.RegionId;
         if (!targetRegionId.HasValue)
         {
@@ -133,8 +126,10 @@ public sealed class DashboardController(
     }
 
     [HttpGet("system-admin")]
+    [RequireCapability(Capability.ManageMasterData)]
     [ProducesResponseType<SystemAdminDashboardDto>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> GetSystemAdminDashboard(CancellationToken ct)
     {
         var data = await dashboardService.GetSystemAdminDashboardAsync(ct);

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Simando.Api.Security;
 using Simando.Application.Common;
 using Simando.Application.Security;
 using Simando.Application.Workflow;
@@ -29,30 +30,23 @@ public sealed class EmergencyAdminController(
     // 1. Break Glass Emergency Access
     // ==========================================
     [HttpGet("break-glass/logs")]
+    [RequireCapability(Capability.ViewBreakGlassActivity)]
     [ProducesResponseType<PagedResult<BreakGlassAccessDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> GetBreakGlassLogs(
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 25,
+        [FromQuery] PaginationQuery query,
         CancellationToken ct = default)
     {
-        if (!currentUser.IsAuthenticated) return Unauthorized();
-
-        if (!currentUser.Permissions.HasCapability(Capability.ViewBreakGlassActivity) && currentUser.Scope != AccessScope.All)
-        {
-            return Forbid();
-        }
-
-        if (page < 1) page = 1;
-        if (pageSize < 1) pageSize = 10;
-        if (pageSize > 100) pageSize = 100;
+        var page = query.Page < 1 ? 1 : query.Page;
+        var pageSize = query.PageSize < 1 ? 10 : (query.PageSize > 100 ? 100 : query.PageSize);
 
         var logs = await breakGlassService.GetPagedAuditLogsAsync(currentUser.Permissions, page, pageSize, ct);
         return Ok(logs);
     }
 
     [HttpPost("break-glass/request")]
+    [RequireCapability(Capability.BreakGlassRecordRead)]
     [ProducesResponseType<BreakGlassAccessDto>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -62,13 +56,6 @@ public sealed class EmergencyAdminController(
         if (string.IsNullOrWhiteSpace(request.Reason))
         {
             return BadRequest(new { error = "Alasan akses darurat wajib diisi." });
-        }
-
-        if (!currentUser.IsAuthenticated) return Unauthorized();
-
-        if (!currentUser.Permissions.HasCapability(Capability.BreakGlassRecordRead))
-        {
-            return Forbid();
         }
 
         var access = await breakGlassService.RequestAccessAsync(
@@ -90,36 +77,24 @@ public sealed class EmergencyAdminController(
     // 2. Cross-Region Stuck Steps (System Admin)
     // ==========================================
     [HttpGet("stuck-steps")]
+    [RequireCapability(Capability.ManageMasterData)]
     [ProducesResponseType<IReadOnlyList<StuckStepItemDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> GetStuckSteps(CancellationToken ct)
     {
-        if (!currentUser.IsAuthenticated) return Unauthorized();
-
-        if (!currentUser.Permissions.HasCapability(Capability.ManageMasterData) && currentUser.Scope != AccessScope.All)
-        {
-            return Forbid();
-        }
-
         var result = await workflowService.GetStuckStepsAsync(currentUser.Permissions, ct);
         return Ok(result);
     }
 
     [HttpPost("stuck-steps/reassign")]
+    [RequireCapability(Capability.ReassignWorkflowStep)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> ReassignStuckStep([FromBody] AdminReassignStepRequest request, CancellationToken ct)
     {
-        if (!currentUser.IsAuthenticated) return Unauthorized();
-
-        if (!currentUser.Permissions.HasCapability(Capability.ReassignWorkflowStep) && currentUser.Scope != AccessScope.All)
-        {
-            return Forbid();
-        }
-
         var result = await workflowService.ReassignStepAsync(
             request.StepId,
             request.TargetUserId,

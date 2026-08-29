@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Simando.Api.Security;
 using Simando.Application.Directory;
 using Simando.Domain.Security;
 
@@ -21,15 +22,13 @@ public sealed class CompanyContactsController(
     }
 
     [HttpPost("{id:guid}/contacts")]
+    [RequireCapability(Capability.EditStages1To3)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> AddContact(Guid id, [FromBody] SaveContactRequest request, CancellationToken ct)
     {
-        if (!currentUser.IsAuthenticated)
-        {
-            return Unauthorized();
-        }
-
         var result = await companyService.AddContactAsync(
             id,
             request,
@@ -46,15 +45,13 @@ public sealed class CompanyContactsController(
     }
 
     [HttpPut("{id:guid}/contacts/{contactId:guid}")]
+    [RequireCapability(Capability.EditStages1To3)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> UpdateContact(Guid id, Guid contactId, [FromBody] SaveContactRequest request, CancellationToken ct)
     {
-        if (!currentUser.IsAuthenticated)
-        {
-            return Unauthorized();
-        }
-
         var result = await companyService.UpdateContactAsync(
             id,
             contactId,
@@ -72,15 +69,13 @@ public sealed class CompanyContactsController(
     }
 
     [HttpDelete("{id:guid}/contacts/{contactId:guid}")]
+    [RequireCapability(Capability.EditStages1To3)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> DeleteContact(Guid id, Guid contactId, CancellationToken ct)
     {
-        if (!currentUser.IsAuthenticated)
-        {
-            return Unauthorized();
-        }
-
         var result = await companyService.DeleteContactAsync(
             id,
             contactId,

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Simando.Api.Security;
 using Simando.Application.Workflow;
 using Simando.Domain.Security;
 using Simando.Domain.Workflow;
@@ -17,17 +18,13 @@ public sealed class WorkflowController(
     ICurrentUser currentUser) : ControllerBase
 {
     [HttpPost("steps/{stepId:guid}/act")]
+    [RequireCapability(Capability.ActOnApprovalStep)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> Act(Guid stepId, [FromBody] ActOnStepRequest request, CancellationToken ct)
     {
-        if (!currentUser.IsAuthenticated)
-        {
-            return Unauthorized();
-        }
-
         var result = await workflowService.ActAsync(
             stepId,
             request.Action,
@@ -50,17 +47,13 @@ public sealed class WorkflowController(
     }
 
     [HttpPost("steps/{stepId:guid}/reassign")]
+    [RequireCapability(Capability.ReassignWorkflowStep)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> Reassign(Guid stepId, [FromBody] ReassignStepRequest request, CancellationToken ct)
     {
-        if (!currentUser.IsAuthenticated)
-        {
-            return Unauthorized();
-        }
-
         var result = await workflowService.ReassignStepAsync(
             stepId,
             request.NewUserId,
