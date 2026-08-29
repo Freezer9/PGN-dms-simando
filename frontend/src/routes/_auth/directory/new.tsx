@@ -1,3 +1,4 @@
+import { useForm, useStore } from "@tanstack/react-form";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
 	ArrowLeft,
@@ -10,10 +11,10 @@ import {
 	Phone,
 	Save,
 } from "lucide-react";
-import * as React from "react";
 import { toast } from "sonner";
 import { $api } from "@/api/client";
 import type { CreateCompanyRequest } from "@/api/types";
+import { FormField } from "@/components/form/form-field";
 import { Map, type MapCoordinates } from "@/components/map";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,7 +26,6 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
 	Select,
 	SelectContent,
@@ -34,6 +34,10 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { requireCapabilities } from "@/lib/auth-middleware";
+import {
+	type CreateCompanyFormValues,
+	createCompanySchema,
+} from "@/lib/schemas";
 
 export const Route = createFileRoute("/_auth/directory/new")({
 	beforeLoad: requireCapabilities(["CreateCompany"]),
@@ -42,29 +46,6 @@ export const Route = createFileRoute("/_auth/directory/new")({
 
 function CreateCompanyPage() {
 	const navigate = useNavigate();
-
-	// Form State
-	const [namaPerusahaan, setNamaPerusahaan] = React.useState("");
-	const [industryTypeId, setIndustryTypeId] = React.useState("");
-	const [areaId, setAreaId] = React.useState("");
-	const [npwp, setNpwp] = React.useState("");
-	const [email, setEmail] = React.useState("");
-	const [telp, setTelp] = React.useState("");
-	const [website, setWebsite] = React.useState("");
-	const [alamat, setAlamat] = React.useState("");
-	const [kodePos, setKodePos] = React.useState("");
-
-	// Cascading Geography state
-	const [provinceId, setProvinceId] = React.useState("");
-	const [regencyId, setRegencyId] = React.useState("");
-	const [districtId, setDistrictId] = React.useState("");
-	const [villageId, setVillageId] = React.useState("");
-
-	// Location Coordinates state (Default to Jakarta coordinates)
-	const [coordinates, setCoordinates] = React.useState<MapCoordinates>({
-		latitude: -6.2088,
-		longitude: 106.8456,
-	});
 
 	// Master Data Queries
 	const { data: industryTypes } = $api.useQuery(
@@ -75,45 +56,6 @@ function CreateCompanyPage() {
 
 	// Cascading Geography Queries
 	const { data: provinces } = $api.useQuery("get", "/api/geography/provinces");
-
-	const { data: regencies, isLoading: loadingRegencies } = $api.useQuery(
-		"get",
-		"/api/geography/regencies",
-		{
-			params: {
-				query: { provinceId: provinceId },
-			},
-		},
-		{
-			enabled: Boolean(provinceId),
-		},
-	);
-
-	const { data: districts, isLoading: loadingDistricts } = $api.useQuery(
-		"get",
-		"/api/geography/districts",
-		{
-			params: {
-				query: { regencyId: regencyId },
-			},
-		},
-		{
-			enabled: Boolean(regencyId),
-		},
-	);
-
-	const { data: villages, isLoading: loadingVillages } = $api.useQuery(
-		"get",
-		"/api/geography/villages",
-		{
-			params: {
-				query: { districtId: districtId },
-			},
-		},
-		{
-			enabled: Boolean(districtId),
-		},
-	);
 
 	// Create Mutation
 	const createCompanyMutation = $api.useMutation("post", "/api/companies", {
@@ -134,52 +76,96 @@ function CreateCompanyPage() {
 		},
 	});
 
-	const handleSubmit = (e: React.FormEvent) => {
-		e.preventDefault();
+	const form = useForm({
+		defaultValues: {
+			namaPerusahaan: "",
+			industryTypeId: "",
+			areaId: "",
+			npwp: "",
+			email: "",
+			telp: "",
+			website: "",
+			alamat: "",
+			kodePos: "",
+			provinceId: "",
+			regencyId: "",
+			districtId: "",
+			villageId: "",
+			latitude: -6.2088,
+			longitude: 106.8456,
+		} as CreateCompanyFormValues,
+		validators: {
+			onChange: createCompanySchema,
+		},
+		onSubmit: async ({ value }) => {
+			const payload: CreateCompanyRequest = {
+				namaPerusahaan: value.namaPerusahaan.trim(),
+				industryTypeId: value.industryTypeId,
+				areaId: value.areaId,
+				villageId: value.villageId,
+				alamat: value.alamat.trim(),
+				latitude: value.latitude,
+				longitude: value.longitude,
+				npwp: value.npwp?.trim() || null,
+				email: value.email?.trim() || null,
+				telp: value.telp?.trim() || null,
+				website: value.website?.trim() || null,
+				kodePos: value.kodePos?.trim() || null,
+			};
 
-		if (!namaPerusahaan.trim()) {
-			toast.error("Nama Perusahaan wajib diisi");
-			return;
-		}
+			await createCompanyMutation.mutateAsync({ body: payload });
+		},
+	});
 
-		if (!industryTypeId) {
-			toast.error("Sektor Industri wajib dipilih");
-			return;
-		}
+	// Subscribe to geography field values for cascading queries
+	const provinceId = useStore(form.store, (state) => state.values.provinceId);
+	const regencyId = useStore(form.store, (state) => state.values.regencyId);
+	const districtId = useStore(form.store, (state) => state.values.districtId);
+	const latitude = useStore(form.store, (state) => state.values.latitude);
+	const longitude = useStore(form.store, (state) => state.values.longitude);
 
-		if (!areaId) {
-			toast.error("Wilayah Operasional Area wajib dipilih");
-			return;
-		}
+	const { data: regencies, isLoading: loadingRegencies } = $api.useQuery(
+		"get",
+		"/api/geography/regencies",
+		{
+			params: {
+				query: { provinceId },
+			},
+		},
+		{
+			enabled: Boolean(provinceId),
+		},
+	);
 
-		if (!villageId) {
-			toast.error(
-				"Hierarki Lokasi Administratif (Kelurahan/Desa) wajib dipilih lengkap",
-			);
-			return;
-		}
+	const { data: districts, isLoading: loadingDistricts } = $api.useQuery(
+		"get",
+		"/api/geography/districts",
+		{
+			params: {
+				query: { regencyId },
+			},
+		},
+		{
+			enabled: Boolean(regencyId),
+		},
+	);
 
-		if (!alamat.trim()) {
-			toast.error("Alamat lengkap wajib diisi");
-			return;
-		}
+	const { data: villages, isLoading: loadingVillages } = $api.useQuery(
+		"get",
+		"/api/geography/villages",
+		{
+			params: {
+				query: { districtId },
+			},
+		},
+		{
+			enabled: Boolean(districtId),
+		},
+	);
 
-		const payload: CreateCompanyRequest = {
-			namaPerusahaan: namaPerusahaan.trim(),
-			industryTypeId,
-			areaId,
-			villageId,
-			alamat: alamat.trim(),
-			latitude: coordinates.latitude,
-			longitude: coordinates.longitude,
-			npwp: npwp.trim() || null,
-			email: email.trim() || null,
-			telp: telp.trim() || null,
-			website: website.trim() || null,
-			kodePos: kodePos.trim() || null,
-		};
-
-		createCompanyMutation.mutate({ body: payload });
+	const coordinates: MapCoordinates = {
+		latitude,
+		longitude,
 	};
 
 	return (
@@ -208,7 +194,14 @@ function CreateCompanyPage() {
 				</Badge>
 			</div>
 
-			<form onSubmit={handleSubmit} className="space-y-6">
+			<form
+				onSubmit={(e) => {
+					e.preventDefault();
+					e.stopPropagation();
+					form.handleSubmit();
+				}}
+				className="space-y-6"
+			>
 				{/* Section 1: Data Identitas Perusahaan */}
 				<Card className="border-border/60 shadow-xs">
 					<CardHeader className="pb-3">
@@ -223,128 +216,205 @@ function CreateCompanyPage() {
 					<CardContent className="space-y-4">
 						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 							{/* Nama Perusahaan */}
-							<div className="space-y-1.5 md:col-span-2">
-								<Label htmlFor="namaPerusahaan" className="text-xs font-medium">
-									Nama Perusahaan <span className="text-destructive">*</span>
-								</Label>
-								<Input
-									id="namaPerusahaan"
-									placeholder="Contoh: PT Sumber Pangan Nusantara"
-									value={namaPerusahaan}
-									onChange={(e) => setNamaPerusahaan(e.target.value)}
-									className="text-xs h-9"
-									required
-								/>
+							<div className="md:col-span-2">
+								<form.Field name="namaPerusahaan">
+									{(field) => {
+										const error = field.state.meta.errors[0]?.message;
+										return (
+											<FormField label="Nama Perusahaan" required error={error}>
+												<Input
+													id={field.name}
+													name={field.name}
+													placeholder="Contoh: PT Sumber Pangan Nusantara"
+													value={field.state.value}
+													onBlur={field.handleBlur}
+													onChange={(e) => field.handleChange(e.target.value)}
+													className="text-xs h-9"
+												/>
+											</FormField>
+										);
+									}}
+								</form.Field>
 							</div>
 
 							{/* Sektor Industri */}
-							<div className="space-y-1.5">
-								<Label htmlFor="industryType" className="text-xs font-medium">
-									Sektor Industri <span className="text-destructive">*</span>
-								</Label>
-								<Select
-									value={industryTypeId}
-									onValueChange={setIndustryTypeId}
-								>
-									<SelectTrigger id="industryType" className="text-xs h-9">
-										<SelectValue placeholder="Pilih Sektor Industri" />
-									</SelectTrigger>
-									<SelectContent>
-										{industryTypes?.map((it) => (
-											<SelectItem key={it.id} value={it.id}>
-												{it.name}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
+							<div>
+								<form.Field name="industryTypeId">
+									{(field) => {
+										const error = field.state.meta.errors[0]?.message;
+										return (
+											<FormField label="Sektor Industri" required error={error}>
+												<Select
+													value={field.state.value}
+													onValueChange={(val) => field.handleChange(val)}
+												>
+													<SelectTrigger
+														id={field.name}
+														className="text-xs h-9"
+													>
+														<SelectValue placeholder="Pilih Sektor Industri" />
+													</SelectTrigger>
+													<SelectContent>
+														{industryTypes?.map((it) => (
+															<SelectItem key={it.id} value={it.id}>
+																{it.name}
+															</SelectItem>
+														))}
+													</SelectContent>
+												</Select>
+											</FormField>
+										);
+									}}
+								</form.Field>
 							</div>
 
 							{/* Area Kerja PGN */}
-							<div className="space-y-1.5">
-								<Label htmlFor="area" className="text-xs font-medium">
-									Wilayah Area Kerja PGN{" "}
-									<span className="text-destructive">*</span>
-								</Label>
-								<Select value={areaId} onValueChange={setAreaId}>
-									<SelectTrigger id="area" className="text-xs h-9">
-										<SelectValue placeholder="Pilih Area Kerja" />
-									</SelectTrigger>
-									<SelectContent>
-										{areas?.map((a) => (
-											<SelectItem key={a.id} value={a.id}>
-												{a.name} ({a.code})
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
+							<div>
+								<form.Field name="areaId">
+									{(field) => {
+										const error = field.state.meta.errors[0]?.message;
+										return (
+											<FormField
+												label="Wilayah Area Kerja PGN"
+												required
+												error={error}
+											>
+												<Select
+													value={field.state.value}
+													onValueChange={(val) => field.handleChange(val)}
+												>
+													<SelectTrigger
+														id={field.name}
+														className="text-xs h-9"
+													>
+														<SelectValue placeholder="Pilih Area Kerja" />
+													</SelectTrigger>
+													<SelectContent>
+														{areas?.map((a) => (
+															<SelectItem key={a.id} value={a.id}>
+																{a.name} ({a.code})
+															</SelectItem>
+														))}
+													</SelectContent>
+												</Select>
+											</FormField>
+										);
+									}}
+								</form.Field>
 							</div>
 
 							{/* NPWP */}
-							<div className="space-y-1.5">
-								<Label htmlFor="npwp" className="text-xs font-medium">
-									Nomor NPWP Perusahaan
-								</Label>
-								<Input
-									id="npwp"
-									placeholder="Contoh: 01.234.567.8-901.000"
-									value={npwp}
-									onChange={(e) => setNpwp(e.target.value)}
-									className="text-xs h-9"
-								/>
+							<div>
+								<form.Field name="npwp">
+									{(field) => {
+										const error = field.state.meta.errors[0]?.message;
+										return (
+											<FormField label="Nomor NPWP Perusahaan" error={error}>
+												<Input
+													id={field.name}
+													name={field.name}
+													placeholder="Contoh: 01.234.567.8-901.000"
+													value={field.state.value || ""}
+													onBlur={field.handleBlur}
+													onChange={(e) => field.handleChange(e.target.value)}
+													className="text-xs h-9"
+												/>
+											</FormField>
+										);
+									}}
+								</form.Field>
 							</div>
 
 							{/* Website */}
-							<div className="space-y-1.5">
-								<Label
-									htmlFor="website"
-									className="text-xs font-medium flex items-center gap-1"
-								>
-									<Globe className="size-3 text-muted-foreground" /> Website
-								</Label>
-								<Input
-									id="website"
-									type="url"
-									placeholder="https://www.perusahaan.co.id"
-									value={website}
-									onChange={(e) => setWebsite(e.target.value)}
-									className="text-xs h-9"
-								/>
+							<div>
+								<form.Field name="website">
+									{(field) => {
+										const error = field.state.meta.errors[0]?.message;
+										return (
+											<FormField
+												label={
+													<span className="flex items-center gap-1">
+														<Globe className="size-3 text-muted-foreground" />{" "}
+														Website
+													</span>
+												}
+												error={error}
+											>
+												<Input
+													id={field.name}
+													name={field.name}
+													type="url"
+													placeholder="https://www.perusahaan.co.id"
+													value={field.state.value || ""}
+													onBlur={field.handleBlur}
+													onChange={(e) => field.handleChange(e.target.value)}
+													className="text-xs h-9"
+												/>
+											</FormField>
+										);
+									}}
+								</form.Field>
 							</div>
 
 							{/* Email Perusahaan */}
-							<div className="space-y-1.5">
-								<Label
-									htmlFor="email"
-									className="text-xs font-medium flex items-center gap-1"
-								>
-									<Mail className="size-3 text-muted-foreground" /> Email Kontak
-								</Label>
-								<Input
-									id="email"
-									type="email"
-									placeholder="contact@perusahaan.co.id"
-									value={email}
-									onChange={(e) => setEmail(e.target.value)}
-									className="text-xs h-9"
-								/>
+							<div>
+								<form.Field name="email">
+									{(field) => {
+										const error = field.state.meta.errors[0]?.message;
+										return (
+											<FormField
+												label={
+													<span className="flex items-center gap-1">
+														<Mail className="size-3 text-muted-foreground" />{" "}
+														Email Kontak
+													</span>
+												}
+												error={error}
+											>
+												<Input
+													id={field.name}
+													name={field.name}
+													type="email"
+													placeholder="contact@perusahaan.co.id"
+													value={field.state.value || ""}
+													onBlur={field.handleBlur}
+													onChange={(e) => field.handleChange(e.target.value)}
+													className="text-xs h-9"
+												/>
+											</FormField>
+										);
+									}}
+								</form.Field>
 							</div>
 
 							{/* Telepon Perusahaan */}
-							<div className="space-y-1.5">
-								<Label
-									htmlFor="telp"
-									className="text-xs font-medium flex items-center gap-1"
-								>
-									<Phone className="size-3 text-muted-foreground" /> No. Telepon
-									/ Hunting
-								</Label>
-								<Input
-									id="telp"
-									placeholder="Contoh: 021-5551234"
-									value={telp}
-									onChange={(e) => setTelp(e.target.value)}
-									className="text-xs h-9"
-								/>
+							<div>
+								<form.Field name="telp">
+									{(field) => {
+										const error = field.state.meta.errors[0]?.message;
+										return (
+											<FormField
+												label={
+													<span className="flex items-center gap-1">
+														<Phone className="size-3 text-muted-foreground" />{" "}
+														No. Telepon / Hunting
+													</span>
+												}
+												error={error}
+											>
+												<Input
+													id={field.name}
+													name={field.name}
+													placeholder="Contoh: 021-5551234"
+													value={field.state.value || ""}
+													onBlur={field.handleBlur}
+													onChange={(e) => field.handleChange(e.target.value)}
+													className="text-xs h-9"
+												/>
+											</FormField>
+										);
+									}}
+								</form.Field>
 							</div>
 						</div>
 					</CardContent>
@@ -365,160 +435,210 @@ function CreateCompanyPage() {
 					<CardContent className="space-y-4">
 						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
 							{/* Provinsi */}
-							<div className="space-y-1.5">
-								<Label className="text-xs font-medium">
-									Provinsi <span className="text-destructive">*</span>
-								</Label>
-								<Select
-									value={provinceId}
-									onValueChange={(val) => {
-										setProvinceId(val);
-										setRegencyId("");
-										setDistrictId("");
-										setVillageId("");
+							<div>
+								<form.Field name="provinceId">
+									{(field) => {
+										const error = field.state.meta.errors[0]?.message;
+										return (
+											<FormField label="Provinsi" required error={error}>
+												<Select
+													value={field.state.value}
+													onValueChange={(val) => {
+														field.handleChange(val);
+														form.setFieldValue("regencyId", "");
+														form.setFieldValue("districtId", "");
+														form.setFieldValue("villageId", "");
+													}}
+												>
+													<SelectTrigger className="text-xs h-9">
+														<SelectValue placeholder="Pilih Provinsi" />
+													</SelectTrigger>
+													<SelectContent>
+														{provinces?.map((p) => (
+															<SelectItem key={p.id} value={p.id}>
+																{p.name}
+															</SelectItem>
+														))}
+													</SelectContent>
+												</Select>
+											</FormField>
+										);
 									}}
-								>
-									<SelectTrigger className="text-xs h-9">
-										<SelectValue placeholder="Pilih Provinsi" />
-									</SelectTrigger>
-									<SelectContent>
-										{provinces?.map((p) => (
-											<SelectItem key={p.id} value={p.id}>
-												{p.name}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
+								</form.Field>
 							</div>
 
 							{/* Kota / Kabupaten */}
-							<div className="space-y-1.5">
-								<Label className="text-xs font-medium">
-									Kota / Kabupaten <span className="text-destructive">*</span>
-								</Label>
-								<Select
-									value={regencyId}
-									disabled={!provinceId || loadingRegencies}
-									onValueChange={(val) => {
-										setRegencyId(val);
-										setDistrictId("");
-										setVillageId("");
+							<div>
+								<form.Field name="regencyId">
+									{(field) => {
+										const error = field.state.meta.errors[0]?.message;
+										return (
+											<FormField
+												label="Kota / Kabupaten"
+												required
+												error={error}
+											>
+												<Select
+													value={field.state.value}
+													disabled={!provinceId || loadingRegencies}
+													onValueChange={(val) => {
+														field.handleChange(val);
+														form.setFieldValue("districtId", "");
+														form.setFieldValue("villageId", "");
+													}}
+												>
+													<SelectTrigger className="text-xs h-9">
+														<SelectValue
+															placeholder={
+																loadingRegencies
+																	? "Memuat..."
+																	: !provinceId
+																		? "Pilih Provinsi Dahulu"
+																		: "Pilih Kota/Kabupaten"
+															}
+														/>
+													</SelectTrigger>
+													<SelectContent>
+														{regencies?.map((r) => (
+															<SelectItem key={r.id} value={r.id}>
+																{r.name}
+															</SelectItem>
+														))}
+													</SelectContent>
+												</Select>
+											</FormField>
+										);
 									}}
-								>
-									<SelectTrigger className="text-xs h-9">
-										<SelectValue
-											placeholder={
-												loadingRegencies
-													? "Memuat..."
-													: !provinceId
-														? "Pilih Provinsi Dahulu"
-														: "Pilih Kota/Kabupaten"
-											}
-										/>
-									</SelectTrigger>
-									<SelectContent>
-										{regencies?.map((r) => (
-											<SelectItem key={r.id} value={r.id}>
-												{r.name}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
+								</form.Field>
 							</div>
 
 							{/* Kecamatan */}
-							<div className="space-y-1.5">
-								<Label className="text-xs font-medium">
-									Kecamatan <span className="text-destructive">*</span>
-								</Label>
-								<Select
-									value={districtId}
-									disabled={!regencyId || loadingDistricts}
-									onValueChange={(val) => {
-										setDistrictId(val);
-										setVillageId("");
+							<div>
+								<form.Field name="districtId">
+									{(field) => {
+										const error = field.state.meta.errors[0]?.message;
+										return (
+											<FormField label="Kecamatan" required error={error}>
+												<Select
+													value={field.state.value}
+													disabled={!regencyId || loadingDistricts}
+													onValueChange={(val) => {
+														field.handleChange(val);
+														form.setFieldValue("villageId", "");
+													}}
+												>
+													<SelectTrigger className="text-xs h-9">
+														<SelectValue
+															placeholder={
+																loadingDistricts
+																	? "Memuat..."
+																	: !regencyId
+																		? "Pilih Kota/Kab Dahulu"
+																		: "Pilih Kecamatan"
+															}
+														/>
+													</SelectTrigger>
+													<SelectContent>
+														{districts?.map((d) => (
+															<SelectItem key={d.id} value={d.id}>
+																{d.name}
+															</SelectItem>
+														))}
+													</SelectContent>
+												</Select>
+											</FormField>
+										);
 									}}
-								>
-									<SelectTrigger className="text-xs h-9">
-										<SelectValue
-											placeholder={
-												loadingDistricts
-													? "Memuat..."
-													: !regencyId
-														? "Pilih Kota/Kab Dahulu"
-														: "Pilih Kecamatan"
-											}
-										/>
-									</SelectTrigger>
-									<SelectContent>
-										{districts?.map((d) => (
-											<SelectItem key={d.id} value={d.id}>
-												{d.name}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
+								</form.Field>
 							</div>
 
 							{/* Kelurahan / Desa */}
-							<div className="space-y-1.5">
-								<Label className="text-xs font-medium">
-									Kelurahan / Desa <span className="text-destructive">*</span>
-								</Label>
-								<Select
-									value={villageId}
-									disabled={!districtId || loadingVillages}
-									onValueChange={setVillageId}
-								>
-									<SelectTrigger className="text-xs h-9">
-										<SelectValue
-											placeholder={
-												loadingVillages
-													? "Memuat..."
-													: !districtId
-														? "Pilih Kecamatan Dahulu"
-														: "Pilih Kelurahan/Desa"
-											}
-										/>
-									</SelectTrigger>
-									<SelectContent>
-										{villages?.map((v) => (
-											<SelectItem key={v.id} value={v.id}>
-												{v.name}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
+							<div>
+								<form.Field name="villageId">
+									{(field) => {
+										const error = field.state.meta.errors[0]?.message;
+										return (
+											<FormField
+												label="Kelurahan / Desa"
+												required
+												error={error}
+											>
+												<Select
+													value={field.state.value}
+													disabled={!districtId || loadingVillages}
+													onValueChange={(val) => field.handleChange(val)}
+												>
+													<SelectTrigger className="text-xs h-9">
+														<SelectValue
+															placeholder={
+																loadingVillages
+																	? "Memuat..."
+																	: !districtId
+																		? "Pilih Kecamatan Dahulu"
+																		: "Pilih Kelurahan/Desa"
+															}
+														/>
+													</SelectTrigger>
+													<SelectContent>
+														{villages?.map((v) => (
+															<SelectItem key={v.id} value={v.id}>
+																{v.name}
+															</SelectItem>
+														))}
+													</SelectContent>
+												</Select>
+											</FormField>
+										);
+									}}
+								</form.Field>
 							</div>
 						</div>
 
 						{/* Alamat Lengkap & Kode Pos */}
 						<div className="grid grid-cols-1 md:grid-cols-4 gap-3 pt-2">
-							<div className="space-y-1.5 md:col-span-3">
-								<Label htmlFor="alamat" className="text-xs font-medium">
-									Alamat Lengkap (Jalan, Kawasan, Blok, No){" "}
-									<span className="text-destructive">*</span>
-								</Label>
-								<Input
-									id="alamat"
-									placeholder="Contoh: Jl. Industri Raya No. 45, Kawasan Industri Jababeka V"
-									value={alamat}
-									onChange={(e) => setAlamat(e.target.value)}
-									className="text-xs h-9"
-									required
-								/>
+							<div className="md:col-span-3">
+								<form.Field name="alamat">
+									{(field) => {
+										const error = field.state.meta.errors[0]?.message;
+										return (
+											<FormField
+												label="Alamat Lengkap (Jalan, Kawasan, Blok, No)"
+												required
+												error={error}
+											>
+												<Input
+													id={field.name}
+													name={field.name}
+													placeholder="Contoh: Jl. Industri Raya No. 45, Kawasan Industri Jababeka V"
+													value={field.state.value}
+													onBlur={field.handleBlur}
+													onChange={(e) => field.handleChange(e.target.value)}
+													className="text-xs h-9"
+												/>
+											</FormField>
+										);
+									}}
+								</form.Field>
 							</div>
-							<div className="space-y-1.5">
-								<Label htmlFor="kodePos" className="text-xs font-medium">
-									Kode Pos
-								</Label>
-								<Input
-									id="kodePos"
-									placeholder="Contoh: 17530"
-									value={kodePos}
-									onChange={(e) => setKodePos(e.target.value)}
-									className="text-xs h-9"
-								/>
+							<div>
+								<form.Field name="kodePos">
+									{(field) => {
+										const error = field.state.meta.errors[0]?.message;
+										return (
+											<FormField label="Kode Pos" error={error}>
+												<Input
+													id={field.name}
+													name={field.name}
+													placeholder="Contoh: 17530"
+													value={field.state.value || ""}
+													onBlur={field.handleBlur}
+													onChange={(e) => field.handleChange(e.target.value)}
+													className="text-xs h-9"
+												/>
+											</FormField>
+										);
+									}}
+								</form.Field>
 							</div>
 						</div>
 					</CardContent>
@@ -551,7 +671,10 @@ function CreateCompanyPage() {
 							<Map
 								center={[coordinates.longitude, coordinates.latitude]}
 								selectedCoordinates={coordinates}
-								onCoordinateSelect={(coords) => setCoordinates(coords)}
+								onCoordinateSelect={(coords) => {
+									form.setFieldValue("latitude", coords.latitude);
+									form.setFieldValue("longitude", coords.longitude);
+								}}
 								className="h-full w-full"
 							/>
 						</div>
@@ -572,23 +695,29 @@ function CreateCompanyPage() {
 					<Button variant="outline" asChild className="text-xs h-9 px-4">
 						<Link to="/directory">Batal</Link>
 					</Button>
-					<Button
-						type="submit"
-						disabled={createCompanyMutation.isPending}
-						className="text-xs h-9 px-5 flex items-center gap-2"
+					<form.Subscribe
+						selector={(state) => [state.canSubmit, state.isSubmitting]}
 					>
-						{createCompanyMutation.isPending ? (
-							<>
-								<Loader2 className="size-4 animate-spin" />
-								<span>Menyimpan...</span>
-							</>
-						) : (
-							<>
-								<Save className="size-4" />
-								<span>Daftarkan Calon Pelanggan</span>
-							</>
+						{([canSubmit, isSubmitting]) => (
+							<Button
+								type="submit"
+								disabled={!canSubmit || isSubmitting}
+								className="text-xs h-9 px-5 flex items-center gap-2"
+							>
+								{isSubmitting ? (
+									<>
+										<Loader2 className="size-4 animate-spin" />
+										<span>Menyimpan...</span>
+									</>
+								) : (
+									<>
+										<Save className="size-4" />
+										<span>Daftarkan Calon Pelanggan</span>
+									</>
+								)}
+							</Button>
 						)}
-					</Button>
+					</form.Subscribe>
 				</div>
 			</form>
 		</div>

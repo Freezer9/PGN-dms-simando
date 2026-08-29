@@ -1,3 +1,4 @@
+import { useForm } from "@tanstack/react-form";
 import { createFileRoute } from "@tanstack/react-router";
 import {
 	AlertTriangle,
@@ -14,6 +15,7 @@ import {
 import * as React from "react";
 import { $api } from "@/api/client";
 import type { BreakGlassAccessDto } from "@/api/types";
+import { FormField } from "@/components/form/form-field";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,7 +28,6 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
 	Table,
 	TableBody,
@@ -36,6 +37,10 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import {
+	type BreakGlassRequestFormValues,
+	breakGlassRequestSchema,
+} from "@/lib/schemas";
 
 export const Route = createFileRoute("/_auth/admin/break-glass")({
 	component: BreakGlassPage,
@@ -44,8 +49,6 @@ export const Route = createFileRoute("/_auth/admin/break-glass")({
 function BreakGlassPage() {
 	const [requestDialogOpen, setRequestDialogOpen] = React.useState(false);
 	const [companySearch, setCompanySearch] = React.useState("");
-	const [selectedCompanyId, setSelectedCompanyId] = React.useState<string>("");
-	const [reason, setReason] = React.useState("");
 	const [page, setPage] = React.useState(1);
 	const [pageSize] = React.useState(20);
 	const [error, setError] = React.useState<string | null>(null);
@@ -88,8 +91,6 @@ function BreakGlassPage() {
 		{
 			onSuccess: () => {
 				setRequestDialogOpen(false);
-				setSelectedCompanyId("");
-				setReason("");
 				setError(null);
 				refetch();
 			},
@@ -103,35 +104,37 @@ function BreakGlassPage() {
 		},
 	);
 
+	const form = useForm({
+		defaultValues: {
+			companyId: "",
+			reason: "",
+		} as BreakGlassRequestFormValues,
+		validators: {
+			onChange: breakGlassRequestSchema,
+		},
+		onSubmit: async ({ value }) => {
+			setError(null);
+			await requestMutation.mutateAsync({
+				body: {
+					companyId: value.companyId,
+					reason: value.reason.trim(),
+				},
+			});
+		},
+	});
+
 	const items: BreakGlassAccessDto[] = logsData?.items || [];
 	const totalCount = Number(logsData?.totalCount) || 0;
 	const totalPages = Math.ceil(totalCount / pageSize) || 1;
 	const companies = companiesData?.items || [];
 
 	const handleOpenRequest = () => {
-		setSelectedCompanyId("");
-		setReason("");
+		form.reset({
+			companyId: "",
+			reason: "",
+		});
 		setError(null);
 		setRequestDialogOpen(true);
-	};
-
-	const handleSubmitRequest = (e: React.FormEvent) => {
-		e.preventDefault();
-		if (!selectedCompanyId) {
-			setError("Silakan pilih perusahaan terlebih dahulu.");
-			return;
-		}
-		if (!reason.trim()) {
-			setError("Alasan akses darurat wajib diisi secara spesifik.");
-			return;
-		}
-
-		requestMutation.mutate({
-			body: {
-				companyId: selectedCompanyId,
-				reason: reason.trim(),
-			},
-		});
 	};
 
 	return (
@@ -370,7 +373,14 @@ function BreakGlassPage() {
 							</DialogDescription>
 						</DialogHeader>
 
-						<form onSubmit={handleSubmitRequest} className="space-y-4 py-2">
+						<form
+							onSubmit={(e) => {
+								e.preventDefault();
+								e.stopPropagation();
+								form.handleSubmit();
+							}}
+							className="space-y-4 py-2"
+						>
 							{error && (
 								<Alert variant="destructive" className="py-2 text-xs">
 									<AlertTriangle className="h-4 w-4" />
@@ -378,50 +388,67 @@ function BreakGlassPage() {
 								</Alert>
 							)}
 
-							<div className="space-y-1.5">
-								<Label htmlFor="company-search" className="text-xs font-medium">
-									Pilih Berkas Pelanggan{" "}
-									<span className="text-destructive">*</span>
-								</Label>
-								<div className="space-y-1.5">
-									<Input
-										id="company-search"
-										placeholder="Ketik untuk memfilter nama perusahaan..."
-										value={companySearch}
-										onChange={(e) => setCompanySearch(e.target.value)}
-										className="h-8 text-xs"
-									/>
-									<select
-										value={selectedCompanyId}
-										onChange={(e) => setSelectedCompanyId(e.target.value)}
-										className="w-full h-8 px-2.5 rounded-md border bg-background text-xs"
-										required
-									>
-										<option value="">-- Pilih Perusahaan --</option>
-										{companies.map((c) => (
-											<option key={c.id} value={c.id}>
-												{c.nomor} — {c.namaPerusahaan} (
-												{c.salesUserName || c.locationLabel || "Area"})
-											</option>
-										))}
-									</select>
-								</div>
-							</div>
+							<form.Field name="companyId">
+								{(field) => {
+									const fieldError = field.state.meta.errors[0]?.message;
+									return (
+										<FormField
+											label="Pilih Berkas Pelanggan"
+											required
+											error={fieldError}
+										>
+											<div className="space-y-1.5">
+												<Input
+													id="company-search"
+													placeholder="Ketik untuk memfilter nama perusahaan..."
+													value={companySearch}
+													onChange={(e) => setCompanySearch(e.target.value)}
+													className="h-8 text-xs"
+												/>
+												<select
+													id={field.name}
+													name={field.name}
+													value={field.state.value}
+													onBlur={field.handleBlur}
+													onChange={(e) => field.handleChange(e.target.value)}
+													className="w-full h-8 px-2.5 rounded-md border bg-background text-xs"
+												>
+													<option value="">-- Pilih Perusahaan --</option>
+													{companies.map((c) => (
+														<option key={c.id} value={c.id}>
+															{c.nomor} — {c.namaPerusahaan} (
+															{c.salesUserName || c.locationLabel || "Area"})
+														</option>
+													))}
+												</select>
+											</div>
+										</FormField>
+									);
+								}}
+							</form.Field>
 
-							<div className="space-y-1">
-								<Label htmlFor="reason" className="text-xs font-medium">
-									Alasan Akses Darurat{" "}
-									<span className="text-destructive">*</span>
-								</Label>
-								<Textarea
-									id="reason"
-									placeholder="Jelaskan alasan teknis mendesak perlunya membuka berkas ini..."
-									value={reason}
-									onChange={(e) => setReason(e.target.value)}
-									className="text-xs min-h-[80px]"
-									required
-								/>
-							</div>
+							<form.Field name="reason">
+								{(field) => {
+									const fieldError = field.state.meta.errors[0]?.message;
+									return (
+										<FormField
+											label="Alasan Akses Darurat"
+											required
+											error={fieldError}
+										>
+											<Textarea
+												id={field.name}
+												name={field.name}
+												placeholder="Jelaskan alasan teknis mendesak perlunya membuka berkas ini..."
+												value={field.state.value}
+												onBlur={field.handleBlur}
+												onChange={(e) => field.handleChange(e.target.value)}
+												className="text-xs min-h-[80px]"
+											/>
+										</FormField>
+									);
+								}}
+							</form.Field>
 
 							<DialogFooter className="pt-2">
 								<Button
@@ -429,28 +456,33 @@ function BreakGlassPage() {
 									variant="outline"
 									size="sm"
 									onClick={() => setRequestDialogOpen(false)}
-									disabled={requestMutation.isPending}
 								>
 									Batal
 								</Button>
-								<Button
-									type="submit"
-									variant="destructive"
-									size="sm"
-									disabled={requestMutation.isPending}
+								<form.Subscribe
+									selector={(state) => [state.canSubmit, state.isSubmitting]}
 								>
-									{requestMutation.isPending ? (
-										<>
-											<Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
-											Memproses...
-										</>
-									) : (
-										<>
-											<KeyRound className="h-3.5 w-3.5 mr-1.5" />
-											Konfirmasi Akses Darurat
-										</>
+									{([canSubmit, isSubmitting]) => (
+										<Button
+											type="submit"
+											variant="destructive"
+											size="sm"
+											disabled={!canSubmit || isSubmitting}
+										>
+											{isSubmitting ? (
+												<>
+													<Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
+													Memproses...
+												</>
+											) : (
+												<>
+													<KeyRound className="h-3.5 w-3.5 mr-1.5" />
+													Konfirmasi Akses Darurat
+												</>
+											)}
+										</Button>
 									)}
-								</Button>
+								</form.Subscribe>
 							</DialogFooter>
 						</form>
 					</DialogContent>

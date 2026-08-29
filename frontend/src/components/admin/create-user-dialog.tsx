@@ -1,3 +1,4 @@
+import { useForm, useStore } from "@tanstack/react-form";
 import {
 	AlertTriangle,
 	Check,
@@ -9,6 +10,7 @@ import {
 import * as React from "react";
 import { $api } from "@/api/client";
 import type { AppRole, CreateUserResponse } from "@/api/types";
+import { FormField } from "@/components/form/form-field";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,6 +24,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth";
+import { type CreateUserFormValues, createUserSchema } from "@/lib/schemas";
 
 interface CreateUserDialogProps {
 	open: boolean;
@@ -50,16 +53,10 @@ export function CreateUserDialog({
 	const { user: currentUser } = useAuth();
 	const isSysAdmin = currentUser?.capabilities?.includes("ManageMasterData");
 
-	const [fullName, setFullName] = React.useState("");
-	const [username, setUsername] = React.useState("");
-	const [email, setEmail] = React.useState("");
-	const [role, setRole] = React.useState<AppRole>("SalesArea");
-	const [regionId, setRegionId] = React.useState<string>("");
-	const [areaId, setAreaId] = React.useState<string>("");
-	const [error, setError] = React.useState<string | null>(null);
 	const [createdResult, setCreatedResult] =
 		React.useState<CreateUserResponse | null>(null);
 	const [copied, setCopied] = React.useState(false);
+	const [serverError, setServerError] = React.useState<string | null>(null);
 
 	// Fetch organisation hierarchy for region/area dropdowns
 	const { data: orgData } = $api.useQuery(
@@ -72,8 +69,6 @@ export function CreateUserDialog({
 	);
 
 	const regions = orgData || [];
-	const selectedRegion = regions.find((r) => r.id === regionId);
-	const availableAreas = selectedRegion ? selectedRegion.areas : [];
 
 	// Filter available roles based on current user scope/privileges
 	const allowedRoles = React.useMemo(() => {
@@ -86,26 +81,10 @@ export function CreateUserDialog({
 		);
 	}, [isSysAdmin]);
 
-	// Auto-select region if only 1 is available (e.g. for regional admin)
-	React.useEffect(() => {
-		if (regions.length > 0 && !regionId) {
-			setRegionId(regions[0].id);
-		}
-	}, [regions, regionId]);
-
-	// Auto-select first area when region changes
-	React.useEffect(() => {
-		if (availableAreas.length > 0 && !areaId) {
-			setAreaId(availableAreas[0].id);
-		}
-	}, [availableAreas, areaId]);
-
-	const selectedRoleMeta =
-		ALL_ROLES.find((r) => r.value === role) || ALL_ROLES[0];
-
 	const createMutation = $api.useMutation("post", "/api/admin/users", {
 		onSuccess: (data) => {
 			setCreatedResult(data);
+			setServerError(null);
 			onSuccess();
 		},
 		onError: (error) => {
@@ -113,16 +92,84 @@ export function CreateUserDialog({
 				error.detail ||
 				error.title ||
 				"Gagal membuat pengguna. Pastikan nama pengguna belum digunakan.";
-			setError(msg);
+			setServerError(msg);
 		},
 	});
 
+	const form = useForm({
+		defaultValues: {
+			fullName: "",
+			username: "",
+			email: "",
+			role: "SalesArea",
+			regionId: "",
+			areaId: "",
+		} as CreateUserFormValues,
+		validators: {
+			onChange: createUserSchema,
+		},
+		onSubmit: async ({ value }) => {
+			setServerError(null);
+			const selectedRole =
+				ALL_ROLES.find((r) => r.value === value.role) || ALL_ROLES[0];
+
+			let reqRegionId: string | undefined;
+			let reqAreaId: string | undefined;
+
+			if (selectedRole.scopeType === "area") {
+				reqAreaId = value.areaId || undefined;
+				reqRegionId = value.regionId || undefined;
+			} else if (selectedRole.scopeType === "region") {
+				reqRegionId = value.regionId || undefined;
+			}
+
+			await createMutation.mutateAsync({
+				body: {
+					fullName: value.fullName.trim(),
+					username: value.username.trim().toLowerCase(),
+					email: value.email?.trim() || null,
+					role: value.role as AppRole,
+					areaId: reqAreaId || null,
+					regionId: reqRegionId || null,
+				},
+			});
+		},
+	});
+
+	const selectedRoleValue = useStore(form.store, (state) => state.values.role);
+	const selectedRegionId = useStore(
+		form.store,
+		(state) => state.values.regionId,
+	);
+
+	const selectedRoleMeta =
+		ALL_ROLES.find((r) => r.value === selectedRoleValue) || ALL_ROLES[0];
+	const selectedRegion = regions.find((r) => r.id === selectedRegionId);
+	const availableAreas = selectedRegion ? selectedRegion.areas : [];
+
+	// Auto-select region if only 1 is available and none selected
+	React.useEffect(() => {
+		if (regions.length > 0 && !selectedRegionId) {
+			form.setFieldValue("regionId", regions[0].id);
+			if (regions[0].areas.length > 0) {
+				form.setFieldValue("areaId", regions[0].areas[0].id);
+			}
+		}
+	}, [regions, selectedRegionId, form]);
+
 	const handleReset = () => {
-		setFullName("");
-		setUsername("");
-		setEmail("");
-		setRole("SalesArea");
-		setError(null);
+		form.reset({
+			fullName: "",
+			username: "",
+			email: "",
+			role: "SalesArea",
+			regionId: regions.length > 0 ? regions[0].id : "",
+			areaId:
+				regions.length > 0 && regions[0].areas.length > 0
+					? regions[0].areas[0].id
+					: "",
+		});
+		setServerError(null);
 		setCreatedResult(null);
 		setCopied(false);
 	};
@@ -130,49 +177,6 @@ export function CreateUserDialog({
 	const handleClose = () => {
 		handleReset();
 		onOpenChange(false);
-	};
-
-	const handleSubmit = (e: React.FormEvent) => {
-		e.preventDefault();
-		setError(null);
-
-		if (!fullName.trim()) {
-			setError("Nama lengkap wajib diisi.");
-			return;
-		}
-		if (!username.trim()) {
-			setError("Nama pengguna (username) wajib diisi.");
-			return;
-		}
-
-		let reqRegionId: string | undefined;
-		let reqAreaId: string | undefined;
-
-		if (selectedRoleMeta.scopeType === "area") {
-			if (!areaId) {
-				setError("Silakan pilih Sales Area untuk peran ini.");
-				return;
-			}
-			reqAreaId = areaId;
-			reqRegionId = regionId || undefined;
-		} else if (selectedRoleMeta.scopeType === "region") {
-			if (!regionId) {
-				setError("Silakan pilih Wilayah (Region) untuk peran ini.");
-				return;
-			}
-			reqRegionId = regionId;
-		}
-
-		createMutation.mutate({
-			body: {
-				fullName: fullName.trim(),
-				username: username.trim().toLowerCase(),
-				email: email.trim() || null,
-				role: role,
-				areaId: reqAreaId || null,
-				regionId: reqRegionId || null,
-			},
-		});
 	};
 
 	const handleCopy = async () => {
@@ -261,122 +265,187 @@ export function CreateUserDialog({
 						</DialogFooter>
 					</div>
 				) : (
-					<form onSubmit={handleSubmit} className="space-y-4 py-2">
-						{error && (
+					<form
+						onSubmit={(e) => {
+							e.preventDefault();
+							e.stopPropagation();
+							form.handleSubmit();
+						}}
+						className="space-y-4 py-2"
+					>
+						{serverError && (
 							<Alert variant="destructive">
-								<AlertDescription className="text-xs">{error}</AlertDescription>
+								<AlertDescription className="text-xs">
+									{serverError}
+								</AlertDescription>
 							</Alert>
 						)}
 
-						<div className="space-y-1.5">
-							<Label htmlFor="fullname" className="text-xs font-medium">
-								Nama Lengkap <span className="text-destructive">*</span>
-							</Label>
-							<Input
-								id="fullname"
-								placeholder="contoh: Sinta Maharani"
-								value={fullName}
-								onChange={(e) => setFullName(e.target.value)}
-								className="h-9 text-sm"
-								required
-							/>
-						</div>
+						<form.Field name="fullName">
+							{(field) => {
+								const error = field.state.meta.errors[0]?.message;
+								return (
+									<FormField
+										label="Nama Lengkap"
+										htmlFor={field.name}
+										required
+										error={error}
+									>
+										<Input
+											id={field.name}
+											name={field.name}
+											placeholder="contoh: Sinta Maharani"
+											value={field.state.value}
+											onBlur={field.handleBlur}
+											onChange={(e) => field.handleChange(e.target.value)}
+											className="h-9 text-sm"
+										/>
+									</FormField>
+								);
+							}}
+						</form.Field>
 
 						<div className="grid grid-cols-2 gap-3">
-							<div className="space-y-1.5">
-								<Label htmlFor="username" className="text-xs font-medium">
-									Nama Pengguna <span className="text-destructive">*</span>
-								</Label>
-								<Input
-									id="username"
-									placeholder="contoh: sinta.maharani"
-									value={username}
-									onChange={(e) => setUsername(e.target.value)}
-									className="h-9 text-sm font-mono"
-									required
-								/>
-							</div>
+							<form.Field name="username">
+								{(field) => {
+									const error = field.state.meta.errors[0]?.message;
+									return (
+										<FormField
+											label="Nama Pengguna"
+											htmlFor={field.name}
+											required
+											error={error}
+										>
+											<Input
+												id={field.name}
+												name={field.name}
+												placeholder="contoh: sinta.maharani"
+												value={field.state.value}
+												onBlur={field.handleBlur}
+												onChange={(e) => field.handleChange(e.target.value)}
+												className="h-9 text-sm font-mono"
+											/>
+										</FormField>
+									);
+								}}
+							</form.Field>
 
-							<div className="space-y-1.5">
-								<Label htmlFor="email" className="text-xs font-medium">
-									Email (Opsional)
-								</Label>
-								<Input
-									id="email"
-									type="email"
-									placeholder="sinta@pgn.co.id"
-									value={email}
-									onChange={(e) => setEmail(e.target.value)}
-									className="h-9 text-sm"
-								/>
-							</div>
+							<form.Field name="email">
+								{(field) => {
+									const error = field.state.meta.errors[0]?.message;
+									return (
+										<FormField
+											label="Email (Opsional)"
+											htmlFor={field.name}
+											error={error}
+										>
+											<Input
+												id={field.name}
+												name={field.name}
+												type="email"
+												placeholder="sinta@pgn.co.id"
+												value={field.state.value || ""}
+												onBlur={field.handleBlur}
+												onChange={(e) => field.handleChange(e.target.value)}
+												className="h-9 text-sm"
+											/>
+										</FormField>
+									);
+								}}
+							</form.Field>
 						</div>
 
-						<div className="space-y-1.5">
-							<Label htmlFor="role" className="text-xs font-medium">
-								Peran Awal <span className="text-destructive">*</span>
-							</Label>
-							<select
-								id="role"
-								value={role}
-								onChange={(e) => setRole(e.target.value as AppRole)}
-								className="w-full h-9 px-3 rounded-md border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-							>
-								{allowedRoles.map((r) => (
-									<option key={r.value} value={r.value}>
-										{r.label}
-									</option>
-								))}
-							</select>
-						</div>
+						<form.Field name="role">
+							{(field) => {
+								const error = field.state.meta.errors[0]?.message;
+								return (
+									<FormField
+										label="Peran Awal"
+										htmlFor={field.name}
+										required
+										error={error}
+									>
+										<select
+											id={field.name}
+											name={field.name}
+											value={field.state.value}
+											onBlur={field.handleBlur}
+											onChange={(e) => {
+												field.handleChange(e.target.value);
+											}}
+											className="w-full h-9 px-3 rounded-md border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+										>
+											{allowedRoles.map((r) => (
+												<option key={r.value} value={r.value}>
+													{r.label}
+												</option>
+											))}
+										</select>
+									</FormField>
+								);
+							}}
+						</form.Field>
 
 						{/* Scope selectors */}
 						{selectedRoleMeta.scopeType !== "none" && (
 							<div className="grid grid-cols-2 gap-3 p-3 bg-muted/40 rounded-lg border">
-								<div className="space-y-1.5">
-									<Label htmlFor="region" className="text-xs font-medium">
-										Wilayah (SOR) <span className="text-destructive">*</span>
-									</Label>
-									<select
-										id="region"
-										value={regionId}
-										onChange={(e) => {
-											setRegionId(e.target.value);
-											const reg = regions.find((r) => r.id === e.target.value);
-											if (reg && reg.areas.length > 0) {
-												setAreaId(reg.areas[0].id);
-											}
-										}}
-										className="w-full h-8 px-2.5 rounded-md border bg-background text-xs"
-									>
-										<option value="">-- Pilih Wilayah --</option>
-										{regions.map((r) => (
-											<option key={r.id} value={r.id}>
-												{r.name} ({r.code})
-											</option>
-										))}
-									</select>
-								</div>
+								<form.Field name="regionId">
+									{(field) => {
+										const error = field.state.meta.errors[0]?.message;
+										return (
+											<FormField label="Wilayah (SOR)" required error={error}>
+												<select
+													id={field.name}
+													name={field.name}
+													value={field.state.value || ""}
+													onBlur={field.handleBlur}
+													onChange={(e) => {
+														const regId = e.target.value;
+														field.handleChange(regId);
+														const reg = regions.find((r) => r.id === regId);
+														if (reg && reg.areas.length > 0) {
+															form.setFieldValue("areaId", reg.areas[0].id);
+														}
+													}}
+													className="w-full h-8 px-2.5 rounded-md border bg-background text-xs"
+												>
+													<option value="">-- Pilih Wilayah --</option>
+													{regions.map((r) => (
+														<option key={r.id} value={r.id}>
+															{r.name} ({r.code})
+														</option>
+													))}
+												</select>
+											</FormField>
+										);
+									}}
+								</form.Field>
 
 								{selectedRoleMeta.scopeType === "area" && (
-									<div className="space-y-1.5">
-										<Label htmlFor="area" className="text-xs font-medium">
-											Sales Area <span className="text-destructive">*</span>
-										</Label>
-										<select
-											id="area"
-											value={areaId}
-											onChange={(e) => setAreaId(e.target.value)}
-											className="w-full h-8 px-2.5 rounded-md border bg-background text-xs"
-										>
-											<option value="">-- Pilih Area --</option>
-											{availableAreas.map((a) => (
-												<option key={a.id} value={a.id}>
-													{a.name} ({a.code})
-												</option>
-											))}
-										</select>
-									</div>
+									<form.Field name="areaId">
+										{(field) => {
+											const error = field.state.meta.errors[0]?.message;
+											return (
+												<FormField label="Sales Area" required error={error}>
+													<select
+														id={field.name}
+														name={field.name}
+														value={field.state.value || ""}
+														onBlur={field.handleBlur}
+														onChange={(e) => field.handleChange(e.target.value)}
+														className="w-full h-8 px-2.5 rounded-md border bg-background text-xs"
+													>
+														<option value="">-- Pilih Area --</option>
+														{availableAreas.map((a) => (
+															<option key={a.id} value={a.id}>
+																{a.name} ({a.code})
+															</option>
+														))}
+													</select>
+												</FormField>
+											);
+										}}
+									</form.Field>
 								)}
 							</div>
 						)}
@@ -398,16 +467,22 @@ export function CreateUserDialog({
 							>
 								Batal
 							</Button>
-							<Button type="submit" disabled={createMutation.isPending}>
-								{createMutation.isPending ? (
-									<>
-										<Loader2 className="h-4 w-4 animate-spin mr-2" />
-										Menyimpan...
-									</>
-								) : (
-									"Buat Pengguna"
+							<form.Subscribe
+								selector={(state) => [state.canSubmit, state.isSubmitting]}
+							>
+								{([canSubmit, isSubmitting]) => (
+									<Button type="submit" disabled={!canSubmit || isSubmitting}>
+										{isSubmitting ? (
+											<>
+												<Loader2 className="h-4 w-4 animate-spin mr-2" />
+												Menyimpan...
+											</>
+										) : (
+											"Buat Pengguna"
+										)}
+									</Button>
 								)}
-							</Button>
+							</form.Subscribe>
 						</DialogFooter>
 					</form>
 				)}

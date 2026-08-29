@@ -1,3 +1,4 @@
+import { useForm } from "@tanstack/react-form";
 import { useQueryClient } from "@tanstack/react-query";
 import {
 	AlertOctagon,
@@ -12,6 +13,7 @@ import * as React from "react";
 import { toast } from "sonner";
 import { $api } from "@/api/client";
 import type { CompanyRecordDto } from "@/api/types";
+import { FormField } from "@/components/form/form-field";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,8 +24,11 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+	type WorkflowActionBarFormValues,
+	workflowActionBarSchema,
+} from "@/lib/schemas";
 
 interface WorkflowActionBarProps {
 	company: CompanyRecordDto;
@@ -46,7 +51,18 @@ export function WorkflowActionBar({
 	const currentStepId = company.currentStepId;
 
 	const [activeModal, setActiveModal] = React.useState<ActionModalType>(null);
-	const [comment, setComment] = React.useState<string>("");
+
+	// Invalidate company query helper
+	const invalidateCompany = React.useCallback(() => {
+		queryClient.invalidateQueries({
+			queryKey: [
+				"get",
+				"/api/companies/{id}",
+				{ params: { path: { id: company.id } } },
+			],
+		});
+		onActionSuccess?.();
+	}, [queryClient, company.id, onActionSuccess]);
 
 	// Step Action Mutation (Approve, Revise, Reject)
 	const actOnStepMutation = $api.useMutation(
@@ -56,21 +72,11 @@ export function WorkflowActionBar({
 			onSuccess: () => {
 				toast.success("Aksi berhasil diproses!");
 				setActiveModal(null);
-				setComment("");
-				queryClient.invalidateQueries({
-					queryKey: [
-						"get",
-						"/api/companies/{id}",
-						{ params: { path: { id: company.id } } },
-					],
-				});
-				onActionSuccess?.();
+				invalidateCompany();
 			},
 			onError: (error) => {
 				toast.error(
-					error instanceof Error
-						? error.message
-						: "Gagal memproses aksi langkah",
+					error.detail || error.title || "Gagal memproses aksi langkah",
 				);
 			},
 		},
@@ -84,20 +90,10 @@ export function WorkflowActionBar({
 			onSuccess: () => {
 				toast.success("Proses dikembalikan ke Rework!");
 				setActiveModal(null);
-				setComment("");
-				queryClient.invalidateQueries({
-					queryKey: [
-						"get",
-						"/api/companies/{id}",
-						{ params: { path: { id: company.id } } },
-					],
-				});
-				onActionSuccess?.();
+				invalidateCompany();
 			},
 			onError: (error) => {
-				toast.error(
-					error instanceof Error ? error.message : "Gagal melakukan Rework",
-				);
+				toast.error(error.detail || error.title || "Gagal melakukan Rework");
 			},
 		},
 	);
@@ -110,70 +106,85 @@ export function WorkflowActionBar({
 			onSuccess: () => {
 				toast.warning("Proses resmi dihentikan (Discontinued)!");
 				setActiveModal(null);
-				setComment("");
-				queryClient.invalidateQueries({
-					queryKey: [
-						"get",
-						"/api/companies/{id}",
-						{ params: { path: { id: company.id } } },
-					],
-				});
-				onActionSuccess?.();
+				invalidateCompany();
 			},
 			onError: (error) => {
-				toast.error(
-					error instanceof Error ? error.message : "Gagal menghentikan proses",
-				);
+				toast.error(error.detail || error.title || "Gagal menghentikan proses");
 			},
 		},
 	);
 
-	const isPending =
-		actOnStepMutation.isPending ||
-		reworkMutation.isPending ||
-		discontinueMutation.isPending;
+	const form = useForm({
+		defaultValues: {
+			comment: "",
+		} as WorkflowActionBarFormValues,
+		validators: {
+			onChange: workflowActionBarSchema,
+		},
+		onSubmit: async ({ value }) => {
+			const commentTrimmed = value.comment?.trim() || "";
 
-	// Handle Action Execution
-	const handleConfirmAction = () => {
-		if (activeModal === "approve" && currentStepId) {
-			actOnStepMutation.mutate({
-				params: { path: { stepId: currentStepId } },
-				body: { action: "Setuju", comment: comment || null },
-			});
-		} else if (activeModal === "revise" && currentStepId) {
-			if (!comment.trim()) {
-				toast.error("Wajib mengisi catatan/alasan revisi!");
+			if (activeModal === "approve" && currentStepId) {
+				await actOnStepMutation.mutateAsync({
+					params: { path: { stepId: currentStepId } },
+					body: { action: "Setuju", comment: commentTrimmed || null },
+				});
 				return;
 			}
-			actOnStepMutation.mutate({
-				params: { path: { stepId: currentStepId } },
-				body: { action: "Revisi", comment },
-			});
-		} else if (activeModal === "reject" && currentStepId) {
-			if (!comment.trim()) {
-				toast.error("Wajib mengisi alasan penolakan!");
+
+			if (activeModal === "revise" && currentStepId) {
+				if (!commentTrimmed) {
+					toast.error("Wajib mengisi catatan/alasan revisi!");
+					return;
+				}
+				await actOnStepMutation.mutateAsync({
+					params: { path: { stepId: currentStepId } },
+					body: { action: "Revisi", comment: commentTrimmed },
+				});
 				return;
 			}
-			actOnStepMutation.mutate({
-				params: { path: { stepId: currentStepId } },
-				body: { action: "Tolak", comment },
-			});
-		} else if (activeModal === "rework") {
-			reworkMutation.mutate({
-				params: { path: { id: company.id } },
-				body: { comment: comment || null },
-			});
-		} else if (activeModal === "discontinue") {
-			if (!comment.trim()) {
-				toast.error("Wajib memberikan alasan penghentian proses!");
+
+			if (activeModal === "reject" && currentStepId) {
+				if (!commentTrimmed) {
+					toast.error("Wajib mengisi alasan penolakan!");
+					return;
+				}
+				await actOnStepMutation.mutateAsync({
+					params: { path: { stepId: currentStepId } },
+					body: { action: "Tolak", comment: commentTrimmed },
+				});
 				return;
 			}
-			discontinueMutation.mutate({
-				params: { path: { id: company.id } },
-				body: { comment },
+
+			if (activeModal === "rework") {
+				await reworkMutation.mutateAsync({
+					params: { path: { id: company.id } },
+					body: { comment: commentTrimmed || null },
+				});
+				return;
+			}
+
+			if (activeModal === "discontinue") {
+				if (!commentTrimmed) {
+					toast.error("Wajib memberikan alasan penghentian proses!");
+					return;
+				}
+				await discontinueMutation.mutateAsync({
+					params: { path: { id: company.id } },
+					body: { comment: commentTrimmed },
+				});
+			}
+		},
+	});
+
+	// Reset form when modal opens
+	React.useEffect(() => {
+		if (activeModal !== null) {
+			form.reset({
+				comment: "",
 			});
 		}
-	};
+	}, [activeModal, form]);
 
 	// Determine available actions
 	const canAct = company.canAct && !!currentStepId;
@@ -184,6 +195,11 @@ export function WorkflowActionBar({
 	if (!canAct && !canRework && !canDiscontinue) {
 		return null;
 	}
+
+	const isCommentRequired =
+		activeModal === "revise" ||
+		activeModal === "reject" ||
+		activeModal === "discontinue";
 
 	return (
 		<>
@@ -222,10 +238,7 @@ export function WorkflowActionBar({
 								type="button"
 								size="sm"
 								variant="outline"
-								onClick={() => {
-									setActiveModal("reject");
-									setComment("");
-								}}
+								onClick={() => setActiveModal("reject")}
 								className="h-8 text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
 							>
 								<XCircle className="size-3.5 mr-1" /> Tolak
@@ -235,10 +248,7 @@ export function WorkflowActionBar({
 								type="button"
 								size="sm"
 								variant="outline"
-								onClick={() => {
-									setActiveModal("revise");
-									setComment("");
-								}}
+								onClick={() => setActiveModal("revise")}
 								className="h-8 text-xs text-amber-600 border-amber-300 dark:text-amber-400 dark:border-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/30"
 							>
 								<RotateCcw className="size-3.5 mr-1" /> Minta Revisi
@@ -247,10 +257,7 @@ export function WorkflowActionBar({
 							<Button
 								type="button"
 								size="sm"
-								onClick={() => {
-									setActiveModal("approve");
-									setComment("");
-								}}
+								onClick={() => setActiveModal("approve")}
 								className="h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
 							>
 								<CheckCircle2 className="size-3.5 mr-1" /> Setujui Langkah
@@ -264,10 +271,7 @@ export function WorkflowActionBar({
 							type="button"
 							size="sm"
 							variant="outline"
-							onClick={() => {
-								setActiveModal("rework");
-								setComment("");
-							}}
+							onClick={() => setActiveModal("rework")}
 							className="h-8 text-xs text-amber-600 border-amber-300 hover:bg-amber-50"
 						>
 							<Undo2 className="size-3.5 mr-1" /> Rework
@@ -280,10 +284,7 @@ export function WorkflowActionBar({
 							type="button"
 							size="sm"
 							variant="ghost"
-							onClick={() => {
-								setActiveModal("discontinue");
-								setComment("");
-							}}
+							onClick={() => setActiveModal("discontinue")}
 							className="h-8 text-xs text-muted-foreground hover:text-destructive"
 						>
 							<AlertOctagon className="size-3.5 mr-1" /> Hentikan Proses
@@ -345,54 +346,86 @@ export function WorkflowActionBar({
 						</DialogDescription>
 					</DialogHeader>
 
-					<div className="space-y-2 py-2">
-						<Label className="text-xs font-medium">
-							{activeModal === "approve"
-								? "Catatan Tambahan (Opsional)"
-								: "Catatan / Alasan Keputusan (Wajib)"}
-						</Label>
-						<Textarea
-							value={comment}
-							onChange={(e) => setComment(e.target.value)}
-							placeholder={
-								activeModal === "approve"
-									? "Tuliskan catatan opsional..."
-									: "Tuliskan alasan/keterangan yang jelas..."
-							}
-							className="text-xs min-h-[80px]"
-						/>
-					</div>
+					<form
+						onSubmit={(e) => {
+							e.preventDefault();
+							e.stopPropagation();
+							form.handleSubmit();
+						}}
+						className="space-y-4 py-2"
+					>
+						<form.Field name="comment">
+							{(field) => {
+								const error = field.state.meta.errors[0]?.message;
+								const labelText =
+									activeModal === "approve"
+										? "Catatan Tambahan (Opsional)"
+										: "Catatan / Alasan Keputusan";
 
-					<DialogFooter className="flex items-center justify-end gap-2 pt-2">
-						<Button
-							variant="outline"
-							size="sm"
-							onClick={() => setActiveModal(null)}
-							disabled={isPending}
-							className="text-xs"
-						>
-							Batal
-						</Button>
-						<Button
-							size="sm"
-							disabled={isPending}
-							onClick={handleConfirmAction}
-							className={`text-xs text-white ${
-								activeModal === "approve"
-									? "bg-emerald-600 hover:bg-emerald-700"
-									: activeModal === "revise" || activeModal === "rework"
-										? "bg-amber-600 hover:bg-amber-700"
-										: "bg-destructive hover:bg-destructive/90"
-							}`}
-						>
-							{isPending && <Loader2 className="size-3 animate-spin mr-1.5" />}
-							{activeModal === "approve" && "Setujui"}
-							{activeModal === "revise" && "Kirim Permintaan Revisi"}
-							{activeModal === "reject" && "Tolak Berkas"}
-							{activeModal === "rework" && "Proses Rework"}
-							{activeModal === "discontinue" && "Hentikan Proses"}
-						</Button>
-					</DialogFooter>
+								return (
+									<FormField
+										label={labelText}
+										htmlFor="workflow-action-comment"
+										required={isCommentRequired}
+										error={error}
+									>
+										<Textarea
+											id="workflow-action-comment"
+											name={field.name}
+											value={field.state.value || ""}
+											onBlur={field.handleBlur}
+											onChange={(e) => field.handleChange(e.target.value)}
+											placeholder={
+												activeModal === "approve"
+													? "Tuliskan catatan opsional..."
+													: "Tuliskan alasan/keterangan yang jelas..."
+											}
+											className="text-xs min-h-[80px]"
+										/>
+									</FormField>
+								);
+							}}
+						</form.Field>
+
+						<DialogFooter className="flex items-center justify-end gap-2 pt-2">
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								onClick={() => setActiveModal(null)}
+								className="text-xs"
+							>
+								Batal
+							</Button>
+							<form.Subscribe
+								selector={(state) => [state.canSubmit, state.isSubmitting]}
+							>
+								{([canSubmit, isSubmitting]) => (
+									<Button
+										type="submit"
+										size="sm"
+										disabled={!canSubmit || isSubmitting}
+										className={`text-xs text-white ${
+											activeModal === "approve"
+												? "bg-emerald-600 hover:bg-emerald-700"
+												: activeModal === "revise" || activeModal === "rework"
+													? "bg-amber-600 hover:bg-amber-700"
+													: "bg-destructive hover:bg-destructive/90"
+										}`}
+									>
+										{isSubmitting && (
+											<Loader2 className="size-3 animate-spin mr-1.5" />
+										)}
+										{activeModal === "approve" && "Setujui"}
+										{activeModal === "revise" && "Kirim Permintaan Revisi"}
+										{activeModal === "reject" && "Tolak Berkas"}
+										{activeModal === "rework" && "Proses Rework"}
+										{activeModal === "discontinue" && "Hentikan Proses"}
+									</Button>
+								)}
+							</form.Subscribe>
+						</DialogFooter>
+					</form>
 				</DialogContent>
 			</Dialog>
 		</>

@@ -1,3 +1,4 @@
+import { useForm } from "@tanstack/react-form";
 import {
 	AlertTriangle,
 	Edit2,
@@ -8,6 +9,7 @@ import {
 	Trash2,
 } from "lucide-react";
 import * as React from "react";
+import { FormField } from "@/components/form/form-field";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,7 +21,6 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
 	Table,
 	TableBody,
@@ -78,9 +79,44 @@ export function MasterDataTable<T extends { id: string }>({
 	const [dialogOpen, setDialogOpen] = React.useState(false);
 	const [editingItem, setEditingItem] = React.useState<T | null>(null);
 	const [deleteConfirm, setDeleteConfirm] = React.useState<T | null>(null);
-	const [formData, setFormData] = React.useState<Record<string, unknown>>({});
 	const [error, setError] = React.useState<string | null>(null);
-	const [isSubmitting, setIsSubmitting] = React.useState(false);
+	const [isDeleting, setIsDeleting] = React.useState(false);
+
+	const initialValues = React.useMemo(() => {
+		const init: Record<string, unknown> = {};
+		for (const f of fields) {
+			if (f.type === "checkbox") init[f.name] = true;
+			else if (f.type === "number") init[f.name] = 0;
+			else init[f.name] = "";
+		}
+		return init;
+	}, [fields]);
+
+	const form = useForm({
+		defaultValues: initialValues,
+		onSubmit: async ({ value }) => {
+			setError(null);
+			try {
+				await onSave(value, editingItem?.id);
+				setDialogOpen(false);
+				setEditingItem(null);
+			} catch (err: unknown) {
+				const errorObj = err as {
+					detail?: string;
+					error?: string;
+					errors?: string[];
+					message?: string;
+				};
+				setError(
+					errorObj?.detail ||
+						errorObj?.error ||
+						errorObj?.errors?.[0] ||
+						errorObj?.message ||
+						"Gagal menyimpan data master.",
+				);
+			}
+		},
+	});
 
 	// Filter data
 	const filteredData = React.useMemo(() => {
@@ -98,13 +134,7 @@ export function MasterDataTable<T extends { id: string }>({
 
 	const handleOpenCreate = () => {
 		setEditingItem(null);
-		const initial: Record<string, unknown> = {};
-		for (const f of fields) {
-			if (f.type === "checkbox") initial[f.name] = true;
-			else if (f.type === "number") initial[f.name] = 0;
-			else initial[f.name] = "";
-		}
-		setFormData(initial);
+		form.reset(initialValues);
 		setError(null);
 		setDialogOpen(true);
 	};
@@ -115,58 +145,34 @@ export function MasterDataTable<T extends { id: string }>({
 		for (const f of fields) {
 			current[f.name] = (item as Record<string, unknown>)[f.name] ?? "";
 		}
-		setFormData(current);
+		form.reset(current);
 		setError(null);
 		setDialogOpen(true);
 	};
 
-	const handleSubmit = async (e: React.FormEvent) => {
-		e.preventDefault();
-		setError(null);
-		setIsSubmitting(true);
-
-		try {
-			await onSave(formData, editingItem?.id);
-			setDialogOpen(false);
-			setEditingItem(null);
-		} catch (err: unknown) {
-			const errorObj = err as {
-				error?: string;
-				errors?: string[];
-				message?: string;
-			};
-			setError(
-				errorObj?.error ||
-					errorObj?.errors?.[0] ||
-					errorObj?.message ||
-					"Gagal menyimpan data master.",
-			);
-		} finally {
-			setIsSubmitting(false);
-		}
-	};
-
 	const handleConfirmDelete = async () => {
 		if (!deleteConfirm || !onDelete) return;
-		setIsSubmitting(true);
+		setIsDeleting(true);
 		setError(null);
 		try {
 			await onDelete(deleteConfirm.id);
 			setDeleteConfirm(null);
 		} catch (err: unknown) {
 			const errorObj = err as {
+				detail?: string;
 				error?: string;
 				errors?: string[];
 				message?: string;
 			};
 			setError(
-				errorObj?.error ||
+				errorObj?.detail ||
+					errorObj?.error ||
 					errorObj?.errors?.[0] ||
 					errorObj?.message ||
 					"Gagal menghapus data master.",
 			);
 		} finally {
-			setIsSubmitting(false);
+			setIsDeleting(false);
 		}
 	};
 
@@ -314,7 +320,14 @@ export function MasterDataTable<T extends { id: string }>({
 						</DialogDescription>
 					</DialogHeader>
 
-					<form onSubmit={handleSubmit} className="space-y-3 py-2">
+					<form
+						onSubmit={(e) => {
+							e.preventDefault();
+							e.stopPropagation();
+							form.handleSubmit();
+						}}
+						className="space-y-3 py-2"
+					>
 						{error && (
 							<Alert variant="destructive">
 								<AlertDescription className="text-xs">{error}</AlertDescription>
@@ -322,87 +335,84 @@ export function MasterDataTable<T extends { id: string }>({
 						)}
 
 						{fields.map((f) => (
-							<div key={f.name} className="space-y-1">
-								<Label htmlFor={f.name} className="text-xs font-medium">
-									{f.label}{" "}
-									{f.required && <span className="text-destructive">*</span>}
-								</Label>
-
-								{f.type === "textarea" ? (
-									<Textarea
-										id={f.name}
-										placeholder={f.placeholder}
-										value={String(formData[f.name] ?? "")}
-										onChange={(e) =>
-											setFormData((prev) => ({
-												...prev,
-												[f.name]: e.target.value,
-											}))
-										}
-										className="text-xs min-h-[70px]"
-										required={f.required}
-									/>
-								) : f.type === "select" ? (
-									<select
-										id={f.name}
-										value={String(formData[f.name] ?? "")}
-										onChange={(e) =>
-											setFormData((prev) => ({
-												...prev,
-												[f.name]: e.target.value,
-											}))
-										}
-										className="w-full h-8 px-2.5 rounded-md border bg-background text-xs"
-										required={f.required}
-									>
-										<option value="">-- Pilih --</option>
-										{f.options?.map((opt) => (
-											<option key={opt.value} value={opt.value}>
-												{opt.label}
-											</option>
-										))}
-									</select>
-								) : f.type === "checkbox" ? (
-									<div className="flex items-center gap-2 pt-1">
-										<input
-											type="checkbox"
-											id={f.name}
-											checked={Boolean(formData[f.name])}
-											onChange={(e) =>
-												setFormData((prev) => ({
-													...prev,
-													[f.name]: e.target.checked,
-												}))
-											}
-											className="rounded border-gray-300 size-4 text-primary"
-										/>
-										<label
-											htmlFor={f.name}
-											className="text-xs text-foreground cursor-pointer"
+							<form.Field key={f.name} name={f.name}>
+								{(field) => {
+									const fieldError = field.state.meta.errors.length
+										? String(field.state.meta.errors[0])
+										: undefined;
+									return (
+										<FormField
+											label={f.label}
+											required={f.required}
+											error={fieldError}
 										>
-											Aktif
-										</label>
-									</div>
-								) : (
-									<Input
-										id={f.name}
-										type={f.type === "number" ? "number" : "text"}
-										placeholder={f.placeholder}
-										value={String(formData[f.name] ?? "")}
-										onChange={(e) =>
-											setFormData((prev) => ({
-												...prev,
-												[f.name]:
-													f.type === "number"
-														? Number(e.target.value)
-														: e.target.value,
-											}))
-										}
-										className="h-8 text-xs"
-										required={f.required}
-									/>
-								)}
-							</div>
+											{f.type === "textarea" ? (
+												<Textarea
+													id={f.name}
+													placeholder={f.placeholder}
+													value={String(field.state.value ?? "")}
+													onBlur={field.handleBlur}
+													onChange={(e) => field.handleChange(e.target.value)}
+													className="text-xs min-h-[70px]"
+													required={f.required}
+												/>
+											) : f.type === "select" ? (
+												<select
+													id={f.name}
+													value={String(field.state.value ?? "")}
+													onBlur={field.handleBlur}
+													onChange={(e) => field.handleChange(e.target.value)}
+													className="w-full h-8 px-2.5 rounded-md border bg-background text-xs"
+													required={f.required}
+												>
+													<option value="">-- Pilih --</option>
+													{f.options?.map((opt) => (
+														<option key={opt.value} value={opt.value}>
+															{opt.label}
+														</option>
+													))}
+												</select>
+											) : f.type === "checkbox" ? (
+												<div className="flex items-center gap-2 pt-1">
+													<input
+														type="checkbox"
+														id={f.name}
+														checked={Boolean(field.state.value)}
+														onBlur={field.handleBlur}
+														onChange={(e) =>
+															field.handleChange(e.target.checked)
+														}
+														className="rounded border-gray-300 size-4 text-primary"
+													/>
+													<label
+														htmlFor={f.name}
+														className="text-xs text-foreground cursor-pointer"
+													>
+														Aktif
+													</label>
+												</div>
+											) : (
+												<Input
+													id={f.name}
+													type={f.type === "number" ? "number" : "text"}
+													placeholder={f.placeholder}
+													value={String(field.state.value ?? "")}
+													onBlur={field.handleBlur}
+													onChange={(e) =>
+														field.handleChange(
+															f.type === "number"
+																? Number(e.target.value)
+																: e.target.value,
+														)
+													}
+													className="h-8 text-xs"
+													required={f.required}
+												/>
+											)}
+										</FormField>
+									);
+								}}
+							</form.Field>
 						))}
 
 						<DialogFooter className="pt-2">
@@ -414,12 +424,22 @@ export function MasterDataTable<T extends { id: string }>({
 							>
 								Batal
 							</Button>
-							<Button type="submit" size="sm" disabled={isSubmitting}>
-								{isSubmitting ? (
-									<Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
-								) : null}
-								Simpan
-							</Button>
+							<form.Subscribe
+								selector={(state) => [state.canSubmit, state.isSubmitting]}
+							>
+								{([canSubmit, isSubmitting]) => (
+									<Button
+										type="submit"
+										size="sm"
+										disabled={!canSubmit || isSubmitting}
+									>
+										{isSubmitting ? (
+											<Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+										) : null}
+										Simpan
+									</Button>
+								)}
+							</form.Subscribe>
 						</DialogFooter>
 					</form>
 				</DialogContent>
@@ -450,7 +470,7 @@ export function MasterDataTable<T extends { id: string }>({
 							variant="outline"
 							size="sm"
 							onClick={() => setDeleteConfirm(null)}
-							disabled={isSubmitting}
+							disabled={isDeleting}
 						>
 							Batal
 						</Button>
@@ -459,9 +479,9 @@ export function MasterDataTable<T extends { id: string }>({
 							variant="destructive"
 							size="sm"
 							onClick={handleConfirmDelete}
-							disabled={isSubmitting}
+							disabled={isDeleting}
 						>
-							{isSubmitting ? (
+							{isDeleting ? (
 								<Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
 							) : null}
 							Hapus

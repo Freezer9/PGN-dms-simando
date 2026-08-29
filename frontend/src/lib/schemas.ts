@@ -226,3 +226,126 @@ export const nolIssuanceSchema = z.object({
 });
 
 export type NolIssuanceFormValues = z.infer<typeof nolIssuanceSchema>;
+
+// --- Directory / Company Creation Schema ---
+export const createCompanySchema = z.object({
+	namaPerusahaan: z.string().min(1, "Nama perusahaan wajib diisi"),
+	industryTypeId: z.string().min(1, "Sektor industri wajib dipilih"),
+	areaId: z.string().min(1, "Wilayah area kerja PGN wajib dipilih"),
+	provinceId: z.string().min(1, "Provinsi wajib dipilih"),
+	regencyId: z.string().min(1, "Kota/Kabupaten wajib dipilih"),
+	districtId: z.string().min(1, "Kecamatan wajib dipilih"),
+	villageId: z
+		.string()
+		.min(
+			1,
+			"Hierarki Lokasi Administratif (Kelurahan/Desa) wajib dipilih lengkap",
+		),
+	alamat: z.string().min(1, "Alamat lengkap wajib diisi"),
+	kodePos: z.string().optional(),
+	npwp: z.string().optional(),
+	email: z
+		.string()
+		.email("Format email tidak valid")
+		.or(z.literal(""))
+		.optional(),
+	telp: z.string().optional(),
+	website: z.string().optional(),
+	latitude: z.number(),
+	longitude: z.number(),
+});
+
+export type CreateCompanyFormValues = z.infer<typeof createCompanySchema>;
+
+// --- Contact Form Schema ---
+export const saveContactSchema = z.object({
+	nama: z.string().min(1, "Nama kontak wajib diisi"),
+	jabatan: z.string().optional(),
+	email: z
+		.string()
+		.email("Format email tidak valid")
+		.or(z.literal(""))
+		.optional(),
+	noHp: z.string().optional(),
+	isPrimary: z.boolean().optional(),
+});
+
+export type SaveContactFormValues = z.infer<typeof saveContactSchema>;
+
+// --- Plotting Form Schema ---
+export const savePlottingSchema = z.object({
+	salesUserId: z.string().min(1, "Sales Representative wajib dipilih"),
+	posisiPelanggan: z.string().optional(),
+	kawasan: z.string().optional(),
+});
+
+export type SavePlottingFormValues = z.infer<typeof savePlottingSchema>;
+
+// --- Admin: User Creation Schema ---
+export const createUserSchema = z.object({
+	fullName: z.string().min(1, "Nama lengkap wajib diisi"),
+	username: z.string().min(1, "Nama pengguna (username) wajib diisi"),
+	email: z
+		.string()
+		.email("Format email tidak valid")
+		.or(z.literal(""))
+		.optional(),
+	role: z.string().min(1, "Peran awal wajib dipilih"),
+	regionId: z.string().optional(),
+	areaId: z.string().optional(),
+});
+
+export type CreateUserFormValues = z.infer<typeof createUserSchema>;
+
+// --- Admin: Role Assignment Schema ---
+export const assignRoleSchema = z.object({
+	role: z.string().min(1, "Peran wajib dipilih"),
+	regionId: z.string().optional(),
+	areaId: z.string().optional(),
+});
+
+export type AssignRoleFormValues = z.infer<typeof assignRoleSchema>;
+
+// --- Admin: Break Glass Request Schema ---
+export const breakGlassRequestSchema = z.object({
+	companyId: z.string().min(1, "Silakan pilih perusahaan terlebih dahulu"),
+	reason: z.string().min(1, "Alasan akses darurat wajib diisi secara spesifik"),
+});
+
+export type BreakGlassRequestFormValues = z.infer<
+	typeof breakGlassRequestSchema
+>;
+
+// --- Admin: Stuck Step Reassign Schema ---
+export const reassignStuckStepSchema = z.object({
+	targetUserId: z.string().min(1, "Silakan pilih pengguna tujuan pengalihan"),
+});
+
+export type ReassignStuckStepFormValues = z.infer<
+	typeof reassignStuckStepSchema
+>;
+
+// --- Task Action Modal Schema ---
+export const taskActionModalSchema = z.object({
+	newUserId: z.string().optional(),
+	comment: z.string().optional(),
+});
+
+export type TaskActionModalFormValues = z.infer<typeof taskActionModalSchema>;
+
+// --- Workflow Action Bar Schema ---
+export const workflowActionBarSchema = z.object({
+	comment: z.string().optional(),
+});
+
+export type WorkflowActionBarFormValues = z.infer<
+	typeof workflowActionBarSchema
+>;
+
+// --- Attachment Upload Schema ---
+export const attachmentUploadSchema = z.object({
+	kind: z.string().min(1, "Jenis dokumen wajib dipilih"),
+	signatureMethod: z.string().optional(),
+});
+
+export type AttachmentUploadFormValues = z.infer<typeof attachmentUploadSchema>;

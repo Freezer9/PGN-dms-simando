@@ -1,12 +1,10 @@
+import { useForm, useStore } from "@tanstack/react-form";
 import { useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, FileUp, Loader2, UploadCloud, X } from "lucide-react";
 import * as React from "react";
 import { toast } from "sonner";
-import type {
-	AttachmentDetail,
-	AttachmentKind,
-	SignatureMethod,
-} from "@/api/types";
+import type { AttachmentDetail, AttachmentKind } from "@/api/types";
+import { FormField } from "@/components/form/form-field";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -24,6 +22,10 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import {
+	type AttachmentUploadFormValues,
+	attachmentUploadSchema,
+} from "@/lib/schemas";
 import { cn } from "@/lib/utils";
 
 export const ATTACHMENT_KIND_LABELS: Record<AttachmentKind, string> = {
@@ -76,22 +78,96 @@ export function AttachmentUploadDialog({
 	const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
 	const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
-	const [kind, setKind] = React.useState<AttachmentKind>(defaultKind);
-	const [signatureMethod, setSignatureMethod] = React.useState<
-		SignatureMethod | ""
-	>("");
 	const [isDragging, setIsDragging] = React.useState(false);
-	const [isSubmitting, setIsSubmitting] = React.useState(false);
 	const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
+
+	const form = useForm({
+		defaultValues: {
+			kind: defaultKind,
+			signatureMethod: "",
+		} as AttachmentUploadFormValues,
+		validators: {
+			onChange: attachmentUploadSchema,
+		},
+		onSubmit: async ({ value }) => {
+			if (!selectedFile) {
+				setErrorMsg("Silakan pilih berkas yang akan diunggah.");
+				return;
+			}
+
+			setErrorMsg(null);
+
+			try {
+				const formData = new FormData();
+				formData.append("file", selectedFile);
+				formData.append("kind", value.kind);
+				if (value.signatureMethod) {
+					formData.append("signatureMethod", value.signatureMethod);
+				}
+
+				const response = await fetch(
+					`/api/companies/${companyId}/attachments`,
+					{
+						method: "POST",
+						body: formData,
+					},
+				);
+
+				if (!response.ok) {
+					let errorMessage = "Gagal mengunggah berkas.";
+					try {
+						const errorData = await response.json();
+						if (errorData.detail) errorMessage = errorData.detail;
+						else if (errorData.title) errorMessage = errorData.title;
+					} catch {
+						// Fallback default message
+					}
+					throw new Error(errorMessage);
+				}
+
+				const uploaded: AttachmentDetail = await response.json();
+
+				toast.success("Berkas lampiran berhasil diunggah!");
+				queryClient.invalidateQueries({
+					queryKey: [
+						"get",
+						"/api/companies/{companyId}/attachments",
+						{ params: { path: { companyId } } },
+					],
+				});
+				queryClient.invalidateQueries({
+					queryKey: [
+						"get",
+						"/api/companies/{id}",
+						{ params: { path: { id: companyId } } },
+					],
+				});
+
+				onSuccess?.(uploaded);
+				onClose();
+			} catch (err: unknown) {
+				const message =
+					err instanceof Error
+						? err.message
+						: "Terjadi kesalahan saat mengunggah berkas.";
+				setErrorMsg(message);
+				toast.error(message);
+			}
+		},
+	});
+
+	const kindValue = useStore(form.store, (state) => state.values.kind);
 
 	React.useEffect(() => {
 		if (isOpen) {
-			setKind(defaultKind);
+			form.reset({
+				kind: defaultKind,
+				signatureMethod: "",
+			});
 			setSelectedFile(null);
-			setSignatureMethod("");
 			setErrorMsg(null);
 		}
-	}, [isOpen, defaultKind]);
+	}, [isOpen, defaultKind, form]);
 
 	const validateAndSetFile = (file: File) => {
 		setErrorMsg(null);
@@ -138,73 +214,6 @@ export function AttachmentUploadDialog({
 		}
 	};
 
-	const handleSubmit = async (e: React.FormEvent) => {
-		e.preventDefault();
-		if (!selectedFile) {
-			setErrorMsg("Silakan pilih berkas yang akan diunggah.");
-			return;
-		}
-
-		setIsSubmitting(true);
-		setErrorMsg(null);
-
-		try {
-			const formData = new FormData();
-			formData.append("file", selectedFile);
-			formData.append("kind", kind);
-			if (signatureMethod) {
-				formData.append("signatureMethod", signatureMethod);
-			}
-
-			const response = await fetch(`/api/companies/${companyId}/attachments`, {
-				method: "POST",
-				body: formData,
-			});
-
-			if (!response.ok) {
-				let errorMessage = "Gagal mengunggah berkas.";
-				try {
-					const errorData = await response.json();
-					if (errorData.detail) errorMessage = errorData.detail;
-					else if (errorData.title) errorMessage = errorData.title;
-				} catch {
-					// Fallback default message
-				}
-				throw new Error(errorMessage);
-			}
-
-			const uploaded: AttachmentDetail = await response.json();
-
-			toast.success("Berkas lampiran berhasil diunggah!");
-			queryClient.invalidateQueries({
-				queryKey: [
-					"get",
-					"/api/companies/{companyId}/attachments",
-					{ params: { path: { companyId } } },
-				],
-			});
-			queryClient.invalidateQueries({
-				queryKey: [
-					"get",
-					"/api/companies/{id}",
-					{ params: { path: { id: companyId } } },
-				],
-			});
-
-			onSuccess?.(uploaded);
-			onClose();
-		} catch (err: unknown) {
-			const message =
-				err instanceof Error
-					? err.message
-					: "Terjadi kesalahan saat mengunggah berkas.";
-			setErrorMsg(message);
-			toast.error(message);
-		} finally {
-			setIsSubmitting(false);
-		}
-	};
-
 	const formatSize = (bytes: number) => {
 		if (bytes < 1024 * 1024) {
 			return `${(bytes / 1024).toFixed(1)} KB`;
@@ -226,65 +235,85 @@ export function AttachmentUploadDialog({
 					</DialogDescription>
 				</DialogHeader>
 
-				<form onSubmit={handleSubmit} className="space-y-4 pt-2">
+				<form
+					onSubmit={(e) => {
+						e.preventDefault();
+						e.stopPropagation();
+						form.handleSubmit();
+					}}
+					className="space-y-4 pt-2"
+				>
 					{/* Jenis Dokumen / Kind */}
-					<div className="space-y-1.5">
-						<Label htmlFor="attachment-kind" className="text-xs font-semibold">
-							Jenis Dokumen <span className="text-destructive">*</span>
-						</Label>
-						<Select
-							value={kind}
-							onValueChange={(val) => setKind(val as AttachmentKind)}
-						>
-							<SelectTrigger id="attachment-kind" className="text-xs">
-								<SelectValue placeholder="Pilih jenis dokumen" />
-							</SelectTrigger>
-							<SelectContent className="max-h-60">
-								{(
-									Object.entries(ATTACHMENT_KIND_LABELS) as [
-										AttachmentKind,
-										string,
-									][]
-								).map(([key, label]) => (
-									<SelectItem key={key} value={key} className="text-xs">
-										{label}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-					</div>
+					<form.Field name="kind">
+						{(field) => {
+							const error = field.state.meta.errors[0]?.message;
+							return (
+								<FormField
+									label="Jenis Dokumen"
+									htmlFor="attachment-kind"
+									required
+									error={error}
+								>
+									<Select
+										value={field.state.value}
+										onValueChange={(val) =>
+											field.handleChange(val as AttachmentKind)
+										}
+									>
+										<SelectTrigger id="attachment-kind" className="text-xs">
+											<SelectValue placeholder="Pilih jenis dokumen" />
+										</SelectTrigger>
+										<SelectContent className="max-h-60">
+											{(
+												Object.entries(ATTACHMENT_KIND_LABELS) as [
+													AttachmentKind,
+													string,
+												][]
+											).map(([key, label]) => (
+												<SelectItem key={key} value={key} className="text-xs">
+													{label}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								</FormField>
+							);
+						}}
+					</form.Field>
 
 					{/* Signature Method (for A1 or KK0 signed forms) */}
-					{(kind === "A1" || kind === "Kk0") && (
-						<div className="space-y-1.5 p-3 rounded-lg bg-muted/40 border">
-							<Label
-								htmlFor="signature-method"
-								className="text-xs font-semibold"
-							>
-								Metode Tanda Tangan (Opsional)
-							</Label>
-							<Select
-								value={signatureMethod || undefined}
-								onValueChange={(val) =>
-									setSignatureMethod((val as SignatureMethod) || "")
-								}
-							>
-								<SelectTrigger
-									id="signature-method"
-									className="text-xs bg-background"
-								>
-									<SelectValue placeholder="Pilih metode tanda tangan (opsional)" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="Digital" className="text-xs">
-										Digital Certificate / TTE Elektronik
-									</SelectItem>
-									<SelectItem value="Wet" className="text-xs">
-										Tanda Tangan Basah / Manual Stamp
-									</SelectItem>
-								</SelectContent>
-							</Select>
-						</div>
+					{(kindValue === "A1" || kindValue === "Kk0") && (
+						<form.Field name="signatureMethod">
+							{(field) => (
+								<div className="space-y-1.5 p-3 rounded-lg bg-muted/40 border">
+									<Label
+										htmlFor="signature-method"
+										className="text-xs font-semibold"
+									>
+										Metode Tanda Tangan (Opsional)
+									</Label>
+									<Select
+										value={field.state.value || undefined}
+										onValueChange={(val) => field.handleChange(val)}
+									>
+										<SelectTrigger
+											id="signature-method"
+											className="text-xs bg-background"
+										>
+											<SelectValue placeholder="Pilih metode tanda tangan (opsional)" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="Digital" className="text-xs">
+												Digital Certificate / TTE Elektronik
+											</SelectItem>
+											<SelectItem value="Wet" className="text-xs">
+												Tanda Tangan Basah / Manual Stamp
+											</SelectItem>
+										</SelectContent>
+									</Select>
+								</div>
+							)}
+						</form.Field>
 					)}
 
 					{/* Dropzone Area */}
@@ -356,33 +385,33 @@ export function AttachmentUploadDialog({
 					)}
 
 					<DialogFooter className="pt-2">
-						<Button
-							type="button"
-							variant="outline"
-							size="sm"
-							onClick={onClose}
-							disabled={isSubmitting}
-						>
+						<Button type="button" variant="outline" size="sm" onClick={onClose}>
 							Batal
 						</Button>
-						<Button
-							type="submit"
-							size="sm"
-							disabled={!selectedFile || isSubmitting}
-							className="bg-primary text-primary-foreground font-medium"
+						<form.Subscribe
+							selector={(state) => [state.canSubmit, state.isSubmitting]}
 						>
-							{isSubmitting ? (
-								<>
-									<Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
-									Mengunggah...
-								</>
-							) : (
-								<>
-									<FileUp className="h-3.5 w-3.5 mr-1.5" />
-									Unggah Berkas
-								</>
+							{([canSubmit, isSubmitting]) => (
+								<Button
+									type="submit"
+									size="sm"
+									disabled={!selectedFile || !canSubmit || isSubmitting}
+									className="bg-primary text-primary-foreground font-medium"
+								>
+									{isSubmitting ? (
+										<>
+											<Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
+											Mengunggah...
+										</>
+									) : (
+										<>
+											<FileUp className="h-3.5 w-3.5 mr-1.5" />
+											Unggah Berkas
+										</>
+									)}
+								</Button>
 							)}
-						</Button>
+						</form.Subscribe>
 					</DialogFooter>
 				</form>
 			</DialogContent>

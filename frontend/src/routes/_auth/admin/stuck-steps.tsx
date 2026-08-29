@@ -1,3 +1,4 @@
+import { useForm } from "@tanstack/react-form";
 import { createFileRoute } from "@tanstack/react-router";
 import {
 	ArrowRightLeft,
@@ -13,6 +14,7 @@ import {
 import * as React from "react";
 import { $api } from "@/api/client";
 import type { StuckStepItemDto } from "@/api/types";
+import { FormField } from "@/components/form/form-field";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,7 +27,6 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
 	Table,
 	TableBody,
@@ -34,6 +35,10 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import {
+	type ReassignStuckStepFormValues,
+	reassignStuckStepSchema,
+} from "@/lib/schemas";
 
 export const Route = createFileRoute("/_auth/admin/stuck-steps")({
 	component: StuckStepsPage,
@@ -43,7 +48,6 @@ function StuckStepsPage() {
 	const [searchTerm, setSearchTerm] = React.useState("");
 	const [selectedStep, setSelectedStep] =
 		React.useState<StuckStepItemDto | null>(null);
-	const [targetUserId, setTargetUserId] = React.useState<string>("");
 	const [error, setError] = React.useState<string | null>(null);
 
 	const {
@@ -60,7 +64,6 @@ function StuckStepsPage() {
 		{
 			onSuccess: () => {
 				setSelectedStep(null);
-				setTargetUserId("");
 				setError(null);
 				refetch();
 			},
@@ -69,6 +72,25 @@ function StuckStepsPage() {
 			},
 		},
 	);
+
+	const form = useForm({
+		defaultValues: {
+			targetUserId: "",
+		} as ReassignStuckStepFormValues,
+		validators: {
+			onChange: reassignStuckStepSchema,
+		},
+		onSubmit: async ({ value }) => {
+			if (!selectedStep) return;
+			setError(null);
+			await reassignMutation.mutateAsync({
+				body: {
+					stepId: selectedStep.stepId,
+					targetUserId: value.targetUserId,
+				},
+			});
+		},
+	});
 
 	const stepList = stuckSteps || [];
 	const allUsers = usersData || [];
@@ -90,23 +112,10 @@ function StuckStepsPage() {
 
 	const handleOpenReassign = (step: StuckStepItemDto) => {
 		setSelectedStep(step);
-		setTargetUserId("");
-		setError(null);
-	};
-
-	const handleReassignSubmit = (e: React.FormEvent) => {
-		e.preventDefault();
-		if (!selectedStep || !targetUserId) {
-			setError("Silakan pilih pengguna tujuan pengalihan.");
-			return;
-		}
-
-		reassignMutation.mutate({
-			body: {
-				stepId: selectedStep.stepId,
-				targetUserId,
-			},
+		form.reset({
+			targetUserId: "",
 		});
+		setError(null);
 	};
 
 	return (
@@ -302,7 +311,14 @@ function StuckStepsPage() {
 						</Alert>
 					)}
 
-					<form onSubmit={handleReassignSubmit} className="space-y-4 py-2">
+					<form
+						onSubmit={(e) => {
+							e.preventDefault();
+							e.stopPropagation();
+							form.handleSubmit();
+						}}
+						className="space-y-4 py-2"
+					>
 						<div className="rounded-lg border bg-muted/30 p-3 space-y-1.5 text-xs">
 							<div className="flex justify-between">
 								<span className="text-muted-foreground">Langkah Workflow:</span>
@@ -324,33 +340,43 @@ function StuckStepsPage() {
 							</div>
 						</div>
 
-						<div className="space-y-1.5">
-							<Label htmlFor="target-user" className="text-xs font-medium">
-								Pilih Petugas Baru <span className="text-destructive">*</span>
-							</Label>
-							<select
-								id="target-user"
-								value={targetUserId}
-								onChange={(e) => setTargetUserId(e.target.value)}
-								className="w-full h-9 px-3 rounded-md border bg-background text-xs"
-								required
-							>
-								<option value="">-- Pilih Pengguna Aktif --</option>
-								{allUsers
-									.filter(
-										(u) => u.active && u.id !== selectedStep?.assignedUserId,
-									)
-									.map((user) => (
-										<option key={user.id} value={user.id}>
-											{user.fullName} (
-											{user.roles
-												.map((r) => `${r.role} - ${r.scopeLabel}`)
-												.join(", ") || user.username}
-											)
-										</option>
-									))}
-							</select>
-						</div>
+						<form.Field name="targetUserId">
+							{(field) => {
+								const fieldError = field.state.meta.errors[0]?.message;
+								return (
+									<FormField
+										label="Pilih Petugas Baru"
+										required
+										error={fieldError}
+									>
+										<select
+											id={field.name}
+											name={field.name}
+											value={field.state.value}
+											onBlur={field.handleBlur}
+											onChange={(e) => field.handleChange(e.target.value)}
+											className="w-full h-9 px-3 rounded-md border bg-background text-xs"
+										>
+											<option value="">-- Pilih Pengguna Aktif --</option>
+											{allUsers
+												.filter(
+													(u) =>
+														u.active && u.id !== selectedStep?.assignedUserId,
+												)
+												.map((user) => (
+													<option key={user.id} value={user.id}>
+														{user.fullName} (
+														{user.roles
+															.map((r) => `${r.role} - ${r.scopeLabel}`)
+															.join(", ") || user.username}
+														)
+													</option>
+												))}
+										</select>
+									</FormField>
+								);
+							}}
+						</form.Field>
 
 						<DialogFooter className="pt-2">
 							<Button
@@ -358,24 +384,29 @@ function StuckStepsPage() {
 								variant="outline"
 								size="sm"
 								onClick={() => setSelectedStep(null)}
-								disabled={reassignMutation.isPending}
 							>
 								Batal
 							</Button>
-							<Button
-								type="submit"
-								size="sm"
-								disabled={reassignMutation.isPending}
+							<form.Subscribe
+								selector={(state) => [state.canSubmit, state.isSubmitting]}
 							>
-								{reassignMutation.isPending ? (
-									<>
-										<Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
-										Mengalihkan...
-									</>
-								) : (
-									"Konfirmasi Pengalihan"
+								{([canSubmit, isSubmitting]) => (
+									<Button
+										type="submit"
+										size="sm"
+										disabled={!canSubmit || isSubmitting}
+									>
+										{isSubmitting ? (
+											<>
+												<Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
+												Mengalihkan...
+											</>
+										) : (
+											"Konfirmasi Pengalihan"
+										)}
+									</Button>
 								)}
-							</Button>
+							</form.Subscribe>
 						</DialogFooter>
 					</form>
 				</DialogContent>

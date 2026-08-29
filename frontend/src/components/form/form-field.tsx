@@ -3,7 +3,8 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
 export interface FormFieldProps extends React.HTMLAttributes<HTMLDivElement> {
-	label?: string;
+	label?: React.ReactNode;
+	htmlFor?: string;
 	required?: boolean;
 	error?: string | null;
 	description?: string;
@@ -11,13 +12,23 @@ export interface FormFieldProps extends React.HTMLAttributes<HTMLDivElement> {
 
 export const FormField = React.forwardRef<HTMLDivElement, FormFieldProps>(
 	(
-		{ label, required, error, description, className, children, ...props },
+		{
+			label,
+			htmlFor,
+			required,
+			error,
+			description,
+			className,
+			children,
+			...props
+		},
 		ref,
 	) => {
 		return (
 			<div ref={ref} className={cn("space-y-1.5", className)} {...props}>
 				{label && (
 					<Label
+						htmlFor={htmlFor}
 						className={cn(
 							error && "text-destructive",
 							"flex items-center gap-1",

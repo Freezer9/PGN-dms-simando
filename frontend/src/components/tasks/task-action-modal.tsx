@@ -1,3 +1,4 @@
+import { useForm } from "@tanstack/react-form";
 import { useQueryClient } from "@tanstack/react-query";
 import {
 	AlertTriangle,
@@ -11,6 +12,7 @@ import * as React from "react";
 import { toast } from "sonner";
 import { $api } from "@/api/client";
 import type { TaskListItem } from "@/api/types";
+import { FormField } from "@/components/form/form-field";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -20,7 +22,6 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
 import {
 	Select,
 	SelectContent,
@@ -29,6 +30,10 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import {
+	type TaskActionModalFormValues,
+	taskActionModalSchema,
+} from "@/lib/schemas";
 
 export type TaskActionModalType =
 	| "Setuju"
@@ -53,16 +58,23 @@ export function TaskActionModal({
 	onSuccess,
 }: TaskActionModalProps) {
 	const queryClient = useQueryClient();
-	const [comment, setComment] = React.useState("");
-	const [newUserId, setNewUserId] = React.useState<string>("");
 
-	// Reset form when opened
-	React.useEffect(() => {
-		if (isOpen) {
-			setComment("");
-			setNewUserId("");
+	const invalidateAllTaskQueries = React.useCallback(() => {
+		queryClient.invalidateQueries({ queryKey: ["get", "/api/tasks/inbox"] });
+		queryClient.invalidateQueries({ queryKey: ["get", "/api/tasks/region"] });
+		queryClient.invalidateQueries({ queryKey: ["get", "/api/tasks/blocked"] });
+		queryClient.invalidateQueries({ queryKey: ["get", "/api/tasks/history"] });
+		queryClient.invalidateQueries({ queryKey: ["get", "/api/tasks/summary"] });
+		if (task?.companyId) {
+			queryClient.invalidateQueries({
+				queryKey: [
+					"get",
+					"/api/companies/{id}",
+					{ params: { path: { id: task.companyId } } },
+				],
+			});
 		}
-	}, [isOpen]);
+	}, [queryClient, task?.companyId]);
 
 	// Master Reviewers query for Reassign
 	const { data: reviewers = [] } = $api.useQuery(
@@ -92,9 +104,7 @@ export function TaskActionModal({
 				onSuccess?.();
 			},
 			onError: (error) => {
-				toast.error(
-					error instanceof Error ? error.message : "Gagal memproses tindakan",
-				);
+				toast.error(error.detail || error.title || "Gagal memproses tindakan");
 			},
 		},
 	);
@@ -112,91 +122,89 @@ export function TaskActionModal({
 			},
 			onError: (error) => {
 				toast.error(
-					error instanceof Error
-						? error.message
-						: "Gagal menugaskan ulang reviewer",
+					error.detail || error.title || "Gagal menugaskan ulang reviewer",
 				);
 			},
 		},
 	);
 
-	const invalidateAllTaskQueries = () => {
-		queryClient.invalidateQueries({ queryKey: ["get", "/api/tasks/inbox"] });
-		queryClient.invalidateQueries({ queryKey: ["get", "/api/tasks/region"] });
-		queryClient.invalidateQueries({ queryKey: ["get", "/api/tasks/blocked"] });
-		queryClient.invalidateQueries({ queryKey: ["get", "/api/tasks/history"] });
-		queryClient.invalidateQueries({ queryKey: ["get", "/api/tasks/summary"] });
-		if (task?.companyId) {
-			queryClient.invalidateQueries({
-				queryKey: [
-					"get",
-					"/api/companies/{id}",
-					{ params: { path: { id: task.companyId } } },
-				],
-			});
-		}
-	};
+	const form = useForm({
+		defaultValues: {
+			comment: "",
+			newUserId: "",
+		} as TaskActionModalFormValues,
+		validators: {
+			onChange: taskActionModalSchema,
+		},
+		onSubmit: async ({ value }) => {
+			if (!task) return;
 
-	const isPending = actOnStepMutation.isPending || reassignMutation.isPending;
-
-	const handleConfirm = () => {
-		if (!task) return;
-
-		if (actionType === "Reassign") {
-			if (!newUserId) {
-				toast.error("Wajib memilih reviewer baru!");
+			if (actionType === "Reassign") {
+				if (!value.newUserId) {
+					toast.error("Wajib memilih reviewer baru!");
+					return;
+				}
+				await reassignMutation.mutateAsync({
+					params: { path: { stepId: task.stepId } },
+					body: {
+						newUserId: value.newUserId,
+						reason: value.comment?.trim() || null,
+					},
+				});
 				return;
 			}
-			reassignMutation.mutate({
-				params: { path: { stepId: task.stepId } },
-				body: {
-					newUserId,
-					reason: comment.trim() || null,
-				},
-			});
-			return;
-		}
 
-		if (actionType === "Revisi") {
-			if (!comment.trim()) {
-				toast.error("Wajib mengisi catatan/alasan revisi!");
+			if (actionType === "Revisi") {
+				if (!value.comment?.trim()) {
+					toast.error("Wajib mengisi catatan/alasan revisi!");
+					return;
+				}
+				await actOnStepMutation.mutateAsync({
+					params: { path: { stepId: task.stepId } },
+					body: {
+						action: "Revisi",
+						comment: value.comment.trim(),
+					},
+				});
 				return;
 			}
-			actOnStepMutation.mutate({
-				params: { path: { stepId: task.stepId } },
-				body: {
-					action: "Revisi",
-					comment: comment.trim(),
-				},
-			});
-			return;
-		}
 
-		if (actionType === "Tolak") {
-			if (!comment.trim()) {
-				toast.error("Wajib mengisi alasan penolakan!");
+			if (actionType === "Tolak") {
+				if (!value.comment?.trim()) {
+					toast.error("Wajib mengisi alasan penolakan!");
+					return;
+				}
+				await actOnStepMutation.mutateAsync({
+					params: { path: { stepId: task.stepId } },
+					body: {
+						action: "Tolak",
+						comment: value.comment.trim(),
+					},
+				});
 				return;
 			}
-			actOnStepMutation.mutate({
-				params: { path: { stepId: task.stepId } },
-				body: {
-					action: "Tolak",
-					comment: comment.trim(),
-				},
-			});
-			return;
-		}
 
-		if (actionType === "Setuju") {
-			actOnStepMutation.mutate({
-				params: { path: { stepId: task.stepId } },
-				body: {
-					action: "Setuju",
-					comment: comment.trim() || null,
-				},
+			if (actionType === "Setuju") {
+				await actOnStepMutation.mutateAsync({
+					params: { path: { stepId: task.stepId } },
+					body: {
+						action: "Setuju",
+						comment: value.comment?.trim() || null,
+					},
+				});
+			}
+		},
+	});
+
+	// Reset form when opened
+	React.useEffect(() => {
+		if (isOpen) {
+			form.reset({
+				comment: "",
+				newUserId: "",
 			});
 		}
-	};
+	}, [isOpen, form]);
 
 	if (!actionType || !task) {
 		return null;
@@ -277,59 +285,88 @@ export function TaskActionModal({
 					</DialogDescription>
 				</DialogHeader>
 
-				<div className="space-y-4 py-2">
+				<form
+					onSubmit={(e) => {
+						e.preventDefault();
+						e.stopPropagation();
+						form.handleSubmit();
+					}}
+					className="space-y-4 py-2"
+				>
 					{actionType === "Reassign" && (
-						<div className="space-y-2">
-							<Label htmlFor="new-reviewer-select">
-								Pilih Reviewer Baru <span className="text-rose-500">*</span>
-							</Label>
-							<Select value={newUserId} onValueChange={setNewUserId}>
-								<SelectTrigger id="new-reviewer-select">
-									<SelectValue placeholder="-- Pilih Reviewer --" />
-								</SelectTrigger>
-								<SelectContent>
-									{reviewers.map((r) => (
-										<SelectItem key={r.id} value={r.id}>
-											{r.fullName} ({r.role}) - {r.email}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</div>
+						<form.Field name="newUserId">
+							{(field) => {
+								const error = field.state.meta.errors[0]?.message;
+								return (
+									<FormField
+										label="Pilih Reviewer Baru"
+										htmlFor="new-reviewer-select"
+										required
+										error={error}
+									>
+										<Select
+											value={field.state.value || undefined}
+											onValueChange={(val) => field.handleChange(val)}
+										>
+											<SelectTrigger id="new-reviewer-select">
+												<SelectValue placeholder="-- Pilih Reviewer --" />
+											</SelectTrigger>
+											<SelectContent>
+												{reviewers.map((r) => (
+													<SelectItem key={r.id} value={r.id}>
+														{r.fullName} ({r.role}) - {r.email}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									</FormField>
+								);
+							}}
+						</form.Field>
 					)}
 
-					<div className="space-y-2">
-						<Label htmlFor="action-comment">
-							{actionType === "Setuju" && "Catatan Persetujuan (Opsional)"}
-							{actionType === "Revisi" && (
-								<>
-									Catatan Revisi / Poin Perbaikan{" "}
-									<span className="text-rose-500">*</span>
-								</>
-							)}
-							{actionType === "Tolak" && (
-								<>
-									Alasan Penolakan <span className="text-rose-500">*</span>
-								</>
-							)}
-							{actionType === "Reassign" && "Alasan Penugasan Ulang (Opsional)"}
-						</Label>
-						<Textarea
-							id="action-comment"
-							rows={3}
-							value={comment}
-							onChange={(e) => setComment(e.target.value)}
-							placeholder={
+					<form.Field name="comment">
+						{(field) => {
+							const error = field.state.meta.errors[0]?.message;
+							const isCommentRequired =
+								actionType === "Revisi" || actionType === "Tolak";
+							const labelText =
 								actionType === "Setuju"
-									? "Tulis catatan tambahan jika ada..."
+									? "Catatan Persetujuan (Opsional)"
 									: actionType === "Revisi"
-										? "Jelaskan data atau berkas yang wajib diperbaiki oleh pemohon..."
+										? "Catatan Revisi / Poin Perbaikan"
 										: actionType === "Tolak"
-											? "Jelaskan alasan pengajuan tidak dapat disetujui..."
-											: "Tulis alasan pengalihan tugas..."
-							}
-						/>
-					</div>
+											? "Alasan Penolakan"
+											: "Alasan Penugasan Ulang (Opsional)";
+
+							return (
+								<FormField
+									label={labelText}
+									htmlFor="action-comment"
+									required={isCommentRequired}
+									error={error}
+								>
+									<Textarea
+										id="action-comment"
+										name={field.name}
+										rows={3}
+										value={field.state.value || ""}
+										onBlur={field.handleBlur}
+										onChange={(e) => field.handleChange(e.target.value)}
+										placeholder={
+											actionType === "Setuju"
+												? "Tulis catatan tambahan jika ada..."
+												: actionType === "Revisi"
+													? "Jelaskan data atau berkas yang wajib diperbaiki oleh pemohon..."
+													: actionType === "Tolak"
+														? "Jelaskan alasan pengajuan tidak dapat disetujui..."
+														: "Tulis alasan pengalihan tugas..."
+										}
+									/>
+								</FormField>
+							);
+						}}
+					</form.Field>
 
 					{actionType === "Tolak" && (
 						<div className="flex items-start gap-2.5 p-2.5 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-xs text-rose-700 dark:text-rose-300">
@@ -340,30 +377,38 @@ export function TaskActionModal({
 							</span>
 						</div>
 					)}
-				</div>
 
-				<DialogFooter className="gap-2 sm:gap-0">
-					<Button variant="outline" onClick={onClose} disabled={isPending}>
-						Batal
-					</Button>
-					<Button
-						variant={
-							actionType === "Tolak"
-								? "destructive"
-								: actionType === "Setuju"
-									? "default"
-									: "secondary"
-						}
-						onClick={handleConfirm}
-						disabled={isPending}
-					>
-						{isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-						{actionType === "Setuju" && "Setujui Permohonan"}
-						{actionType === "Revisi" && "Minta Revisi"}
-						{actionType === "Tolak" && "Tolak Berkas"}
-						{actionType === "Reassign" && "Tugaskan Reviewer"}
-					</Button>
-				</DialogFooter>
+					<DialogFooter className="gap-2 sm:gap-0 pt-2">
+						<Button type="button" variant="outline" onClick={onClose}>
+							Batal
+						</Button>
+						<form.Subscribe
+							selector={(state) => [state.canSubmit, state.isSubmitting]}
+						>
+							{([canSubmit, isSubmitting]) => (
+								<Button
+									type="submit"
+									variant={
+										actionType === "Tolak"
+											? "destructive"
+											: actionType === "Setuju"
+												? "default"
+												: "secondary"
+									}
+									disabled={!canSubmit || isSubmitting}
+								>
+									{isSubmitting && (
+										<Loader2 className="h-4 w-4 mr-2 animate-spin" />
+									)}
+									{actionType === "Setuju" && "Setujui Permohonan"}
+									{actionType === "Revisi" && "Minta Revisi"}
+									{actionType === "Tolak" && "Tolak Berkas"}
+									{actionType === "Reassign" && "Tugaskan Reviewer"}
+								</Button>
+							)}
+						</form.Subscribe>
+					</DialogFooter>
+				</form>
 			</DialogContent>
 		</Dialog>
 	);

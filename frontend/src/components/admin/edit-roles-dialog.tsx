@@ -1,3 +1,4 @@
+import { useForm, useStore } from "@tanstack/react-form";
 import {
 	AlertTriangle,
 	Loader2,
@@ -9,6 +10,7 @@ import {
 import * as React from "react";
 import { $api } from "@/api/client";
 import type { AppRole, UserListItemDto } from "@/api/types";
+import { FormField } from "@/components/form/form-field";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,6 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth";
+import { type AssignRoleFormValues, assignRoleSchema } from "@/lib/schemas";
 
 interface EditRolesDialogProps {
 	user: UserListItemDto | null;
@@ -51,9 +54,6 @@ export function EditRolesDialog({
 	const { user: currentUser } = useAuth();
 	const isSysAdmin = currentUser?.capabilities?.includes("ManageMasterData");
 
-	const [role, setRole] = React.useState<AppRole>("SalesArea");
-	const [regionId, setRegionId] = React.useState<string>("");
-	const [areaId, setAreaId] = React.useState<string>("");
 	const [error, setError] = React.useState<string | null>(null);
 
 	// Fetch organisation hierarchy for region/area dropdowns
@@ -67,8 +67,6 @@ export function EditRolesDialog({
 	);
 
 	const regions = orgData || [];
-	const selectedRegion = regions.find((r) => r.id === regionId);
-	const availableAreas = selectedRegion ? selectedRegion.areas : [];
 
 	// Filter allowed roles based on actor
 	const allowedRoles = React.useMemo(() => {
@@ -81,21 +79,6 @@ export function EditRolesDialog({
 		);
 	}, [isSysAdmin]);
 
-	React.useEffect(() => {
-		if (regions.length > 0 && !regionId) {
-			setRegionId(regions[0].id);
-		}
-	}, [regions, regionId]);
-
-	React.useEffect(() => {
-		if (availableAreas.length > 0 && !areaId) {
-			setAreaId(availableAreas[0].id);
-		}
-	}, [availableAreas, areaId]);
-
-	const selectedRoleMeta =
-		ALL_ROLES.find((r) => r.value === role) || ALL_ROLES[0];
-
 	const addRoleMutation = $api.useMutation(
 		"post",
 		"/api/admin/users/{id}/roles",
@@ -104,9 +87,9 @@ export function EditRolesDialog({
 				setError(null);
 				onSuccess();
 			},
-			onError: (error) => {
+			onError: (err) => {
 				const msg =
-					error.detail || error.title || "Gagal menambahkan peran pengguna.";
+					err.detail || err.title || "Gagal menambahkan peran pengguna.";
 				setError(msg);
 			},
 		},
@@ -120,49 +103,74 @@ export function EditRolesDialog({
 				setError(null);
 				onSuccess();
 			},
-			onError: (error) => {
+			onError: (err) => {
 				const msg =
-					error.detail || error.title || "Gagal menonaktifkan peran pengguna.";
+					err.detail || err.title || "Gagal menonaktifkan peran pengguna.";
 				setError(msg);
 			},
 		},
 	);
 
-	if (!user) return null;
+	const form = useForm({
+		defaultValues: {
+			role: "SalesArea",
+			regionId: "",
+			areaId: "",
+		} as AssignRoleFormValues,
+		validators: {
+			onChange: assignRoleSchema,
+		},
+		onSubmit: async ({ value }) => {
+			if (!user) return;
+			setError(null);
 
-	const handleAddRole = (e: React.FormEvent) => {
-		e.preventDefault();
-		setError(null);
+			const selectedRole =
+				ALL_ROLES.find((r) => r.value === value.role) || ALL_ROLES[0];
 
-		let reqRegionId: string | undefined;
-		let reqAreaId: string | undefined;
+			let reqRegionId: string | undefined;
+			let reqAreaId: string | undefined;
 
-		if (selectedRoleMeta.scopeType === "area") {
-			if (!areaId) {
-				setError("Silakan pilih Sales Area untuk peran ini.");
-				return;
+			if (selectedRole.scopeType === "area") {
+				reqAreaId = value.areaId || undefined;
+				reqRegionId = value.regionId || undefined;
+			} else if (selectedRole.scopeType === "region") {
+				reqRegionId = value.regionId || undefined;
 			}
-			reqAreaId = areaId;
-			reqRegionId = regionId || undefined;
-		} else if (selectedRoleMeta.scopeType === "region") {
-			if (!regionId) {
-				setError("Silakan pilih Wilayah (Region) untuk peran ini.");
-				return;
+
+			await addRoleMutation.mutateAsync({
+				params: {
+					path: { id: user.id },
+				},
+				body: {
+					role: value.role as AppRole,
+					areaId: reqAreaId || null,
+					regionId: reqRegionId || null,
+				},
+			});
+		},
+	});
+
+	const selectedRoleValue = useStore(form.store, (state) => state.values.role);
+	const selectedRegionId = useStore(
+		form.store,
+		(state) => state.values.regionId,
+	);
+
+	const selectedRoleMeta =
+		ALL_ROLES.find((r) => r.value === selectedRoleValue) || ALL_ROLES[0];
+	const selectedRegion = regions.find((r) => r.id === selectedRegionId);
+	const availableAreas = selectedRegion ? selectedRegion.areas : [];
+
+	React.useEffect(() => {
+		if (regions.length > 0 && !selectedRegionId) {
+			form.setFieldValue("regionId", regions[0].id);
+			if (regions[0].areas.length > 0) {
+				form.setFieldValue("areaId", regions[0].areas[0].id);
 			}
-			reqRegionId = regionId;
 		}
+	}, [regions, selectedRegionId, form]);
 
-		addRoleMutation.mutate({
-			params: {
-				path: { id: user.id },
-			},
-			body: {
-				role,
-				areaId: reqAreaId || null,
-				regionId: reqRegionId || null,
-			},
-		});
-	};
+	if (!user) return null;
 
 	const handleDeactivateAssignment = (assignmentId: string) => {
 		if (user.roles.length <= 1) {
@@ -262,90 +270,127 @@ export function EditRolesDialog({
 					</div>
 
 					{/* Add role form */}
-					<form onSubmit={handleAddRole} className="space-y-3 pt-2 border-t">
+					<form
+						onSubmit={(e) => {
+							e.preventDefault();
+							e.stopPropagation();
+							form.handleSubmit();
+						}}
+						className="space-y-3 pt-2 border-t"
+					>
 						<Label className="text-xs font-semibold text-foreground">
 							Tambah Peran Baru
 						</Label>
 
 						<div className="grid grid-cols-2 gap-2">
-							<div className="space-y-1">
-								<Label className="text-[11px] text-muted-foreground">
-									Pilih Peran
-								</Label>
-								<select
-									value={role}
-									onChange={(e) => setRole(e.target.value as AppRole)}
-									className="w-full h-8 px-2.5 rounded-md border bg-background text-xs"
-								>
-									{allowedRoles.map((r) => (
-										<option key={r.value} value={r.value}>
-											{r.label}
-										</option>
-									))}
-								</select>
-							</div>
+							<form.Field name="role">
+								{(field) => {
+									const fieldError = field.state.meta.errors[0]?.message;
+									return (
+										<FormField label="Pilih Peran" error={fieldError}>
+											<select
+												id={field.name}
+												name={field.name}
+												value={field.state.value}
+												onBlur={field.handleBlur}
+												onChange={(e) => {
+													field.handleChange(e.target.value);
+												}}
+												className="w-full h-8 px-2.5 rounded-md border bg-background text-xs"
+											>
+												{allowedRoles.map((r) => (
+													<option key={r.value} value={r.value}>
+														{r.label}
+													</option>
+												))}
+											</select>
+										</FormField>
+									);
+								}}
+							</form.Field>
 
 							{selectedRoleMeta.scopeType !== "none" && (
-								<div className="space-y-1">
-									<Label className="text-[11px] text-muted-foreground">
-										Wilayah (Region)
-									</Label>
-									<select
-										value={regionId}
-										onChange={(e) => {
-											setRegionId(e.target.value);
-											const reg = regions.find((r) => r.id === e.target.value);
-											if (reg && reg.areas.length > 0) {
-												setAreaId(reg.areas[0].id);
-											}
-										}}
-										className="w-full h-8 px-2.5 rounded-md border bg-background text-xs"
-									>
-										<option value="">-- Pilih Wilayah --</option>
-										{regions.map((r) => (
-											<option key={r.id} value={r.id}>
-												{r.name}
-											</option>
-										))}
-									</select>
-								</div>
+								<form.Field name="regionId">
+									{(field) => {
+										const fieldError = field.state.meta.errors[0]?.message;
+										return (
+											<FormField label="Wilayah (Region)" error={fieldError}>
+												<select
+													id={field.name}
+													name={field.name}
+													value={field.state.value || ""}
+													onBlur={field.handleBlur}
+													onChange={(e) => {
+														const regId = e.target.value;
+														field.handleChange(regId);
+														const reg = regions.find((r) => r.id === regId);
+														if (reg && reg.areas.length > 0) {
+															form.setFieldValue("areaId", reg.areas[0].id);
+														}
+													}}
+													className="w-full h-8 px-2.5 rounded-md border bg-background text-xs"
+												>
+													<option value="">-- Pilih Wilayah --</option>
+													{regions.map((r) => (
+														<option key={r.id} value={r.id}>
+															{r.name}
+														</option>
+													))}
+												</select>
+											</FormField>
+										);
+									}}
+								</form.Field>
 							)}
 						</div>
 
 						{selectedRoleMeta.scopeType === "area" && (
-							<div className="space-y-1">
-								<Label className="text-[11px] text-muted-foreground">
-									Sales Area
-								</Label>
-								<select
-									value={areaId}
-									onChange={(e) => setAreaId(e.target.value)}
-									className="w-full h-8 px-2.5 rounded-md border bg-background text-xs"
-								>
-									<option value="">-- Pilih Area --</option>
-									{availableAreas.map((a) => (
-										<option key={a.id} value={a.id}>
-											{a.name} ({a.code})
-										</option>
-									))}
-								</select>
-							</div>
+							<form.Field name="areaId">
+								{(field) => {
+									const fieldError = field.state.meta.errors[0]?.message;
+									return (
+										<FormField label="Sales Area" error={fieldError}>
+											<select
+												id={field.name}
+												name={field.name}
+												value={field.state.value || ""}
+												onBlur={field.handleBlur}
+												onChange={(e) => field.handleChange(e.target.value)}
+												className="w-full h-8 px-2.5 rounded-md border bg-background text-xs"
+											>
+												<option value="">-- Pilih Area --</option>
+												{availableAreas.map((a) => (
+													<option key={a.id} value={a.id}>
+														{a.name} ({a.code})
+													</option>
+												))}
+											</select>
+										</FormField>
+									);
+								}}
+							</form.Field>
 						)}
 
 						<div className="flex justify-end pt-1">
-							<Button
-								type="submit"
-								size="sm"
-								disabled={addRoleMutation.isPending}
-								className="h-8 text-xs gap-1.5"
+							<form.Subscribe
+								selector={(state) => [state.canSubmit, state.isSubmitting]}
 							>
-								{addRoleMutation.isPending ? (
-									<Loader2 className="h-3.5 w-3.5 animate-spin" />
-								) : (
-									<Plus className="h-3.5 w-3.5" />
+								{([canSubmit, isSubmitting]) => (
+									<Button
+										type="submit"
+										size="sm"
+										disabled={!canSubmit || isSubmitting}
+										className="h-8 text-xs gap-1.5"
+									>
+										{isSubmitting ? (
+											<Loader2 className="h-3.5 w-3.5 animate-spin" />
+										) : (
+											<Plus className="h-3.5 w-3.5" />
+										)}
+										<span>Tambah Peran</span>
+									</Button>
 								)}
-								<span>Tambah Peran</span>
-							</Button>
+							</form.Subscribe>
 						</div>
 					</form>
 
