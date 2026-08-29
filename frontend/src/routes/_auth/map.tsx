@@ -90,7 +90,7 @@ function GeospatialMapPage() {
 
 			// Stage filter
 			if (selectedStages.length > 0) {
-				if (!selectedStages.includes(item.currentStage)) return false;
+				if (!selectedStages.includes(Number(item.currentStage))) return false;
 			}
 
 			// Industry filter
@@ -124,12 +124,12 @@ function GeospatialMapPage() {
 		return filteredPins.map((item) => ({
 			id: item.id,
 			coordinates: {
-				latitude: item.latitude,
-				longitude: item.longitude,
+				latitude: Number(item.latitude),
+				longitude: Number(item.longitude),
 			},
 			title: item.namaPerusahaan,
 			description: `${item.nomor} — ${item.industryTypeName || "Industri"} (${getStageInfo(item.currentStage).shortName})`,
-			color: STAGE_PIN_COLORS[item.currentStage] || "#3b82f6",
+			color: STAGE_PIN_COLORS[Number(item.currentStage)] || "#3b82f6",
 		}));
 	}, [filteredPins]);
 
@@ -305,33 +305,58 @@ function GeospatialMapPage() {
 								</div>
 							</div>
 
-							{/* Reset Button */}
-							{(searchTerm ||
-								selectedStages.length > 0 ||
-								selectedIndustry !== "ALL" ||
-								selectedPosisi !== "ALL" ||
-								selectedKawasan !== "ALL") && (
-								<Button
-									variant="ghost"
-									size="sm"
-									onClick={resetFilters}
-									className="h-7 text-xs w-full text-muted-foreground hover:text-foreground flex items-center justify-center gap-1 pt-1"
+							{/* Posisi Kawasan */}
+							<div className="space-y-1 pt-1 border-t">
+								<Label className="text-[11px] font-medium text-muted-foreground">
+									Kawasan
+								</Label>
+								<Select
+									value={selectedKawasan}
+									onValueChange={setSelectedKawasan}
 								>
-									<RotateCcw className="size-3" /> Reset Filter
-								</Button>
-							)}
+									<SelectTrigger className="h-8 text-xs">
+										<SelectValue placeholder="Semua Kawasan" />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="ALL">Semua Kawasan</SelectItem>
+										<SelectItem value="KawasanIndustri">
+											Kawasan Industri
+										</SelectItem>
+										<SelectItem value="NonKawasanIndustri">
+											Non Kawasan Industri
+										</SelectItem>
+									</SelectContent>
+								</Select>
+							</div>
+
+							{/* Reset Button */}
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={resetFilters}
+								className="w-full h-7 text-xs flex items-center justify-center gap-1 mt-2 text-muted-foreground hover:text-foreground"
+							>
+								<RotateCcw className="size-3" />
+								<span>Reset Filter</span>
+							</Button>
 						</CardContent>
 					</Card>
 				)}
 
-				{/* Floating Bottom Quick Selection List */}
-				<div className="absolute bottom-4 left-4 right-4 z-10 flex gap-2 overflow-x-auto pb-1 pointer-events-none">
-					{filteredPins.slice(0, 8).map((p) => {
+				{/* Floating Results Quick List (Bottom Left) */}
+				<div className="absolute bottom-4 left-4 right-4 sm:right-auto sm:w-96 max-h-48 overflow-y-auto z-10 flex flex-col gap-1.5 p-1 bg-background/80 backdrop-blur-xs rounded-lg border shadow-md">
+					<div className="px-2 py-1 text-[11px] font-semibold text-muted-foreground flex justify-between items-center border-b">
+						<span>Daftar Titik ({filteredPins.length})</span>
+						<span className="text-[10px] text-primary">
+							Klik item untuk detail
+						</span>
+					</div>
+					{filteredPins.slice(0, 10).map((p) => {
 						const stage = getStageInfo(p.currentStage);
 						return (
 							<Card
 								key={p.id}
-								className="w-64 shrink-0 pointer-events-auto bg-background/95 backdrop-blur-xs border-border/80 shadow-md p-3 space-y-1.5 cursor-pointer hover:border-primary transition-all"
+								className="p-2 cursor-pointer hover:bg-muted/60 transition-colors shadow-none border-border/60"
 								onClick={() => setSelectedPin(p)}
 							>
 								<div className="flex items-center justify-between">
@@ -344,7 +369,7 @@ function GeospatialMapPage() {
 									<span
 										className="size-2 rounded-full"
 										style={{
-											backgroundColor: STAGE_PIN_COLORS[p.currentStage],
+											backgroundColor: STAGE_PIN_COLORS[Number(p.currentStage)],
 										}}
 									/>
 								</div>
@@ -441,8 +466,8 @@ function GeospatialMapPage() {
 								<div className="flex justify-between font-mono text-[11px]">
 									<span className="text-muted-foreground">Koordinat:</span>
 									<span>
-										{selectedPin.latitude.toFixed(5)},{" "}
-										{selectedPin.longitude.toFixed(5)}
+										{Number(selectedPin.latitude).toFixed(5)},{" "}
+										{Number(selectedPin.longitude).toFixed(5)}
 									</span>
 								</div>
 							</div>

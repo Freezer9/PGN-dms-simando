@@ -8,9 +8,14 @@ import { AuthProvider, useAuth } from "./auth";
 const mockUser: CurrentUserDto = {
 	id: "00000000-0000-0000-0000-000000000001",
 	username: "sales.sby",
+	email: "sales.sby@pgn.co.id",
 	fullName: "Sales Surabaya",
+	scope: "Area",
+	areaId: "00000000-0000-0000-0000-000000000002",
+	regionId: "00000000-0000-0000-0000-000000000003",
 	roles: ["SalesArea"],
-	capabilities: ["CreateCompany", "EditDraft"],
+	capabilities: ["CreateCompany", "EditStages1To3"],
+	mustChangePassword: false,
 };
 
 vi.mock("@/api/client", () => ({
@@ -62,13 +67,11 @@ describe("AuthProvider and useAuth", () => {
 		expect(result.current.hasRole("SystemAdmin")).toBe(false);
 		expect(result.current.hasAnyRole(["SalesArea", "DivisionHead"])).toBe(true);
 		expect(result.current.hasCapability("CreateCompany")).toBe(true);
-		expect(result.current.hasCapability("BreakGlassEmergencyAccess")).toBe(
-			false,
-		);
+		expect(result.current.hasCapability("BreakGlassRecordRead")).toBe(false);
 		expect(
 			result.current.hasAnyCapability([
 				"CreateCompany",
-				"BreakGlassEmergencyAccess",
+				"BreakGlassRecordRead",
 			]),
 		).toBe(true);
 	});

@@ -50,7 +50,7 @@ function BreakGlassPage() {
 	const [pageSize] = React.useState(20);
 	const [error, setError] = React.useState<string | null>(null);
 
-	// Fetch audit logs
+	// Fetch logs
 	const {
 		data: logsData,
 		isLoading,
@@ -64,17 +64,24 @@ function BreakGlassPage() {
 		},
 	});
 
-	// Fetch companies for selection
-	const { data: companiesData } = $api.useQuery("get", "/api/companies", {
-		params: {
-			query: {
-				page: 1,
-				pageSize: 50,
-				search: companySearch || undefined,
+	// Fetch company list for emergency access dropdown
+	const { data: companiesData } = $api.useQuery(
+		"get",
+		"/api/companies",
+		{
+			params: {
+				query: {
+					pageSize: 100,
+					searchTerm: companySearch || undefined,
+				},
 			},
 		},
-	});
+		{
+			enabled: requestDialogOpen,
+		},
+	);
 
+	// Emergency request mutation
 	const requestMutation = $api.useMutation(
 		"post",
 		"/api/admin/break-glass/request",
@@ -86,10 +93,10 @@ function BreakGlassPage() {
 				setError(null);
 				refetch();
 			},
-			onError: (error) => {
+			onError: (err) => {
 				setError(
-					error.detail ||
-						error.title ||
+					err.detail ||
+						err.title ||
 						"Gagal mengajukan permintaan akses darurat.",
 				);
 			},
@@ -97,8 +104,8 @@ function BreakGlassPage() {
 	);
 
 	const items: BreakGlassAccessDto[] = logsData?.items || [];
-	const totalCount = logsData?.totalCount || 0;
-	const totalPages = logsData?.totalPages || 1;
+	const totalCount = Number(logsData?.totalCount) || 0;
+	const totalPages = Math.ceil(totalCount / pageSize) || 1;
 	const companies = companiesData?.items || [];
 
 	const handleOpenRequest = () => {
@@ -127,306 +134,328 @@ function BreakGlassPage() {
 		});
 	};
 
-	const now = Date.now();
-
 	return (
-		<div className="space-y-4">
-			{/* Top Header */}
-			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-				<div className="space-y-0.5">
-					<h2 className="text-lg font-bold tracking-tight text-foreground flex items-center gap-2">
-						<ShieldAlert className="h-5 w-5 text-destructive" />
-						<span>Akses Darurat (Break-Glass) & Log Audit</span>
-					</h2>
-					<p className="text-xs text-muted-foreground">
-						Mekanisme akses darurat berbatas waktu (60 menit) dengan pencatatan
-						audit penuh untuk keperluan investigasi teknis dan dukungan sistem.
+		<div className="space-y-6">
+			{/* Page Header */}
+			<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+				<div className="space-y-1">
+					<div className="flex items-center gap-2">
+						<ShieldAlert className="h-6 w-6 text-destructive" />
+						<h1 className="text-2xl font-bold tracking-tight text-foreground">
+							Akses Darurat (Break-Glass Protocol)
+						</h1>
+					</div>
+					<p className="text-sm text-muted-foreground">
+						Audit log dan permohonan akses darurat bypass wewenang berkas untuk
+						kondisi luar biasa. Seluruh aktivitas tercatat dan diaudit secara
+						ketat.
 					</p>
 				</div>
-
-				<div className="flex items-center gap-2">
-					<Button
-						variant="destructive"
-						size="sm"
-						onClick={handleOpenRequest}
-						className="h-9 gap-1.5 text-xs"
-					>
-						<KeyRound className="h-4 w-4" />
-						<span>Minta Akses Darurat</span>
-					</Button>
-				</div>
+				<Button
+					onClick={handleOpenRequest}
+					variant="destructive"
+					className="shadow-xs"
+				>
+					<KeyRound className="h-4 w-4 mr-1.5" />
+					Buka Akses Darurat
+				</Button>
 			</div>
 
-			{/* Info Box */}
-			<Alert className="border-amber-200 bg-amber-50 dark:border-amber-800/60 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 py-2.5">
-				<AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
-				<AlertDescription className="text-xs leading-relaxed">
-					<strong>Ketentuan Keamanan:</strong> Akses break-glass hanya
-					diperbolehkan saat pemecahan masalah teknis mendesak. Setiap pembacaan
-					berkas dicatat permanen dalam jejak audit kepatuhan.
+			{/* Security Notice Alert */}
+			<Alert
+				variant="destructive"
+				className="bg-destructive/5 border-destructive/20 text-destructive"
+			>
+				<AlertTriangle className="h-4 w-4" />
+				<AlertDescription className="text-xs">
+					<strong>Pemberitahuan Keamanan:</strong> Fitur Break-Glass hanya boleh
+					digunakan untuk investigasi mendesak, insiden operasional, atau audit
+					kepatuhan resmi. Setiap pembukaan berkas melalui protokol ini akan
+					menghasilkan log permanen yang dilaporkan kepada Dewan Pengawas
+					Sistem.
 				</AlertDescription>
 			</Alert>
 
-			{/* Audit Log Table */}
-			<div className="rounded-xl border bg-card shadow-xs overflow-hidden">
-				<Table>
-					<TableHeader className="bg-muted/40">
-						<TableRow>
-							<TableHead className="font-semibold text-xs py-3">
-								Pengguna (Admin)
-							</TableHead>
-							<TableHead className="font-semibold text-xs py-3">
-								ID / Target Perusahaan
-							</TableHead>
-							<TableHead className="font-semibold text-xs py-3">
-								Alasan Permintaan
-							</TableHead>
-							<TableHead className="font-semibold text-xs py-3">
-								Waktu Akses
-							</TableHead>
-							<TableHead className="font-semibold text-xs py-3">
-								Kadaluarsa
-							</TableHead>
-							<TableHead className="text-right font-semibold text-xs py-3 pr-4">
-								Status Sesi
-							</TableHead>
-						</TableRow>
-					</TableHeader>
-					<TableBody>
-						{isLoading ? (
+			{/* Audit Log Table Card */}
+			<div className="space-y-4">
+				<div className="flex items-center justify-between">
+					<h3 className="text-base font-semibold text-foreground flex items-center gap-2">
+						<History className="h-4 w-4 text-muted-foreground" />
+						Log Aktivitas Akses Darurat
+					</h3>
+					<Badge variant="outline" className="font-mono text-xs">
+						{totalCount} Riwayat
+					</Badge>
+				</div>
+
+				<div className="rounded-xl border bg-card shadow-xs overflow-hidden">
+					<Table>
+						<TableHeader className="bg-muted/40">
 							<TableRow>
-								<TableCell colSpan={6} className="text-center py-12">
-									<div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
-										<Loader2 className="h-6 w-6 animate-spin text-primary" />
-										<span className="text-sm font-medium">
-											Memuat log audit akses darurat...
-										</span>
-									</div>
-								</TableCell>
+								<TableHead className="font-semibold text-xs pl-4">
+									Pengguna (Auditor)
+								</TableHead>
+								<TableHead className="font-semibold text-xs">
+									Target Berkas
+								</TableHead>
+								<TableHead className="font-semibold text-xs">
+									Alasan / Urgensi
+								</TableHead>
+								<TableHead className="font-semibold text-xs">
+									Waktu Permintaan
+								</TableHead>
+								<TableHead className="font-semibold text-xs">
+									Berakhir Pada
+								</TableHead>
+								<TableHead className="font-semibold text-xs text-right pr-4">
+									Status Sesi
+								</TableHead>
 							</TableRow>
-						) : items.length === 0 ? (
-							<TableRow>
-								<TableCell colSpan={6} className="text-center py-12">
-									<div className="flex flex-col items-center justify-center gap-1.5 text-muted-foreground">
-										<History className="h-8 w-8 text-muted-foreground/60" />
-										<span className="text-sm font-medium text-foreground">
-											Belum Ada Riwayat Break-Glass
-										</span>
-										<span className="text-xs">
-											Tidak ada aktivitas akses darurat yang tercatat.
-										</span>
-									</div>
-								</TableCell>
-							</TableRow>
-						) : (
-							items.map((log) => {
-								const expiresTime = new Date(log.expiresAt).getTime();
-								const isExpired = now >= expiresTime;
-								return (
-									<TableRow
-										key={log.id}
-										className="hover:bg-muted/30 transition-colors"
+						</TableHeader>
+						<TableBody>
+							{isLoading ? (
+								<TableRow>
+									<TableCell colSpan={6} className="h-48 text-center">
+										<div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
+											<Loader2 className="h-6 w-6 animate-spin text-primary" />
+											<span className="text-xs">
+												Memuat audit log break-glass...
+											</span>
+										</div>
+									</TableCell>
+								</TableRow>
+							) : items.length === 0 ? (
+								<TableRow>
+									<TableCell
+										colSpan={6}
+										className="h-48 text-center text-muted-foreground text-xs"
 									>
-										{/* User */}
-										<TableCell className="py-3">
-											<div className="flex items-center gap-2">
-												<User className="h-3.5 w-3.5 text-primary shrink-0" />
-												<div className="flex flex-col">
-													<span className="font-semibold text-foreground text-xs">
-														{log.userName}
-													</span>
-													<span className="font-mono text-[10px] text-muted-foreground">
-														{log.userId.slice(0, 8)}...
+										Belum ada riwayat pembukaan akses darurat.
+									</TableCell>
+								</TableRow>
+							) : (
+								items.map((log) => {
+									const isExpired =
+										!log.isActive || new Date(log.expiresAt) < new Date();
+
+									return (
+										<TableRow
+											key={log.id}
+											className="hover:bg-muted/30 transition-colors"
+										>
+											{/* User */}
+											<TableCell className="py-3 pl-4">
+												<div className="flex items-center gap-2">
+													<div className="size-7 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+														<User className="size-3.5" />
+													</div>
+													<div>
+														<div className="font-medium text-xs text-foreground">
+															{log.userName}
+														</div>
+														<span className="text-[10px] text-muted-foreground font-mono">
+															ID: {log.userId.slice(0, 8)}
+														</span>
+													</div>
+												</div>
+											</TableCell>
+
+											{/* Target Company */}
+											<TableCell className="py-3">
+												<div className="flex items-center gap-1.5 font-mono text-xs">
+													<Building2 className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+													<span>
+														{log.companyNomor || log.companyId.slice(0, 8)} (
+														{log.companyName})
 													</span>
 												</div>
-											</div>
-										</TableCell>
+											</TableCell>
 
-										{/* Target Company */}
-										<TableCell className="py-3">
-											<div className="flex items-center gap-1.5 font-mono text-xs">
-												<Building2 className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-												<span>{log.companyId.slice(0, 8)}...</span>
-											</div>
-										</TableCell>
+											{/* Reason */}
+											<TableCell className="py-3 text-xs max-w-xs">
+												<p className="line-clamp-2 text-foreground">
+													{log.reason}
+												</p>
+											</TableCell>
 
-										{/* Reason */}
-										<TableCell className="py-3 text-xs max-w-xs">
-											<p className="line-clamp-2 text-foreground">
-												{log.reason}
-											</p>
-										</TableCell>
+											{/* Requested At */}
+											<TableCell className="py-3 text-xs text-muted-foreground">
+												{new Date(log.requestedAt).toLocaleString("id-ID", {
+													dateStyle: "medium",
+													timeStyle: "short",
+												})}
+											</TableCell>
 
-										{/* Granted At */}
-										<TableCell className="py-3 text-xs text-muted-foreground">
-											{new Date(log.grantedAt).toLocaleString("id-ID", {
-												dateStyle: "medium",
-												timeStyle: "short",
-											})}
-										</TableCell>
+											{/* Expires At */}
+											<TableCell className="py-3 text-xs text-muted-foreground">
+												{new Date(log.expiresAt).toLocaleString("id-ID", {
+													dateStyle: "medium",
+													timeStyle: "short",
+												})}
+											</TableCell>
 
-										{/* Expires At */}
-										<TableCell className="py-3 text-xs text-muted-foreground">
-											{new Date(log.expiresAt).toLocaleString("id-ID", {
-												dateStyle: "medium",
-												timeStyle: "short",
-											})}
-										</TableCell>
-
-										{/* Status */}
-										<TableCell className="py-3 text-right pr-4">
-											{isExpired ? (
-												<Badge
-													variant="outline"
-													className="text-[10px] bg-muted/40 text-muted-foreground"
-												>
-													Kadaluarsa
-												</Badge>
-											) : (
-												<Badge
-													variant="outline"
-													className="text-[10px] bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300 animate-pulse"
-												>
-													<Clock className="h-3 w-3 mr-1" />
-													Sesi Aktif
-												</Badge>
-											)}
-										</TableCell>
-									</TableRow>
-								);
-							})
-						)}
-					</TableBody>
-				</Table>
-			</div>
-
-			{/* Pagination */}
-			{totalPages > 1 && (
-				<div className="flex items-center justify-between pt-2">
-					<div className="text-xs text-muted-foreground">
-						Halaman <strong className="text-foreground">{page}</strong> dari{" "}
-						<strong className="text-foreground">{totalPages}</strong> (Total{" "}
-						{totalCount} entri)
-					</div>
-					<div className="flex items-center gap-2">
-						<Button
-							size="sm"
-							variant="outline"
-							className="h-8 px-3 text-xs"
-							onClick={() => setPage((p) => Math.max(1, p - 1))}
-							disabled={page <= 1}
-						>
-							<ChevronLeft className="h-3.5 w-3.5 mr-1" />
-							Sebelumnya
-						</Button>
-						<Button
-							size="sm"
-							variant="outline"
-							className="h-8 px-3 text-xs"
-							onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-							disabled={page >= totalPages}
-						>
-							Berikutnya
-							<ChevronRight className="h-3.5 w-3.5 ml-1" />
-						</Button>
-					</div>
+											{/* Status */}
+											<TableCell className="py-3 text-right pr-4">
+												{isExpired ? (
+													<Badge
+														variant="outline"
+														className="text-[10px] bg-muted/40 text-muted-foreground"
+													>
+														Kadaluarsa
+													</Badge>
+												) : (
+													<Badge
+														variant="outline"
+														className="text-[10px] bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300 animate-pulse"
+													>
+														<Clock className="h-3 w-3 mr-1" />
+														Sesi Aktif
+													</Badge>
+												)}
+											</TableCell>
+										</TableRow>
+									);
+								})
+							)}
+						</TableBody>
+					</Table>
 				</div>
-			)}
 
-			{/* Request Dialog */}
-			<Dialog open={requestDialogOpen} onOpenChange={setRequestDialogOpen}>
-				<DialogContent className="sm:max-w-[500px]">
-					<DialogHeader>
-						<DialogTitle className="flex items-center gap-2 text-sm font-semibold text-destructive">
-							<ShieldAlert className="h-4 w-4" />
-							<span>Permintaan Akses Darurat (Break-Glass)</span>
-						</DialogTitle>
-						<DialogDescription className="text-xs">
-							Akses darurat diberikan selama 60 menit dan seluruh aksi Anda akan
-							diaudit.
-						</DialogDescription>
-					</DialogHeader>
-
-					{error && (
-						<Alert variant="destructive">
-							<AlertDescription className="text-xs">{error}</AlertDescription>
-						</Alert>
-					)}
-
-					<form onSubmit={handleSubmitRequest} className="space-y-3 py-2">
-						<div className="space-y-1">
-							<Label htmlFor="company-search" className="text-xs font-medium">
-								Pilih Perusahaan Target{" "}
-								<span className="text-destructive">*</span>
-							</Label>
-							<div className="space-y-1.5">
-								<Input
-									id="company-search"
-									placeholder="Ketik untuk memfilter nama perusahaan..."
-									value={companySearch}
-									onChange={(e) => setCompanySearch(e.target.value)}
-									className="h-8 text-xs"
-								/>
-								<select
-									value={selectedCompanyId}
-									onChange={(e) => setSelectedCompanyId(e.target.value)}
-									className="w-full h-8 px-2.5 rounded-md border bg-background text-xs"
-									required
-								>
-									<option value="">-- Pilih Perusahaan --</option>
-									{companies.map((c) => (
-										<option key={c.id} value={c.id}>
-											{c.nomor} — {c.namaPerusahaan} (
-											{c.salesAreaName || "Area"})
-										</option>
-									))}
-								</select>
-							</div>
+				{/* Pagination */}
+				{totalPages > 1 && (
+					<div className="flex items-center justify-between pt-2">
+						<div className="text-xs text-muted-foreground">
+							Halaman <strong className="text-foreground">{page}</strong> dari{" "}
+							<strong className="text-foreground">{totalPages}</strong> (Total{" "}
+							{totalCount} entri)
 						</div>
-
-						<div className="space-y-1">
-							<Label htmlFor="reason" className="text-xs font-medium">
-								Alasan Akses Darurat <span className="text-destructive">*</span>
-							</Label>
-							<Textarea
-								id="reason"
-								placeholder="Jelaskan alasan teknis mendesak perlunya membuka berkas ini..."
-								value={reason}
-								onChange={(e) => setReason(e.target.value)}
-								className="text-xs min-h-[80px]"
-								required
-							/>
-						</div>
-
-						<DialogFooter className="pt-2">
+						<div className="flex items-center gap-2">
 							<Button
-								type="button"
+								size="sm"
 								variant="outline"
-								size="sm"
-								onClick={() => setRequestDialogOpen(false)}
-								disabled={requestMutation.isPending}
+								className="h-8 px-3 text-xs"
+								onClick={() => setPage((p) => Math.max(1, p - 1))}
+								disabled={page <= 1}
 							>
-								Batal
+								<ChevronLeft className="h-3.5 w-3.5 mr-1" />
+								Sebelumnya
 							</Button>
 							<Button
-								type="submit"
-								variant="destructive"
 								size="sm"
-								disabled={requestMutation.isPending}
+								variant="outline"
+								className="h-8 px-3 text-xs"
+								onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+								disabled={page >= totalPages}
 							>
-								{requestMutation.isPending ? (
-									<>
-										<Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
-										<span>Mengajukan...</span>
-									</>
-								) : (
-									"Konfirmasi Akses Darurat"
-								)}
+								Berikutnya
+								<ChevronRight className="h-3.5 w-3.5 ml-1" />
 							</Button>
-						</DialogFooter>
-					</form>
-				</DialogContent>
-			</Dialog>
+						</div>
+					</div>
+				)}
+
+				{/* Request Dialog */}
+				<Dialog open={requestDialogOpen} onOpenChange={setRequestDialogOpen}>
+					<DialogContent className="sm:max-w-[500px]">
+						<DialogHeader>
+							<div className="flex items-center gap-2 text-destructive">
+								<ShieldAlert className="h-5 w-5" />
+								<DialogTitle>
+									Permohonan Akses Darurat (Break-Glass)
+								</DialogTitle>
+							</div>
+							<DialogDescription className="text-xs">
+								Akses darurat memberikan wewenang baca/tinjau sementara pada
+								berkas pelanggan yang terkunci atau berada di luar wilayah Anda.
+							</DialogDescription>
+						</DialogHeader>
+
+						<form onSubmit={handleSubmitRequest} className="space-y-4 py-2">
+							{error && (
+								<Alert variant="destructive" className="py-2 text-xs">
+									<AlertTriangle className="h-4 w-4" />
+									<AlertDescription>{error}</AlertDescription>
+								</Alert>
+							)}
+
+							<div className="space-y-1.5">
+								<Label htmlFor="company-search" className="text-xs font-medium">
+									Pilih Berkas Pelanggan{" "}
+									<span className="text-destructive">*</span>
+								</Label>
+								<div className="space-y-1.5">
+									<Input
+										id="company-search"
+										placeholder="Ketik untuk memfilter nama perusahaan..."
+										value={companySearch}
+										onChange={(e) => setCompanySearch(e.target.value)}
+										className="h-8 text-xs"
+									/>
+									<select
+										value={selectedCompanyId}
+										onChange={(e) => setSelectedCompanyId(e.target.value)}
+										className="w-full h-8 px-2.5 rounded-md border bg-background text-xs"
+										required
+									>
+										<option value="">-- Pilih Perusahaan --</option>
+										{companies.map((c) => (
+											<option key={c.id} value={c.id}>
+												{c.nomor} — {c.namaPerusahaan} (
+												{c.salesUserName || c.locationLabel || "Area"})
+											</option>
+										))}
+									</select>
+								</div>
+							</div>
+
+							<div className="space-y-1">
+								<Label htmlFor="reason" className="text-xs font-medium">
+									Alasan Akses Darurat{" "}
+									<span className="text-destructive">*</span>
+								</Label>
+								<Textarea
+									id="reason"
+									placeholder="Jelaskan alasan teknis mendesak perlunya membuka berkas ini..."
+									value={reason}
+									onChange={(e) => setReason(e.target.value)}
+									className="text-xs min-h-[80px]"
+									required
+								/>
+							</div>
+
+							<DialogFooter className="pt-2">
+								<Button
+									type="button"
+									variant="outline"
+									size="sm"
+									onClick={() => setRequestDialogOpen(false)}
+									disabled={requestMutation.isPending}
+								>
+									Batal
+								</Button>
+								<Button
+									type="submit"
+									variant="destructive"
+									size="sm"
+									disabled={requestMutation.isPending}
+								>
+									{requestMutation.isPending ? (
+										<>
+											<Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
+											Memproses...
+										</>
+									) : (
+										<>
+											<KeyRound className="h-3.5 w-3.5 mr-1.5" />
+											Konfirmasi Akses Darurat
+										</>
+									)}
+								</Button>
+							</DialogFooter>
+						</form>
+					</DialogContent>
+				</Dialog>
+			</div>
 		</div>
 	);
 }

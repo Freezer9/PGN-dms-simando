@@ -20,11 +20,11 @@ function CountriesPage() {
 
 	const columns: ColumnDef<CountryDto>[] = [
 		{
-			key: "code",
+			key: "isoCode",
 			header: "Kode Negara (ISO)",
 			render: (row) => (
 				<span className="font-mono font-semibold text-foreground">
-					{row.code}
+					{row.isoCode}
 				</span>
 			),
 		},
@@ -39,7 +39,7 @@ function CountriesPage() {
 
 	const fields: FieldDef[] = [
 		{
-			name: "code",
+			name: "isoCode",
 			label: "Kode Negara (2-3 Karakter)",
 			type: "text",
 			required: true,
@@ -69,7 +69,7 @@ function CountriesPage() {
 			columns={columns}
 			fields={fields}
 			onSave={handleSave}
-			searchKeys={["code", "name"]}
+			searchKeys={["isoCode", "name"]}
 		/>
 	);
 }

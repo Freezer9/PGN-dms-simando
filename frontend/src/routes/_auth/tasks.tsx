@@ -25,7 +25,7 @@ function TasksLayout() {
 			to: "/tasks",
 			icon: Inbox,
 			exact: true,
-			count: summary?.myTasksCount ?? 0,
+			count: summary?.myTasksCount != null ? Number(summary.myTasksCount) : 0,
 			badgeVariant: "default" as const,
 			active: location.pathname === "/tasks",
 		},
@@ -34,7 +34,10 @@ function TasksLayout() {
 			to: "/tasks/blocked",
 			icon: AlertOctagon,
 			exact: false,
-			count: summary?.blockedTasksCount ?? 0,
+			count:
+				summary?.blockedTasksCount != null
+					? Number(summary.blockedTasksCount)
+					: 0,
 			badgeVariant: "destructive" as const,
 			active: location.pathname.startsWith("/tasks/blocked"),
 		},

@@ -201,7 +201,11 @@ export function OrganisationView() {
 		if (editingRegion) {
 			updateRegionMutation.mutate({
 				params: { path: { id: editingRegion.id } },
-				body: { code: regionCode.trim(), name: regionName.trim() },
+				body: {
+					code: regionCode.trim(),
+					name: regionName.trim(),
+					active: editingRegion.active ?? true,
+				},
 			});
 		} else {
 			createRegionMutation.mutate({
@@ -242,6 +246,7 @@ export function OrganisationView() {
 					regionId: areaTargetRegionId,
 					code: areaCode.trim(),
 					name: areaName.trim(),
+					active: editingArea.area.active ?? true,
 				},
 			});
 		} else {

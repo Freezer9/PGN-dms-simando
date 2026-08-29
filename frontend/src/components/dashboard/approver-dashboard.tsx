@@ -34,6 +34,7 @@ export function ApproverDashboard({
 	roleTitle = "Approver & Reviewer",
 }: ApproverDashboardProps) {
 	const pendingCount = data.pendingApprovals?.length || 0;
+	const totalPending = Number(data.totalPendingApprovals);
 
 	return (
 		<div className="space-y-6">
@@ -84,8 +85,8 @@ export function ApproverDashboard({
 					value={data.totalPendingApprovals}
 					description="Tugas verifikasi aktif dalam antrean"
 					icon={Clock}
-					variant={data.totalPendingApprovals > 0 ? "amber" : "default"}
-					badge={data.totalPendingApprovals > 0 ? "Pending" : "Selesai"}
+					variant={totalPending > 0 ? "amber" : "default"}
+					badge={totalPending > 0 ? "Pending" : "Selesai"}
 				/>
 				<StatTile
 					title="Total Record Aktif"
@@ -161,7 +162,8 @@ export function ApproverDashboard({
 											<TableCell className="font-medium">
 												<div>
 													<Link
-														to={`/directory/${item.companyId}`}
+														to="/directory/$companyId"
+														params={{ companyId: item.companyId }}
 														className="hover:underline text-foreground font-semibold text-sm"
 													>
 														{item.companyName}
@@ -196,7 +198,10 @@ export function ApproverDashboard({
 													variant="default"
 													className="gap-1"
 												>
-													<Link to={`/directory/${item.companyId}`}>
+													<Link
+														to="/directory/$companyId"
+														params={{ companyId: item.companyId }}
+													>
 														Tinjau
 														<ArrowRight className="size-3.5" />
 													</Link>

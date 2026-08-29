@@ -1,7 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Tags } from "lucide-react";
 import { $api } from "@/api/client";
-import type { ReasonCategoryDto } from "@/api/types";
+import type {
+	CreateReasonCategoryRequest,
+	ReasonCategoryDto,
+	UpdateReasonCategoryRequest,
+} from "@/api/types";
 import {
 	type ColumnDef,
 	type FieldDef,
@@ -15,7 +19,7 @@ export const Route = createFileRoute("/_auth/master/reason-categories")({
 function ReasonCategoriesPage() {
 	const { data, isLoading, refetch } = $api.useQuery(
 		"get",
-		"/api/admin/master/reason-categories",
+		"/api/master/reason-categories",
 	);
 
 	const createMutation = $api.useMutation(
@@ -50,13 +54,6 @@ function ReasonCategoriesPage() {
 				<span className="font-semibold text-foreground">{row.name}</span>
 			),
 		},
-		{
-			key: "description",
-			header: "Deskripsi",
-			render: (row) => (
-				<span className="text-muted-foreground">{row.description || "-"}</span>
-			),
-		},
 	];
 
 	const fields: FieldDef[] = [
@@ -67,33 +64,21 @@ function ReasonCategoriesPage() {
 			required: true,
 			placeholder: "contoh: Kelengkapan Dokumen Legalitas",
 		},
-		{
-			name: "description",
-			label: "Deskripsi Kategori",
-			type: "textarea",
-			placeholder: "contoh: Alasan terkait izin usaha, NIB, atau NPWP",
-		},
 	];
 
 	const handleSave = async (formData: Record<string, unknown>, id?: string) => {
+		const payload: CreateReasonCategoryRequest | UpdateReasonCategoryRequest = {
+			name: String(formData.name),
+		};
+
 		if (id) {
 			await updateMutation.mutateAsync({
 				params: { path: { id } },
-				body: {
-					name: String(formData.name),
-					description: formData.description
-						? String(formData.description)
-						: null,
-				},
+				body: payload,
 			});
 		} else {
 			await createMutation.mutateAsync({
-				body: {
-					name: String(formData.name),
-					description: formData.description
-						? String(formData.description)
-						: null,
-				},
+				body: payload,
 			});
 		}
 	};
@@ -115,7 +100,7 @@ function ReasonCategoriesPage() {
 			fields={fields}
 			onSave={handleSave}
 			onDelete={handleDelete}
-			searchKeys={["name", "description"]}
+			searchKeys={["name"]}
 		/>
 	);
 }

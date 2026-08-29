@@ -15,7 +15,8 @@
     "test:watch": "vitest",
     "format": "biome format",
     "lint": "biome lint",
-    "check": "biome check"
+    "typecheck": "tsc --noEmit",
+    "check": "biome check && tsc --noEmit"
   },
   "dependencies": {
     "@radix-ui/react-checkbox": "^1.3.11",

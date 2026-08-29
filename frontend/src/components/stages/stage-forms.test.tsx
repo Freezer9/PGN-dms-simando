@@ -21,14 +21,14 @@ function createTestQueryClient() {
 }
 
 function renderWithClient(ui: React.ReactElement) {
-	const queryClient = createTestQueryClient();
+	const testQueryClient = createTestQueryClient();
 	return render(
-		<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>,
+		<QueryClientProvider client={testQueryClient}>{ui}</QueryClientProvider>,
 	);
 }
 
-describe("Stage Forms and Workflow Components", () => {
-	it("renders SurveyKk0Form with default sections", () => {
+describe("Stage Form Components", () => {
+	it("renders SurveyKk0Form with main section headers", () => {
 		renderWithClient(
 			<SurveyKk0Form
 				companyId="00000000-0000-0000-0000-000000000001"
@@ -37,7 +37,7 @@ describe("Stage Forms and Workflow Components", () => {
 		);
 
 		expect(
-			screen.getByText(/Formulir Survei Calon Pelanggan \(KK0/i),
+			screen.getByText(/Formulir Survei Calon Pelanggan/i),
 		).toBeInTheDocument();
 		expect(
 			screen.getByText(/1\. Data Pelaksanaan Survei & Jam Kerja Operasional/i),
@@ -46,11 +46,14 @@ describe("Stage Forms and Workflow Components", () => {
 			screen.getByText(/2\. Kebutuhan Energi & Kedekatan Jalur Pipa/i),
 		).toBeInTheDocument();
 		expect(
+			screen.getByText(/3\. Rencana Pemanfaatan Gas & Keekonomian/i),
+		).toBeInTheDocument();
+		expect(
 			screen.getAllByRole("button", { name: /Simpan Data Survei KK0/i }).length,
 		).toBeGreaterThan(0);
 	});
 
-	it("renders A1RegistrationForm with customer subscription fields", () => {
+	it("renders A1RegistrationForm with commercial fields", () => {
 		renderWithClient(
 			<A1RegistrationForm
 				companyId="00000000-0000-0000-0000-000000000001"
@@ -59,20 +62,23 @@ describe("Stage Forms and Workflow Components", () => {
 		);
 
 		expect(
-			screen.getByText(/Formulir Berlangganan Gas Bumi \(Formulir A1\)/i),
+			screen.getByText(/Formulir Berlangganan Gas Bumi/i),
 		).toBeInTheDocument();
 		expect(
-			screen.getByText(/1\. Data Kontak Person in Charge \(PIC\)/i),
+			screen.getByText(/1\. Data Penanggung Jawab & Pendaftaran/i),
 		).toBeInTheDocument();
 		expect(
-			screen.getByText(/3\. Periode & Profil Pemakaian Gas/i),
+			screen.getByText(/2\. Skema Harga, Kontrak & Status Bangunan/i),
+		).toBeInTheDocument();
+		expect(
+			screen.getByText(/3\. Periode & Volume Penggunaan Gas/i),
 		).toBeInTheDocument();
 		expect(
 			screen.getAllByRole("button", { name: /Simpan Formulir A1/i }).length,
 		).toBeGreaterThan(0);
 	});
 
-	it("renders NolRequestForm with Capex and connection costs", () => {
+	it("renders NolRequestForm with financial calculation section", () => {
 		renderWithClient(
 			<NolRequestForm
 				companyId="00000000-0000-0000-0000-000000000001"
@@ -82,19 +88,17 @@ describe("Stage Forms and Workflow Components", () => {
 		);
 
 		expect(
-			screen.getByText(
-				/Permohonan Surat Kesiapan Gas \/ Notice of Letter \(NOL\)/i,
-			),
+			screen.getByText(/Formulir Permohonan Surat NOL/i),
 		).toBeInTheDocument();
 		expect(
-			screen.getByText(/2\. Rincian Biaya Penyambungan Gas/i),
+			screen.getByText(/1\. Data Nota Dinas & Status Registrasi/i),
+		).toBeInTheDocument();
+		expect(
+			screen.getByText(/2\. Biaya Penyambungan & Capex Pre-GR3/i),
 		).toBeInTheDocument();
 		expect(
 			screen.getAllByRole("button", { name: /Simpan Permohonan NOL/i }).length,
 		).toBeGreaterThan(0);
-		expect(
-			screen.getByRole("button", { name: /Ajukan ke Evaluasi NOL/i }),
-		).toBeInTheDocument();
 	});
 
 	it("renders NolEvaluationForm with pipeline and scenario analysis", () => {
@@ -107,18 +111,16 @@ describe("Stage Forms and Workflow Components", () => {
 		);
 
 		expect(
-			screen.getByText(/Evaluasi Teknis & Komersial Surat NOL/i),
+			screen.getByText(/Resume Evaluasi Kelayakan Calon Pelanggan/i),
 		).toBeInTheDocument();
 		expect(
-			screen.getByText(/1\. Status FEED & Spesifikasi Jaringan Pipa/i),
+			screen.getByText(/1\. Status FEED & Status Penganggaran RKAP/i),
 		).toBeInTheDocument();
 		expect(
-			screen.getByText(
-				/4\. Analisis Kelayakan Finansial & Skenario Investasi/i,
-			),
+			screen.getByText(/3\. Analisis Finansial & Skenario Keekonomian Proyek/i),
 		).toBeInTheDocument();
 		expect(
-			screen.getByRole("button", { name: /Tetapkan Reviewer/i }),
+			screen.getByRole("button", { name: /Pilih Reviewer/i }),
 		).toBeInTheDocument();
 	});
 
@@ -131,7 +133,9 @@ describe("Stage Forms and Workflow Components", () => {
 		);
 
 		expect(
-			screen.getByText(/Penerbitan Surat Kesiapan Pasokan Gas \(Surat NOL\)/i),
+			screen.getByText(
+				/Penerbitan Surat Kesiapan Pasokan Gas \(Surat NOL \/ RL\)/i,
+			),
 		).toBeInTheDocument();
 		expect(
 			screen.getByText(/1\. Keputusan Akhir & Administrasi Surat Resmi/i),
@@ -140,34 +144,54 @@ describe("Stage Forms and Workflow Components", () => {
 			screen.getByText(/2\. Ketentuan Volume Gas yang Disetujui/i),
 		).toBeInTheDocument();
 		expect(
-			screen.getAllByRole("button", { name: /Simpan Penerbitan NOL/i }).length,
+			screen.getAllByRole("button", { name: /Simpan Penerbitan/i }).length,
 		).toBeGreaterThan(0);
 	});
 
 	it("renders WorkflowActionBar when user has action rights", () => {
 		const mockCompany: CompanyRecordDto = {
 			id: "00000000-0000-0000-0000-000000000001",
-			name: "PT Industri Gas Jaya",
-			businessSector: "Manufacturing",
-			address: "Jl. Industri No. 12",
-			latitude: -6.2,
-			longitude: 106.8,
-			stage: 6,
-			status: "NeedReview",
+			nomor: "REG-2026-001",
+			namaPerusahaan: "PT Industri Gas Jaya",
+			website: null,
+			alamat: "Jl. Industri No. 12",
+			villageId: "00000000-0000-0000-0000-000000000002",
+			villageName: "Cilincing",
+			districtId: "00000000-0000-0000-0000-000000000003",
+			districtName: "Cilincing",
+			regencyId: "00000000-0000-0000-0000-000000000004",
+			regencyName: "Jakarta Utara",
+			provinceId: "00000000-0000-0000-0000-000000000005",
+			provinceName: "DKI Jakarta",
+			locationLabel: "Jakarta Utara, DKI Jakarta",
+			industryTypeId: "00000000-0000-0000-0000-000000000006",
+			industryTypeName: "Manufacturing",
+			npwp: null,
+			email: null,
+			kodePos: null,
+			telp: null,
+			areaId: "00000000-0000-0000-0000-000000000007",
+			areaName: "Area Jakarta",
+			regionId: "00000000-0000-0000-0000-000000000008",
+			regionName: "Region Barat",
+			currentStage: 6,
+			status: "Reviewer1",
+			createdBy: "00000000-0000-0000-0000-000000000009",
 			salesRepName: "Sales User",
 			createdAt: "2026-08-28T00:00:00Z",
-			userCanAct: true,
-			userCanSubmit: false,
-			userCanChooseReviewers: false,
-			userCanRework: true,
-			userCanDiscontinue: true,
-			activeWorkflowStep: {
-				id: "step-1",
-				instanceId: "inst-1",
-				stepType: "Review",
-				stepName: "Review Teknis",
-				status: "Pending",
-			},
+			updatedAt: null,
+			latitude: -6.2,
+			longitude: 106.8,
+			holderLabel: "Reviewer",
+			holderName: "Tech Reviewer",
+			statusSince: "2026-08-28T00:00:00Z",
+			currentStepId: "step-1",
+			currentStepKind: "Reviewer1",
+			workflowInstanceId: "inst-1",
+			canSubmit: false,
+			canAct: true,
+			canChooseReviewers: false,
+			contacts: [],
 		};
 
 		renderWithClient(<WorkflowActionBar company={mockCompany} />);
@@ -175,7 +199,7 @@ describe("Stage Forms and Workflow Components", () => {
 		expect(
 			screen.getByText(/Aksi Alur Kerja \(Workflow Gate\)/i),
 		).toBeInTheDocument();
-		expect(screen.getByText(/Tahap: Review Teknis/i)).toBeInTheDocument();
+		expect(screen.getByText(/Tahap: Reviewer1/i)).toBeInTheDocument();
 		expect(
 			screen.getByRole("button", { name: /Setujui Langkah/i }),
 		).toBeInTheDocument();

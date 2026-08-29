@@ -8,12 +8,10 @@ import {
 	Phone,
 	RotateCcw,
 	User,
-	UserCheck,
 	XCircle,
 } from "lucide-react";
 import { $api } from "@/api/client";
 import type { TaskListItem } from "@/api/types";
-import { SlaClockBadge } from "@/components/tasks/sla-clock-badge";
 import type { TaskActionModalType } from "@/components/tasks/task-action-modal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,15 +23,13 @@ import {
 	SheetHeader,
 	SheetTitle,
 } from "@/components/ui/sheet";
+import { getStageInfo } from "@/lib/directory-utils";
 
-export interface TaskQuickPreviewDrawerProps {
+interface TaskQuickPreviewDrawerProps {
 	task: TaskListItem | null;
 	isOpen: boolean;
 	onClose: () => void;
-	onTakeAction: (
-		task: TaskListItem,
-		actionType: NonNullable<TaskActionModalType>,
-	) => void;
+	onTakeAction: (task: TaskListItem, action: TaskActionModalType) => void;
 }
 
 export function TaskQuickPreviewDrawer({
@@ -42,7 +38,7 @@ export function TaskQuickPreviewDrawer({
 	onClose,
 	onTakeAction,
 }: TaskQuickPreviewDrawerProps) {
-	// Query full company record when drawer is open
+	// Fetch company details for quick inspection
 	const { data: company, isLoading } = $api.useQuery(
 		"get",
 		"/api/companies/{id}",
@@ -54,65 +50,68 @@ export function TaskQuickPreviewDrawer({
 		},
 	);
 
-	if (!task) return null;
+	if (!task) {
+		return null;
+	}
+
+	const primaryContact =
+		company?.contacts?.find((c) => c.isPrimary) || company?.contacts?.[0];
 
 	return (
 		<Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
-			<SheetContent
-				side="right"
-				className="flex flex-col sm:max-w-xl overflow-y-auto"
-			>
+			<SheetContent className="sm:max-w-md w-full overflow-y-auto">
 				<SheetHeader className="pb-4 border-b">
-					<div className="flex items-center justify-between gap-2 pr-6">
-						<Badge
-							variant="outline"
-							className="font-mono text-xs text-muted-foreground"
-						>
-							{task.nomor}
-						</Badge>
-						<SlaClockBadge waitingSince={task.waitingSince} />
+					<div className="flex items-center gap-2">
+						<Building2 className="h-5 w-5 text-primary" />
+						<SheetTitle className="text-base font-bold text-foreground">
+							{task.namaPerusahaan ||
+								company?.namaPerusahaan ||
+								"Pratinjau Pelanggan"}
+						</SheetTitle>
 					</div>
-					<SheetTitle className="text-xl font-bold text-foreground flex items-center gap-2 mt-1">
-						<Building2 className="h-5 w-5 text-primary shrink-0" />
-						<span>{task.namaPerusahaan}</span>
-					</SheetTitle>
-					<SheetDescription className="flex items-center gap-2 text-xs">
-						<span>{task.industryTypeName || "Industri"}</span>
-						<span>•</span>
-						<span>
-							{task.areaName} ({task.regionName})
+					<SheetDescription className="text-xs">
+						No. Registrasi:{" "}
+						<span className="font-mono font-semibold text-foreground">
+							{task.nomor || company?.nomor || "-"}
 						</span>
 					</SheetDescription>
 				</SheetHeader>
 
-				<div className="flex-1 py-4 space-y-5">
-					{/* Status & Review Turn Summary */}
-					<div className="p-3.5 bg-muted/50 rounded-xl border space-y-2">
+				<div className="py-4 space-y-6">
+					{/* Task Context Card */}
+					<div className="p-3.5 rounded-xl bg-muted/40 border space-y-2.5">
 						<div className="flex items-center justify-between text-xs">
 							<span className="text-muted-foreground font-medium">
-								Tahap Verifikasi
+								Tugas / Langkah:
 							</span>
-							<Badge variant="secondary" className="font-medium">
-								{task.stepKind ?? "Persetujuan"}
+							<Badge variant="outline" className="font-semibold text-primary">
+								{task.stepKind || "Pemeriksaan Berkas"}
 							</Badge>
 						</div>
 						<div className="flex items-center justify-between text-xs">
-							<span className="text-muted-foreground font-medium">
-								Diajukan Oleh
-							</span>
-							<span className="font-medium text-foreground">
-								{task.submittedByName || "-"}
+							<span className="text-muted-foreground">Menunggu Sejak:</span>
+							<span className="text-foreground font-medium">
+								{task.waitingSince
+									? new Date(task.waitingSince).toLocaleDateString("id-ID", {
+											day: "numeric",
+											month: "short",
+											year: "numeric",
+											hour: "2-digit",
+											minute: "2-digit",
+										})
+									: "-"}
 							</span>
 						</div>
 						<div className="flex items-center justify-between text-xs">
-							<span className="text-muted-foreground font-medium">
-								Menunggu Sejak
+							<span className="text-muted-foreground">Area / Regional:</span>
+							<span className="text-foreground font-medium">
+								{task.areaName} / {task.regionName}
 							</span>
-							<span className="text-foreground">
-								{new Date(task.waitingSince).toLocaleString("id-ID", {
-									dateStyle: "medium",
-									timeStyle: "short",
-								})}
+						</div>
+						<div className="flex items-center justify-between text-xs">
+							<span className="text-muted-foreground">Diajukan Oleh:</span>
+							<span className="text-foreground font-medium">
+								{task.submittedByName || "-"}
 							</span>
 						</div>
 					</div>
@@ -148,7 +147,7 @@ export function TaskQuickPreviewDrawer({
 							</div>
 
 							{/* Contact Information */}
-							{company.contact && (
+							{primaryContact && (
 								<div className="space-y-1.5">
 									<h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
 										Kontak Person (PIC)
@@ -157,18 +156,20 @@ export function TaskQuickPreviewDrawer({
 										<div className="flex items-center justify-between">
 											<div className="flex items-center gap-2 font-medium text-foreground">
 												<User className="h-3.5 w-3.5 text-primary" />
-												<span>{company.contact.nama}</span>
+												<span>{primaryContact.nama}</span>
 											</div>
-											{company.contact.jabatan && (
+											{primaryContact.jabatan && (
 												<Badge variant="outline" className="text-[10px]">
-													{company.contact.jabatan}
+													{primaryContact.jabatan}
 												</Badge>
 											)}
 										</div>
-										{company.contact.telp && (
+										{(primaryContact.noHp || primaryContact.email) && (
 											<div className="flex items-center gap-2 text-muted-foreground">
 												<Phone className="h-3.5 w-3.5" />
-												<span>{company.contact.telp}</span>
+												<span>
+													{primaryContact.noHp || primaryContact.email}
+												</span>
 											</div>
 										)}
 									</div>
@@ -186,8 +187,7 @@ export function TaskQuickPreviewDrawer({
 											Tahap Saat Ini
 										</span>
 										<span className="font-semibold text-primary">
-											Tahap {company.currentStage}:{" "}
-											{getStageName(company.currentStage)}
+											{getStageInfo(Number(company.currentStage)).name}
 										</span>
 									</div>
 									<div className="flex items-center justify-between">
@@ -220,7 +220,7 @@ export function TaskQuickPreviewDrawer({
 							onClick={() => onTakeAction(task, "Revisi")}
 						>
 							<RotateCcw className="h-4 w-4 mr-1.5" />
-							Revisi
+							Minta Revisi
 						</Button>
 						<Button
 							size="sm"
@@ -228,62 +228,26 @@ export function TaskQuickPreviewDrawer({
 							onClick={() => onTakeAction(task, "Setuju")}
 						>
 							<CheckCircle2 className="h-4 w-4 mr-1.5" />
-							Setuju
+							Setujui
 						</Button>
 					</div>
 
-					<div className="flex items-center justify-between w-full pt-1">
-						<Button
-							size="sm"
-							variant="ghost"
-							className="text-xs text-muted-foreground"
-							onClick={() => onTakeAction(task, "Reassign")}
+					<Button
+						asChild
+						variant="ghost"
+						size="sm"
+						className="w-full text-xs text-muted-foreground hover:text-foreground"
+					>
+						<Link
+							to="/directory/$companyId"
+							params={{ companyId: task.companyId }}
 						>
-							<UserCheck className="h-3.5 w-3.5 mr-1" />
-							Tugaskan Ulang
-						</Button>
-
-						<Button
-							asChild
-							size="sm"
-							variant="link"
-							className="text-xs p-0 h-auto"
-						>
-							<Link
-								to="/directory/$companyId"
-								params={{ companyId: task.companyId }}
-								onClick={onClose}
-							>
-								Buka Halaman Lengkap
-								<ExternalLink className="h-3 w-3 ml-1" />
-							</Link>
-						</Button>
-					</div>
+							<ExternalLink className="h-3.5 w-3.5 mr-1.5" />
+							Buka Berkas Lengkap Pelanggan
+						</Link>
+					</Button>
 				</SheetFooter>
 			</SheetContent>
 		</Sheet>
 	);
-}
-
-function getStageName(stage: number): string {
-	switch (stage) {
-		case 1:
-			return "Calon Pelanggan";
-		case 2:
-			return "Kontak & Profiling";
-		case 3:
-			return "Plotting & Geotagging";
-		case 4:
-			return "Survei KK0";
-		case 5:
-			return "Registrasi A1";
-		case 6:
-			return "Permohonan NOL";
-		case 7:
-			return "Evaluasi NOL";
-		case 8:
-			return "Penerbitan Surat NOL";
-		default:
-			return `Tahap ${stage}`;
-	}
 }

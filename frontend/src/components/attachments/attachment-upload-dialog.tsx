@@ -264,9 +264,9 @@ export function AttachmentUploadDialog({
 								Metode Tanda Tangan (Opsional)
 							</Label>
 							<Select
-								value={signatureMethod}
+								value={signatureMethod || undefined}
 								onValueChange={(val) =>
-									setSignatureMethod(val as SignatureMethod | "")
+									setSignatureMethod((val as SignatureMethod) || "")
 								}
 							>
 								<SelectTrigger
@@ -349,8 +349,8 @@ export function AttachmentUploadDialog({
 
 					{/* Error Alert */}
 					{errorMsg && (
-						<div className="flex items-center gap-2 p-2.5 rounded-lg bg-destructive/10 text-destructive text-xs">
-							<AlertCircle className="h-4 w-4 shrink-0" />
+						<div className="flex items-start gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-xs">
+							<AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
 							<span>{errorMsg}</span>
 						</div>
 					)}

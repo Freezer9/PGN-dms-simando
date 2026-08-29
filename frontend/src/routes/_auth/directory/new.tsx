@@ -172,11 +172,11 @@ function CreateCompanyPage() {
 			alamat: alamat.trim(),
 			latitude: coordinates.latitude,
 			longitude: coordinates.longitude,
-			npwp: npwp.trim() || undefined,
-			email: email.trim() || undefined,
-			telp: telp.trim() || undefined,
-			website: website.trim() || undefined,
-			kodePos: kodePos.trim() || undefined,
+			npwp: npwp.trim() || null,
+			email: email.trim() || null,
+			telp: telp.trim() || null,
+			website: website.trim() || null,
+			kodePos: kodePos.trim() || null,
 		};
 
 		createCompanyMutation.mutate({ body: payload });

@@ -92,8 +92,6 @@ const mockUser: UserListItemDto = {
 		{
 			role: "SalesArea",
 			scopeLabel: "Surabaya",
-			areaId: "00000000-0000-0000-0000-000000000020",
-			regionId: "00000000-0000-0000-0000-000000000030",
 		},
 	],
 	assignmentIds: ["assign-1"],

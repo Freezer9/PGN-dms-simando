@@ -119,10 +119,11 @@ export function AttachmentList({
 		}
 	};
 
-	const formatSize = (bytes: number) => {
-		if (bytes < 1024) return `${bytes} B`;
-		if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-		return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+	const formatSize = (bytes: number | string) => {
+		const num = Number(bytes);
+		if (num < 1024) return `${num} B`;
+		if (num < 1024 * 1024) return `${(num / 1024).toFixed(1)} KB`;
+		return `${(num / (1024 * 1024)).toFixed(1)} MB`;
 	};
 
 	const getFileIcon = (filename: string, mimeType: string) => {

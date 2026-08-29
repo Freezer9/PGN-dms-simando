@@ -192,7 +192,7 @@ function CompanyRecordHubPage() {
 	const [contactNama, setContactNama] = React.useState("");
 	const [contactJabatan, setContactJabatan] = React.useState("");
 	const [contactEmail, setContactEmail] = React.useState("");
-	const [contactTelp, setContactTelp] = React.useState("");
+	const [contactNoHp, setContactNoHp] = React.useState("");
 	const [contactIsPrimary, setContactIsPrimary] = React.useState(false);
 
 	// State for Plotting Form
@@ -222,8 +222,8 @@ function CompanyRecordHubPage() {
 	React.useEffect(() => {
 		if (company && company.latitude != null && company.longitude != null) {
 			setCurrentCoords({
-				latitude: company.latitude,
-				longitude: company.longitude,
+				latitude: Number(company.latitude),
+				longitude: Number(company.longitude),
 			});
 			setHasChangedCoords(false);
 		}
@@ -378,7 +378,7 @@ function CompanyRecordHubPage() {
 		setContactNama("");
 		setContactJabatan("");
 		setContactEmail("");
-		setContactTelp("");
+		setContactNoHp("");
 		setContactIsPrimary(false);
 		setContactModalOpen(true);
 	};
@@ -388,7 +388,7 @@ function CompanyRecordHubPage() {
 		setContactNama(c.nama);
 		setContactJabatan(c.jabatan || "");
 		setContactEmail(c.email || "");
-		setContactTelp(c.telp || "");
+		setContactNoHp(c.noHp || "");
 		setContactIsPrimary(c.isPrimary);
 		setContactModalOpen(true);
 	};
@@ -402,9 +402,12 @@ function CompanyRecordHubPage() {
 
 		const payload: SaveContactRequest = {
 			nama: contactNama.trim(),
-			jabatan: contactJabatan.trim() || undefined,
-			email: contactEmail.trim() || undefined,
-			telp: contactTelp.trim() || undefined,
+			jabatan: contactJabatan.trim(),
+			email: contactEmail.trim() || null,
+			noHp: contactNoHp.trim() || null,
+			linkedIn: null,
+			instagram: null,
+			facebook: null,
 			isPrimary: contactIsPrimary,
 		};
 
@@ -423,10 +426,15 @@ function CompanyRecordHubPage() {
 
 	const handleSavePlotting = (e: React.FormEvent) => {
 		e.preventDefault();
+		if (!selectedSalesUserId) {
+			toast.error("Sales Representative wajib dipilih");
+			return;
+		}
+
 		const payload: SavePlottingRequest = {
-			salesUserId: selectedSalesUserId || undefined,
-			posisiPelanggan: selectedPosisi ? selectedPosisi : undefined,
-			kawasan: selectedKawasan ? selectedKawasan : undefined,
+			salesUserId: selectedSalesUserId,
+			posisiPelanggan: selectedPosisi ? selectedPosisi : null,
+			kawasan: selectedKawasan ? selectedKawasan : null,
 		};
 
 		savePlottingMutation.mutate({
@@ -494,7 +502,7 @@ function CompanyRecordHubPage() {
 
 				<div className="flex items-center gap-2">
 					<DocumentDownloadDropdown companyId={companyId} />
-					{company.currentStage === 2 && (
+					{Number(company.currentStage) === 2 && (
 						<Button
 							size="sm"
 							onClick={() =>
@@ -562,7 +570,7 @@ function CompanyRecordHubPage() {
 									<span>
 										Sales PIC:{" "}
 										<strong className="text-foreground">
-											{company.salesUserName || "Belum Ditugaskan"}
+											{company.salesRepName || "Belum Ditugaskan"}
 										</strong>
 									</span>
 								</div>
@@ -584,8 +592,8 @@ function CompanyRecordHubPage() {
 					<div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
 						{[1, 2, 3, 4, 5, 6, 7, 8].map((s) => {
 							const stepInfo = STAGE_CONFIG[s];
-							const isCompleted = company.currentStage > s;
-							const isCurrent = company.currentStage === s;
+							const isCompleted = Number(company.currentStage) > s;
+							const isCurrent = Number(company.currentStage) === s;
 
 							return (
 								<div
@@ -705,7 +713,7 @@ function CompanyRecordHubPage() {
 									Sales Representative PIC
 								</span>
 								<div className="text-base font-bold text-foreground">
-									{company.salesUserName || "Belum Ditugaskan"}
+									{company.salesRepName || "Belum Ditugaskan"}
 								</div>
 								<span className="text-[11px] text-muted-foreground">
 									Petugas Penanggung Jawab
@@ -757,7 +765,7 @@ function CompanyRecordHubPage() {
 								</div>
 								<div className="grid grid-cols-3 gap-2 py-1.5 border-b">
 									<span className="text-muted-foreground">Alamat Lengkap</span>
-									<span className="col-span-2">{company.address}</span>
+									<span className="col-span-2">{company.alamat}</span>
 								</div>
 								<div className="grid grid-cols-3 gap-2 py-1.5 border-b">
 									<span className="text-muted-foreground">Wilayah BPS</span>
@@ -804,8 +812,8 @@ function CompanyRecordHubPage() {
 									</CardTitle>
 									{company.latitude != null && company.longitude != null && (
 										<Badge variant="outline" className="font-mono text-xs">
-											{company.latitude.toFixed(6)},{" "}
-											{company.longitude.toFixed(6)}
+											{Number(company.latitude).toFixed(6)},{" "}
+											{Number(company.longitude).toFixed(6)}
 										</Badge>
 									)}
 								</div>
@@ -814,12 +822,15 @@ function CompanyRecordHubPage() {
 								{company.latitude != null && company.longitude != null ? (
 									<div className="h-[280px] w-full rounded-md overflow-hidden border">
 										<Map
-											center={[company.longitude, company.latitude]}
+											center={[
+												Number(company.longitude),
+												Number(company.latitude),
+											]}
 											zoom={13}
 											interactive={false}
 											selectedCoordinates={{
-												latitude: company.latitude,
-												longitude: company.longitude,
+												latitude: Number(company.latitude),
+												longitude: Number(company.longitude),
 											}}
 											className="h-full w-full"
 										/>
@@ -902,7 +913,7 @@ function CompanyRecordHubPage() {
 													{c.email || "-"}
 												</TableCell>
 												<TableCell className="text-xs">
-													{c.telp || "-"}
+													{c.noHp || "-"}
 												</TableCell>
 												<TableCell className="text-xs text-center">
 													{c.isPrimary && (
@@ -997,7 +1008,7 @@ function CompanyRecordHubPage() {
 												<SelectItem value="NONE">Belum Ditugaskan</SelectItem>
 												{salesUsers?.map((u) => (
 													<SelectItem key={u.id} value={u.id}>
-														{u.fullName} ({u.role})
+														{u.fullName} ({u.username})
 													</SelectItem>
 												))}
 											</SelectContent>
@@ -1139,7 +1150,7 @@ function CompanyRecordHubPage() {
 					<SurveyKk0Form
 						companyId={companyId}
 						initialData={surveyData}
-						canEdit={company.userCanEdit}
+						canEdit={company.canAct}
 					/>
 				</TabsContent>
 
@@ -1148,7 +1159,7 @@ function CompanyRecordHubPage() {
 					<A1RegistrationForm
 						companyId={companyId}
 						initialData={registrationData}
-						canEdit={company.userCanEdit}
+						canEdit={company.canAct}
 					/>
 				</TabsContent>
 
@@ -1157,8 +1168,8 @@ function CompanyRecordHubPage() {
 					<NolRequestForm
 						companyId={companyId}
 						initialData={nolRequestData}
-						canEdit={company.userCanEdit}
-						canSubmit={company.userCanSubmit}
+						canEdit={company.canAct}
+						canSubmit={company.canSubmit}
 					/>
 				</TabsContent>
 
@@ -1167,8 +1178,8 @@ function CompanyRecordHubPage() {
 					<NolEvaluationForm
 						companyId={companyId}
 						initialData={nolEvaluationData}
-						canEdit={company.userCanEdit}
-						canChooseReviewers={company.userCanChooseReviewers}
+						canEdit={company.canAct}
+						canChooseReviewers={company.canChooseReviewers}
 					/>
 				</TabsContent>
 
@@ -1177,7 +1188,7 @@ function CompanyRecordHubPage() {
 					<NolIssuanceForm
 						companyId={companyId}
 						initialData={nolIssuanceData}
-						canEdit={company.userCanEdit}
+						canEdit={company.canAct}
 					/>
 				</TabsContent>
 
@@ -1236,7 +1247,7 @@ function CompanyRecordHubPage() {
 								<div className="space-y-4 relative before:absolute before:inset-0 before:left-3.5 before:w-0.5 before:bg-muted">
 									{timeline.map((entry) => (
 										<div
-											key={`${entry.createdAt}-${entry.action}-${entry.fromStatus}-${entry.toStatus}`}
+											key={entry.id}
 											className="flex items-start gap-4 relative pl-8"
 										>
 											<div className="absolute left-2 top-1 size-3 rounded-full bg-primary border-2 border-background" />
@@ -1248,22 +1259,21 @@ function CompanyRecordHubPage() {
 														</span>
 														<span className="text-muted-foreground">oleh</span>
 														<span className="font-medium text-foreground">
-															{entry.actorUserName}
+															{entry.actorName} ({entry.roleLabel})
 														</span>
 													</div>
 													<span className="text-[11px] text-muted-foreground font-mono">
-														{new Date(entry.createdAt).toLocaleString("id-ID")}
+														{new Date(entry.occurredAt).toLocaleString("id-ID")}
 													</span>
 												</div>
 												<div className="flex items-center gap-2 text-muted-foreground pt-1">
 													<span>
-														Status: <strong>{entry.fromStatus}</strong> →{" "}
-														<strong>{entry.toStatus}</strong>
+														Status Tujuan: <strong>{entry.toStatus}</strong>
 													</span>
 												</div>
-												{entry.notes && (
+												{entry.comment && (
 													<p className="text-muted-foreground pt-1 italic">
-														"{entry.notes}"
+														"{entry.comment}"
 													</p>
 												)}
 											</div>
@@ -1334,14 +1344,14 @@ function CompanyRecordHubPage() {
 								/>
 							</div>
 							<div className="space-y-1">
-								<Label htmlFor="contactTelp" className="text-xs font-medium">
+								<Label htmlFor="contactNoHp" className="text-xs font-medium">
 									No. Telepon / HP
 								</Label>
 								<Input
-									id="contactTelp"
+									id="contactNoHp"
 									placeholder="0812-3456-7890"
-									value={contactTelp}
-									onChange={(e) => setContactTelp(e.target.value)}
+									value={contactNoHp}
+									onChange={(e) => setContactNoHp(e.target.value)}
 									className="text-xs h-9"
 								/>
 							</div>

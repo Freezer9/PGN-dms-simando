@@ -350,7 +350,9 @@ function BlockedTasksPage() {
 				}}
 				onTakeAction={(task, actionType) => {
 					setIsDrawerOpen(false);
-					handleOpenActionModal(task, actionType);
+					if (actionType) {
+						handleOpenActionModal(task, actionType);
+					}
 				}}
 			/>
 		</div>

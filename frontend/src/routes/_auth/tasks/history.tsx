@@ -56,8 +56,8 @@ function TaskHistoryPage() {
 	});
 
 	const items = data?.items || [];
-	const totalCount = data?.totalCount || 0;
-	const totalPages = data?.totalPages || 1;
+	const totalCount = Number(data?.totalCount) || 0;
+	const totalPages = Math.ceil(totalCount / pageSize) || 1;
 
 	const handlePageChange = (newPage: number) => {
 		navigate({
@@ -98,116 +98,116 @@ function TaskHistoryPage() {
 							</TableHead>
 							<TableHead className="font-semibold text-xs">Tindakan</TableHead>
 							<TableHead className="font-semibold text-xs">
-								Status Akhir
+								Menuju Status
 							</TableHead>
 							<TableHead className="font-semibold text-xs">
 								Catatan / Alasan
 							</TableHead>
 							<TableHead className="font-semibold text-xs">
-								Waktu Keputusan
+								Waktu Proses
 							</TableHead>
-							<TableHead className="text-right font-semibold text-xs pr-4">
-								Tautan
+							<TableHead className="font-semibold text-xs text-right">
+								Aksi
 							</TableHead>
 						</TableRow>
 					</TableHeader>
 					<TableBody>
 						{isLoading ? (
 							<TableRow>
-								<TableCell colSpan={6} className="text-center py-12">
+								<TableCell colSpan={6} className="h-48 text-center">
 									<div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
 										<Loader2 className="h-6 w-6 animate-spin text-primary" />
-										<span className="text-sm font-medium">
-											Memuat riwayat persetujuan...
-										</span>
+										<span className="text-xs">Memuat riwayat tindakan...</span>
 									</div>
 								</TableCell>
 							</TableRow>
 						) : items.length === 0 ? (
 							<TableRow>
-								<TableCell colSpan={6} className="text-center py-14">
-									<div className="flex flex-col items-center justify-center gap-2 max-w-sm mx-auto text-muted-foreground">
-										<div className="p-3 rounded-full bg-muted text-muted-foreground">
-											<History className="h-6 w-6" />
-										</div>
-										<h4 className="font-semibold text-foreground text-base">
-											Belum Ada Riwayat Keputusan
-										</h4>
-										<p className="text-xs text-muted-foreground text-center leading-relaxed">
-											Anda belum pernah mengambil tindakan atau keputusan
-											persetujuan pada berkas manapun.
+								<TableCell colSpan={6} className="h-48 text-center">
+									<div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
+										<History className="h-8 w-8 text-muted-foreground/40" />
+										<p className="text-sm font-medium">
+											Belum ada riwayat tindakan
+										</p>
+										<p className="text-xs">
+											Tindakan persetujuan atau revisi yang Anda lakukan akan
+											tercatat di sini.
 										</p>
 									</div>
 								</TableCell>
 							</TableRow>
 						) : (
-							items.map((item, index) => (
+							items.map((item) => (
 								<TableRow
-									// biome-ignore lint/suspicious/noArrayIndexKey: unique row key with index fallback
-									key={`${item.companyId}-${item.actedAt}-${index}`}
+									key={`${item.companyId}-${item.actedAt}-${item.action}`}
 									className="hover:bg-muted/30 transition-colors"
 								>
 									{/* Company Info */}
-									<TableCell className="py-3">
-										<div className="flex flex-col gap-0.5">
-											<span className="font-medium text-foreground text-sm flex items-center gap-1.5">
+									<TableCell>
+										<div className="space-y-0.5">
+											<div className="flex items-center gap-1.5 font-medium text-foreground text-xs">
 												<Building2 className="h-3.5 w-3.5 text-primary shrink-0" />
 												<span>{item.namaPerusahaan}</span>
-											</span>
-											<span className="font-mono text-[11px] text-muted-foreground">
+											</div>
+											<span className="text-[11px] font-mono text-muted-foreground block pl-5">
 												{item.nomor}
 											</span>
 										</div>
 									</TableCell>
 
-									{/* Action Badge */}
-									<TableCell className="py-3">
+									{/* Action Taken */}
+									<TableCell>
 										<ActionBadge action={item.action} />
 									</TableCell>
 
 									{/* Target Status */}
-									<TableCell className="py-3">
-										<Badge variant="outline" className="text-xs font-mono">
+									<TableCell>
+										<Badge variant="outline" className="text-[11px]">
 											{item.toStatus}
 										</Badge>
 									</TableCell>
 
-									{/* Comments */}
-									<TableCell className="py-3 max-w-xs">
+									{/* Comment */}
+									<TableCell className="max-w-[280px]">
 										{item.comment ? (
-											<div className="flex items-start gap-1.5 text-xs text-foreground bg-muted/40 p-2 rounded-md border">
-												<MessageSquare className="h-3 w-3 text-muted-foreground shrink-0 mt-0.5" />
-												<span className="line-clamp-2">{item.comment}</span>
+											<div className="flex items-start gap-1.5 text-xs text-muted-foreground">
+												<MessageSquare className="h-3.5 w-3.5 mt-0.5 shrink-0 text-muted-foreground/60" />
+												<span className="line-clamp-2 italic">
+													"{item.comment}"
+												</span>
 											</div>
 										) : (
-											<span className="text-xs text-muted-foreground italic">
+											<span className="text-xs text-muted-foreground/50">
 												-
 											</span>
 										)}
 									</TableCell>
 
 									{/* Acted At */}
-									<TableCell className="py-3 text-xs text-muted-foreground">
-										{new Date(item.actedAt).toLocaleString("id-ID", {
-											dateStyle: "medium",
-											timeStyle: "short",
+									<TableCell className="text-xs text-muted-foreground">
+										{new Date(item.actedAt).toLocaleDateString("id-ID", {
+											day: "numeric",
+											month: "short",
+											year: "numeric",
+											hour: "2-digit",
+											minute: "2-digit",
 										})}
 									</TableCell>
 
-									{/* Link */}
-									<TableCell className="py-3 text-right pr-4">
+									{/* Action Button */}
+									<TableCell className="text-right">
 										<Button
 											asChild
 											size="sm"
 											variant="ghost"
-											className="h-8 px-2 text-xs"
+											className="h-7 text-xs"
 										>
 											<Link
 												to="/directory/$companyId"
 												params={{ companyId: item.companyId }}
 											>
-												Detail
-												<ExternalLink className="h-3 w-3 ml-1" />
+												<ExternalLink className="h-3.5 w-3.5 mr-1" />
+												Buka Berkas
 											</Link>
 										</Button>
 									</TableCell>
@@ -220,19 +220,17 @@ function TaskHistoryPage() {
 
 			{/* Pagination Controls */}
 			{totalPages > 1 && (
-				<div className="flex items-center justify-between pt-2">
-					<div className="text-xs text-muted-foreground">
-						Halaman <strong className="text-foreground">{page}</strong> dari{" "}
-						<strong className="text-foreground">{totalPages}</strong> (Total{" "}
-						{totalCount} riwayat)
+				<div className="flex items-center justify-between text-xs text-muted-foreground px-2 py-1">
+					<div>
+						Halaman {page} dari {totalPages}
 					</div>
 					<div className="flex items-center gap-2">
 						<Button
 							size="sm"
 							variant="outline"
-							className="h-8 px-3 text-xs"
-							onClick={() => handlePageChange(page - 1)}
+							className="h-7 px-2"
 							disabled={page <= 1}
+							onClick={() => handlePageChange(page - 1)}
 						>
 							<ChevronLeft className="h-3.5 w-3.5 mr-1" />
 							Sebelumnya
@@ -240,9 +238,9 @@ function TaskHistoryPage() {
 						<Button
 							size="sm"
 							variant="outline"
-							className="h-8 px-3 text-xs"
-							onClick={() => handlePageChange(page + 1)}
+							className="h-7 px-2"
 							disabled={page >= totalPages}
+							onClick={() => handlePageChange(page + 1)}
 						>
 							Berikutnya
 							<ChevronRight className="h-3.5 w-3.5 ml-1" />
@@ -257,68 +255,63 @@ function TaskHistoryPage() {
 function ActionBadge({ action }: { action: StatusEventAction }) {
 	switch (action) {
 		case "Setuju":
+		case "Issue":
 			return (
 				<Badge
-					variant="outline"
-					className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60 inline-flex items-center gap-1 text-xs"
+					variant="default"
+					className="bg-emerald-600 hover:bg-emerald-700 text-[11px] gap-1"
 				>
-					<CheckCircle2 className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
-					<span>Setuju</span>
+					<CheckCircle2 className="h-3 w-3" />
+					Setuju
 				</Badge>
 			);
 		case "Revisi":
 			return (
 				<Badge
 					variant="outline"
-					className="bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/60 inline-flex items-center gap-1 text-xs"
+					className="border-amber-400 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 text-[11px] gap-1"
 				>
-					<RotateCcw className="h-3 w-3 text-amber-600 dark:text-amber-400" />
-					<span>Revisi</span>
+					<RotateCcw className="h-3 w-3" />
+					Revisi
 				</Badge>
 			);
 		case "Tolak":
 			return (
-				<Badge
-					variant="outline"
-					className="bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800/60 inline-flex items-center gap-1 text-xs"
-				>
-					<XCircle className="h-3 w-3 text-rose-600 dark:text-rose-400" />
-					<span>Tolak</span>
-				</Badge>
-			);
-		case "Submit":
-			return (
-				<Badge
-					variant="outline"
-					className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60 inline-flex items-center gap-1 text-xs"
-				>
-					<Send className="h-3 w-3 text-blue-600 dark:text-blue-400" />
-					<span>Submit</span>
+				<Badge variant="destructive" className="text-[11px] gap-1 shadow-none">
+					<XCircle className="h-3 w-3" />
+					Tolak
 				</Badge>
 			);
 		case "Rework":
 			return (
 				<Badge
 					variant="outline"
-					className="bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/40 dark:text-orange-300 dark:border-orange-800/60 inline-flex items-center gap-1 text-xs"
+					className="border-blue-400 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 text-[11px] gap-1"
 				>
-					<Undo2 className="h-3 w-3 text-orange-600 dark:text-orange-400" />
-					<span>Rework</span>
+					<Undo2 className="h-3 w-3" />
+					Rework
 				</Badge>
 			);
 		case "Discontinue":
 			return (
 				<Badge
 					variant="outline"
-					className="bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 inline-flex items-center gap-1 text-xs"
+					className="border-rose-400 text-rose-600 bg-rose-50 dark:bg-rose-950/40 text-[11px] gap-1"
 				>
-					<AlertOctagon className="h-3 w-3 text-slate-600 dark:text-slate-400" />
-					<span>Discontinue</span>
+					<AlertOctagon className="h-3 w-3" />
+					Discontinue
+				</Badge>
+			);
+		case "Submit":
+			return (
+				<Badge variant="secondary" className="text-[11px] gap-1">
+					<Send className="h-3 w-3" />
+					Submit
 				</Badge>
 			);
 		default:
 			return (
-				<Badge variant="secondary" className="text-xs">
+				<Badge variant="outline" className="text-[11px]">
 					{action}
 				</Badge>
 			);

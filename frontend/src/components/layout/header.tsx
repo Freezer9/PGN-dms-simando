@@ -29,7 +29,7 @@ export function Header() {
 		},
 	);
 
-	const pendingCount = taskSummary?.myTasksCount ?? 0;
+	const pendingCount = Number(taskSummary?.myTasksCount ?? 0);
 
 	const handleLogout = async () => {
 		try {

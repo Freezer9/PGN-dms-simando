@@ -72,6 +72,8 @@ export type A1RegistrationDetail =
 export type SaveA1RegistrationRequest =
 	components["schemas"]["SaveA1RegistrationRequest"];
 export type A1UsagePeriodDetail = components["schemas"]["A1UsagePeriodDetail"];
+export type SaveA1UsagePeriodRequest =
+	components["schemas"]["A1UsagePeriodDetail"];
 export type RegistrasiSource = components["schemas"]["RegistrasiSource"];
 export type BasisKontrak = components["schemas"]["BasisKontrak"];
 export type SkemaHarga = components["schemas"]["SkemaHarga"];
@@ -87,15 +89,22 @@ export type SaveNolRequestRequest =
 	components["schemas"]["SaveNolRequestRequest"];
 export type NolRequestPeriodDetail =
 	components["schemas"]["NolRequestPeriodDetail"];
+export type SaveNolRequestPeriodRequest =
+	components["schemas"]["NolRequestPeriodDetail"];
 export type NolRequestDailyDetail =
 	components["schemas"]["NolRequestDailyDetail"];
+export type SaveNolRequestDailyRequest =
+	components["schemas"]["NolRequestDailyDetail"];
 export type RegistrationType = components["schemas"]["RegistrationType"];
+export type DayOfWeek = components["schemas"]["DayOfWeek"];
 
 // Epic 5: Stage 7 - Evaluasi NOL Form
 export type NolEvaluationDetail = components["schemas"]["NolEvaluationDetail"];
 export type SaveNolEvaluationRequest =
 	components["schemas"]["SaveNolEvaluationRequest"];
 export type NolEvaluationScenarioDetail =
+	components["schemas"]["NolEvaluationScenarioDetail"];
+export type SaveNolEvaluationScenarioRequest =
 	components["schemas"]["NolEvaluationScenarioDetail"];
 export type FeedStatus = components["schemas"]["FeedStatus"];
 export type DiameterUnit = components["schemas"]["DiameterUnit"];
@@ -107,6 +116,8 @@ export type NolIssuanceDetail = components["schemas"]["NolIssuanceDetail"];
 export type SaveNolIssuanceRequest =
 	components["schemas"]["SaveNolIssuanceRequest"];
 export type NolIssuanceApprovedTermDetail =
+	components["schemas"]["NolIssuanceApprovedTermDetail"];
+export type SaveNolIssuanceApprovedTermRequest =
 	components["schemas"]["NolIssuanceApprovedTermDetail"];
 export type NolOutcome = components["schemas"]["NolOutcome"];
 

@@ -7,7 +7,6 @@ import type {
 	Asal,
 	BahanBakarEksisting,
 	KebutuhanEnergiJenis,
-	RencanaPemanfaatanGas,
 	SaveSurveyEquipmentRequest,
 	SaveSurveyMarketRequest,
 	SaveSurveyProductRequest,
@@ -16,7 +15,6 @@ import type {
 	SurveyDetail,
 } from "@/api/types";
 import { DocumentDownloadButton } from "@/components/documents/document-download-buttons";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -132,6 +130,8 @@ export function SurveyKk0Form({
 			? String(initialData.pipaTerdekatTekanan)
 			: "",
 	);
+
+	// Fuel & Power
 	const [bahanBakarEksisting, setBahanBakarEksisting] = React.useState<
 		BahanBakarEksisting | ""
 	>(initialData?.bahanBakarEksisting || "");
@@ -148,9 +148,10 @@ export function SurveyKk0Form({
 			? String(initialData.pemakaianListrikKwh)
 			: "",
 	);
-	const [rencanaPemanfaatanGas, setRencanaPemanfaatanGas] = React.useState<
-		RencanaPemanfaatanGas | ""
-	>(initialData?.rencanaPemanfaatanGas || "");
+
+	// Gas utilization & economics
+	const [rencanaPemanfaatanGas, setRencanaPemanfaatanGas] =
+		React.useState<string>(initialData?.rencanaPemanfaatanGas || "");
 	const [deskripsiProsesProduksi, setDeskripsiProsesProduksi] =
 		React.useState<string>(initialData?.deskripsiProsesProduksi || "");
 	const [minEfisiensiDiharapkanPct, setMinEfisiensiDiharapkanPct] =
@@ -173,9 +174,9 @@ export function SurveyKk0Form({
 	const [products, setProducts] = React.useState<SaveSurveyProductRequest[]>(
 		initialData?.products?.map((p) => ({
 			produk: p.produk,
-			kapasitas: p.kapasitas != null ? Number(p.kapasitas) : undefined,
-			hargaProduk: p.hargaProduk != null ? Number(p.hargaProduk) : undefined,
-			catatan: p.catatan || undefined,
+			kapasitas: p.kapasitas != null ? p.kapasitas : null,
+			hargaProduk: p.hargaProduk != null ? p.hargaProduk : null,
+			catatan: p.catatan || null,
 		})) || [],
 	);
 
@@ -183,21 +184,21 @@ export function SurveyKk0Form({
 		SaveSurveyRawMaterialRequest[]
 	>(
 		initialData?.rawMaterials?.map((m) => ({
-			bahan: m.bahan || undefined,
-			asal: m.asal || undefined,
-			countryId: m.countryId || undefined,
-			volume: m.volume != null ? Number(m.volume) : undefined,
-			satuanUnitId: m.satuanUnitId || undefined,
+			bahan: m.bahan || null,
+			asal: m.asal || null,
+			countryId: m.countryId || null,
+			volume: m.volume != null ? m.volume : null,
+			satuanUnitId: m.satuanUnitId || null,
 		})) || [],
 	);
 
 	const [markets, setMarkets] = React.useState<SaveSurveyMarketRequest[]>(
 		initialData?.markets?.map((m) => ({
-			bahan: m.bahan || undefined,
-			asal: m.asal || undefined,
-			countryId: m.countryId || undefined,
-			volume: m.volume != null ? Number(m.volume) : undefined,
-			satuanUnitId: m.satuanUnitId || undefined,
+			bahan: m.bahan || null,
+			asal: m.asal || null,
+			countryId: m.countryId || null,
+			volume: m.volume != null ? m.volume : null,
+			satuanUnitId: m.satuanUnitId || null,
 		})) || [],
 	);
 
@@ -206,18 +207,15 @@ export function SurveyKk0Form({
 	>(
 		initialData?.equipment?.map((e) => ({
 			jenisPeralatan: e.jenisPeralatan,
-			kapasitas: e.kapasitas != null ? Number(e.kapasitas) : undefined,
-			kapasitasUnitId: e.kapasitasUnitId || undefined,
-			jamPerHari: e.jamPerHari != null ? Number(e.jamPerHari) : undefined,
-			hariPerMinggu:
-				e.hariPerMinggu != null ? Number(e.hariPerMinggu) : undefined,
-			fuelTypeId: e.fuelTypeId || undefined,
-			hargaBahanBakar:
-				e.hargaBahanBakar != null ? Number(e.hargaBahanBakar) : undefined,
-			konsumsiPerBulan:
-				e.konsumsiPerBulan != null ? Number(e.konsumsiPerBulan) : undefined,
-			konsumsiUnitId: e.konsumsiUnitId || undefined,
-			konversiKeGas: Number(e.konversiKeGas) || 0,
+			kapasitas: e.kapasitas != null ? e.kapasitas : null,
+			kapasitasUnitId: e.kapasitasUnitId || null,
+			jamPerHari: e.jamPerHari != null ? e.jamPerHari : null,
+			hariPerMinggu: e.hariPerMinggu != null ? e.hariPerMinggu : null,
+			fuelTypeId: e.fuelTypeId || null,
+			hargaBahanBakar: e.hargaBahanBakar != null ? e.hargaBahanBakar : null,
+			konsumsiPerBulan: e.konsumsiPerBulan != null ? e.konsumsiPerBulan : null,
+			konsumsiUnitId: e.konsumsiUnitId || null,
+			konversiKeGas: e.konversiKeGas != null ? e.konversiKeGas : 0,
 		})) || [],
 	);
 
@@ -297,32 +295,31 @@ export function SurveyKk0Form({
 				setProducts(
 					initialData.products.map((p) => ({
 						produk: p.produk,
-						kapasitas: p.kapasitas != null ? Number(p.kapasitas) : undefined,
-						hargaProduk:
-							p.hargaProduk != null ? Number(p.hargaProduk) : undefined,
-						catatan: p.catatan || undefined,
+						kapasitas: p.kapasitas != null ? p.kapasitas : null,
+						hargaProduk: p.hargaProduk != null ? p.hargaProduk : null,
+						catatan: p.catatan || null,
 					})),
 				);
 			}
 			if (initialData.rawMaterials) {
 				setRawMaterials(
 					initialData.rawMaterials.map((m) => ({
-						bahan: m.bahan || undefined,
-						asal: m.asal || undefined,
-						countryId: m.countryId || undefined,
-						volume: m.volume != null ? Number(m.volume) : undefined,
-						satuanUnitId: m.satuanUnitId || undefined,
+						bahan: m.bahan || null,
+						asal: m.asal || null,
+						countryId: m.countryId || null,
+						volume: m.volume != null ? m.volume : null,
+						satuanUnitId: m.satuanUnitId || null,
 					})),
 				);
 			}
 			if (initialData.markets) {
 				setMarkets(
 					initialData.markets.map((m) => ({
-						bahan: m.bahan || undefined,
-						asal: m.asal || undefined,
-						countryId: m.countryId || undefined,
-						volume: m.volume != null ? Number(m.volume) : undefined,
-						satuanUnitId: m.satuanUnitId || undefined,
+						bahan: m.bahan || null,
+						asal: m.asal || null,
+						countryId: m.countryId || null,
+						volume: m.volume != null ? m.volume : null,
+						satuanUnitId: m.satuanUnitId || null,
 					})),
 				);
 			}
@@ -330,20 +327,17 @@ export function SurveyKk0Form({
 				setEquipment(
 					initialData.equipment.map((e) => ({
 						jenisPeralatan: e.jenisPeralatan,
-						kapasitas: e.kapasitas != null ? Number(e.kapasitas) : undefined,
-						kapasitasUnitId: e.kapasitasUnitId || undefined,
-						jamPerHari: e.jamPerHari != null ? Number(e.jamPerHari) : undefined,
-						hariPerMinggu:
-							e.hariPerMinggu != null ? Number(e.hariPerMinggu) : undefined,
-						fuelTypeId: e.fuelTypeId || undefined,
+						kapasitas: e.kapasitas != null ? e.kapasitas : null,
+						kapasitasUnitId: e.kapasitasUnitId || null,
+						jamPerHari: e.jamPerHari != null ? e.jamPerHari : null,
+						hariPerMinggu: e.hariPerMinggu != null ? e.hariPerMinggu : null,
+						fuelTypeId: e.fuelTypeId || null,
 						hargaBahanBakar:
-							e.hargaBahanBakar != null ? Number(e.hargaBahanBakar) : undefined,
+							e.hargaBahanBakar != null ? e.hargaBahanBakar : null,
 						konsumsiPerBulan:
-							e.konsumsiPerBulan != null
-								? Number(e.konsumsiPerBulan)
-								: undefined,
-						konsumsiUnitId: e.konsumsiUnitId || undefined,
-						konversiKeGas: Number(e.konversiKeGas) || 0,
+							e.konsumsiPerBulan != null ? e.konsumsiPerBulan : null,
+						konsumsiUnitId: e.konsumsiUnitId || null,
+						konversiKeGas: e.konversiKeGas != null ? e.konversiKeGas : 0,
 					})),
 				);
 			}
@@ -453,7 +447,7 @@ export function SurveyKk0Form({
 	const addProductRow = () => {
 		setProducts([
 			...products,
-			{ produk: "", kapasitas: undefined, hargaProduk: undefined, catatan: "" },
+			{ produk: "", kapasitas: null, hargaProduk: null, catatan: null },
 		]);
 	};
 	const removeProductRow = (index: number) => {
@@ -465,10 +459,10 @@ export function SurveyKk0Form({
 			...rawMaterials,
 			{
 				bahan: "",
-				asal: "Domestik",
-				countryId: undefined,
-				volume: undefined,
-				satuanUnitId: undefined,
+				asal: "Lokal",
+				countryId: null,
+				volume: null,
+				satuanUnitId: null,
 			},
 		]);
 	};
@@ -481,10 +475,10 @@ export function SurveyKk0Form({
 			...markets,
 			{
 				bahan: "",
-				asal: "Domestik",
-				countryId: undefined,
-				volume: undefined,
-				satuanUnitId: undefined,
+				asal: "Lokal",
+				countryId: null,
+				volume: null,
+				satuanUnitId: null,
 			},
 		]);
 	};
@@ -497,14 +491,14 @@ export function SurveyKk0Form({
 			...equipment,
 			{
 				jenisPeralatan: "",
-				kapasitas: undefined,
-				kapasitasUnitId: undefined,
-				jamPerHari: undefined,
-				hariPerMinggu: undefined,
-				fuelTypeId: undefined,
-				hargaBahanBakar: undefined,
-				konsumsiPerBulan: undefined,
-				konsumsiUnitId: undefined,
+				kapasitas: null,
+				kapasitasUnitId: null,
+				jamPerHari: null,
+				hariPerMinggu: null,
+				fuelTypeId: null,
+				hargaBahanBakar: null,
+				konsumsiPerBulan: null,
+				konsumsiUnitId: null,
 				konversiKeGas: 0,
 			},
 		]);
@@ -778,7 +772,7 @@ export function SurveyKk0Form({
 							</Label>
 							<Input
 								type="number"
-								placeholder="contoh: 1500"
+								placeholder="contoh: 500"
 								value={kapasitasListrikKw}
 								onChange={(e) => setKapasitasListrikKw(e.target.value)}
 								disabled={!canEdit}
@@ -789,61 +783,13 @@ export function SurveyKk0Form({
 						{/* Pemakaian Listrik (kWh) */}
 						<div className="space-y-1.5">
 							<Label className="text-xs font-medium">
-								Pemakaian Listrik Bulanan (kWh)
+								Pemakaian Listrik (kWh/Bulan)
 							</Label>
 							<Input
 								type="number"
-								placeholder="contoh: 350000"
+								placeholder="contoh: 120000"
 								value={pemakaianListrikKwh}
 								onChange={(e) => setPemakaianListrikKwh(e.target.value)}
-								disabled={!canEdit}
-								className="text-xs h-9"
-							/>
-						</div>
-
-						{/* Jarak Pipa Terdekat (meter) */}
-						<div className="space-y-1.5">
-							<Label className="text-xs font-medium">
-								Jarak Pipa Terdekat (meter)
-							</Label>
-							<Input
-								type="number"
-								step="0.1"
-								placeholder="contoh: 250"
-								value={pipaTerdekatJarakM}
-								onChange={(e) => setPipaTerdekatJarakM(e.target.value)}
-								disabled={!canEdit}
-								className="text-xs h-9"
-							/>
-						</div>
-
-						{/* Diameter Pipa */}
-						<div className="space-y-1.5">
-							<Label className="text-xs font-medium">
-								Diameter Pipa Terdekat (inch)
-							</Label>
-							<Input
-								type="number"
-								step="0.5"
-								placeholder="contoh: 6"
-								value={pipaTerdekatDiameter}
-								onChange={(e) => setPipaTerdekatDiameter(e.target.value)}
-								disabled={!canEdit}
-								className="text-xs h-9"
-							/>
-						</div>
-
-						{/* Tekanan Pipa */}
-						<div className="space-y-1.5">
-							<Label className="text-xs font-medium">
-								Tekanan Pipa Terdekat (barg)
-							</Label>
-							<Input
-								type="number"
-								step="0.1"
-								placeholder="contoh: 4"
-								value={pipaTerdekatTekanan}
-								onChange={(e) => setPipaTerdekatTekanan(e.target.value)}
 								disabled={!canEdit}
 								className="text-xs h-9"
 							/>
@@ -869,85 +815,127 @@ export function SurveyKk0Form({
 								<SelectContent>
 									<SelectItem value="NONE">Belum Ada</SelectItem>
 									<SelectItem value="Solar">Solar / HSD</SelectItem>
+									<SelectItem value="MFO">MFO / Residu</SelectItem>
 									<SelectItem value="Batubara">Batubara</SelectItem>
-									<SelectItem value="Lpg">LPG</SelectItem>
-									<SelectItem value="Biomassa">Biomassa / Cangkang</SelectItem>
+									<SelectItem value="LPG">LPG</SelectItem>
+									<SelectItem value="Biomassa">Biomassa</SelectItem>
 									<SelectItem value="Lainnya">Lainnya</SelectItem>
 								</SelectContent>
 							</Select>
 						</div>
 
-						{/* Nama Pemasok Eksisting */}
+						{/* Nama Pemasok Bahan Bakar */}
 						<div className="space-y-1.5">
 							<Label className="text-xs font-medium">
-								Nama Pemasok BBM Eksisting
+								Nama Pemasok Bahan Bakar
 							</Label>
 							<Input
-								placeholder="contoh: Pertamina Patra Niaga"
+								placeholder="contoh: PT Pertamina Patra Niaga"
 								value={namaPemasok}
 								onChange={(e) => setNamaPemasok(e.target.value)}
 								disabled={!canEdit}
 								className="text-xs h-9"
 							/>
 						</div>
+					</div>
 
+					{/* Pipeline Terdekat */}
+					<div className="pt-2 border-t">
+						<Label className="text-xs font-semibold mb-2 block text-muted-foreground">
+							Jalur Pipa Terdekat Eksisting
+						</Label>
+						<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+							<div className="space-y-1.5">
+								<Label className="text-[11px]">Jarak ke Pipa (Meter)</Label>
+								<Input
+									type="number"
+									placeholder="contoh: 250"
+									value={pipaTerdekatJarakM}
+									onChange={(e) => setPipaTerdekatJarakM(e.target.value)}
+									disabled={!canEdit}
+									className="text-xs h-9"
+								/>
+							</div>
+							<div className="space-y-1.5">
+								<Label className="text-[11px]">Diameter Pipa (Inci)</Label>
+								<Input
+									type="number"
+									step="0.5"
+									placeholder="contoh: 6"
+									value={pipaTerdekatDiameter}
+									onChange={(e) => setPipaTerdekatDiameter(e.target.value)}
+									disabled={!canEdit}
+									className="text-xs h-9"
+								/>
+							</div>
+							<div className="space-y-1.5">
+								<Label className="text-[11px]">Tekanan Pipa (Barg)</Label>
+								<Input
+									type="number"
+									step="0.1"
+									placeholder="contoh: 4.0"
+									value={pipaTerdekatTekanan}
+									onChange={(e) => setPipaTerdekatTekanan(e.target.value)}
+									disabled={!canEdit}
+									className="text-xs h-9"
+								/>
+							</div>
+						</div>
+					</div>
+				</CardContent>
+			</Card>
+
+			{/* SECTION 3: RENCANA GAS & KEEKONOMIAN */}
+			<Card className="border-border/60 shadow-xs">
+				<CardHeader className="pb-3">
+					<CardTitle className="text-sm font-semibold">
+						3. Rencana Pemanfaatan Gas & Keekonomian
+					</CardTitle>
+					<CardDescription className="text-xs">
+						Aplikasi pemanfaatan gas, efisiensi target, dan willingness to pay
+					</CardDescription>
+				</CardHeader>
+				<CardContent className="space-y-4">
+					<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
 						{/* Rencana Pemanfaatan Gas */}
 						<div className="space-y-1.5">
 							<Label className="text-xs font-medium">
-								Rencana Pemanfaatan Gas
+								Rencana Aplikasi Gas
 							</Label>
 							<Select
 								value={rencanaPemanfaatanGas || "NONE"}
 								onValueChange={(val) =>
-									setRencanaPemanfaatanGas(
-										val === "NONE" ? "" : (val as RencanaPemanfaatanGas),
-									)
+									setRencanaPemanfaatanGas(val === "NONE" ? "" : val)
 								}
 								disabled={!canEdit}
 							>
 								<SelectTrigger className="text-xs h-9">
-									<SelectValue placeholder="Pilih Pemanfaatan Gas" />
+									<SelectValue placeholder="Pilih Pemanfaatan" />
 								</SelectTrigger>
 								<SelectContent>
 									<SelectItem value="NONE">Belum Ditentukan</SelectItem>
-									<SelectItem value="BahanBakar">
-										Bahan Bakar Pembakaran
+									<SelectItem value="Boiler">Boiler / Steam</SelectItem>
+									<SelectItem value="Furnace">Furnace / Kiln / Oven</SelectItem>
+									<SelectItem value="PembangkitListrik">
+										Pembangkit Listrik / Genset Gas
 									</SelectItem>
-									<SelectItem value="BahanBaku">
-										Bahan Baku Proses Kimia
+									<SelectItem value="Chiller">
+										Gas Absorption Chiller
 									</SelectItem>
-									<SelectItem value="Pembangkit">
-										Pembangkit Listrik Mandiri
+									<SelectItem value="ProsesProduksiLain">
+										Proses Produksi Lainnya
 									</SelectItem>
-									<SelectItem value="Lainnya">Lainnya</SelectItem>
 								</SelectContent>
 							</Select>
 						</div>
 
-						{/* Willingness To Pay */}
+						{/* Min Efisiensi Diharapkan */}
 						<div className="space-y-1.5">
 							<Label className="text-xs font-medium">
-								Willingness to Pay (USD/MMBTU)
+								Target Peningkatan Efisiensi (%)
 							</Label>
 							<Input
 								type="number"
-								step="0.01"
-								placeholder="contoh: 9.50"
-								value={willingnessToPayUsdMmbtu}
-								onChange={(e) => setWillingnessToPayUsdMmbtu(e.target.value)}
-								disabled={!canEdit}
-								className="text-xs h-9"
-							/>
-						</div>
-
-						{/* Min Efisiensi */}
-						<div className="space-y-1.5">
-							<Label className="text-xs font-medium">
-								Target Efisiensi Biaya (%)
-							</Label>
-							<Input
-								type="number"
-								step="0.1"
 								placeholder="contoh: 15"
 								value={minEfisiensiDiharapkanPct}
 								onChange={(e) => setMinEfisiensiDiharapkanPct(e.target.value)}
@@ -955,34 +943,51 @@ export function SurveyKk0Form({
 								className="text-xs h-9"
 							/>
 						</div>
+
+						{/* Willingness to Pay */}
+						<div className="space-y-1.5">
+							<Label className="text-xs font-medium">
+								Willingness to Pay (USD / MMBTU)
+							</Label>
+							<Input
+								type="number"
+								step="0.01"
+								placeholder="contoh: 9.5"
+								value={willingnessToPayUsdMmbtu}
+								onChange={(e) => setWillingnessToPayUsdMmbtu(e.target.value)}
+								disabled={!canEdit}
+								className="text-xs h-9"
+							/>
+						</div>
 					</div>
 
 					{/* Deskripsi Proses Produksi */}
-					<div className="space-y-1.5 pt-2">
+					<div className="space-y-1.5">
 						<Label className="text-xs font-medium">
 							Deskripsi Alur Proses Produksi
 						</Label>
 						<Textarea
-							placeholder="Jelaskan proses produksi dari bahan baku hingga barang jadi..."
+							placeholder="Jelaskan alur proses produksi yang memerlukan panas/gas..."
 							value={deskripsiProsesProduksi}
 							onChange={(e) => setDeskripsiProsesProduksi(e.target.value)}
 							disabled={!canEdit}
-							className="text-xs min-h-[60px]"
+							className="text-xs min-h-[70px]"
 						/>
 					</div>
 				</CardContent>
 			</Card>
 
-			{/* SECTION 3: REPEATING EQUIPMENT & GAS CONVERSION TABLE */}
+			{/* SECTION 4: DAFTAR PERALATAN ENERGI & KONVERSI GAS */}
 			<Card className="border-border/60 shadow-xs">
 				<CardHeader className="pb-3 flex flex-row items-center justify-between">
 					<div>
 						<CardTitle className="text-sm font-semibold flex items-center gap-2">
 							<Zap className="size-4 text-amber-500" />
-							3. Tabel Peralatan Pembakar & Konversi Volume Gas
+							4. Daftar Peralatan Energi & Konversi ke Gas
 						</CardTitle>
 						<CardDescription className="text-xs">
-							Daftar burner/boiler dan perhitungan konversi gas bulanan (MMBTU)
+							Spesifikasi boiler, furnace, burner, dan estimasi konsumsi gas
+							hasil konversi
 						</CardDescription>
 					</div>
 					{canEdit && (
@@ -993,42 +998,29 @@ export function SurveyKk0Form({
 							onClick={addEquipmentRow}
 							className="h-8 text-xs flex items-center gap-1"
 						>
-							<Plus className="size-3.5" /> Tambah Peralatan
+							<Plus className="size-3.5" />
+							Tambah Peralatan
 						</Button>
 					)}
 				</CardHeader>
 				<CardContent>
-					<div className="border rounded-lg overflow-x-auto">
+					<div className="rounded-lg border overflow-hidden">
 						<Table>
-							<TableHeader className="bg-muted/50">
+							<TableHeader className="bg-muted/40">
 								<TableRow>
-									<TableHead className="text-xs font-semibold min-w-[140px]">
-										Jenis Peralatan
-									</TableHead>
-									<TableHead className="text-xs font-semibold min-w-[100px]">
-										Kapasitas
-									</TableHead>
-									<TableHead className="text-xs font-semibold min-w-[110px]">
-										Satuan
-									</TableHead>
-									<TableHead className="text-xs font-semibold min-w-[90px]">
-										Jam/Hari
-									</TableHead>
-									<TableHead className="text-xs font-semibold min-w-[90px]">
-										Hari/Minggu
-									</TableHead>
-									<TableHead className="text-xs font-semibold min-w-[130px]">
-										Bahan Bakar
-									</TableHead>
-									<TableHead className="text-xs font-semibold min-w-[110px]">
-										Konsumsi/Bln
-									</TableHead>
-									<TableHead className="text-xs font-semibold min-w-[130px]">
-										Konversi Gas (MMBTU)
+									<TableHead className="text-xs">Jenis Peralatan</TableHead>
+									<TableHead className="text-xs">Kapasitas</TableHead>
+									<TableHead className="text-xs">Satuan</TableHead>
+									<TableHead className="text-xs">Jam/Hari</TableHead>
+									<TableHead className="text-xs">Hari/Mgg</TableHead>
+									<TableHead className="text-xs">Bahan Bakar</TableHead>
+									<TableHead className="text-xs">Konsumsi/Bln</TableHead>
+									<TableHead className="text-xs font-semibold text-primary">
+										Konversi Gas (MMBTU/Bln)
 									</TableHead>
 									{canEdit && (
-										<TableHead className="text-xs font-semibold w-12 text-center">
-											Aksi
+										<TableHead className="text-xs text-center w-12">
+											Hapus
 										</TableHead>
 									)}
 								</TableRow>
@@ -1038,10 +1030,10 @@ export function SurveyKk0Form({
 									<TableRow>
 										<TableCell
 											colSpan={canEdit ? 9 : 8}
-											className="h-20 text-center text-xs text-muted-foreground"
+											className="text-center text-xs py-6 text-muted-foreground"
 										>
-											Belum ada data peralatan. Klik "+ Tambah Peralatan" untuk
-											menambahkan.
+											Belum ada data peralatan energi. Klik "+ Tambah Peralatan"
+											untuk menambahkan.
 										</TableCell>
 									</TableRow>
 								) : (
@@ -1069,7 +1061,7 @@ export function SurveyKk0Form({
 														const next = [...equipment];
 														next[idx].kapasitas = e.target.value
 															? Number(e.target.value)
-															: undefined;
+															: null;
 														setEquipment(next);
 													}}
 													placeholder="10"
@@ -1083,7 +1075,7 @@ export function SurveyKk0Form({
 													onValueChange={(val) => {
 														const next = [...equipment];
 														next[idx].kapasitasUnitId =
-															val === "NONE" ? undefined : val;
+															val === "NONE" ? null : val;
 														setEquipment(next);
 													}}
 													disabled={!canEdit}
@@ -1109,7 +1101,7 @@ export function SurveyKk0Form({
 														const next = [...equipment];
 														next[idx].jamPerHari = e.target.value
 															? Number(e.target.value)
-															: undefined;
+															: null;
 														setEquipment(next);
 													}}
 													placeholder="24"
@@ -1125,7 +1117,7 @@ export function SurveyKk0Form({
 														const next = [...equipment];
 														next[idx].hariPerMinggu = e.target.value
 															? Number(e.target.value)
-															: undefined;
+															: null;
 														setEquipment(next);
 													}}
 													placeholder="7"
@@ -1138,8 +1130,7 @@ export function SurveyKk0Form({
 													value={row.fuelTypeId || "NONE"}
 													onValueChange={(val) => {
 														const next = [...equipment];
-														next[idx].fuelTypeId =
-															val === "NONE" ? undefined : val;
+														next[idx].fuelTypeId = val === "NONE" ? null : val;
 														setEquipment(next);
 													}}
 													disabled={!canEdit}
@@ -1165,7 +1156,7 @@ export function SurveyKk0Form({
 														const next = [...equipment];
 														next[idx].konsumsiPerBulan = e.target.value
 															? Number(e.target.value)
-															: undefined;
+															: null;
 														setEquipment(next);
 													}}
 													placeholder="15000"
@@ -1208,33 +1199,20 @@ export function SurveyKk0Form({
 							</TableBody>
 						</Table>
 					</div>
-
-					<div className="mt-3 flex items-center justify-end gap-2 text-xs font-semibold">
-						<span className="text-muted-foreground">Total Konversi Gas:</span>
-						<Badge
-							variant="outline"
-							className="text-xs font-mono font-bold bg-emerald-50 text-emerald-700 border-emerald-300"
-						>
-							{totalGasConversion.toLocaleString("id-ID", {
-								maximumFractionDigits: 2,
-							})}{" "}
-							MMBTU/Bulan
-						</Badge>
-					</div>
 				</CardContent>
 			</Card>
 
-			{/* SECTION 4: PRODUK UTAMA, BAHAN BAKU & PASAR */}
-			<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-				{/* Produk Utama */}
+			{/* SECTION 5: PRODUK, BAHAN BAKU & PASAR (3-COLUMN SUB-GRID) */}
+			<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+				{/* Produk yang Dihasilkan */}
 				<Card className="border-border/60 shadow-xs">
 					<CardHeader className="pb-3 flex flex-row items-center justify-between">
 						<div>
 							<CardTitle className="text-xs font-semibold">
-								4. Produk Utama
+								4. Produk Akhir
 							</CardTitle>
 							<CardDescription className="text-[11px]">
-								Barang hasil produksi
+								Output produksi pabrik
 							</CardDescription>
 						</div>
 						{canEdit && (
@@ -1252,7 +1230,7 @@ export function SurveyKk0Form({
 					<CardContent className="space-y-3">
 						{products.length === 0 ? (
 							<p className="text-xs text-muted-foreground text-center py-4">
-								Belum ada produk.
+								Belum ada daftar produk.
 							</p>
 						) : (
 							products.map((p, idx) => (
@@ -1296,7 +1274,7 @@ export function SurveyKk0Form({
 												const next = [...products];
 												next[idx].kapasitas = e.target.value
 													? Number(e.target.value)
-													: undefined;
+													: null;
 												setProducts(next);
 											}}
 											placeholder="Kapasitas"
@@ -1310,7 +1288,7 @@ export function SurveyKk0Form({
 												const next = [...products];
 												next[idx].hargaProduk = e.target.value
 													? Number(e.target.value)
-													: undefined;
+													: null;
 												setProducts(next);
 											}}
 											placeholder="Harga (IDR)"
@@ -1379,7 +1357,7 @@ export function SurveyKk0Form({
 										value={m.bahan ?? ""}
 										onChange={(e) => {
 											const next = [...rawMaterials];
-											next[idx].bahan = e.target.value || undefined;
+											next[idx].bahan = e.target.value || null;
 											setRawMaterials(next);
 										}}
 										placeholder="Nama Bahan Baku"
@@ -1388,7 +1366,7 @@ export function SurveyKk0Form({
 									/>
 									<div className="grid grid-cols-2 gap-2">
 										<Select
-											value={m.asal || "Domestik"}
+											value={m.asal || "Lokal"}
 											onValueChange={(val) => {
 												const next = [...rawMaterials];
 												next[idx].asal = val as Asal;
@@ -1400,7 +1378,7 @@ export function SurveyKk0Form({
 												<SelectValue />
 											</SelectTrigger>
 											<SelectContent>
-												<SelectItem value="Domestik">Domestik</SelectItem>
+												<SelectItem value="Lokal">Lokal</SelectItem>
 												<SelectItem value="Impor">Impor</SelectItem>
 											</SelectContent>
 										</Select>
@@ -1412,7 +1390,7 @@ export function SurveyKk0Form({
 												const next = [...rawMaterials];
 												next[idx].volume = e.target.value
 													? Number(e.target.value)
-													: undefined;
+													: null;
 												setRawMaterials(next);
 											}}
 											placeholder="Volume"
@@ -1481,7 +1459,7 @@ export function SurveyKk0Form({
 										value={m.bahan ?? ""}
 										onChange={(e) => {
 											const next = [...markets];
-											next[idx].bahan = e.target.value || undefined;
+											next[idx].bahan = e.target.value || null;
 											setMarkets(next);
 										}}
 										placeholder="Target Segmen / Komoditas"
@@ -1490,7 +1468,7 @@ export function SurveyKk0Form({
 									/>
 									<div className="grid grid-cols-2 gap-2">
 										<Select
-											value={m.asal || "Domestik"}
+											value={m.asal || "Lokal"}
 											onValueChange={(val) => {
 												const next = [...markets];
 												next[idx].asal = val as Asal;
@@ -1502,8 +1480,10 @@ export function SurveyKk0Form({
 												<SelectValue />
 											</SelectTrigger>
 											<SelectContent>
-												<SelectItem value="Domestik">Domestik</SelectItem>
-												<SelectItem value="Impor">Ekspor</SelectItem>
+												<SelectItem value="Lokal">Lokal (Domestik)</SelectItem>
+												<SelectItem value="Impor">
+													Ekspor (Internasional)
+												</SelectItem>
 											</SelectContent>
 										</Select>
 
@@ -1514,7 +1494,7 @@ export function SurveyKk0Form({
 												const next = [...markets];
 												next[idx].volume = e.target.value
 													? Number(e.target.value)
-													: undefined;
+													: null;
 												setMarkets(next);
 											}}
 											placeholder="Volume"

@@ -1,7 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Gauge } from "lucide-react";
 import { $api } from "@/api/client";
-import type { MeterSizeDto } from "@/api/types";
+import type {
+	CreateMeterSizeRequest,
+	MeterSizeDto,
+	UpdateMeterSizeRequest,
+} from "@/api/types";
 import {
 	type ColumnDef,
 	type FieldDef,
@@ -44,42 +48,42 @@ function MeterSizesPage() {
 
 	const columns: ColumnDef<MeterSizeDto>[] = [
 		{
-			key: "gsize",
+			key: "gSize",
 			header: "G-Size",
 			render: (row) => (
 				<span className="font-mono font-semibold text-foreground">
-					{row.gsize}
+					{row.gSize}
 				</span>
 			),
 		},
 		{
-			key: "nominalFlowM3h",
+			key: "nominalFlow",
 			header: "Aliran Nominal (Qnom m³/jam)",
 			render: (row) => (
 				<span className="font-mono">
-					{row.nominalFlowM3h !== null && row.nominalFlowM3h !== undefined
-						? `${row.nominalFlowM3h} m³/h`
+					{row.nominalFlow !== null && row.nominalFlow !== undefined
+						? `${row.nominalFlow} m³/h`
 						: "-"}
 				</span>
 			),
 		},
 		{
-			key: "maxFlowM3h",
+			key: "maxFlow",
 			header: "Aliran Maksimum (Qmax m³/jam)",
 			render: (row) => (
 				<span className="font-mono">
-					{row.maxFlowM3h !== null && row.maxFlowM3h !== undefined
-						? `${row.maxFlowM3h} m³/h`
+					{row.maxFlow !== null && row.maxFlow !== undefined
+						? `${row.maxFlow} m³/h`
 						: "-"}
 				</span>
 			),
 		},
 		{
 			key: "pressureRating",
-			header: "Pressure Rating",
+			header: "Pressure Rating (Bar)",
 			render: (row) => (
-				<span className="text-muted-foreground">
-					{row.pressureRating || "-"}
+				<span className="text-muted-foreground font-mono">
+					{row.pressureRating != null ? `${row.pressureRating} Bar` : "-"}
 				</span>
 			),
 		},
@@ -87,46 +91,41 @@ function MeterSizesPage() {
 
 	const fields: FieldDef[] = [
 		{
-			name: "gsize",
+			name: "gSize",
 			label: "Ukuran G-Size",
 			type: "text",
 			required: true,
 			placeholder: "contoh: G-100",
 		},
 		{
-			name: "nominalFlowM3h",
+			name: "nominalFlow",
 			label: "Aliran Nominal (m³/jam)",
 			type: "number",
+			required: true,
 			placeholder: "contoh: 100",
 		},
 		{
-			name: "maxFlowM3h",
+			name: "maxFlow",
 			label: "Aliran Maksimum (m³/jam)",
 			type: "number",
+			required: true,
 			placeholder: "contoh: 160",
 		},
 		{
 			name: "pressureRating",
-			label: "Pressure Rating (ANSI / Bar)",
-			type: "text",
-			placeholder: "contoh: ANSI 150 / PN 16",
+			label: "Pressure Rating (Bar)",
+			type: "number",
+			required: true,
+			placeholder: "contoh: 16",
 		},
 	];
 
 	const handleSave = async (formData: Record<string, unknown>, id?: string) => {
-		const payload = {
-			gsize: String(formData.gsize),
-			nominalFlowM3h:
-				formData.nominalFlowM3h !== "" && formData.nominalFlowM3h !== undefined
-					? Number(formData.nominalFlowM3h)
-					: null,
-			maxFlowM3h:
-				formData.maxFlowM3h !== "" && formData.maxFlowM3h !== undefined
-					? Number(formData.maxFlowM3h)
-					: null,
-			pressureRating: formData.pressureRating
-				? String(formData.pressureRating)
-				: null,
+		const payload: CreateMeterSizeRequest | UpdateMeterSizeRequest = {
+			gSize: String(formData.gSize),
+			nominalFlow: Number(formData.nominalFlow) || 0,
+			maxFlow: Number(formData.maxFlow) || 0,
+			pressureRating: Number(formData.pressureRating) || 0,
 		};
 
 		if (id) {
@@ -158,7 +157,7 @@ function MeterSizesPage() {
 			fields={fields}
 			onSave={handleSave}
 			onDelete={handleDelete}
-			searchKeys={["gsize", "pressureRating"]}
+			searchKeys={["gSize"]}
 		/>
 	);
 }

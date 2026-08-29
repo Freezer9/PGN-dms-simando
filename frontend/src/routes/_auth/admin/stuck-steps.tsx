@@ -64,8 +64,8 @@ function StuckStepsPage() {
 				setError(null);
 				refetch();
 			},
-			onError: (error) => {
-				setError(error.detail || error.title || "Gagal mengalihkan penugasan.");
+			onError: (err) => {
+				setError(err.detail || err.title || "Gagal mengalihkan penugasan.");
 			},
 		},
 	);
@@ -82,7 +82,7 @@ function StuckStepsPage() {
 				s.companyNomor.toLowerCase().includes(q) ||
 				s.regionName.toLowerCase().includes(q) ||
 				s.areaName.toLowerCase().includes(q) ||
-				s.stepKind.toLowerCase().includes(q) ||
+				(s.stepKind || "").toLowerCase().includes(q) ||
 				s.assignedUserName.toLowerCase().includes(q)
 			);
 		});
@@ -318,7 +318,7 @@ function StuckStepsPage() {
 							</div>
 							<div className="flex justify-between">
 								<span className="text-muted-foreground">Petugas Saat Ini:</span>
-								<span className="text-foreground">
+								<span className="text-foreground font-medium">
 									{selectedStep?.assignedUserName}
 								</span>
 							</div>
@@ -335,14 +335,18 @@ function StuckStepsPage() {
 								className="w-full h-9 px-3 rounded-md border bg-background text-xs"
 								required
 							>
-								<option value="">-- Pilih Petugas Pengganti --</option>
+								<option value="">-- Pilih Pengguna Aktif --</option>
 								{allUsers
 									.filter(
 										(u) => u.active && u.id !== selectedStep?.assignedUserId,
 									)
-									.map((u) => (
-										<option key={u.id} value={u.id}>
-											{u.fullName} ({u.roles.map((r) => r.role).join(", ")})
+									.map((user) => (
+										<option key={user.id} value={user.id}>
+											{user.fullName} (
+											{user.roles
+												.map((r) => `${r.role} - ${r.scopeLabel}`)
+												.join(", ") || user.username}
+											)
 										</option>
 									))}
 							</select>
@@ -366,10 +370,10 @@ function StuckStepsPage() {
 								{reassignMutation.isPending ? (
 									<>
 										<Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
-										<span>Mengalihkan...</span>
+										Mengalihkan...
 									</>
 								) : (
-									"Alihkan Penugasan"
+									"Konfirmasi Pengalihan"
 								)}
 							</Button>
 						</DialogFooter>

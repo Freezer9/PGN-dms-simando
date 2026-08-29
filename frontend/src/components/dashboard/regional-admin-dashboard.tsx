@@ -33,10 +33,10 @@ export function RegionalAdminDashboard({
 	regionName = "Regional",
 }: RegionalAdminDashboardProps) {
 	const stuckCount = data.stuckTasks?.length || 0;
-	const totalPipeline = Object.values(data.regionFunnelCounts || {}).reduce(
-		(a, b) => Math.max(a, b),
-		0,
-	);
+	const totalPipeline: number = Object.values(
+		data.regionFunnelCounts || {},
+	).reduce<number>((a, b) => Math.max(Number(a), Number(b)), 0);
+	const pendingMyAction = Number(data.pendingMyActionCount);
 
 	return (
 		<div className="space-y-6">
@@ -112,7 +112,7 @@ export function RegionalAdminDashboard({
 					value={data.pendingMyActionCount}
 					description="Verifikasi Tahap 7 / Verifikasi Evaluasi"
 					icon={Clock}
-					variant={data.pendingMyActionCount > 0 ? "amber" : "default"}
+					variant={pendingMyAction > 0 ? "amber" : "default"}
 				/>
 				<StatTile
 					title="Total Berkas Berjalan"
@@ -151,7 +151,10 @@ export function RegionalAdminDashboard({
 						</div>
 						<div className="flex items-center gap-2 shrink-0">
 							<Button asChild size="sm" variant="default" className="gap-1">
-								<Link to={`/directory/${data.oldestWaitingItem.companyId}`}>
+								<Link
+									to="/directory/$companyId"
+									params={{ companyId: data.oldestWaitingItem.companyId }}
+								>
 									Periksa Berkas
 									<ArrowRight className="size-3.5" />
 								</Link>
@@ -216,7 +219,12 @@ export function RegionalAdminDashboard({
 												{task.waitingDays} hari
 											</span>
 											<Button asChild size="sm" variant="ghost" className="h-7">
-												<Link to={`/directory/${task.companyId}`}>Buka</Link>
+												<Link
+													to="/directory/$companyId"
+													params={{ companyId: task.companyId }}
+												>
+													Buka
+												</Link>
 											</Button>
 										</div>
 									</div>
@@ -244,8 +252,9 @@ export function RegionalAdminDashboard({
 					</CardHeader>
 					<CardContent className="space-y-2">
 						{Object.values(STAGE_CONFIG).map((stage) => {
-							const count =
-								data.regionFunnelCounts?.[stage.stage.toString()] ?? 0;
+							const count = Number(
+								data.regionFunnelCounts?.[stage.stage.toString()] ?? 0,
+							);
 							const percentage =
 								totalPipeline > 0
 									? Math.round((count / totalPipeline) * 100)

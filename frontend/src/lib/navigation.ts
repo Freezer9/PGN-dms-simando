@@ -30,8 +30,8 @@ const BROWSE_PIPELINE_ROLES = ["SalesArea", "AreaHead", "RegionalAdmin"];
 
 export function buildNavigationMenu(
 	user: CurrentUserDto | null,
-	pendingTaskCount?: number | null,
-	blockedTaskCount?: number | null,
+	pendingTaskCount?: number | string | null,
+	blockedTaskCount?: number | string | null,
 ): NavMenu {
 	if (!user) {
 		return { sections: [] };
@@ -56,8 +56,11 @@ export function buildNavigationMenu(
 	}
 
 	if (capabilities.has("ActOnApprovalStep")) {
-		const badge =
-			pendingTaskCount && pendingTaskCount > 0 ? pendingTaskCount : null;
+		const pCount =
+			pendingTaskCount !== null && pendingTaskCount !== undefined
+				? Number(pendingTaskCount)
+				: null;
+		const badge = pCount && pCount > 0 ? pCount : null;
 		caseWorkNodes.push({
 			type: "item",
 			title: "Tugas Saya",
@@ -68,8 +71,11 @@ export function buildNavigationMenu(
 	}
 
 	if (capabilities.has("ReassignWorkflowStep") && user.scope === "Region") {
-		const blockedBadge =
-			blockedTaskCount && blockedTaskCount > 0 ? blockedTaskCount : null;
+		const bCount =
+			blockedTaskCount !== null && blockedTaskCount !== undefined
+				? Number(blockedTaskCount)
+				: null;
+		const blockedBadge = bCount && bCount > 0 ? bCount : null;
 		caseWorkNodes.push({
 			type: "item",
 			title: "Tugas Tertahan",

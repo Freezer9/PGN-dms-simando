@@ -35,10 +35,10 @@ export function SalesAreaDashboard({
 	const returnedCount = data.returnedWorkItems?.length || 0;
 	const activeApprovalCount = data.activeApprovalItems?.length || 0;
 	const totalPipeline = Object.values(data.stageCounts || {}).reduce(
-		(a, b) => Math.max(a, b),
+		(a, b) => Math.max(Number(a), Number(b)),
 		0,
 	);
-	const nolIssuedCount = data.stageCounts?.["8"] || 0;
+	const nolIssuedCount = Number(data.stageCounts?.["8"] || 0);
 
 	return (
 		<div className="space-y-6">
@@ -162,7 +162,10 @@ export function SalesAreaDashboard({
 									variant="default"
 									className="shrink-0 gap-1"
 								>
-									<Link to={`/directory/${item.companyId}`}>
+									<Link
+										to="/directory/$companyId"
+										params={{ companyId: item.companyId }}
+									>
 										Buka Record
 										<ArrowRight className="size-3.5" />
 									</Link>
@@ -187,7 +190,9 @@ export function SalesAreaDashboard({
 				<CardContent>
 					<div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
 						{Object.values(STAGE_CONFIG).map((stage) => {
-							const count = data.stageCounts?.[stage.stage.toString()] ?? 0;
+							const count = Number(
+								data.stageCounts?.[stage.stage.toString()] ?? 0,
+							);
 							return (
 								<Link
 									key={stage.stage}
@@ -244,7 +249,8 @@ export function SalesAreaDashboard({
 									>
 										<div className="min-w-0 pr-2">
 											<Link
-												to={`/directory/${item.companyId}`}
+												to="/directory/$companyId"
+												params={{ companyId: item.companyId }}
 												className="text-sm font-medium hover:underline text-foreground block truncate"
 											>
 												{item.companyName}

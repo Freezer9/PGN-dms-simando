@@ -7,17 +7,17 @@ import {
 	Loader2,
 	Plus,
 	Save,
-	Send,
 	Trash2,
 } from "lucide-react";
 import * as React from "react";
 import { toast } from "sonner";
 import { $api } from "@/api/client";
 import type {
+	DayOfWeek,
+	NolRequestDailyDetail,
 	NolRequestDetail,
+	NolRequestPeriodDetail,
 	RegistrationType,
-	SaveNolRequestDailyRequest,
-	SaveNolRequestPeriodRequest,
 	SaveNolRequestRequest,
 	SkemaHarga,
 } from "@/api/types";
@@ -52,23 +52,31 @@ interface NolRequestFormProps {
 	onSubmitted?: () => void;
 }
 
-const DAY_NAMES: Record<number, string> = {
-	1: "Senin",
-	2: "Selasa",
-	3: "Rabu",
-	4: "Kamis",
-	5: "Jumat",
-	6: "Sabtu",
-	0: "Minggu",
+const ALL_DAYS: DayOfWeek[] = [
+	"Monday",
+	"Tuesday",
+	"Wednesday",
+	"Thursday",
+	"Friday",
+	"Saturday",
+	"Sunday",
+];
+
+const DAY_LABELS: Record<DayOfWeek, string> = {
+	Monday: "Senin",
+	Tuesday: "Selasa",
+	Wednesday: "Rabu",
+	Thursday: "Kamis",
+	Friday: "Jumat",
+	Saturday: "Sabtu",
+	Sunday: "Minggu",
 };
 
 export function NolRequestForm({
 	companyId,
 	initialData,
 	canEdit = true,
-	canSubmit = false,
 	onSaved,
-	onSubmitted,
 }: NolRequestFormProps) {
 	const queryClient = useQueryClient();
 	const { data: refDocs } = $api.useQuery(
@@ -80,166 +88,144 @@ export function NolRequestForm({
 	const [nomorNotaDinas, setNomorNotaDinas] = React.useState<string>(
 		initialData?.nomorNotaDinas || "",
 	);
-	const [tanggalNotaDinas, setTanggalNotaDinas] = React.useState<string>(
-		initialData?.tanggalNotaDinas || "",
+	const [registrationType, setRegistrationType] =
+		React.useState<RegistrationType>(
+			initialData?.registrationType || "RegistrasiBaru",
+		);
+	const [samaDenganA1, setSamaDenganA1] = React.useState<boolean>(
+		initialData?.samaDenganA1 ?? true,
 	);
-	const [registrationType, setRegistrationType] = React.useState<
-		RegistrationType | ""
-	>(initialData?.registrationType || "PelangganBaru");
-	const [isSameWithA1, setIsSameWithA1] = React.useState<boolean>(
-		initialData?.isSameWithA1 ?? true,
+	const [bulanDimulai, setBulanDimulai] = React.useState<string>(
+		initialData?.bulanDimulai || "",
 	);
 	const [skemaHarga, setSkemaHarga] = React.useState<SkemaHarga | "">(
 		initialData?.skemaHarga || "Reguler",
 	);
-	const [hargaJualNilai, setHargaJualNilai] = React.useState<string>(
-		initialData?.hargaJualNilai ? String(initialData.hargaJualNilai) : "",
+	const [hargaNilai, setHargaNilai] = React.useState<string>(
+		initialData?.hargaNilai != null ? String(initialData.hargaNilai) : "",
 	);
-	const [jangkaWaktuTahun, setJangkaWaktuTahun] = React.useState<string>(
-		initialData?.jangkaWaktuTahun ? String(initialData.jangkaWaktuTahun) : "",
-	);
-	const [namaPimpinan, setNamaPimpinan] = React.useState<string>(
-		initialData?.namaPimpinan || "",
-	);
-	const [jabatanPimpinan, setJabatanPimpinan] = React.useState<string>(
-		initialData?.jabatanPimpinan || "",
+	const [alasanKontrakBersyarat, setAlasanKontrakBersyarat] =
+		React.useState<string>(initialData?.alasanKontrakBersyarat || "");
+	const [namaPimpinanPerusahaan, setNamaPimpinanPerusahaan] =
+		React.useState<string>(initialData?.namaPimpinanPerusahaan || "");
+	const [jangkaWaktuKontrak, setJangkaWaktuKontrak] = React.useState<string>(
+		initialData?.jangkaWaktuKontrak || "",
 	);
 
 	// Connection Costs
-	const [biayaCapexPreGr3, setBiayaCapexPreGr3] = React.useState<string>(
-		initialData?.biayaPenyambunganCapexPreGr3
-			? String(initialData.biayaPenyambunganCapexPreGr3)
-			: "",
+	const [capexPreGr3, setCapexPreGr3] = React.useState<string>(
+		initialData?.capexPreGr3 != null ? String(initialData.capexPreGr3) : "",
 	);
-	const [biayaReguler, setBiayaReguler] = React.useState<string>(
-		initialData?.biayaPenyambunganReguler
-			? String(initialData.biayaPenyambunganReguler)
-			: "",
-	);
-	const [biayaExtra, setBiayaExtra] = React.useState<string>(
-		initialData?.biayaPenyambunganExtra
-			? String(initialData.biayaPenyambunganExtra)
-			: "",
-	);
-	const [biayaPenyambunganManual, setBiayaPenyambunganManual] =
+	const [biayaPenyambunganReguler, setBiayaPenyambunganReguler] =
 		React.useState<string>(
-			initialData?.biayaPenyambungan
-				? String(initialData.biayaPenyambungan)
+			initialData?.biayaPenyambunganReguler != null
+				? String(initialData.biayaPenyambunganReguler)
+				: "",
+		);
+	const [biayaPenyambunganExtra, setBiayaPenyambunganExtra] =
+		React.useState<string>(
+			initialData?.biayaPenyambunganExtra != null
+				? String(initialData.biayaPenyambunganExtra)
 				: "",
 		);
 
-	const [keterangan, setKeterangan] = React.useState<string>(
-		initialData?.keterangan || "",
-	);
-
 	// Selected Reference Docs
-	const [selectedDocIds, setSelectedDocIds] = React.useState<string[]>(
-		initialData?.referenceDocuments?.map((d) => d.referenceDocumentId) || [],
-	);
+	const [referenceDocumentIds, setReferenceDocumentIds] = React.useState<
+		string[]
+	>(initialData?.referenceDocumentIds || []);
 
 	// Repeating Periods
-	const [periods, setPeriods] = React.useState<SaveNolRequestPeriodRequest[]>(
-		initialData?.periods?.map((p) => ({
-			periodeMulai: p.periodeMulai || undefined,
-			periodeSelesai: p.periodeSelesai || undefined,
-			volumeRataRata:
-				p.volumeRataRata != null ? Number(p.volumeRataRata) : undefined,
-			volumeMin: p.volumeMin != null ? Number(p.volumeMin) : undefined,
-			volumeMax: p.volumeMax != null ? Number(p.volumeMax) : undefined,
-			unitId: p.unitId || undefined,
+	const [periods, setPeriods] = React.useState<NolRequestPeriodDetail[]>(
+		initialData?.periods?.map((p, idx) => ({
+			id: p.id || crypto.randomUUID(),
+			periodeMulai: p.periodeMulai || "",
+			periodeSelesai: p.periodeSelesai || "",
+			rataRata: Number(p.rataRata) || 0,
+			kontrakMinimum: Number(p.kontrakMinimum) || 0,
+			kontrakMaksimum: Number(p.kontrakMaksimum) || 0,
+			sortOrder: Number(p.sortOrder) || idx + 1,
 		})) || [],
 	);
 
-	// Daily Periods
-	const [dailyPeriods, setDailyPeriods] = React.useState<
-		SaveNolRequestDailyRequest[]
+	// Repeating Daily Rows
+	const [dailyBasisRows, setDailyBasisRows] = React.useState<
+		NolRequestDailyDetail[]
 	>(
-		initialData?.dailyPeriods?.map((d) => ({
-			dayOfWeek: d.dayOfWeek,
-			volumeMin: d.volumeMin != null ? Number(d.volumeMin) : undefined,
-			volumeMax: d.volumeMax != null ? Number(d.volumeMax) : undefined,
-			unitId: d.unitId || undefined,
-		})) || [],
+		initialData?.dailyBasisRows && initialData.dailyBasisRows.length > 0
+			? initialData.dailyBasisRows.map((d) => ({
+					id: d.id || crypto.randomUUID(),
+					hari: d.hari,
+					min: Number(d.min) || 0,
+					max: Number(d.max) || 0,
+				}))
+			: ALL_DAYS.map((h) => ({
+					id: crypto.randomUUID(),
+					hari: h,
+					min: 0,
+					max: 0,
+				})),
 	);
 
-	// Sync initialData
+	// Calculated Total Biaya Penyambungan
+	const totalBiayaPenyambungan =
+		(Number(biayaPenyambunganReguler) || 0) +
+		(Number(biayaPenyambunganExtra) || 0);
+
+	// Synchronize when initialData changes
 	React.useEffect(() => {
 		if (initialData) {
 			setNomorNotaDinas(initialData.nomorNotaDinas || "");
-			setTanggalNotaDinas(initialData.tanggalNotaDinas || "");
-			setRegistrationType(initialData.registrationType || "PelangganBaru");
-			setIsSameWithA1(initialData.isSameWithA1 ?? true);
+			setRegistrationType(initialData.registrationType || "RegistrasiBaru");
+			setSamaDenganA1(initialData.samaDenganA1 ?? true);
+			setBulanDimulai(initialData.bulanDimulai || "");
 			setSkemaHarga(initialData.skemaHarga || "Reguler");
-			setHargaJualNilai(
-				initialData.hargaJualNilai ? String(initialData.hargaJualNilai) : "",
+			setHargaNilai(
+				initialData.hargaNilai != null ? String(initialData.hargaNilai) : "",
 			);
-			setJangkaWaktuTahun(
-				initialData.jangkaWaktuTahun
-					? String(initialData.jangkaWaktuTahun)
-					: "",
+			setAlasanKontrakBersyarat(initialData.alasanKontrakBersyarat || "");
+			setNamaPimpinanPerusahaan(initialData.namaPimpinanPerusahaan || "");
+			setJangkaWaktuKontrak(initialData.jangkaWaktuKontrak || "");
+			setCapexPreGr3(
+				initialData.capexPreGr3 != null ? String(initialData.capexPreGr3) : "",
 			);
-			setNamaPimpinan(initialData.namaPimpinan || "");
-			setJabatanPimpinan(initialData.jabatanPimpinan || "");
-			setBiayaCapexPreGr3(
-				initialData.biayaPenyambunganCapexPreGr3
-					? String(initialData.biayaPenyambunganCapexPreGr3)
-					: "",
-			);
-			setBiayaReguler(
-				initialData.biayaPenyambunganReguler
+			setBiayaPenyambunganReguler(
+				initialData.biayaPenyambunganReguler != null
 					? String(initialData.biayaPenyambunganReguler)
 					: "",
 			);
-			setBiayaExtra(
-				initialData.biayaPenyambunganExtra
+			setBiayaPenyambunganExtra(
+				initialData.biayaPenyambunganExtra != null
 					? String(initialData.biayaPenyambunganExtra)
 					: "",
 			);
-			setBiayaPenyambunganManual(
-				initialData.biayaPenyambungan
-					? String(initialData.biayaPenyambungan)
-					: "",
-			);
-			setKeterangan(initialData.keterangan || "");
+			setReferenceDocumentIds(initialData.referenceDocumentIds || []);
 
-			if (initialData.referenceDocuments) {
-				setSelectedDocIds(
-					initialData.referenceDocuments.map((d) => d.referenceDocumentId),
-				);
-			}
 			if (initialData.periods) {
 				setPeriods(
-					initialData.periods.map((p) => ({
-						periodeMulai: p.periodeMulai || undefined,
-						periodeSelesai: p.periodeSelesai || undefined,
-						volumeRataRata:
-							p.volumeRataRata != null ? Number(p.volumeRataRata) : undefined,
-						volumeMin: p.volumeMin != null ? Number(p.volumeMin) : undefined,
-						volumeMax: p.volumeMax != null ? Number(p.volumeMax) : undefined,
-						unitId: p.unitId || undefined,
+					initialData.periods.map((p, idx) => ({
+						id: p.id || crypto.randomUUID(),
+						periodeMulai: p.periodeMulai || "",
+						periodeSelesai: p.periodeSelesai || "",
+						rataRata: Number(p.rataRata) || 0,
+						kontrakMinimum: Number(p.kontrakMinimum) || 0,
+						kontrakMaksimum: Number(p.kontrakMaksimum) || 0,
+						sortOrder: Number(p.sortOrder) || idx + 1,
 					})),
 				);
 			}
-			if (initialData.dailyPeriods) {
-				setDailyPeriods(
-					initialData.dailyPeriods.map((d) => ({
-						dayOfWeek: d.dayOfWeek,
-						volumeMin: d.volumeMin != null ? Number(d.volumeMin) : undefined,
-						volumeMax: d.volumeMax != null ? Number(d.volumeMax) : undefined,
-						unitId: d.unitId || undefined,
+
+			if (initialData.dailyBasisRows && initialData.dailyBasisRows.length > 0) {
+				setDailyBasisRows(
+					initialData.dailyBasisRows.map((d) => ({
+						id: d.id || crypto.randomUUID(),
+						hari: d.hari,
+						min: Number(d.min) || 0,
+						max: Number(d.max) || 0,
 					})),
 				);
 			}
 		}
 	}, [initialData]);
-
-	// Auto compute total connection cost
-	const totalConnectionCostCalculated = React.useMemo(() => {
-		const pre = Number(biayaCapexPreGr3) || 0;
-		const reg = Number(biayaReguler) || 0;
-		const ext = Number(biayaExtra) || 0;
-		return pre + reg + ext;
-	}, [biayaCapexPreGr3, biayaReguler, biayaExtra]);
 
 	// Save Mutation
 	const saveMutation = $api.useMutation(
@@ -247,7 +233,7 @@ export function NolRequestForm({
 		"/api/companies/{id}/nol-request",
 		{
 			onSuccess: () => {
-				toast.success("Data Permohonan NOL berhasil disimpan!");
+				toast.success("Data Permohonan Surat NOL berhasil disimpan!");
 				queryClient.invalidateQueries({
 					queryKey: [
 						"get",
@@ -268,42 +254,7 @@ export function NolRequestForm({
 				toast.error(
 					error instanceof Error
 						? error.message
-						: "Gagal menyimpan Permohonan NOL",
-				);
-			},
-		},
-	);
-
-	// Submit Workflow Mutation
-	const submitWorkflowMutation = $api.useMutation(
-		"post",
-		"/api/companies/{id}/workflow/start",
-		{
-			onSuccess: (res) => {
-				toast.success(
-					`Permohonan NOL berhasil diajukan! Status: ${res.currentStatus}`,
-				);
-				queryClient.invalidateQueries({
-					queryKey: [
-						"get",
-						"/api/companies/{id}",
-						{ params: { path: { id: companyId } } },
-					],
-				});
-				queryClient.invalidateQueries({
-					queryKey: [
-						"get",
-						"/api/companies/{id}/nol-request",
-						{ params: { path: { id: companyId } } },
-					],
-				});
-				onSubmitted?.();
-			},
-			onError: (error) => {
-				toast.error(
-					error instanceof Error
-						? error.message
-						: "Gagal mengajukan Permohonan NOL",
+						: "Gagal menyimpan permohonan NOL",
 				);
 			},
 		},
@@ -312,35 +263,44 @@ export function NolRequestForm({
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 
-		const totalCost =
-			totalConnectionCostCalculated > 0
-				? totalConnectionCostCalculated
-				: biayaPenyambunganManual
-					? Number(biayaPenyambunganManual)
-					: null;
-
 		const request: SaveNolRequestRequest = {
 			nomorNotaDinas: nomorNotaDinas || null,
-			tanggalNotaDinas: tanggalNotaDinas || null,
-			registrationType: registrationType
-				? (registrationType as RegistrationType)
-				: null,
-			isSameWithA1,
+			registrationType,
+			samaDenganA1,
+			bulanDimulai: bulanDimulai || null,
+			basisKontrak: initialData?.basisKontrak || null,
 			skemaHarga: skemaHarga ? (skemaHarga as SkemaHarga) : null,
-			hargaJualNilai: hargaJualNilai ? Number(hargaJualNilai) : null,
-			jangkaWaktuTahun: jangkaWaktuTahun ? Number(jangkaWaktuTahun) : null,
-			namaPimpinan: namaPimpinan || null,
-			jabatanPimpinan: jabatanPimpinan || null,
-			biayaPenyambungan: totalCost,
-			biayaPenyambunganCapexPreGr3: biayaCapexPreGr3
-				? Number(biayaCapexPreGr3)
+			segmentId: initialData?.segmentId || null,
+			kodeHarga: initialData?.kodeHarga || null,
+			hargaNilai: hargaNilai ? Number(hargaNilai) : null,
+			hargaCurrency: initialData?.hargaCurrency || null,
+			hargaUnit: initialData?.hargaUnit || null,
+			alasanKontrakBersyarat: alasanKontrakBersyarat || null,
+			namaPimpinanPerusahaan: namaPimpinanPerusahaan || null,
+			jangkaWaktuKontrak: jangkaWaktuKontrak || null,
+			capexPreGr3: capexPreGr3 ? Number(capexPreGr3) : null,
+			biayaPenyambunganReguler: biayaPenyambunganReguler
+				? Number(biayaPenyambunganReguler)
 				: null,
-			biayaPenyambunganReguler: biayaReguler ? Number(biayaReguler) : null,
-			biayaPenyambunganExtra: biayaExtra ? Number(biayaExtra) : null,
-			keterangan: keterangan || null,
-			selectedDocIds,
-			periods,
-			dailyPeriods,
+			biayaPenyambunganExtra: biayaPenyambunganExtra
+				? Number(biayaPenyambunganExtra)
+				: null,
+			periods: periods.map((p, idx) => ({
+				id: p.id || crypto.randomUUID(),
+				periodeMulai: p.periodeMulai,
+				periodeSelesai: p.periodeSelesai,
+				rataRata: Number(p.rataRata) || 0,
+				kontrakMinimum: Number(p.kontrakMinimum) || 0,
+				kontrakMaksimum: Number(p.kontrakMaksimum) || 0,
+				sortOrder: idx + 1,
+			})),
+			dailyBasisRows: dailyBasisRows.map((d) => ({
+				id: d.id || crypto.randomUUID(),
+				hari: d.hari,
+				min: Number(d.min) || 0,
+				max: Number(d.max) || 0,
+			})),
+			referenceDocumentIds,
 		};
 
 		saveMutation.mutate({
@@ -353,45 +313,32 @@ export function NolRequestForm({
 		setPeriods([
 			...periods,
 			{
-				periodeMulai: undefined,
-				periodeSelesai: undefined,
-				volumeRataRata: undefined,
-				volumeMin: undefined,
-				volumeMax: undefined,
-				unitId: undefined,
+				id: crypto.randomUUID(),
+				periodeMulai: "",
+				periodeSelesai: "",
+				rataRata: 0,
+				kontrakMinimum: 0,
+				kontrakMaksimum: 0,
+				sortOrder: periods.length + 1,
 			},
 		]);
 	};
+
 	const removePeriodRow = (index: number) => {
 		setPeriods(periods.filter((_, i) => i !== index));
 	};
 
-	const addDailyRow = () => {
-		setDailyPeriods([
-			...dailyPeriods,
-			{
-				dayOfWeek: 1,
-				volumeMin: undefined,
-				volumeMax: undefined,
-				unitId: undefined,
-			},
-		]);
-	};
-	const removeDailyRow = (index: number) => {
-		setDailyPeriods(dailyPeriods.filter((_, i) => i !== index));
-	};
-
-	const toggleDoc = (docId: string) => {
-		if (selectedDocIds.includes(docId)) {
-			setSelectedDocIds(selectedDocIds.filter((id) => id !== docId));
+	const toggleDoc = (id: string) => {
+		if (referenceDocumentIds.includes(id)) {
+			setReferenceDocumentIds(referenceDocumentIds.filter((d) => d !== id));
 		} else {
-			setSelectedDocIds([...selectedDocIds, docId]);
+			setReferenceDocumentIds([...referenceDocumentIds, id]);
 		}
 	};
 
 	return (
 		<form onSubmit={handleSubmit} className="space-y-6">
-			{/* Top Bar Summary / Save / Submit */}
+			{/* Top Bar Summary / Save */}
 			<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 bg-muted/40 rounded-lg border">
 				<div className="flex items-center gap-3">
 					<div className="size-10 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-600 flex items-center justify-center">
@@ -399,11 +346,11 @@ export function NolRequestForm({
 					</div>
 					<div>
 						<h3 className="text-sm font-semibold">
-							Permohonan Surat Kesiapan Gas / Notice of Letter (NOL)
+							Formulir Permohonan Surat NOL (Notice of Letter)
 						</h3>
 						<p className="text-xs text-muted-foreground">
-							Pengajuan komersial, nota dinas, estimasi biaya penyambungan, dan
-							dokumen referensi
+							Nota dinas permohonan, verifikasi syarat komersial, dan komitmen
+							penyambungan
 						</p>
 					</div>
 				</div>
@@ -412,7 +359,7 @@ export function NolRequestForm({
 					<DocumentDownloadButton
 						companyId={companyId}
 						documentType="nol-request"
-						label="Unduh Permohonan NOL (.docx)"
+						label="Unduh Nota Dinas NOL (.docx)"
 					/>
 					{canEdit && (
 						<Button
@@ -429,40 +376,16 @@ export function NolRequestForm({
 							Simpan Permohonan NOL
 						</Button>
 					)}
-
-					{canSubmit && (
-						<Button
-							type="button"
-							size="sm"
-							disabled={submitWorkflowMutation.isPending}
-							onClick={() =>
-								submitWorkflowMutation.mutate({
-									params: { path: { id: companyId } },
-								})
-							}
-							className="h-9 text-xs flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
-						>
-							{submitWorkflowMutation.isPending ? (
-								<Loader2 className="size-3.5 animate-spin" />
-							) : (
-								<Send className="size-3.5" />
-							)}
-							Ajukan ke Evaluasi NOL
-						</Button>
-					)}
 				</div>
 			</div>
 
-			{/* SECTION 1: NOTA DINAS & INFORMASI DASAR */}
+			{/* SECTION 1: NOTA DINAS & TIPE REGISTRASI */}
 			<Card className="border-border/60 shadow-xs">
 				<CardHeader className="pb-3">
 					<CardTitle className="text-sm font-semibold flex items-center gap-2">
 						<FileText className="size-4 text-amber-500" />
-						1. Data Nota Dinas & Legalitas Permohonan
+						1. Data Nota Dinas & Status Registrasi
 					</CardTitle>
-					<CardDescription className="text-xs">
-						Nomor nota dinas sales, jenis registrasi, dan pimpinan penandatangan
-					</CardDescription>
 				</CardHeader>
 				<CardContent className="space-y-4">
 					<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -472,46 +395,31 @@ export function NolRequestForm({
 							<Input
 								value={nomorNotaDinas}
 								onChange={(e) => setNomorNotaDinas(e.target.value)}
-								placeholder="contoh: ND-042/PGN/SLS/2026"
-								disabled={!canEdit}
-								className="text-xs h-9 font-mono"
-							/>
-						</div>
-
-						{/* Tanggal Nota Dinas */}
-						<div className="space-y-1.5">
-							<Label className="text-xs font-medium">Tanggal Nota Dinas</Label>
-							<Input
-								type="date"
-								value={tanggalNotaDinas}
-								onChange={(e) => setTanggalNotaDinas(e.target.value)}
+								placeholder="contoh: ND-012/PGN/SA/2026"
 								disabled={!canEdit}
 								className="text-xs h-9"
 							/>
 						</div>
 
-						{/* Jenis Registrasi */}
+						{/* Tipe Registrasi */}
 						<div className="space-y-1.5">
-							<Label className="text-xs font-medium">Jenis Registrasi</Label>
+							<Label className="text-xs font-medium">Tipe Registrasi</Label>
 							<Select
-								value={registrationType || "NONE"}
+								value={registrationType}
 								onValueChange={(val) =>
-									setRegistrationType(
-										val === "NONE" ? "" : (val as RegistrationType),
-									)
+									setRegistrationType(val as RegistrationType)
 								}
 								disabled={!canEdit}
 							>
 								<SelectTrigger className="text-xs h-9">
-									<SelectValue placeholder="Pilih Jenis Registrasi" />
+									<SelectValue />
 								</SelectTrigger>
 								<SelectContent>
-									<SelectItem value="NONE">Belum Dipilih</SelectItem>
-									<SelectItem value="PelangganBaru">Pelanggan Baru</SelectItem>
-									<SelectItem value="PerubahanVolume">
-										Perubahan Volume Gas
+									<SelectItem value="RegistrasiBaru">
+										Pelanggan Baru (Registrasi Baru)
 									</SelectItem>
-									<SelectItem value="PerpanjanganKontrak">
+									<SelectItem value="Amendemen">Amendemen Kontrak</SelectItem>
+									<SelectItem value="Perpanjangan">
 										Perpanjangan Kontrak
 									</SelectItem>
 								</SelectContent>
@@ -521,47 +429,68 @@ export function NolRequestForm({
 						{/* Nama Pimpinan */}
 						<div className="space-y-1.5">
 							<Label className="text-xs font-medium">
-								Nama Pimpinan Pemohon
+								Nama Pimpinan Perusahaan
 							</Label>
 							<Input
-								value={namaPimpinan}
-								onChange={(e) => setNamaPimpinan(e.target.value)}
-								placeholder="contoh: Bambang Soedirman"
+								value={namaPimpinanPerusahaan}
+								onChange={(e) => setNamaPimpinanPerusahaan(e.target.value)}
+								placeholder="contoh: Budi Santoso"
 								disabled={!canEdit}
 								className="text-xs h-9"
 							/>
 						</div>
 
-						{/* Jabatan Pimpinan */}
-						<div className="space-y-1.5">
-							<Label className="text-xs font-medium">Jabatan Pimpinan</Label>
-							<Input
-								value={jabatanPimpinan}
-								onChange={(e) => setJabatanPimpinan(e.target.value)}
-								placeholder="contoh: Presiden Direktur"
-								disabled={!canEdit}
-								className="text-xs h-9"
-							/>
-						</div>
-
-						{/* Jangka Waktu (Tahun) */}
+						{/* Jangka Waktu Kontrak */}
 						<div className="space-y-1.5">
 							<Label className="text-xs font-medium">
-								Jangka Waktu Kontrak (Tahun)
+								Jangka Waktu Kontrak
 							</Label>
 							<Input
-								type="number"
-								value={jangkaWaktuTahun}
-								onChange={(e) => setJangkaWaktuTahun(e.target.value)}
-								placeholder="contoh: 5"
+								value={jangkaWaktuKontrak}
+								onChange={(e) => setJangkaWaktuKontrak(e.target.value)}
+								placeholder="contoh: 5 Tahun"
 								disabled={!canEdit}
 								className="text-xs h-9"
 							/>
 						</div>
 
-						{/* Skema Harga */}
+						{/* Bulan Dimulai */}
 						<div className="space-y-1.5">
-							<Label className="text-xs font-medium">Skema Harga Gas</Label>
+							<Label className="text-xs font-medium">
+								Rencana Mulai Penyaluran
+							</Label>
+							<Input
+								type="date"
+								value={bulanDimulai}
+								onChange={(e) => setBulanDimulai(e.target.value)}
+								disabled={!canEdit}
+								className="text-xs h-9"
+							/>
+						</div>
+
+						{/* Sama dengan A1 Switch */}
+						<div className="space-y-1.5 flex flex-col justify-end">
+							<div className="flex items-center space-x-2 pb-2">
+								<Switch
+									id="sameWithA1"
+									checked={samaDenganA1}
+									onCheckedChange={setSamaDenganA1}
+									disabled={!canEdit}
+								/>
+								<Label
+									htmlFor="sameWithA1"
+									className="text-xs font-medium cursor-pointer"
+								>
+									Ketentuan Sama dengan Formulir A1
+								</Label>
+							</div>
+						</div>
+					</div>
+
+					{/* Skema Harga & Alasan Bersyarat */}
+					<div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t">
+						<div className="space-y-1.5">
+							<Label className="text-xs font-medium">Skema Harga</Label>
 							<Select
 								value={skemaHarga || "NONE"}
 								onValueChange={(val) =>
@@ -570,137 +499,131 @@ export function NolRequestForm({
 								disabled={!canEdit}
 							>
 								<SelectTrigger className="text-xs h-9">
-									<SelectValue placeholder="Pilih Skema Harga" />
+									<SelectValue placeholder="Pilih Skema" />
 								</SelectTrigger>
 								<SelectContent>
 									<SelectItem value="NONE">Belum Dipilih</SelectItem>
 									<SelectItem value="Reguler">Reguler</SelectItem>
-									<SelectItem value="SiGas">SiGas</SelectItem>
+									<SelectItem value="Sigas">SiGas</SelectItem>
 									<SelectItem value="Bersyarat">Bersyarat</SelectItem>
 								</SelectContent>
 							</Select>
 						</div>
 
-						{/* Harga Jual Gas */}
 						<div className="space-y-1.5">
 							<Label className="text-xs font-medium">
-								Harga Jual Gas (USD/MMBTU)
+								Tarif / Harga Gas (USD/MMBTU)
 							</Label>
 							<Input
 								type="number"
-								step="0.001"
-								value={hargaJualNilai}
-								onChange={(e) => setHargaJualNilai(e.target.value)}
+								step="0.01"
+								value={hargaNilai}
+								onChange={(e) => setHargaNilai(e.target.value)}
 								placeholder="contoh: 9.85"
+								disabled={!canEdit}
+								className="text-xs h-9 font-mono"
+							/>
+						</div>
+					</div>
+
+					{skemaHarga === "Bersyarat" && (
+						<div className="space-y-1.5">
+							<Label className="text-xs font-medium text-amber-700 dark:text-amber-400">
+								Alasan / Justifikasi Skema Bersyarat
+							</Label>
+							<Textarea
+								value={alasanKontrakBersyarat}
+								onChange={(e) => setAlasanKontrakBersyarat(e.target.value)}
+								placeholder="Jelaskan alasan penetapan skema bersyarat atau tarif khusus..."
+								disabled={!canEdit}
+								className="text-xs min-h-[60px]"
+							/>
+						</div>
+					)}
+				</CardContent>
+			</Card>
+
+			{/* SECTION 2: BIAYA PENYAMBUNGAN & CAPEX PRE-GR3 */}
+			<Card className="border-border/60 shadow-xs">
+				<CardHeader className="pb-3">
+					<CardTitle className="text-sm font-semibold flex items-center gap-2">
+						<Coins className="size-4 text-emerald-500" />
+						2. Biaya Penyambungan & Capex Pre-GR3
+					</CardTitle>
+					<CardDescription className="text-xs">
+						Rincian biaya penyambungan jaringan dan alokasi capex awal
+					</CardDescription>
+				</CardHeader>
+				<CardContent className="space-y-4">
+					<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+						{/* Biaya Reguler */}
+						<div className="space-y-1.5">
+							<Label className="text-xs font-medium">
+								Biaya Penyambungan Reguler (IDR)
+							</Label>
+							<Input
+								type="number"
+								value={biayaPenyambunganReguler}
+								onChange={(e) => setBiayaPenyambunganReguler(e.target.value)}
+								placeholder="contoh: 15000000"
 								disabled={!canEdit}
 								className="text-xs h-9"
 							/>
 						</div>
 
-						{/* Switch Sama dengan A1 */}
-						<div className="flex items-center space-x-3 pt-6">
-							<Switch
-								id="same-a1"
-								checked={isSameWithA1}
-								onCheckedChange={setIsSameWithA1}
-								disabled={!canEdit}
-							/>
-							<div>
-								<Label
-									htmlFor="same-a1"
-									className="text-xs font-semibold cursor-pointer"
-								>
-									Sesuai Data Formulir A1
-								</Label>
-								<p className="text-[11px] text-muted-foreground">
-									Gunakan profil dan ketentuan identik dengan registrasi A1
-								</p>
-							</div>
-						</div>
-					</div>
-				</CardContent>
-			</Card>
-
-			{/* SECTION 2: BIAYA PENYAMBUNGAN (CONNECTION CHARGES) */}
-			<Card className="border-border/60 shadow-xs">
-				<CardHeader className="pb-3">
-					<CardTitle className="text-sm font-semibold flex items-center gap-2">
-						<Coins className="size-4 text-emerald-500" />
-						2. Rincian Biaya Penyambungan Gas
-					</CardTitle>
-					<CardDescription className="text-xs">
-						Komponen capex pipa, biaya reguler, dan biaya ekstra penyambungan
-					</CardDescription>
-				</CardHeader>
-				<CardContent className="space-y-4">
-					<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-						{/* Capex Pre GR3 */}
-						<div className="space-y-1.5">
-							<Label className="text-xs font-medium">Capex Pre GR3 (IDR)</Label>
-							<Input
-								type="number"
-								value={biayaCapexPreGr3}
-								onChange={(e) => setBiayaCapexPreGr3(e.target.value)}
-								placeholder="contoh: 50000000"
-								disabled={!canEdit}
-								className="text-xs h-9 font-mono"
-							/>
-						</div>
-
-						{/* Biaya Reguler */}
-						<div className="space-y-1.5">
-							<Label className="text-xs font-medium">Biaya Reguler (IDR)</Label>
-							<Input
-								type="number"
-								value={biayaReguler}
-								onChange={(e) => setBiayaReguler(e.target.value)}
-								placeholder="contoh: 25000000"
-								disabled={!canEdit}
-								className="text-xs h-9 font-mono"
-							/>
-						</div>
-
 						{/* Biaya Extra */}
 						<div className="space-y-1.5">
-							<Label className="text-xs font-medium">Biaya Extra (IDR)</Label>
+							<Label className="text-xs font-medium">
+								Biaya Tambahan / Extra (IDR)
+							</Label>
 							<Input
 								type="number"
-								value={biayaExtra}
-								onChange={(e) => setBiayaExtra(e.target.value)}
-								placeholder="contoh: 10000000"
+								value={biayaPenyambunganExtra}
+								onChange={(e) => setBiayaPenyambunganExtra(e.target.value)}
+								placeholder="contoh: 5000000"
 								disabled={!canEdit}
-								className="text-xs h-9 font-mono"
+								className="text-xs h-9"
 							/>
 						</div>
 
 						{/* Total Biaya Penyambungan */}
 						<div className="space-y-1.5">
-							<Label className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+							<Label className="text-xs font-medium text-primary">
 								Total Biaya Penyambungan (IDR)
 							</Label>
-							<div className="h-9 px-3 border rounded-md bg-emerald-50 dark:bg-emerald-950/40 flex items-center font-mono font-bold text-xs text-emerald-700 dark:text-emerald-300">
-								{totalConnectionCostCalculated > 0
-									? `Rp ${totalConnectionCostCalculated.toLocaleString("id-ID")}`
-									: biayaPenyambunganManual
-										? `Rp ${Number(biayaPenyambunganManual).toLocaleString("id-ID")}`
-										: "Rp 0"}
+							<div className="h-9 px-3 flex items-center bg-muted/60 border rounded-md font-mono text-xs font-semibold">
+								Rp {totalBiayaPenyambungan.toLocaleString("id-ID")}
 							</div>
+						</div>
+
+						{/* Capex Pre-GR3 */}
+						<div className="space-y-1.5">
+							<Label className="text-xs font-medium">Capex Pre-GR3 (USD)</Label>
+							<Input
+								type="number"
+								step="0.01"
+								value={capexPreGr3}
+								onChange={(e) => setCapexPreGr3(e.target.value)}
+								placeholder="contoh: 50000"
+								disabled={!canEdit}
+								className="text-xs h-9 font-mono"
+							/>
 						</div>
 					</div>
 				</CardContent>
 			</Card>
 
-			{/* SECTION 3: REPEATING DEMAND PERIODS & DAILY TABLE */}
+			{/* SECTION 3: PERIODE PERMOHONAN & KEBUTUHAN HARIAN */}
 			<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-				{/* Demand Periods Table */}
+				{/* Periods */}
 				<Card className="border-border/60 shadow-xs">
 					<CardHeader className="pb-3 flex flex-row items-center justify-between">
 						<div>
-							<CardTitle className="text-xs font-semibold">
-								3. Periode Kebutuhan Gas
+							<CardTitle className="text-sm font-semibold">
+								3. Periode & Volume Komitmen
 							</CardTitle>
-							<CardDescription className="text-[11px]">
-								Rentang waktu dan volume komitmen
+							<CardDescription className="text-xs">
+								Rata-rata, min, dan max volume kontrak
 							</CardDescription>
 						</div>
 						{canEdit && (
@@ -718,17 +641,17 @@ export function NolRequestForm({
 					<CardContent className="space-y-3">
 						{periods.length === 0 ? (
 							<p className="text-xs text-muted-foreground text-center py-4">
-								Belum ada periode kebutuhan.
+								Belum ada periode komitmen.
 							</p>
 						) : (
 							periods.map((row, idx) => (
 								<div
 									// biome-ignore lint/suspicious/noArrayIndexKey: dynamic form rows
 									key={idx}
-									className="p-2.5 border rounded-md space-y-2 bg-muted/20"
+									className="p-3 border rounded-md space-y-2 bg-muted/20 text-xs"
 								>
 									<div className="flex items-center justify-between">
-										<span className="text-[11px] font-semibold text-muted-foreground">
+										<span className="font-semibold text-muted-foreground">
 											Periode #{idx + 1}
 										</span>
 										{canEdit && (
@@ -746,10 +669,10 @@ export function NolRequestForm({
 									<div className="grid grid-cols-2 gap-2">
 										<Input
 											type="date"
-											value={row.periodeMulai ?? ""}
+											value={row.periodeMulai}
 											onChange={(e) => {
 												const next = [...periods];
-												next[idx].periodeMulai = e.target.value || undefined;
+												next[idx].periodeMulai = e.target.value;
 												setPeriods(next);
 											}}
 											disabled={!canEdit}
@@ -757,10 +680,10 @@ export function NolRequestForm({
 										/>
 										<Input
 											type="date"
-											value={row.periodeSelesai ?? ""}
+											value={row.periodeSelesai}
 											onChange={(e) => {
 												const next = [...periods];
-												next[idx].periodeSelesai = e.target.value || undefined;
+												next[idx].periodeSelesai = e.target.value;
 												setPeriods(next);
 											}}
 											disabled={!canEdit}
@@ -770,43 +693,37 @@ export function NolRequestForm({
 									<div className="grid grid-cols-3 gap-2">
 										<Input
 											type="number"
-											value={row.volumeRataRata ?? ""}
+											placeholder="Rata2"
+											value={row.rataRata}
 											onChange={(e) => {
 												const next = [...periods];
-												next[idx].volumeRataRata = e.target.value
-													? Number(e.target.value)
-													: undefined;
+												next[idx].rataRata = Number(e.target.value) || 0;
 												setPeriods(next);
 											}}
-											placeholder="Vol Rerata"
 											disabled={!canEdit}
 											className="text-xs h-7"
 										/>
 										<Input
 											type="number"
-											value={row.volumeMin ?? ""}
+											placeholder="Min"
+											value={row.kontrakMinimum}
 											onChange={(e) => {
 												const next = [...periods];
-												next[idx].volumeMin = e.target.value
-													? Number(e.target.value)
-													: undefined;
+												next[idx].kontrakMinimum = Number(e.target.value) || 0;
 												setPeriods(next);
 											}}
-											placeholder="Vol Min"
 											disabled={!canEdit}
 											className="text-xs h-7"
 										/>
 										<Input
 											type="number"
-											value={row.volumeMax ?? ""}
+											placeholder="Max"
+											value={row.kontrakMaksimum}
 											onChange={(e) => {
 												const next = [...periods];
-												next[idx].volumeMax = e.target.value
-													? Number(e.target.value)
-													: undefined;
+												next[idx].kontrakMaksimum = Number(e.target.value) || 0;
 												setPeriods(next);
 											}}
-											placeholder="Vol Max"
 											disabled={!canEdit}
 											className="text-xs h-7"
 										/>
@@ -817,114 +734,56 @@ export function NolRequestForm({
 					</CardContent>
 				</Card>
 
-				{/* Daily Periods Table */}
+				{/* Daily Basis */}
 				<Card className="border-border/60 shadow-xs">
-					<CardHeader className="pb-3 flex flex-row items-center justify-between">
-						<div>
-							<CardTitle className="text-xs font-semibold">
-								4. Pola Pemakaian Harian
-							</CardTitle>
-							<CardDescription className="text-[11px]">
-								Profil beban per hari dalam seminggu
-							</CardDescription>
-						</div>
-						{canEdit && (
-							<Button
-								type="button"
-								variant="outline"
-								size="sm"
-								onClick={addDailyRow}
-								className="h-7 text-xs px-2"
-							>
-								<Plus className="size-3" />
-							</Button>
-						)}
+					<CardHeader className="pb-3">
+						<CardTitle className="text-sm font-semibold">
+							4. Pola Beban Harian (Senin - Minggu)
+						</CardTitle>
+						<CardDescription className="text-xs">
+							Estimasi min dan max penyaluran harian (MMBTU/hari)
+						</CardDescription>
 					</CardHeader>
-					<CardContent className="space-y-3">
-						{dailyPeriods.length === 0 ? (
-							<p className="text-xs text-muted-foreground text-center py-4">
-								Belum ada pola harian.
-							</p>
-						) : (
-							dailyPeriods.map((row, idx) => (
-								<div
-									// biome-ignore lint/suspicious/noArrayIndexKey: dynamic form rows
-									key={idx}
-									className="p-2.5 border rounded-md space-y-2 bg-muted/20"
-								>
-									<div className="flex items-center justify-between">
-										<span className="text-[11px] font-semibold text-muted-foreground">
-											Hari:{" "}
-											{DAY_NAMES[row.dayOfWeek ?? 1] || `Hari ${row.dayOfWeek}`}
-										</span>
-										{canEdit && (
-											<Button
-												type="button"
-												variant="ghost"
-												size="icon"
-												onClick={() => removeDailyRow(idx)}
-												className="size-6 text-destructive"
-											>
-												<Trash2 className="size-3" />
-											</Button>
-										)}
-									</div>
-									<div className="grid grid-cols-3 gap-2">
-										<Select
-											value={String(row.dayOfWeek ?? 1)}
-											onValueChange={(val) => {
-												const next = [...dailyPeriods];
-												next[idx].dayOfWeek = Number(val);
-												setDailyPeriods(next);
-											}}
-											disabled={!canEdit}
-										>
-											<SelectTrigger className="text-xs h-7">
-												<SelectValue />
-											</SelectTrigger>
-											<SelectContent>
-												<SelectItem value="1">Senin</SelectItem>
-												<SelectItem value="2">Selasa</SelectItem>
-												<SelectItem value="3">Rabu</SelectItem>
-												<SelectItem value="4">Kamis</SelectItem>
-												<SelectItem value="5">Jumat</SelectItem>
-												<SelectItem value="6">Sabtu</SelectItem>
-												<SelectItem value="0">Minggu</SelectItem>
-											</SelectContent>
-										</Select>
-
-										<Input
-											type="number"
-											value={row.volumeMin ?? ""}
-											onChange={(e) => {
-												const next = [...dailyPeriods];
-												next[idx].volumeMin = e.target.value
-													? Number(e.target.value)
-													: undefined;
-												setDailyPeriods(next);
-											}}
-											placeholder="Vol Min"
-											disabled={!canEdit}
-											className="text-xs h-7"
-										/>
-										<Input
-											type="number"
-											value={row.volumeMax ?? ""}
-											onChange={(e) => {
-												const next = [...dailyPeriods];
-												next[idx].volumeMax = e.target.value
-													? Number(e.target.value)
-													: undefined;
-												setDailyPeriods(next);
-											}}
-											placeholder="Vol Max"
-											disabled={!canEdit}
-											className="text-xs h-7"
-										/>
-									</div>
+					<CardContent className="space-y-2">
+						{dailyBasisRows.map((d, idx) => (
+							<div
+								key={d.hari}
+								className="flex items-center justify-between gap-3 text-xs py-1 border-b last:border-b-0"
+							>
+								<span className="w-20 font-medium">
+									{DAY_LABELS[d.hari] || d.hari}
+								</span>
+								<div className="flex items-center gap-2 flex-1">
+									<Input
+										type="number"
+										step="0.1"
+										placeholder="Min"
+										value={d.min}
+										onChange={(e) => {
+											const next = [...dailyBasisRows];
+											next[idx].min = Number(e.target.value) || 0;
+											setDailyBasisRows(next);
+										}}
+										disabled={!canEdit}
+										className="text-xs h-7 font-mono"
+									/>
+									<span className="text-muted-foreground">-</span>
+									<Input
+										type="number"
+										step="0.1"
+										placeholder="Max"
+										value={d.max}
+										onChange={(e) => {
+											const next = [...dailyBasisRows];
+											next[idx].max = Number(e.target.value) || 0;
+											setDailyBasisRows(next);
+										}}
+										disabled={!canEdit}
+										className="text-xs h-7 font-mono"
+									/>
 								</div>
-							))
-						)}
+							</div>
+						))}
 					</CardContent>
 				</Card>
 			</div>
@@ -934,63 +793,43 @@ export function NolRequestForm({
 				<CardHeader className="pb-3">
 					<CardTitle className="text-sm font-semibold flex items-center gap-2">
 						<Layers className="size-4 text-purple-500" />
-						5. Dokumen Acuan & Referensi
+						5. Dokumen Referensi Kebijakan / Ketentuan Acuan
 					</CardTitle>
 					<CardDescription className="text-xs">
-						Pilih surat atau dokumen acuan yang melandasi permohonan NOL ini
+						Pilih dasar acuan regulasi atau surat keputusan yang menjadi dasar
+						permohonan NOL
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
 					<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-						{refDocs?.map((doc) => {
-							const isChecked = selectedDocIds.includes(doc.id);
-							return (
-								<button
-									key={doc.id}
-									type="button"
-									onClick={() => canEdit && toggleDoc(doc.id)}
-									className={`flex items-start space-x-2.5 p-3 rounded-lg border text-left cursor-pointer transition-colors ${
-										isChecked
-											? "bg-purple-50 border-purple-300 dark:bg-purple-950/30 dark:border-purple-800"
-											: "hover:bg-muted/40"
-									}`}
-								>
-									<Checkbox
-										checked={isChecked}
-										onCheckedChange={() => canEdit && toggleDoc(doc.id)}
-										disabled={!canEdit}
-										className="mt-0.5 pointer-events-none"
-									/>
-									<div className="space-y-0.5">
-										<p className="text-xs font-semibold leading-none">
-											{doc.title}
-										</p>
-										{doc.documentNumber && (
-											<p className="text-[11px] font-mono text-muted-foreground">
-												{doc.documentNumber}
-											</p>
-										)}
-									</div>
-								</button>
-							);
-						})}
+						{refDocs?.map((doc) => (
+							<div
+								key={doc.id}
+								className="flex items-start space-x-2.5 p-2.5 rounded-md border bg-muted/20"
+							>
+								<Checkbox
+									id={`doc-${doc.id}`}
+									checked={referenceDocumentIds.includes(doc.id)}
+									onCheckedChange={() => toggleDoc(doc.id)}
+									disabled={!canEdit}
+									className="mt-0.5"
+								/>
+								<div className="space-y-0.5 leading-none text-xs">
+									<Label
+										htmlFor={`doc-${doc.id}`}
+										className="font-medium cursor-pointer"
+									>
+										{doc.name}
+									</Label>
+									<p className="text-[11px] text-muted-foreground">
+										Versi {doc.version} (Berlaku sejak {doc.effectiveFrom})
+									</p>
+								</div>
+							</div>
+						))}
 					</div>
 				</CardContent>
 			</Card>
-
-			{/* Keterangan */}
-			<div className="space-y-1.5">
-				<Label className="text-xs font-medium">
-					Catatan / Justifikasi Permohonan
-				</Label>
-				<Textarea
-					placeholder="Tuliskan justifikasi permohonan NOL atau catatan penting lainnya..."
-					value={keterangan}
-					onChange={(e) => setKeterangan(e.target.value)}
-					disabled={!canEdit}
-					className="text-xs min-h-[60px]"
-				/>
-			</div>
 
 			{canEdit && (
 				<div className="flex justify-end pt-2">

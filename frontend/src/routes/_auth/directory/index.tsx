@@ -19,7 +19,7 @@ import {
 import * as React from "react";
 import { z } from "zod";
 import { $api } from "@/api/client";
-import type { CompanyListItem, PosisiPelanggan } from "@/api/types";
+import type { CompanyListItem } from "@/api/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -95,8 +95,8 @@ function CompanyDirectoryPage() {
 					stage: search.stage,
 					industryTypeId: search.industryTypeId,
 					searchTerm: search.searchTerm,
-					posisiPelanggan: search.posisiPelanggan,
-					kawasan: search.kawasan,
+					posisiPelanggan: search.posisiPelanggan || undefined,
+					kawasan: search.kawasan || undefined,
 				},
 			},
 		},
@@ -380,7 +380,9 @@ function CompanyDirectoryPage() {
 								onValueChange={(val) =>
 									updateFilters({
 										posisiPelanggan:
-											val === "ALL" ? undefined : (val as PosisiPelanggan),
+											val === "ALL"
+												? undefined
+												: (val as "Pengembangan" | "JalurExisting"),
 									})
 								}
 							>

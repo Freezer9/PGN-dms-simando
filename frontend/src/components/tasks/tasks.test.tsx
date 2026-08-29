@@ -116,7 +116,7 @@ describe("Tasks UI Components", () => {
 			expect(screen.getByText("Konfirmasi Persetujuan")).toBeInTheDocument();
 			expect(screen.getByText(/PT Test Gas Nusantara/i)).toBeInTheDocument();
 			expect(
-				screen.getByRole("button", { name: "Konfirmasi Setuju" }),
+				screen.getByRole("button", { name: "Setujui Permohonan" }),
 			).toBeInTheDocument();
 		});
 
@@ -135,7 +135,7 @@ describe("Tasks UI Components", () => {
 				screen.getByText(/Catatan Revisi \/ Poin Perbaikan/i),
 			).toBeInTheDocument();
 			expect(
-				screen.getByRole("button", { name: "Kirim Permintaan Revisi" }),
+				screen.getByRole("button", { name: "Minta Revisi" }),
 			).toBeInTheDocument();
 		});
 
@@ -157,7 +157,7 @@ describe("Tasks UI Components", () => {
 				),
 			).toBeInTheDocument();
 			expect(
-				screen.getByRole("button", { name: "Konfirmasi Tolak" }),
+				screen.getByRole("button", { name: "Tolak Berkas" }),
 			).toBeInTheDocument();
 		});
 	});

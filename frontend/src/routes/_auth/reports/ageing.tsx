@@ -123,7 +123,8 @@ function AgeingReportPage() {
 												<TableCell>
 													<div>
 														<Link
-															to={`/directory/${r.companyId}`}
+															to="/directory/$companyId"
+															params={{ companyId: r.companyId }}
 															className="font-semibold text-sm hover:underline text-foreground"
 														>
 															{r.namaPerusahaan}
@@ -178,7 +179,10 @@ function AgeingReportPage() {
 														variant="default"
 														className="h-8 gap-1 text-xs"
 													>
-														<Link to={`/directory/${r.companyId}`}>
+														<Link
+															to="/directory/$companyId"
+															params={{ companyId: r.companyId }}
+														>
 															Periksa
 															<ArrowRight className="size-3.5" />
 														</Link>

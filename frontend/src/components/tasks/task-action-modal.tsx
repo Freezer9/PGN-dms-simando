@@ -290,7 +290,7 @@ export function TaskActionModal({
 								<SelectContent>
 									{reviewers.map((r) => (
 										<SelectItem key={r.id} value={r.id}>
-											{r.name} ({r.role}) - {r.email}
+											{r.fullName} ({r.role}) - {r.email}
 										</SelectItem>
 									))}
 								</SelectContent>
@@ -350,25 +350,18 @@ export function TaskActionModal({
 						variant={
 							actionType === "Tolak"
 								? "destructive"
-								: actionType === "Revisi"
-									? "secondary"
-									: "default"
-						}
-						className={
-							actionType === "Setuju"
-								? "bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
-								: actionType === "Revisi"
-									? "bg-amber-600 hover:bg-amber-700 text-white font-medium"
-									: undefined
+								: actionType === "Setuju"
+									? "default"
+									: "secondary"
 						}
 						onClick={handleConfirm}
 						disabled={isPending}
 					>
-						{isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-						{actionType === "Setuju" && "Konfirmasi Setuju"}
-						{actionType === "Revisi" && "Kirim Permintaan Revisi"}
-						{actionType === "Tolak" && "Konfirmasi Tolak"}
-						{actionType === "Reassign" && "Simpan Penugasan"}
+						{isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+						{actionType === "Setuju" && "Setujui Permohonan"}
+						{actionType === "Revisi" && "Minta Revisi"}
+						{actionType === "Tolak" && "Tolak Berkas"}
+						{actionType === "Reassign" && "Tugaskan Reviewer"}
 					</Button>
 				</DialogFooter>
 			</DialogContent>

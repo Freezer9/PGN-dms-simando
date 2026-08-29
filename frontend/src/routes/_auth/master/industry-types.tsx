@@ -1,7 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Factory } from "lucide-react";
 import { $api } from "@/api/client";
-import type { IndustryTypeDto } from "@/api/types";
+import type {
+	CreateIndustryTypeRequest,
+	IndustryTypeDto,
+	UpdateIndustryTypeRequest,
+} from "@/api/types";
 import {
 	type ColumnDef,
 	type FieldDef,
@@ -51,10 +55,10 @@ function IndustryTypesPage() {
 			),
 		},
 		{
-			key: "description",
-			header: "Contoh Produk / Deskripsi",
+			key: "contohProduk",
+			header: "Contoh Produk",
 			render: (row) => (
-				<span className="text-muted-foreground">{row.description || "-"}</span>
+				<span className="text-muted-foreground">{row.contohProduk || "-"}</span>
 			),
 		},
 	];
@@ -68,32 +72,29 @@ function IndustryTypesPage() {
 			placeholder: "contoh: Industri Makanan & Minuman",
 		},
 		{
-			name: "description",
-			label: "Deskripsi / Contoh Produk",
+			name: "contohProduk",
+			label: "Contoh Produk",
 			type: "textarea",
 			placeholder: "contoh: Mie instan, biskuit, sirup",
 		},
 	];
 
 	const handleSave = async (formData: Record<string, unknown>, id?: string) => {
+		const payload: CreateIndustryTypeRequest | UpdateIndustryTypeRequest = {
+			name: String(formData.name),
+			contohProduk: formData.contohProduk
+				? String(formData.contohProduk)
+				: null,
+		};
+
 		if (id) {
 			await updateMutation.mutateAsync({
 				params: { path: { id } },
-				body: {
-					name: String(formData.name),
-					description: formData.description
-						? String(formData.description)
-						: null,
-				},
+				body: payload,
 			});
 		} else {
 			await createMutation.mutateAsync({
-				body: {
-					name: String(formData.name),
-					description: formData.description
-						? String(formData.description)
-						: null,
-				},
+				body: payload,
 			});
 		}
 	};
@@ -115,7 +116,7 @@ function IndustryTypesPage() {
 			fields={fields}
 			onSave={handleSave}
 			onDelete={handleDelete}
-			searchKeys={["name", "description"]}
+			searchKeys={["name", "contohProduk"]}
 		/>
 	);
 }

@@ -1,7 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { FileText } from "lucide-react";
 import { $api } from "@/api/client";
-import type { ReferenceDocumentDto } from "@/api/types";
+import type {
+	CreateReferenceDocumentRequest,
+	ReferenceDocumentDto,
+	UpdateReferenceDocumentRequest,
+} from "@/api/types";
 import {
 	type ColumnDef,
 	type FieldDef,
@@ -44,24 +48,17 @@ function ReferenceDocumentsPage() {
 
 	const columns: ColumnDef<ReferenceDocumentDto>[] = [
 		{
-			key: "title",
+			key: "name",
 			header: "Judul Ketentuan / Dokumen",
 			render: (row) => (
-				<span className="font-semibold text-foreground">{row.title}</span>
+				<span className="font-semibold text-foreground">{row.name}</span>
 			),
 		},
 		{
-			key: "documentNumber",
-			header: "Nomor Dokumen",
+			key: "version",
+			header: "Versi Dokumen",
 			render: (row) => (
-				<span className="font-mono text-xs">{row.documentNumber || "-"}</span>
-			),
-		},
-		{
-			key: "description",
-			header: "Deskripsi",
-			render: (row) => (
-				<span className="text-muted-foreground">{row.description || "-"}</span>
+				<span className="font-mono text-xs">v{row.version}</span>
 			),
 		},
 		{
@@ -75,40 +72,57 @@ function ReferenceDocumentsPage() {
 				</span>
 			),
 		},
+		{
+			key: "effectiveTo",
+			header: "Berlaku Sampai",
+			render: (row) => (
+				<span className="text-xs text-muted-foreground">
+					{row.effectiveTo
+						? new Date(row.effectiveTo).toLocaleDateString("id-ID")
+						: "Sekarang"}
+				</span>
+			),
+		},
 	];
 
 	const fields: FieldDef[] = [
 		{
-			name: "title",
-			label: "Judul Dokumen Acuan",
+			name: "name",
+			label: "Nama Dokumen Acuan",
 			type: "text",
 			required: true,
 			placeholder: "contoh: Ketentuan Penyaluran Gas Bumi Non-Pipa",
 		},
 		{
-			name: "documentNumber",
-			label: "Nomor Ketentuan / Keputusan",
-			type: "text",
-			placeholder: "contoh: SK-DIR/012/PGN/2024",
+			name: "version",
+			label: "Versi (Angka)",
+			type: "number",
+			required: true,
+			placeholder: "1",
 		},
 		{
-			name: "description",
-			label: "Ringkasan / Catatan Dokumen",
-			type: "textarea",
-			placeholder: "contoh: Ketentuan teknis dan komersial baku",
+			name: "effectiveFrom",
+			label: "Tanggal Berlaku Mulai",
+			type: "text",
+			required: true,
+			placeholder: "YYYY-MM-DD",
+		},
+		{
+			name: "effectiveTo",
+			label: "Tanggal Berlaku Sampai (Opsional)",
+			type: "text",
+			placeholder: "YYYY-MM-DD",
 		},
 	];
 
 	const handleSave = async (formData: Record<string, unknown>, id?: string) => {
-		const payload = {
-			title: String(formData.title),
-			documentNumber: formData.documentNumber
-				? String(formData.documentNumber)
-				: null,
-			description: formData.description ? String(formData.description) : null,
-			effectiveFrom: null,
-			effectiveTo: null,
-			fileUrl: null,
+		const payload:
+			| CreateReferenceDocumentRequest
+			| UpdateReferenceDocumentRequest = {
+			name: String(formData.name),
+			version: Number(formData.version) || 1,
+			effectiveFrom: String(formData.effectiveFrom),
+			effectiveTo: formData.effectiveTo ? String(formData.effectiveTo) : null,
 		};
 
 		if (id) {
@@ -140,7 +154,7 @@ function ReferenceDocumentsPage() {
 			fields={fields}
 			onSave={handleSave}
 			onDelete={handleDelete}
-			searchKeys={["title", "documentNumber", "description"]}
+			searchKeys={["name"]}
 		/>
 	);
 }

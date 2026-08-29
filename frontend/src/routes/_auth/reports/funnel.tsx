@@ -73,7 +73,7 @@ function FunnelReportPage() {
 										Tingkat Konversi Akhir (NOL)
 									</p>
 									<p className="text-2xl font-bold mt-1 text-emerald-600 dark:text-emerald-400">
-										{report.overallConversionRatePct.toFixed(1)}%
+										{Number(report.overallConversionRatePct).toFixed(1)}%
 									</p>
 								</div>
 								<Badge
@@ -101,16 +101,17 @@ function FunnelReportPage() {
 						</CardHeader>
 						<CardContent className="space-y-3">
 							{report.stages.map((stage) => {
-								const maxCount =
-									report.totalRecords > 0 ? report.totalRecords : 1;
+								const total = Number(report.totalRecords) || 0;
+								const count = Number(stage.recordCount) || 0;
+								const maxCount = total > 0 ? total : 1;
 								const barWidthPct = Math.max(
 									4,
-									Math.round((stage.recordCount / maxCount) * 100),
+									Math.round((count / maxCount) * 100),
 								);
 
 								return (
 									<div
-										key={stage.stage}
+										key={String(stage.stage)}
 										className="space-y-1.5 p-2 rounded-lg hover:bg-muted/30 transition-colors"
 									>
 										<div className="flex items-center justify-between text-xs font-medium">
@@ -127,12 +128,14 @@ function FunnelReportPage() {
 													{stage.recordCount} record
 												</span>
 												<Badge
-													variant={stage.stage === 1 ? "secondary" : "outline"}
+													variant={
+														Number(stage.stage) === 1 ? "secondary" : "outline"
+													}
 													className="text-[11px] font-mono min-w-16 text-center justify-center"
 												>
-													{stage.stage === 1
+													{Number(stage.stage) === 1
 														? "Baseline"
-														: `${stage.conversionRatePct.toFixed(1)}%`}
+														: `${Number(stage.conversionRatePct).toFixed(1)}%`}
 												</Badge>
 											</div>
 										</div>
@@ -173,7 +176,7 @@ function FunnelReportPage() {
 								</TableHeader>
 								<TableBody>
 									{report.stages.map((st) => (
-										<TableRow key={st.stage}>
+										<TableRow key={String(st.stage)}>
 											<TableCell className="font-mono font-medium">
 												{st.stage}
 											</TableCell>
@@ -184,13 +187,13 @@ function FunnelReportPage() {
 												{st.recordCount}
 											</TableCell>
 											<TableCell className="text-right font-mono">
-												{st.stage === 1
+												{Number(st.stage) === 1
 													? "-"
-													: `${st.conversionRatePct.toFixed(1)}%`}
+													: `${Number(st.conversionRatePct).toFixed(1)}%`}
 											</TableCell>
 											<TableCell className="text-right text-muted-foreground text-xs">
-												{st.avgTurnaroundDays > 0
-													? `${st.avgTurnaroundDays.toFixed(1)} hari`
+												{Number(st.avgTurnaroundDays) > 0
+													? `${Number(st.avgTurnaroundDays).toFixed(1)} hari`
 													: "-"}
 											</TableCell>
 											<TableCell className="text-right">
@@ -200,7 +203,10 @@ function FunnelReportPage() {
 													variant="ghost"
 													className="h-7 text-xs"
 												>
-													<Link to="/directory" search={{ stage: st.stage }}>
+													<Link
+														to="/directory"
+														search={{ stage: Number(st.stage) }}
+													>
 														Lihat
 														<ArrowRight className="size-3 ml-1" />
 													</Link>

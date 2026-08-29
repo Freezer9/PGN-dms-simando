@@ -9,17 +9,15 @@ import {
 	Save,
 	ScrollText,
 	Trash2,
-	XCircle,
 } from "lucide-react";
 import * as React from "react";
 import { toast } from "sonner";
 import { $api } from "@/api/client";
 import type {
+	NolIssuanceApprovedTermDetail,
 	NolIssuanceDetail,
 	NolOutcome,
-	SaveNolIssuanceApprovedTermRequest,
 	SaveNolIssuanceRequest,
-	SkemaHarga,
 } from "@/api/types";
 import { DocumentDownloadButton } from "@/components/documents/document-download-buttons";
 import { Button } from "@/components/ui/button";
@@ -47,7 +45,6 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { Textarea } from "@/components/ui/textarea";
 
 interface NolIssuanceFormProps {
 	companyId: string;
@@ -63,32 +60,13 @@ export function NolIssuanceForm({
 	onSaved,
 }: NolIssuanceFormProps) {
 	const queryClient = useQueryClient();
-	const { data: units } = $api.useQuery("get", "/api/master/units");
 
 	// Form State
-	const [outcome, setOutcome] = React.useState<NolOutcome | "">(
-		initialData?.outcome || "Diterbitkan",
-	);
-	const [nomorSuratNol, setNomorSuratNol] = React.useState<string>(
-		initialData?.nomorSuratNol || "",
-	);
-	const [tanggalSuratNol, setTanggalSuratNol] = React.useState<string>(
-		initialData?.tanggalSuratNol || "",
+	const [outcome, setOutcome] = React.useState<NolOutcome>(
+		initialData?.outcome || "Nol",
 	);
 	const [nomorNotaDinas, setNomorNotaDinas] = React.useState<string>(
 		initialData?.nomorNotaDinas || "",
-	);
-	const [tanggalNotaDinas, setTanggalNotaDinas] = React.useState<string>(
-		initialData?.tanggalNotaDinas || "",
-	);
-	const [jangkaWaktuTahun, setJangkaWaktuTahun] = React.useState<string>(
-		initialData?.jangkaWaktuTahun ? String(initialData.jangkaWaktuTahun) : "",
-	);
-	const [skemaHarga, setSkemaHarga] = React.useState<SkemaHarga | "">(
-		initialData?.skemaHarga || "Reguler",
-	);
-	const [hargaJualNilai, setHargaJualNilai] = React.useState<string>(
-		initialData?.hargaJualNilai ? String(initialData.hargaJualNilai) : "",
 	);
 	const [berlakuSejak, setBerlakuSejak] = React.useState<string>(
 		initialData?.berlakuSejak || "",
@@ -96,62 +74,46 @@ export function NolIssuanceForm({
 	const [berlakuSampai, setBerlakuSampai] = React.useState<string>(
 		initialData?.berlakuSampai || "",
 	);
-	const [keterangan, setKeterangan] = React.useState<string>(
-		initialData?.keterangan || "",
-	);
 
 	// Conditional Terms (List of strings)
-	const [syaratKetentuan, setSyaratKetentuan] = React.useState<string[]>(
-		initialData?.syaratKetentuanTambahan || [],
+	const [kontrakBersyarat, setKontrakBersyarat] = React.useState<string[]>(
+		initialData?.kontrakBersyarat || [],
 	);
 
 	// Repeating Approved Terms
 	const [approvedTerms, setApprovedTerms] = React.useState<
-		SaveNolIssuanceApprovedTermRequest[]
+		NolIssuanceApprovedTermDetail[]
 	>(
-		initialData?.approvedTerms?.map((t) => ({
-			periodeMulai: t.periodeMulai || undefined,
-			periodeSelesai: t.periodeSelesai || undefined,
-			volumeRataRata:
-				t.volumeRataRata != null ? Number(t.volumeRataRata) : undefined,
-			volumeMin: t.volumeMin != null ? Number(t.volumeMin) : undefined,
-			volumeMax: t.volumeMax != null ? Number(t.volumeMax) : undefined,
-			unitId: t.unitId || undefined,
+		initialData?.approvedTerms?.map((t, idx) => ({
+			id: t.id || crypto.randomUUID(),
+			periodeMulai: t.periodeMulai,
+			periodeSelesai: t.periodeSelesai,
+			rataRata: Number(t.rataRata) || 0,
+			kontrakMinimum: Number(t.kontrakMinimum) || 0,
+			kontrakMaksimum: Number(t.kontrakMaksimum) || 0,
+			sortOrder: idx + 1,
 		})) || [],
 	);
 
 	// Sync initialData
 	React.useEffect(() => {
 		if (initialData) {
-			setOutcome(initialData.outcome || "Diterbitkan");
-			setNomorSuratNol(initialData.nomorSuratNol || "");
-			setTanggalSuratNol(initialData.tanggalSuratNol || "");
+			setOutcome(initialData.outcome || "Nol");
 			setNomorNotaDinas(initialData.nomorNotaDinas || "");
-			setTanggalNotaDinas(initialData.tanggalNotaDinas || "");
-			setJangkaWaktuTahun(
-				initialData.jangkaWaktuTahun
-					? String(initialData.jangkaWaktuTahun)
-					: "",
-			);
-			setSkemaHarga(initialData.skemaHarga || "Reguler");
-			setHargaJualNilai(
-				initialData.hargaJualNilai ? String(initialData.hargaJualNilai) : "",
-			);
 			setBerlakuSejak(initialData.berlakuSejak || "");
 			setBerlakuSampai(initialData.berlakuSampai || "");
-			setKeterangan(initialData.keterangan || "");
-			setSyaratKetentuan(initialData.syaratKetentuanTambahan || []);
+			setKontrakBersyarat(initialData.kontrakBersyarat || []);
 
 			if (initialData.approvedTerms) {
 				setApprovedTerms(
-					initialData.approvedTerms.map((t) => ({
-						periodeMulai: t.periodeMulai || undefined,
-						periodeSelesai: t.periodeSelesai || undefined,
-						volumeRataRata:
-							t.volumeRataRata != null ? Number(t.volumeRataRata) : undefined,
-						volumeMin: t.volumeMin != null ? Number(t.volumeMin) : undefined,
-						volumeMax: t.volumeMax != null ? Number(t.volumeMax) : undefined,
-						unitId: t.unitId || undefined,
+					initialData.approvedTerms.map((t, idx) => ({
+						id: t.id || crypto.randomUUID(),
+						periodeMulai: t.periodeMulai,
+						periodeSelesai: t.periodeSelesai,
+						rataRata: Number(t.rataRata) || 0,
+						kontrakMinimum: Number(t.kontrakMinimum) || 0,
+						kontrakMaksimum: Number(t.kontrakMaksimum) || 0,
+						sortOrder: idx + 1,
 					})),
 				);
 			}
@@ -164,7 +126,7 @@ export function NolIssuanceForm({
 		"/api/companies/{id}/nol-issuance",
 		{
 			onSuccess: () => {
-				toast.success("Penerbitan Surat NOL berhasil disimpan!");
+				toast.success("Penerbitan Surat NOL/RL berhasil disimpan!");
 				queryClient.invalidateQueries({
 					queryKey: [
 						"get",
@@ -195,19 +157,21 @@ export function NolIssuanceForm({
 		e.preventDefault();
 
 		const request: SaveNolIssuanceRequest = {
-			outcome: outcome ? (outcome as NolOutcome) : null,
-			nomorSuratNol: nomorSuratNol || null,
-			tanggalSuratNol: tanggalSuratNol || null,
+			outcome,
 			nomorNotaDinas: nomorNotaDinas || null,
-			tanggalNotaDinas: tanggalNotaDinas || null,
-			jangkaWaktuTahun: jangkaWaktuTahun ? Number(jangkaWaktuTahun) : null,
-			skemaHarga: skemaHarga ? (skemaHarga as SkemaHarga) : null,
-			hargaJualNilai: hargaJualNilai ? Number(hargaJualNilai) : null,
+			kontrakBersyarat,
 			berlakuSejak: berlakuSejak || null,
 			berlakuSampai: berlakuSampai || null,
-			syaratKetentuanTambahan: syaratKetentuan,
-			keterangan: keterangan || null,
-			approvedTerms,
+			documentId: initialData?.documentId || null,
+			approvedTerms: approvedTerms.map((t, idx) => ({
+				id: t.id || crypto.randomUUID(),
+				periodeMulai: t.periodeMulai,
+				periodeSelesai: t.periodeSelesai,
+				rataRata: Number(t.rataRata) || 0,
+				kontrakMinimum: Number(t.kontrakMinimum) || 0,
+				kontrakMaksimum: Number(t.kontrakMaksimum) || 0,
+				sortOrder: idx + 1,
+			})),
 		};
 
 		saveMutation.mutate({
@@ -220,12 +184,13 @@ export function NolIssuanceForm({
 		setApprovedTerms([
 			...approvedTerms,
 			{
-				periodeMulai: undefined,
-				periodeSelesai: undefined,
-				volumeRataRata: undefined,
-				volumeMin: undefined,
-				volumeMax: undefined,
-				unitId: undefined,
+				id: crypto.randomUUID(),
+				periodeMulai: "",
+				periodeSelesai: "",
+				rataRata: 0,
+				kontrakMinimum: 0,
+				kontrakMaksimum: 0,
+				sortOrder: approvedTerms.length + 1,
 			},
 		]);
 	};
@@ -235,11 +200,11 @@ export function NolIssuanceForm({
 	};
 
 	const addConditionRow = () => {
-		setSyaratKetentuan([...syaratKetentuan, ""]);
+		setKontrakBersyarat([...kontrakBersyarat, ""]);
 	};
 
 	const removeConditionRow = (index: number) => {
-		setSyaratKetentuan(syaratKetentuan.filter((_, i) => i !== index));
+		setKontrakBersyarat(kontrakBersyarat.filter((_, i) => i !== index));
 	};
 
 	return (
@@ -252,11 +217,11 @@ export function NolIssuanceForm({
 					</div>
 					<div>
 						<h3 className="text-sm font-semibold">
-							Penerbitan Surat Kesiapan Pasokan Gas (Surat NOL)
+							Penerbitan Surat Kesiapan Pasokan Gas (Surat NOL / RL)
 						</h3>
 						<p className="text-xs text-muted-foreground">
-							Surat resmi persetujuan pasokan gas bumi, nomor nota dinas, dan
-							ketentuan komitmen akhir
+							Surat resmi persetujuan pasokan gas bumi (NOL) atau surat
+							tanggapan (RL) beserta ketentuan akhir
 						</p>
 					</div>
 				</div>
@@ -265,7 +230,7 @@ export function NolIssuanceForm({
 					<DocumentDownloadButton
 						companyId={companyId}
 						documentType="nol-issuance"
-						label="Unduh Surat Penerbitan NOL (.docx)"
+						label="Unduh Surat Penerbitan (.docx)"
 					/>
 					{canEdit && (
 						<Button
@@ -279,13 +244,13 @@ export function NolIssuanceForm({
 							) : (
 								<Save className="size-3.5" />
 							)}
-							Simpan Penerbitan NOL
+							Simpan Penerbitan
 						</Button>
 					)}
 				</div>
 			</div>
 
-			{/* SECTION 1: KEPUTUSAN & NOMOR SURAT RESMI */}
+			{/* SECTION 1: KEPUTUSAN & NOMOR NOTA DINAS */}
 			<Card className="border-border/60 shadow-xs">
 				<CardHeader className="pb-3">
 					<CardTitle className="text-sm font-semibold flex items-center gap-2">
@@ -293,8 +258,8 @@ export function NolIssuanceForm({
 						1. Keputusan Akhir & Administrasi Surat Resmi
 					</CardTitle>
 					<CardDescription className="text-xs">
-						Status penerbitan surat NOL, nomor surat resmi PGN, dan nota dinas
-						divisi
+						Status penerbitan surat NOL (Notice of Letter) / RL (Response
+						Letter) dan nota dinas divisi
 					</CardDescription>
 				</CardHeader>
 				<CardContent className="space-y-4">
@@ -305,7 +270,7 @@ export function NolIssuanceForm({
 								Keputusan Akhir (Outcome)
 							</Label>
 							<Select
-								value={outcome || "Diterbitkan"}
+								value={outcome}
 								onValueChange={(val) => setOutcome(val as NolOutcome)}
 								disabled={!canEdit}
 							>
@@ -313,51 +278,20 @@ export function NolIssuanceForm({
 									<SelectValue />
 								</SelectTrigger>
 								<SelectContent>
-									<SelectItem value="Diterbitkan">
+									<SelectItem value="Nol">
 										<div className="flex items-center gap-2 text-emerald-600">
-											<CheckCircle className="size-3.5" /> Diterbitkan
+											<CheckCircle className="size-3.5" /> Diterbitkan Surat NOL
 											(Approved)
 										</div>
 									</SelectItem>
-									<SelectItem value="Bersyarat">
+									<SelectItem value="Rl">
 										<div className="flex items-center gap-2 text-amber-600">
-											<AlertTriangle className="size-3.5" /> Diterbitkan
-											Bersyarat (Conditional)
-										</div>
-									</SelectItem>
-									<SelectItem value="Ditolak">
-										<div className="flex items-center gap-2 text-destructive">
-											<XCircle className="size-3.5" /> Ditolak (Rejected)
+											<AlertTriangle className="size-3.5" /> Diterbitkan Surat
+											RL (Response Letter)
 										</div>
 									</SelectItem>
 								</SelectContent>
 							</Select>
-						</div>
-
-						{/* Nomor Surat NOL */}
-						<div className="space-y-1.5">
-							<Label className="text-xs font-medium">
-								Nomor Surat Resmi NOL
-							</Label>
-							<Input
-								value={nomorSuratNol}
-								onChange={(e) => setNomorSuratNol(e.target.value)}
-								placeholder="contoh: 014200.S/LG.01.01/PGN/2026"
-								disabled={!canEdit}
-								className="text-xs h-9 font-mono font-semibold"
-							/>
-						</div>
-
-						{/* Tanggal Surat NOL */}
-						<div className="space-y-1.5">
-							<Label className="text-xs font-medium">Tanggal Surat NOL</Label>
-							<Input
-								type="date"
-								value={tanggalSuratNol}
-								onChange={(e) => setTanggalSuratNol(e.target.value)}
-								disabled={!canEdit}
-								className="text-xs h-9"
-							/>
 						</div>
 
 						{/* Nomor Nota Dinas */}
@@ -369,73 +303,6 @@ export function NolIssuanceForm({
 								value={nomorNotaDinas}
 								onChange={(e) => setNomorNotaDinas(e.target.value)}
 								placeholder="contoh: ND-108/PGN/COM/2026"
-								disabled={!canEdit}
-								className="text-xs h-9 font-mono"
-							/>
-						</div>
-
-						{/* Tanggal Nota Dinas */}
-						<div className="space-y-1.5">
-							<Label className="text-xs font-medium">Tanggal Nota Dinas</Label>
-							<Input
-								type="date"
-								value={tanggalNotaDinas}
-								onChange={(e) => setTanggalNotaDinas(e.target.value)}
-								disabled={!canEdit}
-								className="text-xs h-9"
-							/>
-						</div>
-
-						{/* Jangka Waktu (Tahun) */}
-						<div className="space-y-1.5">
-							<Label className="text-xs font-medium">
-								Jangka Waktu Kontrak (Tahun)
-							</Label>
-							<Input
-								type="number"
-								value={jangkaWaktuTahun}
-								onChange={(e) => setJangkaWaktuTahun(e.target.value)}
-								placeholder="contoh: 5"
-								disabled={!canEdit}
-								className="text-xs h-9"
-							/>
-						</div>
-
-						{/* Skema Harga */}
-						<div className="space-y-1.5">
-							<Label className="text-xs font-medium">
-								Skema Harga yang Disetujui
-							</Label>
-							<Select
-								value={skemaHarga || "NONE"}
-								onValueChange={(val) =>
-									setSkemaHarga(val === "NONE" ? "" : (val as SkemaHarga))
-								}
-								disabled={!canEdit}
-							>
-								<SelectTrigger className="text-xs h-9">
-									<SelectValue placeholder="Pilih Skema Harga" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="NONE">Belum Dipilih</SelectItem>
-									<SelectItem value="Reguler">Reguler</SelectItem>
-									<SelectItem value="SiGas">SiGas</SelectItem>
-									<SelectItem value="Bersyarat">Bersyarat</SelectItem>
-								</SelectContent>
-							</Select>
-						</div>
-
-						{/* Harga Jual Disetujui */}
-						<div className="space-y-1.5">
-							<Label className="text-xs font-medium">
-								Harga Jual Disetujui (USD/MMBTU)
-							</Label>
-							<Input
-								type="number"
-								step="0.001"
-								value={hargaJualNilai}
-								onChange={(e) => setHargaJualNilai(e.target.value)}
-								placeholder="contoh: 9.85"
 								disabled={!canEdit}
 								className="text-xs h-9 font-mono"
 							/>
@@ -483,7 +350,7 @@ export function NolIssuanceForm({
 							2. Ketentuan Volume Gas yang Disetujui (Approved Terms)
 						</CardTitle>
 						<CardDescription className="text-xs">
-							Volume pasokan terjamin per periode kontrak
+							Volume pasokan terjamin per periode kontrak (MMBTUD)
 						</CardDescription>
 					</div>
 					{canEdit && (
@@ -518,9 +385,6 @@ export function NolIssuanceForm({
 									<TableHead className="text-xs font-semibold min-w-[120px]">
 										Vol Maksimum
 									</TableHead>
-									<TableHead className="text-xs font-semibold min-w-[120px]">
-										Satuan
-									</TableHead>
 									{canEdit && (
 										<TableHead className="text-xs font-semibold w-12 text-center">
 											Aksi
@@ -532,7 +396,7 @@ export function NolIssuanceForm({
 								{approvedTerms.length === 0 ? (
 									<TableRow>
 										<TableCell
-											colSpan={canEdit ? 7 : 6}
+											colSpan={canEdit ? 6 : 5}
 											className="h-20 text-center text-xs text-muted-foreground"
 										>
 											Belum ada ketentuan volume. Klik "+ Tambah Ketentuan"
@@ -549,8 +413,7 @@ export function NolIssuanceForm({
 													value={row.periodeMulai ?? ""}
 													onChange={(e) => {
 														const next = [...approvedTerms];
-														next[idx].periodeMulai =
-															e.target.value || undefined;
+														next[idx].periodeMulai = e.target.value;
 														setApprovedTerms(next);
 													}}
 													disabled={!canEdit}
@@ -563,8 +426,7 @@ export function NolIssuanceForm({
 													value={row.periodeSelesai ?? ""}
 													onChange={(e) => {
 														const next = [...approvedTerms];
-														next[idx].periodeSelesai =
-															e.target.value || undefined;
+														next[idx].periodeSelesai = e.target.value;
 														setApprovedTerms(next);
 													}}
 													disabled={!canEdit}
@@ -575,12 +437,12 @@ export function NolIssuanceForm({
 												<Input
 													type="number"
 													step="0.01"
-													value={row.volumeRataRata ?? ""}
+													value={row.rataRata ?? ""}
 													onChange={(e) => {
 														const next = [...approvedTerms];
-														next[idx].volumeRataRata = e.target.value
+														next[idx].rataRata = e.target.value
 															? Number(e.target.value)
-															: undefined;
+															: 0;
 														setApprovedTerms(next);
 													}}
 													placeholder="1000"
@@ -592,12 +454,12 @@ export function NolIssuanceForm({
 												<Input
 													type="number"
 													step="0.01"
-													value={row.volumeMin ?? ""}
+													value={row.kontrakMinimum ?? ""}
 													onChange={(e) => {
 														const next = [...approvedTerms];
-														next[idx].volumeMin = e.target.value
+														next[idx].kontrakMinimum = e.target.value
 															? Number(e.target.value)
-															: undefined;
+															: 0;
 														setApprovedTerms(next);
 													}}
 													placeholder="800"
@@ -609,41 +471,18 @@ export function NolIssuanceForm({
 												<Input
 													type="number"
 													step="0.01"
-													value={row.volumeMax ?? ""}
+													value={row.kontrakMaksimum ?? ""}
 													onChange={(e) => {
 														const next = [...approvedTerms];
-														next[idx].volumeMax = e.target.value
+														next[idx].kontrakMaksimum = e.target.value
 															? Number(e.target.value)
-															: undefined;
+															: 0;
 														setApprovedTerms(next);
 													}}
 													placeholder="1200"
 													disabled={!canEdit}
 													className="text-xs h-8 font-mono"
 												/>
-											</TableCell>
-											<TableCell>
-												<Select
-													value={row.unitId || "NONE"}
-													onValueChange={(val) => {
-														const next = [...approvedTerms];
-														next[idx].unitId = val === "NONE" ? undefined : val;
-														setApprovedTerms(next);
-													}}
-													disabled={!canEdit}
-												>
-													<SelectTrigger className="text-xs h-8">
-														<SelectValue placeholder="Satuan" />
-													</SelectTrigger>
-													<SelectContent>
-														<SelectItem value="NONE">-</SelectItem>
-														{units?.map((u) => (
-															<SelectItem key={u.id} value={u.id}>
-																{u.name} ({u.code})
-															</SelectItem>
-														))}
-													</SelectContent>
-												</Select>
 											</TableCell>
 											{canEdit && (
 												<TableCell className="text-center">
@@ -667,13 +506,13 @@ export function NolIssuanceForm({
 				</CardContent>
 			</Card>
 
-			{/* SECTION 3: SYARAT & KETENTUAN TAMBAHAN (CONDITIONAL TERMS) */}
+			{/* SECTION 3: SYARAT & KETENTUAN TAMBAHAN (KONTRAK BERSYARAT) */}
 			<Card className="border-border/60 shadow-xs">
 				<CardHeader className="pb-3 flex flex-row items-center justify-between">
 					<div>
 						<CardTitle className="text-sm font-semibold flex items-center gap-2">
 							<ScrollText className="size-4 text-amber-500" />
-							3. Syarat & Ketentuan Tambahan (Conditional Terms)
+							3. Syarat & Ketentuan Tambahan (Kontrak Bersyarat)
 						</CardTitle>
 						<CardDescription className="text-xs">
 							Klausul khusus yang wajib dipenuhi pelanggan sebelum gas in /
@@ -693,12 +532,12 @@ export function NolIssuanceForm({
 					)}
 				</CardHeader>
 				<CardContent className="space-y-3">
-					{syaratKetentuan.length === 0 ? (
+					{kontrakBersyarat.length === 0 ? (
 						<p className="text-xs text-muted-foreground text-center py-4">
 							Tidak ada klausul syarat tambahan khusus.
 						</p>
 					) : (
-						syaratKetentuan.map((item, idx) => (
+						kontrakBersyarat.map((item, idx) => (
 							// biome-ignore lint/suspicious/noArrayIndexKey: dynamic form rows
 							<div key={idx} className="flex items-center gap-2">
 								<span className="text-xs font-mono text-muted-foreground w-6 text-right">
@@ -707,9 +546,9 @@ export function NolIssuanceForm({
 								<Input
 									value={item}
 									onChange={(e) => {
-										const next = [...syaratKetentuan];
+										const next = [...kontrakBersyarat];
 										next[idx] = e.target.value;
-										setSyaratKetentuan(next);
+										setKontrakBersyarat(next);
 									}}
 									placeholder="contoh: Pelanggan wajib menyerahkan Jaminan Pembayaran 14 hari sebelum gas in"
 									disabled={!canEdit}
@@ -732,20 +571,6 @@ export function NolIssuanceForm({
 				</CardContent>
 			</Card>
 
-			{/* Catatan / Keterangan */}
-			<div className="space-y-1.5">
-				<Label className="text-xs font-medium">
-					Catatan / Keterangan Penutup
-				</Label>
-				<Textarea
-					placeholder="Catatan penutup penerbitan surat NOL..."
-					value={keterangan}
-					onChange={(e) => setKeterangan(e.target.value)}
-					disabled={!canEdit}
-					className="text-xs min-h-[60px]"
-				/>
-			</div>
-
 			{canEdit && (
 				<div className="flex justify-end pt-2">
 					<Button
@@ -758,7 +583,7 @@ export function NolIssuanceForm({
 						) : (
 							<Save className="size-3.5" />
 						)}
-						Simpan Penerbitan NOL
+						Simpan Penerbitan
 					</Button>
 				</div>
 			)}

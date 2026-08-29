@@ -16,6 +16,8 @@ describe("Auth Middleware", () => {
 		email: "sales@pgn.co.id",
 		fullName: "Budi Sales",
 		scope: "Area",
+		areaId: "123e4567-e89b-12d3-a456-426614174001",
+		regionId: "123e4567-e89b-12d3-a456-426614174002",
 		roles: ["SalesArea"],
 		capabilities: ["ViewCompanyRecords", "CreateCompany"],
 		mustChangePassword: false,

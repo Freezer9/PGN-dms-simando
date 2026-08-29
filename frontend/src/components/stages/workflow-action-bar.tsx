@@ -43,7 +43,7 @@ export function WorkflowActionBar({
 	onActionSuccess,
 }: WorkflowActionBarProps) {
 	const queryClient = useQueryClient();
-	const activeStep = company.activeWorkflowStep;
+	const currentStepId = company.currentStepId;
 
 	const [activeModal, setActiveModal] = React.useState<ActionModalType>(null);
 	const [comment, setComment] = React.useState<string>("");
@@ -53,10 +53,8 @@ export function WorkflowActionBar({
 		"post",
 		"/api/workflow/steps/{stepId}/act",
 		{
-			onSuccess: (res) => {
-				toast.success(
-					`Aksi berhasil diproses! Status: ${res.currentStatus || "Diperbarui"}`,
-				);
+			onSuccess: () => {
+				toast.success("Aksi berhasil diproses!");
 				setActiveModal(null);
 				setComment("");
 				queryClient.invalidateQueries({
@@ -83,10 +81,8 @@ export function WorkflowActionBar({
 		"post",
 		"/api/companies/{id}/workflow/rework",
 		{
-			onSuccess: (res) => {
-				toast.success(
-					`Proses dikembalikan ke Rework! Status: ${res.currentStatus}`,
-				);
+			onSuccess: () => {
+				toast.success("Proses dikembalikan ke Rework!");
 				setActiveModal(null);
 				setComment("");
 				queryClient.invalidateQueries({
@@ -111,10 +107,8 @@ export function WorkflowActionBar({
 		"post",
 		"/api/companies/{id}/workflow/discontinue",
 		{
-			onSuccess: (res) => {
-				toast.warning(
-					`Proses resmi dihentikan (Discontinued)! Status: ${res.currentStatus}`,
-				);
+			onSuccess: () => {
+				toast.warning("Proses resmi dihentikan (Discontinued)!");
 				setActiveModal(null);
 				setComment("");
 				queryClient.invalidateQueries({
@@ -141,27 +135,27 @@ export function WorkflowActionBar({
 
 	// Handle Action Execution
 	const handleConfirmAction = () => {
-		if (activeModal === "approve" && activeStep) {
+		if (activeModal === "approve" && currentStepId) {
 			actOnStepMutation.mutate({
-				params: { path: { stepId: activeStep.id } },
+				params: { path: { stepId: currentStepId } },
 				body: { action: "Setuju", comment: comment || null },
 			});
-		} else if (activeModal === "revise" && activeStep) {
+		} else if (activeModal === "revise" && currentStepId) {
 			if (!comment.trim()) {
 				toast.error("Wajib mengisi catatan/alasan revisi!");
 				return;
 			}
 			actOnStepMutation.mutate({
-				params: { path: { stepId: activeStep.id } },
+				params: { path: { stepId: currentStepId } },
 				body: { action: "Revisi", comment },
 			});
-		} else if (activeModal === "reject" && activeStep) {
+		} else if (activeModal === "reject" && currentStepId) {
 			if (!comment.trim()) {
 				toast.error("Wajib mengisi alasan penolakan!");
 				return;
 			}
 			actOnStepMutation.mutate({
-				params: { path: { stepId: activeStep.id } },
+				params: { path: { stepId: currentStepId } },
 				body: { action: "Tolak", comment },
 			});
 		} else if (activeModal === "rework") {
@@ -182,13 +176,10 @@ export function WorkflowActionBar({
 	};
 
 	// Determine available actions
-	const canAct = company.userCanAct && !!activeStep;
+	const canAct = company.canAct && !!currentStepId;
 	const canRework =
-		company.userCanRework &&
-		company.status !== "Draft" &&
-		company.status !== "Discontinued";
-	const canDiscontinue =
-		company.userCanDiscontinue && company.status !== "Discontinued";
+		company.status !== "Draft" && company.status !== "Discontinued";
+	const canDiscontinue = company.status !== "Discontinued";
 
 	if (!canAct && !canRework && !canDiscontinue) {
 		return null;
@@ -206,12 +197,12 @@ export function WorkflowActionBar({
 							<span className="text-xs font-semibold text-foreground">
 								Aksi Alur Kerja (Workflow Gate)
 							</span>
-							{activeStep && (
+							{company.currentStepKind && (
 								<Badge
 									variant="outline"
 									className="text-[10px] bg-primary/5 text-primary border-primary/20"
 								>
-									Tahap: {activeStep.stepName}
+									Tahap: {company.currentStepKind}
 								</Badge>
 							)}
 						</div>
