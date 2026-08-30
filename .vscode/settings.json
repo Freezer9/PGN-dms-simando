@@ -1,9 +1,0 @@
-{
-  "tailwindCSS.experimental.configFile": "src/Simando.Web/Styles/app.css",
-
-  "tailwindCSS.includeLanguages": {
-    "razor": "html"
-  },
-
-  "tailwindCSS.classAttributes": ["class", "className", "Class", "ClassName"],
-}

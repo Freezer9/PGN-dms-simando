@@ -59,13 +59,26 @@ bun run codegen
 bun run dev
 ```
 
-### Full containerised stack
+### Full containerised backend stack
 
 ```bash
-docker compose up --build
+docker compose up --build -d
 ```
 
-Runs the entire stack (PostgreSQL + PostGIS, S3 storage, .NET 10 Web API, React SPA via reverse proxy) in containers. Use this to mirror deployment; use the quickstart above for day-to-day development.
+Runs the backend stack (PostgreSQL + PostGIS, S3 storage, .NET 10 Web API) in containers. The Web API is published on `127.0.0.1:5000`.
+
+### Production reverse proxy with Caddy
+
+For deployment with an external Caddy instance (or alongside existing projects), build the frontend and configure Caddy to reverse proxy the backend and serve the static SPA assets:
+
+1. Build the production React bundle:
+   ```bash
+   cd frontend && bun install && bun run build
+   ```
+2. Configure your external Caddy using [Caddyfile.example](Caddyfile.example):
+   - Serves `frontend/dist` with SPA routing (`try_files`).
+   - Reverse proxies `/api/*`, `/scalar/*`, and `/openapi/*` to `127.0.0.1:5000`.
+   - Handles TLS, gzip/zstd compression, and security headers.
 
 ## Seeding accounts
 

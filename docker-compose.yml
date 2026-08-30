@@ -1,6 +1,7 @@
-# Full stack: DMS Simando (React SPA + Caddy, .NET 10 Web API, PostGIS, RustFS S3)
-# All services connected via internal bridge network.
-# Only the web service (Caddy) publishes the port. For IDE-based work use docker-compose.dev.yml.
+# Backend stack: DMS Simando (.NET 10 Web API, PostGIS, RustFS S3)
+# Reverse proxied by your external Caddy (see Caddyfile.example).
+# The Web API is exposed on 127.0.0.1:5000 for external Caddy to forward to.
+# For IDE-based work use docker-compose.dev.yml.
 
 name: simando
 
@@ -11,27 +12,15 @@ x-hardened: &hardened
   restart: unless-stopped
 
 services:
-  web:
-    <<: *hardened
-    container_name: simando-web
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    ports:
-      # 127.0.0.1, not 0.0.0.0 — prevents exposure outside the host loopback
-      - "127.0.0.1:8080:80"
-    networks:
-      - simando-internal
-    depends_on:
-      api:
-        condition: service_healthy
-
   api:
     <<: *hardened
     container_name: simando-api
     build:
       context: .
       dockerfile: src/Simando.Api/Dockerfile
+    ports:
+      # Bound to loopback so external Caddy on host can reverse proxy to it
+      - "127.0.0.1:5000:8080"
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__Postgres: "Host=simando-postgres;Port=5432;Database=simando;Username=simando;Password=simando"
