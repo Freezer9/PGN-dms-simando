@@ -71,19 +71,19 @@ function SidebarNavItem({ item }: { item: NavItem }) {
 		<Link
 			to={item.href}
 			activeOptions={{ exact: item.href === "/" }}
-			className="group flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors [&.active]:bg-primary/10 [&.active]:text-primary [&.active]:font-semibold"
+			className="group flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors [&.active]:bg-primary [&.active]:text-primary-foreground [&.active]:font-semibold"
 		>
 			<div className="flex items-center gap-2.5 min-w-0">
 				<DynamicIcon
 					name={item.icon}
-					className="size-4 shrink-0 transition-colors group-[.active]:text-primary"
+					className="size-4 shrink-0 transition-colors group-[.active]:text-primary-foreground"
 				/>
 				<span className="truncate">{item.title}</span>
 			</div>
 			{item.badge !== undefined && item.badge !== null && (
 				<Badge
 					variant="secondary"
-					className="ml-auto px-1.5 py-0.5 text-[10px] font-mono h-5 min-w-5 flex items-center justify-center bg-primary text-primary-foreground"
+					className="ml-auto px-1.5 py-0.5 text-[10px] font-mono h-5 min-w-5 flex items-center justify-center bg-primary text-primary-foreground group-[.active]:bg-primary-foreground group-[.active]:text-primary"
 				>
 					{item.badge}
 				</Badge>

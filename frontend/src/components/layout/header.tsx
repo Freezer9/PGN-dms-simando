@@ -56,7 +56,7 @@ export function Header() {
 						<span className="font-bold text-primary tracking-tight text-lg">
 							DMS Simando
 						</span>
-						<span className="text-[11px] bg-primary/10 text-primary px-2 py-0.5 rounded font-mono font-semibold">
+						<span className="text-[11px] bg-primary text-primary-foreground px-2 py-0.5 rounded font-mono font-semibold shadow-xs">
 							PGN
 						</span>
 					</Link>

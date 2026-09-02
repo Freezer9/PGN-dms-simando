@@ -25,21 +25,27 @@ function RootComponent() {
 			<AuthProvider>
 				<Outlet />
 				<Toaster position="top-right" richColors />
-				<TanStackDevtools
-					config={{
-						position: "bottom-right",
-					}}
-					plugins={[
-						{
-							name: "TanStack Router",
-							render: <TanStackRouterDevtoolsPanel />,
-						},
-					]}
-				/>
-				<ReactQueryDevtools
-					buttonPosition="bottom-left"
-					initialIsOpen={false}
-				/>
+				{import.meta.env.DEV &&
+					typeof window !== "undefined" &&
+					window.location.search.includes("devtools") && (
+						<>
+							<TanStackDevtools
+								config={{
+									position: "bottom-right",
+								}}
+								plugins={[
+									{
+										name: "TanStack Router",
+										render: <TanStackRouterDevtoolsPanel />,
+									},
+								]}
+							/>
+							<ReactQueryDevtools
+								buttonPosition="bottom-left"
+								initialIsOpen={false}
+							/>
+						</>
+					)}
 			</AuthProvider>
 		</QueryClientProvider>
 	);

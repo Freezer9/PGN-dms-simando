@@ -39,6 +39,16 @@ import {
 	createCompanySchema,
 } from "@/lib/schemas";
 
+function getFieldError(errors: unknown[] | undefined): string | undefined {
+	if (!errors || errors.length === 0) return undefined;
+	const first = errors[0];
+	if (typeof first === "string") return first;
+	if (first && typeof first === "object" && "message" in first) {
+		return (first as { message?: string }).message;
+	}
+	return undefined;
+}
+
 export const Route = createFileRoute("/_auth/directory/new")({
 	beforeLoad: requireCapabilities(["CreateCompany"]),
 	component: CreateCompanyPage,
@@ -219,7 +229,7 @@ function CreateCompanyPage() {
 							<div className="md:col-span-2">
 								<form.Field name="namaPerusahaan">
 									{(field) => {
-										const error = field.state.meta.errors[0]?.message;
+										const error = getFieldError(field.state.meta.errors);
 										return (
 											<FormField label="Nama Perusahaan" required error={error}>
 												<Input
@@ -241,7 +251,7 @@ function CreateCompanyPage() {
 							<div>
 								<form.Field name="industryTypeId">
 									{(field) => {
-										const error = field.state.meta.errors[0]?.message;
+										const error = getFieldError(field.state.meta.errors);
 										return (
 											<FormField label="Sektor Industri" required error={error}>
 												<Select
@@ -272,7 +282,7 @@ function CreateCompanyPage() {
 							<div>
 								<form.Field name="areaId">
 									{(field) => {
-										const error = field.state.meta.errors[0]?.message;
+										const error = getFieldError(field.state.meta.errors);
 										return (
 											<FormField
 												label="Wilayah Area Kerja PGN"
@@ -307,7 +317,7 @@ function CreateCompanyPage() {
 							<div>
 								<form.Field name="npwp">
 									{(field) => {
-										const error = field.state.meta.errors[0]?.message;
+										const error = getFieldError(field.state.meta.errors);
 										return (
 											<FormField label="Nomor NPWP Perusahaan" error={error}>
 												<Input
@@ -329,7 +339,7 @@ function CreateCompanyPage() {
 							<div>
 								<form.Field name="website">
 									{(field) => {
-										const error = field.state.meta.errors[0]?.message;
+										const error = getFieldError(field.state.meta.errors);
 										return (
 											<FormField
 												label={
@@ -360,7 +370,7 @@ function CreateCompanyPage() {
 							<div>
 								<form.Field name="email">
 									{(field) => {
-										const error = field.state.meta.errors[0]?.message;
+										const error = getFieldError(field.state.meta.errors);
 										return (
 											<FormField
 												label={
@@ -391,7 +401,7 @@ function CreateCompanyPage() {
 							<div>
 								<form.Field name="telp">
 									{(field) => {
-										const error = field.state.meta.errors[0]?.message;
+										const error = getFieldError(field.state.meta.errors);
 										return (
 											<FormField
 												label={
@@ -438,7 +448,7 @@ function CreateCompanyPage() {
 							<div>
 								<form.Field name="provinceId">
 									{(field) => {
-										const error = field.state.meta.errors[0]?.message;
+										const error = getFieldError(field.state.meta.errors);
 										return (
 											<FormField label="Provinsi" required error={error}>
 												<Select
@@ -471,7 +481,7 @@ function CreateCompanyPage() {
 							<div>
 								<form.Field name="regencyId">
 									{(field) => {
-										const error = field.state.meta.errors[0]?.message;
+										const error = getFieldError(field.state.meta.errors);
 										return (
 											<FormField
 												label="Kota / Kabupaten"
@@ -516,7 +526,7 @@ function CreateCompanyPage() {
 							<div>
 								<form.Field name="districtId">
 									{(field) => {
-										const error = field.state.meta.errors[0]?.message;
+										const error = getFieldError(field.state.meta.errors);
 										return (
 											<FormField label="Kecamatan" required error={error}>
 												<Select
@@ -556,7 +566,7 @@ function CreateCompanyPage() {
 							<div>
 								<form.Field name="villageId">
 									{(field) => {
-										const error = field.state.meta.errors[0]?.message;
+										const error = getFieldError(field.state.meta.errors);
 										return (
 											<FormField
 												label="Kelurahan / Desa"
@@ -599,7 +609,7 @@ function CreateCompanyPage() {
 							<div className="md:col-span-3">
 								<form.Field name="alamat">
 									{(field) => {
-										const error = field.state.meta.errors[0]?.message;
+										const error = getFieldError(field.state.meta.errors);
 										return (
 											<FormField
 												label="Alamat Lengkap (Jalan, Kawasan, Blok, No)"
@@ -623,7 +633,7 @@ function CreateCompanyPage() {
 							<div>
 								<form.Field name="kodePos">
 									{(field) => {
-										const error = field.state.meta.errors[0]?.message;
+										const error = getFieldError(field.state.meta.errors);
 										return (
 											<FormField label="Kode Pos" error={error}>
 												<Input

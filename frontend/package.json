@@ -13,6 +13,10 @@
     "codegen": "bunx openapi-typescript http://localhost:5000/openapi/v1.json -o ./src/api/schema.d.ts",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:report": "playwright show-report playwright-report",
+    "test:e2e:obscura": "obscura serve --port 9222 --allow-private-network",
     "format": "biome format",
     "lint": "biome lint",
     "typecheck": "tsc --noEmit",
@@ -50,6 +54,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.5",
+    "@playwright/test": "^1.62.1",
     "@tanstack/devtools-vite": "latest",
     "@tanstack/router-cli": "^1.132.0",
     "@tanstack/router-plugin": "latest",

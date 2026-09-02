@@ -87,108 +87,139 @@ export const Map = React.forwardRef<HTMLDivElement, MapProps>(
 		React.useEffect(() => {
 			if (!containerRef.current) return;
 
-			const map = new MapLibreInstance({
-				container: containerRef.current,
-				style: mapStyle,
-				center,
-				zoom,
-				interactive,
-				attributionControl: false,
-			});
+			try {
+				const map = new MapLibreInstance({
+					container: containerRef.current,
+					style: mapStyle,
+					center,
+					zoom,
+					interactive,
+					attributionControl: false,
+				});
 
-			if (interactive) {
-				map.addControl(
-					new NavigationControl({
-						showCompass: true,
-						showZoom: true,
-					}),
-					"top-right",
-				);
-			}
+				if (interactive) {
+					map.addControl(
+						new NavigationControl({
+							showCompass: true,
+							showZoom: true,
+						}),
+						"top-right",
+					);
+				}
 
-			map.on("click", (e) => {
-				if (!onCoordinateSelect) return;
-				const coords: MapCoordinates = {
-					longitude: e.lngLat.lng,
-					latitude: e.lngLat.lat,
+				map.on("click", (e) => {
+					if (!onCoordinateSelect) return;
+					const coords: MapCoordinates = {
+						longitude: e.lngLat.lng,
+						latitude: e.lngLat.lat,
+					};
+					onCoordinateSelect(coords);
+				});
+
+				mapInstanceRef.current = map;
+
+				return () => {
+					try {
+						map.remove();
+					} catch {
+						// safe cleanup
+					}
+					mapInstanceRef.current = null;
 				};
-				onCoordinateSelect(coords);
-			});
-
-			mapInstanceRef.current = map;
-
-			return () => {
-				map.remove();
-				mapInstanceRef.current = null;
-			};
+			} catch (err) {
+				console.warn("MapLibre GL initialization skipped:", err);
+			}
 		}, []);
 
 		// Update center / zoom if changed
 		React.useEffect(() => {
-			const map = mapInstanceRef.current;
-			if (!map) return;
-			map.setCenter(center);
-			map.setZoom(zoom);
+			try {
+				const map = mapInstanceRef.current;
+				if (!map) return;
+				map.setCenter(center);
+				map.setZoom(zoom);
+			} catch (err) {
+				console.warn("Map setCenter/setZoom skipped:", err);
+			}
 		}, [center, zoom]);
 
 		// Update interactive selected coordinate pin
 		React.useEffect(() => {
-			const map = mapInstanceRef.current;
-			if (!map) return;
+			try {
+				const map = mapInstanceRef.current;
+				if (!map) return;
 
-			if (activeMarkerRef.current) {
-				activeMarkerRef.current.remove();
-				activeMarkerRef.current = null;
-			}
+				if (activeMarkerRef.current) {
+					try {
+						activeMarkerRef.current.remove();
+					} catch {
+						// safe cleanup
+					}
+					activeMarkerRef.current = null;
+				}
 
-			if (selectedCoordinates) {
-				const marker = new Marker({
-					color: "#00509E",
-					draggable: true,
-				})
-					.setLngLat([
-						selectedCoordinates.longitude,
-						selectedCoordinates.latitude,
-					])
-					.addTo(map);
+				if (selectedCoordinates) {
+					const marker = new Marker({
+						color: "#00509E",
+						draggable: true,
+					})
+						.setLngLat([
+							selectedCoordinates.longitude,
+							selectedCoordinates.latitude,
+						])
+						.addTo(map);
 
-				marker.on("dragend", () => {
-					const lngLat = marker.getLngLat();
-					onCoordinateSelect?.({ longitude: lngLat.lng, latitude: lngLat.lat });
-				});
+					marker.on("dragend", () => {
+						const lngLat = marker.getLngLat();
+						onCoordinateSelect?.({
+							longitude: lngLat.lng,
+							latitude: lngLat.lat,
+						});
+					});
 
-				activeMarkerRef.current = marker;
+					activeMarkerRef.current = marker;
+				}
+			} catch (err) {
+				console.warn("Active marker update skipped:", err);
 			}
 		}, [selectedCoordinates, onCoordinateSelect]);
 
 		// Update pins
 		React.useEffect(() => {
-			const map = mapInstanceRef.current;
-			if (!map) return;
+			try {
+				const map = mapInstanceRef.current;
+				if (!map) return;
 
-			// Clear existing pins
-			for (const m of pinMarkersRef.current) {
-				m.remove();
-			}
-			pinMarkersRef.current = [];
-
-			for (const pin of pins) {
-				const marker = new Marker({
-					color: pin.color || "#2563eb",
-				}).setLngLat([pin.coordinates.longitude, pin.coordinates.latitude]);
-
-				if (pin.title || pin.description) {
-					const popup = new Popup({ offset: 25 }).setHTML(`
-            <div class="p-2">
-              ${pin.title ? `<strong class="text-sm font-semibold">${pin.title}</strong>` : ""}
-              ${pin.description ? `<p class="text-xs text-gray-600 mt-1">${pin.description}</p>` : ""}
-            </div>
-          `);
-					marker.setPopup(popup);
+				// Clear existing pins
+				for (const m of pinMarkersRef.current) {
+					try {
+						m.remove();
+					} catch {
+						// safe cleanup
+					}
 				}
+				pinMarkersRef.current = [];
 
-				marker.addTo(map);
-				pinMarkersRef.current.push(marker);
+				for (const pin of pins) {
+					const marker = new Marker({
+						color: pin.color || "#2563eb",
+					}).setLngLat([pin.coordinates.longitude, pin.coordinates.latitude]);
+
+					if (pin.title || pin.description) {
+						const popup = new Popup({ offset: 25 }).setHTML(`
+	            <div class="p-2">
+	              ${pin.title ? `<strong class="text-sm font-semibold">${pin.title}</strong>` : ""}
+	              ${pin.description ? `<p class="text-xs text-gray-600 mt-1">${pin.description}</p>` : ""}
+	            </div>
+	          `);
+						marker.setPopup(popup);
+					}
+
+					marker.addTo(map);
+					pinMarkersRef.current.push(marker);
+				}
+			} catch (err) {
+				console.warn("Pin markers update skipped:", err);
 			}
 		}, [pins]);
 

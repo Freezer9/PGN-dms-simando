@@ -27,10 +27,15 @@ const AuthContext = React.createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
 	const queryClient = useQueryClient();
 
-	const { data: user, isLoading } = $api.useQuery("get", "/api/auth/me", {
-		retry: false,
-		staleTime: 1000 * 60 * 5,
-	});
+	const { data: user, isLoading } = $api.useQuery(
+		"get",
+		"/api/auth/me",
+		undefined,
+		{
+			retry: false,
+			staleTime: 1000 * 60 * 5,
+		},
+	);
 
 	const loginMutation = $api.useMutation("post", "/api/auth/login", {
 		onSuccess: (data) => {

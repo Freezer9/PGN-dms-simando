@@ -27,3 +27,9 @@ src/Simando.Web/wwwroot/app.css
 package-lock.json
 pnpm-lock.yaml
 yarn.lock
+
+## Testing & Reports
+playwright-report/
+test-results/
+.devtool/
+
