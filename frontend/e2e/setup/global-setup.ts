@@ -54,6 +54,10 @@ export default async function globalSetup(_config: FullConfig) {
 		{
 			detached: true,
 			stdio: "ignore",
+			env: {
+				...process.env,
+				OBSCURA_ALLOW_PRIVATE_NETWORK: "1",
+			},
 		},
 	);
 	proc.unref();
