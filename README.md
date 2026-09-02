@@ -59,26 +59,25 @@ bun run codegen
 bun run dev
 ```
 
-### Full containerised backend stack
+### Full containerised stack
 
 ```bash
 docker compose up --build -d
 ```
 
-Runs the backend stack (PostgreSQL + PostGIS, S3 storage, .NET 10 Web API) in containers. The Web API is published on `127.0.0.1:5000`.
+Runs the complete application stack (PostgreSQL + PostGIS, S3 storage, .NET 10 Web API, and Caddy Web Gateway serving the built React SPA) in containers. The entire application is exposed on a single port: `127.0.0.1:8080` (customizable via `SIMANDO_PORT` environment variable).
 
 ### Production reverse proxy with Caddy
 
-For deployment with an external Caddy instance (or alongside existing projects), build the frontend and configure Caddy to reverse proxy the backend and serve the static SPA assets:
+To serve DMS Simando through your existing external Caddy (or any reverse proxy such as Nginx or Traefik), add a simple reverse proxy rule pointing to the exposed port:
 
-1. Build the production React bundle:
-   ```bash
-   cd frontend && bun install && bun run build
-   ```
-2. Configure your external Caddy using [Caddyfile.example](Caddyfile.example):
-   - Serves `frontend/dist` with SPA routing (`try_files`).
-   - Reverse proxies `/api/*`, `/scalar/*`, and `/openapi/*` to `127.0.0.1:5000`.
-   - Handles TLS, gzip/zstd compression, and security headers.
+```caddyfile
+dms.yourdomain.com {
+	reverse_proxy 127.0.0.1:8080
+}
+```
+
+See [Caddyfile.example](Caddyfile.example) for the snippet. No manual host builds, static folder paths, or complex route splitting required.
 
 ## Seeding accounts
 
