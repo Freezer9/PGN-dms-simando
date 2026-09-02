@@ -2,17 +2,36 @@ import { Link } from "@tanstack/react-router";
 import { ChevronDown } from "lucide-react";
 import * as React from "react";
 import { $api } from "@/api/client";
-import { Badge } from "@/components/ui/badge";
+import {
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
+	Sidebar,
+	SidebarContent,
+	SidebarGroup,
+	SidebarGroupContent,
+	SidebarGroupLabel,
+	SidebarHeader,
+	SidebarMenu,
+	SidebarMenuBadge,
+	SidebarMenuButton,
+	SidebarMenuItem,
+	SidebarMenuSub,
+	SidebarMenuSubButton,
+	SidebarMenuSubItem,
+	SidebarRail,
+} from "@/components/ui/sidebar";
 import { useAuth } from "@/lib/auth";
 import {
 	buildNavigationMenu,
 	type NavGroup,
 	type NavItem,
 } from "@/lib/navigation";
-import { cn } from "@/lib/utils";
 import { DynamicIcon } from "./icon";
 
-export function Sidebar({ className }: { className?: string }) {
+export function AppSidebar({ className }: { className?: string }) {
 	const { user } = useAuth();
 
 	// Live task summary query for badge counts
@@ -37,89 +56,102 @@ export function Sidebar({ className }: { className?: string }) {
 	);
 
 	return (
-		<aside
-			className={cn(
-				"w-64 border-r bg-card/50 backdrop-blur-sm flex flex-col shrink-0 min-h-[calc(100vh-3.5rem)]",
-				className,
-			)}
-		>
-			<div className="flex-1 py-4 px-3 space-y-6 overflow-y-auto">
-				{menu.sections.map((section, idx) => (
-					<div key={section.title ?? `section-${idx}`} className="space-y-1">
-						{section.title && (
-							<h4 className="px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground/80 mb-2">
-								{section.title}
-							</h4>
-						)}
-						<nav className="space-y-1">
-							{section.nodes.map((node) => {
-								if (node.type === "item") {
-									return <SidebarNavItem key={node.href} item={node} />;
-								}
-								return <SidebarNavGroup key={node.title} group={node} />;
-							})}
-						</nav>
+		<Sidebar collapsible="icon" className={className}>
+			<SidebarHeader className="border-b h-14 flex items-center justify-between px-4">
+				<Link to="/" className="flex items-center gap-2 font-semibold">
+					<div className="flex size-7 items-center justify-center rounded-md bg-primary text-primary-foreground font-mono font-bold text-xs shadow-xs">
+						PGN
 					</div>
+					<span className="font-bold text-primary tracking-tight text-base group-data-[collapsible=icon]:hidden">
+						DMS Simando
+					</span>
+				</Link>
+			</SidebarHeader>
+
+			<SidebarContent className="py-2">
+				{menu.sections.map((section, idx) => (
+					<SidebarGroup key={section.title ?? `section-${idx}`}>
+						{section.title && (
+							<SidebarGroupLabel className="text-[11px] font-semibold tracking-wider text-muted-foreground/80 uppercase">
+								{section.title}
+							</SidebarGroupLabel>
+						)}
+						<SidebarGroupContent>
+							<SidebarMenu>
+								{section.nodes.map((node) => {
+									if (node.type === "item") {
+										return (
+											<SidebarMenuItemComponent key={node.href} item={node} />
+										);
+									}
+									return (
+										<SidebarNavGroupComponent key={node.title} group={node} />
+									);
+								})}
+							</SidebarMenu>
+						</SidebarGroupContent>
+					</SidebarGroup>
 				))}
-			</div>
-		</aside>
+			</SidebarContent>
+
+			<SidebarRail />
+		</Sidebar>
 	);
 }
 
-function SidebarNavItem({ item }: { item: NavItem }) {
+// Re-export as Sidebar for backward compatibility with existing imports
+export { AppSidebar as Sidebar };
+
+function SidebarMenuItemComponent({ item }: { item: NavItem }) {
 	return (
-		<Link
-			to={item.href}
-			activeOptions={{ exact: item.href === "/" }}
-			className="group flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors [&.active]:bg-primary [&.active]:text-primary-foreground [&.active]:font-semibold"
-		>
-			<div className="flex items-center gap-2.5 min-w-0">
-				<DynamicIcon
-					name={item.icon}
-					className="size-4 shrink-0 transition-colors group-[.active]:text-primary-foreground"
-				/>
-				<span className="truncate">{item.title}</span>
-			</div>
-			{item.badge !== undefined && item.badge !== null && (
-				<Badge
-					variant="secondary"
-					className="ml-auto px-1.5 py-0.5 text-[10px] font-mono h-5 min-w-5 flex items-center justify-center bg-primary text-primary-foreground group-[.active]:bg-primary-foreground group-[.active]:text-primary"
+		<SidebarMenuItem>
+			<SidebarMenuButton asChild tooltip={item.title}>
+				<Link
+					to={item.href}
+					activeOptions={{ exact: item.href === "/" }}
+					className="[&.active]:bg-primary [&.active]:text-primary-foreground [&.active]:font-semibold"
 				>
+					<DynamicIcon name={item.icon} className="size-4 shrink-0" />
+					<span className="truncate">{item.title}</span>
+				</Link>
+			</SidebarMenuButton>
+			{item.badge !== undefined && item.badge !== null && (
+				<SidebarMenuBadge className="bg-primary/10 text-primary font-mono text-[10px] font-semibold">
 					{item.badge}
-				</Badge>
+				</SidebarMenuBadge>
 			)}
-		</Link>
+		</SidebarMenuItem>
 	);
 }
 
-function SidebarNavGroup({ group }: { group: NavGroup }) {
-	const [isOpen, setIsOpen] = React.useState(true);
-
+function SidebarNavGroupComponent({ group }: { group: NavGroup }) {
 	return (
-		<div className="space-y-1">
-			<button
-				type="button"
-				onClick={() => setIsOpen(!isOpen)}
-				className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
-			>
-				<div className="flex items-center gap-2.5 min-w-0">
-					<DynamicIcon name={group.icon} className="size-4 shrink-0" />
-					<span className="truncate">{group.title}</span>
-				</div>
-				<ChevronDown
-					className={cn(
-						"size-4 shrink-0 transition-transform duration-200",
-						isOpen && "rotate-180",
-					)}
-				/>
-			</button>
-			{isOpen && (
-				<div className="pl-6 space-y-1">
-					{group.items.map((subItem) => (
-						<SidebarNavItem key={subItem.href} item={subItem} />
-					))}
-				</div>
-			)}
-		</div>
+		<Collapsible defaultOpen className="group/collapsible">
+			<SidebarMenuItem>
+				<CollapsibleTrigger asChild>
+					<SidebarMenuButton tooltip={group.title}>
+						<DynamicIcon name={group.icon} className="size-4 shrink-0" />
+						<span className="truncate">{group.title}</span>
+						<ChevronDown className="ml-auto size-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-180" />
+					</SidebarMenuButton>
+				</CollapsibleTrigger>
+				<CollapsibleContent>
+					<SidebarMenuSub>
+						{group.items.map((subItem) => (
+							<SidebarMenuSubItem key={subItem.href}>
+								<SidebarMenuSubButton asChild>
+									<Link
+										to={subItem.href}
+										className="[&.active]:bg-accent [&.active]:text-accent-foreground [&.active]:font-semibold"
+									>
+										<span>{subItem.title}</span>
+									</Link>
+								</SidebarMenuSubButton>
+							</SidebarMenuSubItem>
+						))}
+					</SidebarMenuSub>
+				</CollapsibleContent>
+			</SidebarMenuItem>
+		</Collapsible>
 	);
 }

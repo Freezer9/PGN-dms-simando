@@ -23,6 +23,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { useAuth } from "@/lib/auth";
 import { type CreateUserFormValues, createUserSchema } from "@/lib/schemas";
 
@@ -365,22 +372,26 @@ export function CreateUserDialog({
 										required
 										error={error}
 									>
-										<select
-											id={field.name}
-											name={field.name}
+										<Select
 											value={field.state.value}
-											onBlur={field.handleBlur}
-											onChange={(e) => {
-												field.handleChange(e.target.value);
-											}}
-											className="w-full h-9 px-3 rounded-md border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+											onValueChange={(val) =>
+												field.handleChange(val as AppRole)
+											}
 										>
-											{allowedRoles.map((r) => (
-												<option key={r.value} value={r.value}>
-													{r.label}
-												</option>
-											))}
-										</select>
+											<SelectTrigger
+												id={field.name}
+												className="w-full h-9 text-sm"
+											>
+												<SelectValue placeholder="Pilih Peran" />
+											</SelectTrigger>
+											<SelectContent side="bottom">
+												{allowedRoles.map((r) => (
+													<SelectItem key={r.value} value={r.value}>
+														{r.label}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
 									</FormField>
 								);
 							}}
@@ -394,28 +405,30 @@ export function CreateUserDialog({
 										const error = field.state.meta.errors[0]?.message;
 										return (
 											<FormField label="Wilayah (SOR)" required error={error}>
-												<select
-													id={field.name}
-													name={field.name}
+												<Select
 													value={field.state.value || ""}
-													onBlur={field.handleBlur}
-													onChange={(e) => {
-														const regId = e.target.value;
+													onValueChange={(regId) => {
 														field.handleChange(regId);
 														const reg = regions.find((r) => r.id === regId);
 														if (reg && reg.areas.length > 0) {
 															form.setFieldValue("areaId", reg.areas[0].id);
 														}
 													}}
-													className="w-full h-8 px-2.5 rounded-md border bg-background text-xs"
 												>
-													<option value="">-- Pilih Wilayah --</option>
-													{regions.map((r) => (
-														<option key={r.id} value={r.id}>
-															{r.name} ({r.code})
-														</option>
-													))}
-												</select>
+													<SelectTrigger
+														id={field.name}
+														className="w-full h-8 text-xs"
+													>
+														<SelectValue placeholder="-- Pilih Wilayah --" />
+													</SelectTrigger>
+													<SelectContent side="bottom">
+														{regions.map((r) => (
+															<SelectItem key={r.id} value={r.id}>
+																{r.name} ({r.code})
+															</SelectItem>
+														))}
+													</SelectContent>
+												</Select>
 											</FormField>
 										);
 									}}
@@ -427,21 +440,24 @@ export function CreateUserDialog({
 											const error = field.state.meta.errors[0]?.message;
 											return (
 												<FormField label="Sales Area" required error={error}>
-													<select
-														id={field.name}
-														name={field.name}
+													<Select
 														value={field.state.value || ""}
-														onBlur={field.handleBlur}
-														onChange={(e) => field.handleChange(e.target.value)}
-														className="w-full h-8 px-2.5 rounded-md border bg-background text-xs"
+														onValueChange={(val) => field.handleChange(val)}
 													>
-														<option value="">-- Pilih Area --</option>
-														{availableAreas.map((a) => (
-															<option key={a.id} value={a.id}>
-																{a.name} ({a.code})
-															</option>
-														))}
-													</select>
+														<SelectTrigger
+															id={field.name}
+															className="w-full h-8 text-xs"
+														>
+															<SelectValue placeholder="-- Pilih Area --" />
+														</SelectTrigger>
+														<SelectContent side="bottom">
+															{availableAreas.map((a) => (
+																<SelectItem key={a.id} value={a.id}>
+																	{a.name} ({a.code})
+																</SelectItem>
+															))}
+														</SelectContent>
+													</Select>
 												</FormField>
 											);
 										}}

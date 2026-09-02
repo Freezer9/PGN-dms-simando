@@ -1,22 +1,26 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
+	type ColumnDef,
+	flexRender,
+	getCoreRowModel,
+	useReactTable,
+} from "@tanstack/react-table";
+import {
 	AlertOctagon,
 	Building2,
 	CheckCircle2,
-	ChevronLeft,
-	ChevronRight,
 	ExternalLink,
 	History,
-	Loader2,
 	MessageSquare,
 	RotateCcw,
 	Send,
 	Undo2,
 	XCircle,
 } from "lucide-react";
+import * as React from "react";
 import { z } from "zod";
 import { $api } from "@/api/client";
-import type { StatusEventAction } from "@/api/types";
+import type { StatusEventAction, TaskHistoryItem } from "@/api/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,6 +31,9 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { TableEmptyState } from "@/components/ui/table-empty-state";
+import { TablePagination } from "@/components/ui/table-pagination";
+import { TableSkeleton } from "@/components/ui/table-skeleton";
 
 const historySearchSchema = z.object({
 	page: z.number().default(1).optional(),
@@ -55,7 +62,7 @@ function TaskHistoryPage() {
 		},
 	});
 
-	const items = data?.items || [];
+	const items = React.useMemo(() => data?.items || [], [data?.items]);
 	const totalCount = Number(data?.totalCount) || 0;
 	const totalPages = Math.ceil(totalCount / pageSize) || 1;
 
@@ -67,6 +74,108 @@ function TaskHistoryPage() {
 			}),
 		});
 	};
+
+	const handlePageSizeChange = (newPageSize: number) => {
+		navigate({
+			search: (prev) => ({
+				...prev,
+				pageSize: newPageSize,
+				page: 1,
+			}),
+		});
+	};
+
+	// Column definitions using OpenAPI TaskHistoryItem DTO
+	const columns = React.useMemo<ColumnDef<TaskHistoryItem>[]>(
+		() => [
+			{
+				accessorKey: "namaPerusahaan",
+				header: "Perusahaan",
+				cell: ({ row }) => {
+					const item = row.original;
+					return (
+						<div className="space-y-0.5">
+							<div className="flex items-center gap-1.5 font-medium text-foreground text-xs">
+								<Building2 className="h-3.5 w-3.5 text-primary shrink-0" />
+								<span>{item.namaPerusahaan}</span>
+							</div>
+							<span className="text-[11px] font-mono text-muted-foreground block pl-5">
+								{item.nomor}
+							</span>
+						</div>
+					);
+				},
+			},
+			{
+				accessorKey: "action",
+				header: "Tindakan",
+				cell: ({ row }) => <ActionBadge action={row.original.action} />,
+			},
+			{
+				accessorKey: "toStatus",
+				header: "Menuju Status",
+				cell: ({ row }) => (
+					<Badge variant="outline" className="text-[11px]">
+						{row.original.toStatus}
+					</Badge>
+				),
+			},
+			{
+				accessorKey: "comment",
+				header: "Catatan / Alasan",
+				cell: ({ row }) => {
+					const comment = row.original.comment;
+					return comment ? (
+						<div className="flex items-start gap-1.5 text-xs text-muted-foreground max-w-[280px]">
+							<MessageSquare className="h-3.5 w-3.5 mt-0.5 shrink-0 text-muted-foreground/60" />
+							<span className="line-clamp-2 italic">"{comment}"</span>
+						</div>
+					) : (
+						<span className="text-xs text-muted-foreground/50">-</span>
+					);
+				},
+			},
+			{
+				accessorKey: "actedAt",
+				header: "Waktu Proses",
+				cell: ({ row }) => (
+					<span className="text-xs text-muted-foreground">
+						{new Date(row.original.actedAt).toLocaleDateString("id-ID", {
+							day: "numeric",
+							month: "short",
+							year: "numeric",
+							hour: "2-digit",
+							minute: "2-digit",
+						})}
+					</span>
+				),
+			},
+			{
+				id: "actions",
+				header: () => <div className="text-right pr-2">Aksi</div>,
+				cell: ({ row }) => (
+					<div className="text-right">
+						<Button asChild size="sm" variant="ghost" className="h-7 text-xs">
+							<Link
+								to="/directory/$companyId"
+								params={{ companyId: row.original.companyId }}
+							>
+								<ExternalLink className="h-3.5 w-3.5 mr-1" />
+								Buka Berkas
+							</Link>
+						</Button>
+					</div>
+				),
+			},
+		],
+		[],
+	);
+
+	const table = useReactTable({
+		data: items,
+		columns,
+		getCoreRowModel: getCoreRowModel(),
+	});
 
 	return (
 		<div className="space-y-4">
@@ -88,166 +197,68 @@ function TaskHistoryPage() {
 				</div>
 			</div>
 
-			{/* History Table */}
+			{/* History Table with TanStack Table */}
 			<div className="rounded-xl border bg-card shadow-xs overflow-hidden">
 				<Table>
 					<TableHeader className="bg-muted/40">
-						<TableRow>
-							<TableHead className="font-semibold text-xs">
-								Perusahaan
-							</TableHead>
-							<TableHead className="font-semibold text-xs">Tindakan</TableHead>
-							<TableHead className="font-semibold text-xs">
-								Menuju Status
-							</TableHead>
-							<TableHead className="font-semibold text-xs">
-								Catatan / Alasan
-							</TableHead>
-							<TableHead className="font-semibold text-xs">
-								Waktu Proses
-							</TableHead>
-							<TableHead className="font-semibold text-xs text-right">
-								Aksi
-							</TableHead>
-						</TableRow>
+						{table.getHeaderGroups().map((headerGroup) => (
+							<TableRow key={headerGroup.id}>
+								{headerGroup.headers.map((header) => (
+									<TableHead key={header.id} className="font-semibold text-xs">
+										{header.isPlaceholder
+											? null
+											: flexRender(
+													header.column.columnDef.header,
+													header.getContext(),
+												)}
+									</TableHead>
+								))}
+							</TableRow>
+						))}
 					</TableHeader>
 					<TableBody>
 						{isLoading ? (
-							<TableRow>
-								<TableCell colSpan={6} className="h-48 text-center">
-									<div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
-										<Loader2 className="h-6 w-6 animate-spin text-primary" />
-										<span className="text-xs">Memuat riwayat tindakan...</span>
-									</div>
-								</TableCell>
-							</TableRow>
-						) : items.length === 0 ? (
-							<TableRow>
-								<TableCell colSpan={6} className="h-48 text-center">
-									<div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
-										<History className="h-8 w-8 text-muted-foreground/40" />
-										<p className="text-sm font-medium">
-											Belum ada riwayat tindakan
-										</p>
-										<p className="text-xs">
-											Tindakan persetujuan atau revisi yang Anda lakukan akan
-											tercatat di sini.
-										</p>
-									</div>
-								</TableCell>
-							</TableRow>
-						) : (
-							items.map((item) => (
+							<TableSkeleton columns={columns.length} rows={5} />
+						) : table.getRowModel().rows?.length ? (
+							table.getRowModel().rows.map((row) => (
 								<TableRow
-									key={`${item.companyId}-${item.actedAt}-${item.action}`}
+									key={row.id}
 									className="hover:bg-muted/30 transition-colors"
 								>
-									{/* Company Info */}
-									<TableCell>
-										<div className="space-y-0.5">
-											<div className="flex items-center gap-1.5 font-medium text-foreground text-xs">
-												<Building2 className="h-3.5 w-3.5 text-primary shrink-0" />
-												<span>{item.namaPerusahaan}</span>
-											</div>
-											<span className="text-[11px] font-mono text-muted-foreground block pl-5">
-												{item.nomor}
-											</span>
-										</div>
-									</TableCell>
-
-									{/* Action Taken */}
-									<TableCell>
-										<ActionBadge action={item.action} />
-									</TableCell>
-
-									{/* Target Status */}
-									<TableCell>
-										<Badge variant="outline" className="text-[11px]">
-											{item.toStatus}
-										</Badge>
-									</TableCell>
-
-									{/* Comment */}
-									<TableCell className="max-w-[280px]">
-										{item.comment ? (
-											<div className="flex items-start gap-1.5 text-xs text-muted-foreground">
-												<MessageSquare className="h-3.5 w-3.5 mt-0.5 shrink-0 text-muted-foreground/60" />
-												<span className="line-clamp-2 italic">
-													"{item.comment}"
-												</span>
-											</div>
-										) : (
-											<span className="text-xs text-muted-foreground/50">
-												-
-											</span>
-										)}
-									</TableCell>
-
-									{/* Acted At */}
-									<TableCell className="text-xs text-muted-foreground">
-										{new Date(item.actedAt).toLocaleDateString("id-ID", {
-											day: "numeric",
-											month: "short",
-											year: "numeric",
-											hour: "2-digit",
-											minute: "2-digit",
-										})}
-									</TableCell>
-
-									{/* Action Button */}
-									<TableCell className="text-right">
-										<Button
-											asChild
-											size="sm"
-											variant="ghost"
-											className="h-7 text-xs"
-										>
-											<Link
-												to="/directory/$companyId"
-												params={{ companyId: item.companyId }}
-											>
-												<ExternalLink className="h-3.5 w-3.5 mr-1" />
-												Buka Berkas
-											</Link>
-										</Button>
-									</TableCell>
+									{row.getVisibleCells().map((cell) => (
+										<TableCell key={cell.id} className="py-3">
+											{flexRender(
+												cell.column.columnDef.cell,
+												cell.getContext(),
+											)}
+										</TableCell>
+									))}
 								</TableRow>
 							))
+						) : (
+							<TableEmptyState
+								colSpan={columns.length}
+								icon="empty"
+								title="Belum Ada Riwayat Tindakan"
+								description="Tindakan persetujuan atau revisi yang Anda lakukan akan tercatat di sini."
+							/>
 						)}
 					</TableBody>
 				</Table>
-			</div>
 
-			{/* Pagination Controls */}
-			{totalPages > 1 && (
-				<div className="flex items-center justify-between text-xs text-muted-foreground px-2 py-1">
-					<div>
-						Halaman {page} dari {totalPages}
-					</div>
-					<div className="flex items-center gap-2">
-						<Button
-							size="sm"
-							variant="outline"
-							className="h-7 px-2"
-							disabled={page <= 1}
-							onClick={() => handlePageChange(page - 1)}
-						>
-							<ChevronLeft className="h-3.5 w-3.5 mr-1" />
-							Sebelumnya
-						</Button>
-						<Button
-							size="sm"
-							variant="outline"
-							className="h-7 px-2"
-							disabled={page >= totalPages}
-							onClick={() => handlePageChange(page + 1)}
-						>
-							Berikutnya
-							<ChevronRight className="h-3.5 w-3.5 ml-1" />
-						</Button>
-					</div>
-				</div>
-			)}
+				{/* Standardized Table Pagination */}
+				<TablePagination
+					pageIndex={page - 1}
+					page={page}
+					pageSize={pageSize}
+					totalCount={totalCount}
+					totalPages={totalPages}
+					onPageChange={handlePageChange}
+					onPageSizeChange={handlePageSizeChange}
+					pageSizeOptions={[10, 25, 50, 100]}
+					className="border-t px-4"
+				/>
+			</div>
 		</div>
 	);
 }
@@ -255,63 +266,64 @@ function TaskHistoryPage() {
 function ActionBadge({ action }: { action: StatusEventAction }) {
 	switch (action) {
 		case "Setuju":
-		case "Issue":
 			return (
-				<Badge
-					variant="default"
-					className="bg-emerald-600 hover:bg-emerald-700 text-[11px] gap-1"
-				>
+				<Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 gap-1 text-[11px] font-normal hover:bg-emerald-500/20">
 					<CheckCircle2 className="h-3 w-3" />
 					Setuju
 				</Badge>
 			);
-		case "Revisi":
-			return (
-				<Badge
-					variant="outline"
-					className="border-amber-400 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 text-[11px] gap-1"
-				>
-					<RotateCcw className="h-3 w-3" />
-					Revisi
-				</Badge>
-			);
 		case "Tolak":
 			return (
-				<Badge variant="destructive" className="text-[11px] gap-1 shadow-none">
+				<Badge className="bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30 gap-1 text-[11px] font-normal hover:bg-rose-500/20">
 					<XCircle className="h-3 w-3" />
 					Tolak
 				</Badge>
 			);
-		case "Rework":
+		case "Revisi":
 			return (
-				<Badge
-					variant="outline"
-					className="border-blue-400 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 text-[11px] gap-1"
-				>
-					<Undo2 className="h-3 w-3" />
-					Rework
-				</Badge>
-			);
-		case "Discontinue":
-			return (
-				<Badge
-					variant="outline"
-					className="border-rose-400 text-rose-600 bg-rose-50 dark:bg-rose-950/40 text-[11px] gap-1"
-				>
-					<AlertOctagon className="h-3 w-3" />
-					Discontinue
+				<Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30 gap-1 text-[11px] font-normal hover:bg-amber-500/20">
+					<RotateCcw className="h-3 w-3" />
+					Revisi
 				</Badge>
 			);
 		case "Submit":
 			return (
-				<Badge variant="secondary" className="text-[11px] gap-1">
+				<Badge className="bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30 gap-1 text-[11px] font-normal hover:bg-blue-500/20">
 					<Send className="h-3 w-3" />
 					Submit
 				</Badge>
 			);
+		case "Reassign":
+			return (
+				<Badge className="bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/30 gap-1 text-[11px] font-normal hover:bg-purple-500/20">
+					<Undo2 className="h-3 w-3" />
+					Alihkan
+				</Badge>
+			);
+		case "Discontinue":
+			return (
+				<Badge className="bg-slate-500/15 text-slate-700 dark:text-slate-300 border-slate-500/30 gap-1 text-[11px] font-normal hover:bg-slate-500/20">
+					<AlertOctagon className="h-3 w-3" />
+					Hentikan
+				</Badge>
+			);
+		case "BreakGlass":
+			return (
+				<Badge className="bg-destructive/15 text-destructive border-destructive/30 gap-1 text-[11px] font-normal hover:bg-destructive/20">
+					<AlertOctagon className="h-3 w-3" />
+					Break Glass
+				</Badge>
+			);
+		case "Rework":
+			return (
+				<Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30 gap-1 text-[11px] font-normal hover:bg-amber-500/20">
+					<RotateCcw className="h-3 w-3" />
+					Rework
+				</Badge>
+			);
 		default:
 			return (
-				<Badge variant="outline" className="text-[11px]">
+				<Badge variant="secondary" className="text-[11px] font-normal">
 					{action}
 				</Badge>
 			);

@@ -12,6 +12,7 @@ import * as React from "react";
 import { FormField } from "@/components/form/form-field";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
 	Dialog,
 	DialogContent,
@@ -22,6 +23,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import {
 	Table,
 	TableBody,
 	TableCell,
@@ -29,6 +37,9 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { TableEmptyState } from "@/components/ui/table-empty-state";
+import { TablePagination } from "@/components/ui/table-pagination";
+import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { Textarea } from "@/components/ui/textarea";
 
 export interface ColumnDef<TItem> {
@@ -141,6 +152,9 @@ export function MasterDataTable<
 	const [error, setError] = React.useState<string | null>(null);
 	const [isDeleting, setIsDeleting] = React.useState(false);
 
+	const [page, setPage] = React.useState(1);
+	const [pageSize, setPageSize] = React.useState(10);
+
 	const initialValues = React.useMemo(() => {
 		const init: Record<string, unknown> = {};
 		for (const f of fields) {
@@ -178,6 +192,14 @@ export function MasterDataTable<
 			});
 		});
 	}, [data, searchTerm, searchKeys]);
+
+	// Paginate data
+	const totalCount = filteredData.length;
+	const totalPages = Math.ceil(totalCount / pageSize) || 1;
+	const paginatedData = React.useMemo(() => {
+		const start = (page - 1) * pageSize;
+		return filteredData.slice(start, start + pageSize);
+	}, [filteredData, page, pageSize]);
 
 	const handleOpenCreate = () => {
 		setEditingItem(null);
@@ -237,7 +259,10 @@ export function MasterDataTable<
 						<Input
 							placeholder="Cari data..."
 							value={searchTerm}
-							onChange={(e) => setSearchTerm(e.target.value)}
+							onChange={(e) => {
+								setSearchTerm(e.target.value);
+								setPage(1);
+							}}
 							className="pl-8 h-9 text-xs"
 						/>
 					</div>
@@ -279,30 +304,24 @@ export function MasterDataTable<
 					</TableHeader>
 					<TableBody>
 						{isLoading ? (
-							<TableRow>
-								<TableCell
-									colSpan={columns.length + 1}
-									className="text-center py-12"
-								>
-									<div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
-										<Loader2 className="h-6 w-6 animate-spin text-primary" />
-										<span className="text-sm font-medium">Memuat data...</span>
-									</div>
-								</TableCell>
-							</TableRow>
+							<TableSkeleton columns={columns.length + 1} rows={5} />
 						) : filteredData.length === 0 ? (
-							<TableRow>
-								<TableCell
-									colSpan={columns.length + 1}
-									className="text-center py-12 text-muted-foreground text-xs"
-								>
-									{searchTerm
-										? "Tidak ada data yang cocok dengan pencarian."
-										: "Belum ada data referensi terdaftar."}
-								</TableCell>
-							</TableRow>
+							<TableEmptyState
+								colSpan={columns.length + 1}
+								icon={searchTerm ? "search" : "folder"}
+								title={
+									searchTerm ? "Data Tidak Ditemukan" : "Belum Ada Data Master"
+								}
+								description={
+									searchTerm
+										? "Tidak ada data yang cocok dengan kriteria pencarian Anda."
+										: "Belum ada data referensi yang tersimpan dalam sistem."
+								}
+								onReset={searchTerm ? () => setSearchTerm("") : undefined}
+								resetLabel="Reset Pencarian"
+							/>
 						) : (
-							filteredData.map((row) => {
+							paginatedData.map((row) => {
 								const rowRecord = row as unknown as Record<string, unknown>;
 								return (
 									<TableRow
@@ -354,6 +373,24 @@ export function MasterDataTable<
 						)}
 					</TableBody>
 				</Table>
+
+				{/* Standardized Pagination */}
+				{filteredData.length > 0 && (
+					<TablePagination
+						pageIndex={page - 1}
+						page={page}
+						pageSize={pageSize}
+						totalCount={totalCount}
+						totalPages={totalPages}
+						onPageChange={(newPage) => setPage(newPage)}
+						onPageSizeChange={(newSize) => {
+							setPageSize(newSize);
+							setPage(1);
+						}}
+						pageSizeOptions={[10, 25, 50]}
+						className="border-t px-4"
+					/>
+				)}
 			</div>
 
 			{/* Form Dialog */}
@@ -409,38 +446,40 @@ export function MasterDataTable<
 													required={f.required}
 												/>
 											) : f.type === "select" ? (
-												<select
-													id={f.name}
+												<Select
 													value={String(field.state.value ?? "")}
-													onBlur={field.handleBlur}
-													onChange={(e) =>
-														field.handleChange(e.target.value as never)
+													onValueChange={(val) =>
+														field.handleChange(val as never)
 													}
-													className="w-full h-8 px-2.5 rounded-md border bg-background text-xs"
-													required={f.required}
 												>
-													<option value="">-- Pilih --</option>
-													{f.options?.map((opt) => (
-														<option key={String(opt.value)} value={opt.value}>
-															{opt.label}
-														</option>
-													))}
-												</select>
+													<SelectTrigger id={f.name} className="h-8 text-xs">
+														<SelectValue
+															placeholder={f.placeholder || "-- Pilih --"}
+														/>
+													</SelectTrigger>
+													<SelectContent side="bottom">
+														{f.options?.map((opt) => (
+															<SelectItem
+																key={String(opt.value)}
+																value={String(opt.value)}
+															>
+																{opt.label}
+															</SelectItem>
+														))}
+													</SelectContent>
+												</Select>
 											) : f.type === "checkbox" ? (
 												<div className="flex items-center gap-2 pt-1">
-													<input
-														type="checkbox"
+													<Checkbox
 														id={f.name}
 														checked={Boolean(field.state.value)}
-														onBlur={field.handleBlur}
-														onChange={(e) =>
-															field.handleChange(e.target.checked as never)
+														onCheckedChange={(checked) =>
+															field.handleChange(Boolean(checked) as never)
 														}
-														className="rounded border-gray-300 size-4 text-primary"
 													/>
 													<label
 														htmlFor={f.name}
-														className="text-xs text-foreground cursor-pointer"
+														className="text-xs text-foreground cursor-pointer select-none font-medium"
 													>
 														Aktif
 													</label>
@@ -507,30 +546,26 @@ export function MasterDataTable<
 
 			{/* Delete Confirmation Dialog */}
 			<Dialog
-				open={Boolean(deleteConfirm)}
-				onOpenChange={(open) => {
-					if (!open) setDeleteConfirm(null);
-				}}
+				open={!!deleteConfirm}
+				onOpenChange={(open) => !open && setDeleteConfirm(null)}
 			>
 				<DialogContent className="sm:max-w-[400px]">
 					<DialogHeader>
-						<DialogTitle className="text-sm font-semibold flex items-center gap-2 text-destructive">
-							<AlertTriangle className="h-4 w-4" />
-							<span>Hapus Data</span>
+						<DialogTitle className="flex items-center gap-2 text-sm font-semibold text-destructive">
+							<Trash2 className="h-4 w-4" />
+							<span>Hapus {title}</span>
 						</DialogTitle>
 						<DialogDescription className="text-xs">
 							Apakah Anda yakin ingin menghapus data ini? Tindakan ini tidak
 							dapat dibatalkan.
 						</DialogDescription>
 					</DialogHeader>
-
 					<DialogFooter className="pt-2">
 						<Button
 							type="button"
 							variant="outline"
 							size="sm"
 							onClick={() => setDeleteConfirm(null)}
-							disabled={isDeleting}
 						>
 							Batal
 						</Button>

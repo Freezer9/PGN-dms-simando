@@ -1,3 +1,4 @@
+import { useForm } from "@tanstack/react-form";
 import {
 	AlertTriangle,
 	Building2,
@@ -10,8 +11,17 @@ import {
 	Trash2,
 } from "lucide-react";
 import * as React from "react";
+import { z } from "zod";
 import { $api } from "@/api/client";
-import type { AreaItemDto, RegionWithAreasDto } from "@/api/types";
+import type {
+	AreaItemDto,
+	CreateAreaRequest,
+	CreateRegionRequest,
+	RegionWithAreasDto,
+	UpdateAreaRequest,
+	UpdateRegionRequest,
+} from "@/api/types";
+import { FormField } from "@/components/form/form-field";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,7 +35,40 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+
+const regionSchema = z.object({
+	code: z
+		.string()
+		.trim()
+		.min(2, "Kode wilayah minimal 2 karakter")
+		.max(20, "Kode wilayah maksimal 20 karakter"),
+	name: z
+		.string()
+		.trim()
+		.min(3, "Nama wilayah minimal 3 karakter")
+		.max(100, "Nama wilayah maksimal 100 karakter"),
+});
+
+const areaSchema = z.object({
+	regionId: z.string().min(1, "Wilayah (Region) wajib dipilih"),
+	code: z
+		.string()
+		.trim()
+		.min(2, "Kode sales area minimal 2 karakter")
+		.max(20, "Kode sales area maksimal 20 karakter"),
+	name: z
+		.string()
+		.trim()
+		.min(3, "Nama sales area minimal 3 karakter")
+		.max(100, "Nama sales area maksimal 100 karakter"),
+});
 
 export function OrganisationView() {
 	const [regionDialogOpen, setRegionDialogOpen] = React.useState(false);
@@ -64,10 +107,8 @@ export function OrganisationView() {
 				setError(null);
 				refetch();
 			},
-			onError: (error) => {
-				setError(
-					error.detail || error.title || "Gagal menyimpan data wilayah.",
-				);
+			onError: (err) => {
+				setError(err.detail || err.title || "Gagal menyimpan data wilayah.");
 			},
 		},
 	);
@@ -82,10 +123,8 @@ export function OrganisationView() {
 				setError(null);
 				refetch();
 			},
-			onError: (error) => {
-				setError(
-					error.detail || error.title || "Gagal memperbarui data wilayah.",
-				);
+			onError: (err) => {
+				setError(err.detail || err.title || "Gagal memperbarui data wilayah.");
 			},
 		},
 	);
@@ -99,10 +138,10 @@ export function OrganisationView() {
 				setError(null);
 				refetch();
 			},
-			onError: (error) => {
+			onError: (err) => {
 				setError(
-					error.detail ||
-						error.title ||
+					err.detail ||
+						err.title ||
 						"Gagal menghapus wilayah. Pastikan wilayah tidak memiliki sales area atau data terkait.",
 				);
 			},
@@ -119,10 +158,8 @@ export function OrganisationView() {
 				setError(null);
 				refetch();
 			},
-			onError: (error) => {
-				setError(
-					error.detail || error.title || "Gagal menyimpan data sales area.",
-				);
+			onError: (err) => {
+				setError(err.detail || err.title || "Gagal menyimpan data sales area.");
 			},
 		},
 	);
@@ -137,9 +174,9 @@ export function OrganisationView() {
 				setError(null);
 				refetch();
 			},
-			onError: (error) => {
+			onError: (err) => {
 				setError(
-					error.detail || error.title || "Gagal memperbarui data sales area.",
+					err.detail || err.title || "Gagal memperbarui data sales area.",
 				);
 			},
 		},
@@ -154,110 +191,117 @@ export function OrganisationView() {
 				setError(null);
 				refetch();
 			},
-			onError: (error) => {
+			onError: (err) => {
 				setError(
-					error.detail ||
-						error.title ||
+					err.detail ||
+						err.title ||
 						"Gagal menghapus sales area. Pastikan sales area tidak memiliki berkas pelanggan aktif.",
 				);
 			},
 		},
 	);
 
-	const regions = orgData || [];
+	const regions = React.useMemo(() => orgData || [], [orgData]);
 
-	// Form states
-	const [regionCode, setRegionCode] = React.useState("");
-	const [regionName, setRegionName] = React.useState("");
+	// TanStack Form for Region
+	const regionForm = useForm({
+		defaultValues: {
+			code: "",
+			name: "",
+		} as CreateRegionRequest,
+		validators: {
+			onChange: regionSchema,
+		},
+		onSubmit: async ({ value }) => {
+			if (editingRegion) {
+				const updatePayload: UpdateRegionRequest = {
+					code: value.code.trim(),
+					name: value.name.trim(),
+					active: editingRegion.active ?? true,
+				};
+				updateRegionMutation.mutate({
+					params: { path: { id: editingRegion.id } },
+					body: updatePayload,
+				});
+			} else {
+				createRegionMutation.mutate({
+					body: {
+						code: value.code.trim(),
+						name: value.name.trim(),
+					},
+				});
+			}
+		},
+	});
 
-	const [areaCode, setAreaCode] = React.useState("");
-	const [areaName, setAreaName] = React.useState("");
-	const [areaTargetRegionId, setAreaTargetRegionId] =
-		React.useState<string>("");
+	// TanStack Form for Area
+	const areaForm = useForm({
+		defaultValues: {
+			regionId: "",
+			code: "",
+			name: "",
+		} as CreateAreaRequest,
+		validators: {
+			onChange: areaSchema,
+		},
+		onSubmit: async ({ value }) => {
+			if (editingArea?.area) {
+				const updatePayload: UpdateAreaRequest = {
+					regionId: value.regionId,
+					code: value.code.trim(),
+					name: value.name.trim(),
+					active: editingArea.area.active ?? true,
+				};
+				updateAreaMutation.mutate({
+					params: { path: { id: editingArea.area.id } },
+					body: updatePayload,
+				});
+			} else {
+				createAreaMutation.mutate({
+					body: {
+						regionId: value.regionId,
+						code: value.code.trim(),
+						name: value.name.trim(),
+					},
+				});
+			}
+		},
+	});
 
 	const handleOpenCreateRegion = () => {
 		setEditingRegion(null);
-		setRegionCode("");
-		setRegionName("");
+		regionForm.reset({ code: "", name: "" });
 		setError(null);
 		setRegionDialogOpen(true);
 	};
 
 	const handleOpenEditRegion = (r: RegionWithAreasDto) => {
 		setEditingRegion(r);
-		setRegionCode(r.code);
-		setRegionName(r.name);
+		regionForm.reset({ code: r.code, name: r.name });
 		setError(null);
 		setRegionDialogOpen(true);
 	};
 
-	const handleSaveRegion = (e: React.FormEvent) => {
-		e.preventDefault();
-		if (!regionCode.trim() || !regionName.trim()) {
-			setError("Kode dan Nama Wilayah wajib diisi.");
-			return;
-		}
-
-		if (editingRegion) {
-			updateRegionMutation.mutate({
-				params: { path: { id: editingRegion.id } },
-				body: {
-					code: regionCode.trim(),
-					name: regionName.trim(),
-					active: editingRegion.active ?? true,
-				},
-			});
-		} else {
-			createRegionMutation.mutate({
-				body: { code: regionCode.trim(), name: regionName.trim() },
-			});
-		}
-	};
-
 	const handleOpenCreateArea = (defaultRegionId?: string) => {
 		setEditingArea(null);
-		setAreaCode("");
-		setAreaName("");
-		setAreaTargetRegionId(defaultRegionId || regions[0]?.id || "");
+		areaForm.reset({
+			regionId: defaultRegionId || regions[0]?.id || "",
+			code: "",
+			name: "",
+		});
 		setError(null);
 		setAreaDialogOpen(true);
 	};
 
 	const handleOpenEditArea = (area: AreaItemDto, currentRegionId: string) => {
 		setEditingArea({ area, regionId: currentRegionId });
-		setAreaCode(area.code);
-		setAreaName(area.name);
-		setAreaTargetRegionId(currentRegionId);
+		areaForm.reset({
+			regionId: currentRegionId,
+			code: area.code,
+			name: area.name,
+		});
 		setError(null);
 		setAreaDialogOpen(true);
-	};
-
-	const handleSaveArea = (e: React.FormEvent) => {
-		e.preventDefault();
-		if (!areaCode.trim() || !areaName.trim() || !areaTargetRegionId) {
-			setError("Kode, Nama Sales Area, dan Wilayah wajib diisi.");
-			return;
-		}
-
-		if (editingArea?.area) {
-			updateAreaMutation.mutate({
-				params: { path: { id: editingArea.area.id } },
-				body: {
-					regionId: areaTargetRegionId,
-					code: areaCode.trim(),
-					name: areaName.trim(),
-					active: editingArea.area.active ?? true,
-				},
-			});
-		} else {
-			createAreaMutation.mutate({
-				body: {
-					regionId: areaTargetRegionId,
-					code: areaCode.trim(),
-					name: areaName.trim(),
-				},
-			});
-		}
 	};
 
 	const handleConfirmDelete = () => {
@@ -461,7 +505,7 @@ export function OrganisationView() {
 				</div>
 			)}
 
-			{/* Dialog Add/Edit Region */}
+			{/* Dialog Add/Edit Region with TanStack Form */}
 			<Dialog open={regionDialogOpen} onOpenChange={setRegionDialogOpen}>
 				<DialogContent className="sm:max-w-[420px]">
 					<DialogHeader>
@@ -478,34 +522,65 @@ export function OrganisationView() {
 						</DialogDescription>
 					</DialogHeader>
 
-					<form onSubmit={handleSaveRegion} className="space-y-3 py-2">
-						<div className="space-y-1">
-							<Label htmlFor="reg-code" className="text-xs font-medium">
-								Kode Wilayah <span className="text-destructive">*</span>
-							</Label>
-							<Input
-								id="reg-code"
-								placeholder="contoh: SOR3"
-								value={regionCode}
-								onChange={(e) => setRegionCode(e.target.value)}
-								className="h-8 text-xs font-mono"
-								required
-							/>
-						</div>
+					<form
+						onSubmit={(e) => {
+							e.preventDefault();
+							e.stopPropagation();
+							regionForm.handleSubmit();
+						}}
+						className="space-y-3 py-2"
+					>
+						<regionForm.Field name="code">
+							{(field) => {
+								const fieldError = field.state.meta.errors.length
+									? String(field.state.meta.errors[0])
+									: undefined;
+								return (
+									<FormField
+										label="Kode Wilayah"
+										htmlFor="reg-code"
+										required
+										error={fieldError}
+									>
+										<Input
+											id="reg-code"
+											placeholder="contoh: SOR3"
+											value={field.state.value}
+											onBlur={field.handleBlur}
+											onChange={(e) => field.handleChange(e.target.value)}
+											className="h-8 text-xs font-mono"
+											required
+										/>
+									</FormField>
+								);
+							}}
+						</regionForm.Field>
 
-						<div className="space-y-1">
-							<Label htmlFor="reg-name" className="text-xs font-medium">
-								Nama Wilayah <span className="text-destructive">*</span>
-							</Label>
-							<Input
-								id="reg-name"
-								placeholder="contoh: Region 3 - Jatim Bali Nusa"
-								value={regionName}
-								onChange={(e) => setRegionName(e.target.value)}
-								className="h-8 text-xs"
-								required
-							/>
-						</div>
+						<regionForm.Field name="name">
+							{(field) => {
+								const fieldError = field.state.meta.errors.length
+									? String(field.state.meta.errors[0])
+									: undefined;
+								return (
+									<FormField
+										label="Nama Wilayah"
+										htmlFor="reg-name"
+										required
+										error={fieldError}
+									>
+										<Input
+											id="reg-name"
+											placeholder="contoh: Region 3 - Jatim Bali Nusa"
+											value={field.state.value}
+											onBlur={field.handleBlur}
+											onChange={(e) => field.handleChange(e.target.value)}
+											className="h-8 text-xs"
+											required
+										/>
+									</FormField>
+								);
+							}}
+						</regionForm.Field>
 
 						<DialogFooter className="pt-2">
 							<Button
@@ -516,22 +591,35 @@ export function OrganisationView() {
 							>
 								Batal
 							</Button>
-							<Button
-								type="submit"
-								size="sm"
-								disabled={
-									createRegionMutation.isPending ||
-									updateRegionMutation.isPending
-								}
+							<regionForm.Subscribe
+								selector={(state) => [state.canSubmit, state.isSubmitting]}
 							>
-								Simpan
-							</Button>
+								{([canSubmit, isSubmitting]) => (
+									<Button
+										type="submit"
+										size="sm"
+										disabled={
+											!canSubmit ||
+											isSubmitting ||
+											createRegionMutation.isPending ||
+											updateRegionMutation.isPending
+										}
+									>
+										{isSubmitting ||
+										createRegionMutation.isPending ||
+										updateRegionMutation.isPending ? (
+											<Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+										) : null}
+										Simpan
+									</Button>
+								)}
+							</regionForm.Subscribe>
 						</DialogFooter>
 					</form>
 				</DialogContent>
 			</Dialog>
 
-			{/* Dialog Add/Edit Area */}
+			{/* Dialog Add/Edit Area with TanStack Form & shadcn Select */}
 			<Dialog open={areaDialogOpen} onOpenChange={setAreaDialogOpen}>
 				<DialogContent className="sm:max-w-[440px]">
 					<DialogHeader>
@@ -546,54 +634,97 @@ export function OrganisationView() {
 						</DialogDescription>
 					</DialogHeader>
 
-					<form onSubmit={handleSaveArea} className="space-y-3 py-2">
-						<div className="space-y-1">
-							<Label htmlFor="area-reg" className="text-xs font-medium">
-								Pilih Wilayah (Region){" "}
-								<span className="text-destructive">*</span>
-							</Label>
-							<select
-								id="area-reg"
-								value={areaTargetRegionId}
-								onChange={(e) => setAreaTargetRegionId(e.target.value)}
-								className="w-full h-8 px-2.5 rounded-md border bg-background text-xs"
-								required
-							>
-								{regions.map((r) => (
-									<option key={r.id} value={r.id}>
-										{r.name} ({r.code})
-									</option>
-								))}
-							</select>
-						</div>
+					<form
+						onSubmit={(e) => {
+							e.preventDefault();
+							e.stopPropagation();
+							areaForm.handleSubmit();
+						}}
+						className="space-y-3 py-2"
+					>
+						<areaForm.Field name="regionId">
+							{(field) => {
+								const fieldError = field.state.meta.errors.length
+									? String(field.state.meta.errors[0])
+									: undefined;
+								return (
+									<FormField
+										label="Pilih Wilayah (Region)"
+										htmlFor="area-reg"
+										required
+										error={fieldError}
+									>
+										<Select
+											value={field.state.value}
+											onValueChange={(val) => field.handleChange(val)}
+										>
+											<SelectTrigger id="area-reg" className="h-8 text-xs">
+												<SelectValue placeholder="-- Pilih Wilayah --" />
+											</SelectTrigger>
+											<SelectContent side="bottom">
+												{regions.map((r) => (
+													<SelectItem key={r.id} value={r.id}>
+														{r.name} ({r.code})
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									</FormField>
+								);
+							}}
+						</areaForm.Field>
 
-						<div className="space-y-1">
-							<Label htmlFor="area-code" className="text-xs font-medium">
-								Kode Sales Area <span className="text-destructive">*</span>
-							</Label>
-							<Input
-								id="area-code"
-								placeholder="contoh: SBY"
-								value={areaCode}
-								onChange={(e) => setAreaCode(e.target.value)}
-								className="h-8 text-xs font-mono"
-								required
-							/>
-						</div>
+						<areaForm.Field name="code">
+							{(field) => {
+								const fieldError = field.state.meta.errors.length
+									? String(field.state.meta.errors[0])
+									: undefined;
+								return (
+									<FormField
+										label="Kode Sales Area"
+										htmlFor="area-code"
+										required
+										error={fieldError}
+									>
+										<Input
+											id="area-code"
+											placeholder="contoh: SBY"
+											value={field.state.value}
+											onBlur={field.handleBlur}
+											onChange={(e) => field.handleChange(e.target.value)}
+											className="h-8 text-xs font-mono"
+											required
+										/>
+									</FormField>
+								);
+							}}
+						</areaForm.Field>
 
-						<div className="space-y-1">
-							<Label htmlFor="area-name" className="text-xs font-medium">
-								Nama Sales Area <span className="text-destructive">*</span>
-							</Label>
-							<Input
-								id="area-name"
-								placeholder="contoh: Area Surabaya"
-								value={areaName}
-								onChange={(e) => setAreaName(e.target.value)}
-								className="h-8 text-xs"
-								required
-							/>
-						</div>
+						<areaForm.Field name="name">
+							{(field) => {
+								const fieldError = field.state.meta.errors.length
+									? String(field.state.meta.errors[0])
+									: undefined;
+								return (
+									<FormField
+										label="Nama Sales Area"
+										htmlFor="area-name"
+										required
+										error={fieldError}
+									>
+										<Input
+											id="area-name"
+											placeholder="contoh: Area Surabaya"
+											value={field.state.value}
+											onBlur={field.handleBlur}
+											onChange={(e) => field.handleChange(e.target.value)}
+											className="h-8 text-xs"
+											required
+										/>
+									</FormField>
+								);
+							}}
+						</areaForm.Field>
 
 						<DialogFooter className="pt-2">
 							<Button
@@ -604,15 +735,29 @@ export function OrganisationView() {
 							>
 								Batal
 							</Button>
-							<Button
-								type="submit"
-								size="sm"
-								disabled={
-									createAreaMutation.isPending || updateAreaMutation.isPending
-								}
+							<areaForm.Subscribe
+								selector={(state) => [state.canSubmit, state.isSubmitting]}
 							>
-								Simpan
-							</Button>
+								{([canSubmit, isSubmitting]) => (
+									<Button
+										type="submit"
+										size="sm"
+										disabled={
+											!canSubmit ||
+											isSubmitting ||
+											createAreaMutation.isPending ||
+											updateAreaMutation.isPending
+										}
+									>
+										{isSubmitting ||
+										createAreaMutation.isPending ||
+										updateAreaMutation.isPending ? (
+											<Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+										) : null}
+										Simpan
+									</Button>
+								)}
+							</areaForm.Subscribe>
 						</DialogFooter>
 					</form>
 				</DialogContent>
@@ -647,9 +792,6 @@ export function OrganisationView() {
 							variant="outline"
 							size="sm"
 							onClick={() => setDeleteConfirm(null)}
-							disabled={
-								deleteRegionMutation.isPending || deleteAreaMutation.isPending
-							}
 						>
 							Batal
 						</Button>

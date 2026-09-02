@@ -2,9 +2,15 @@ import { Link } from "@tanstack/react-router";
 import { ExternalLink, MapPin as MapPinIcon } from "lucide-react";
 import * as React from "react";
 import { $api } from "@/api/client";
-import { Map, type MapPin } from "@/components/map";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Map,
+	MapControls,
+	MapMarker,
+	MarkerContent,
+	MarkerPopup,
+} from "@/components/ui/map";
 
 const STAGE_PIN_COLORS: Record<number, string> = {
 	1: "#64748b",
@@ -20,38 +26,28 @@ const STAGE_PIN_COLORS: Record<number, string> = {
 export function DashboardMapPreview() {
 	const { data: pinsData } = $api.useQuery("get", "/api/companies/map-pins");
 
-	const mapPins: MapPin[] = React.useMemo(() => {
+	const validPins = React.useMemo(() => {
 		if (!pinsData) return [];
 		return pinsData
 			.filter(
 				(p) =>
 					typeof p.latitude === "number" && typeof p.longitude === "number",
 			)
-			.slice(0, 100)
-			.map((p) => ({
-				id: p.id,
-				coordinates: {
-					latitude: p.latitude as number,
-					longitude: p.longitude as number,
-				},
-				title: p.namaPerusahaan,
-				description: `Tahap ${p.currentStage}: ${p.locationLabel || "Area"}`,
-				color: STAGE_PIN_COLORS[Number(p.currentStage)] || "#2563eb",
-			}));
+			.slice(0, 50);
 	}, [pinsData]);
 
 	const defaultCenter: [number, number] = React.useMemo(() => {
-		if (mapPins.length > 0) {
+		if (validPins.length > 0) {
 			return [
-				mapPins[0].coordinates.longitude,
-				mapPins[0].coordinates.latitude,
+				validPins[0].longitude as number,
+				validPins[0].latitude as number,
 			];
 		}
-		return [112.7521, -7.2575]; // Surabaya default center
-	}, [mapPins]);
+		return [106.8456, -6.2088]; // Jakarta center default
+	}, [validPins]);
 
 	return (
-		<Card className="shadow-sm overflow-hidden">
+		<Card className="shadow-xs overflow-hidden">
 			<CardHeader className="flex flex-row items-center justify-between pb-3">
 				<div>
 					<CardTitle className="text-base font-semibold flex items-center gap-2">
@@ -74,10 +70,37 @@ export function DashboardMapPreview() {
 					<Map
 						center={defaultCenter}
 						zoom={10}
-						interactive={true}
-						pins={mapPins}
-						className="h-[240px] w-full rounded-none border-t border-b-0"
-					/>
+						className="h-[260px] w-full rounded-none border-t border-b-0"
+					>
+						<MapControls />
+						{validPins.map((p) => {
+							const stageColor =
+								STAGE_PIN_COLORS[Number(p.currentStage)] || "#3b82f6";
+							return (
+								<MapMarker
+									key={p.id}
+									longitude={p.longitude as number}
+									latitude={p.latitude as number}
+								>
+									<MarkerContent>
+										<div
+											className="size-4 rounded-full border-2 border-white shadow-xs cursor-pointer transition-transform hover:scale-125"
+											style={{ backgroundColor: stageColor }}
+											title={p.namaPerusahaan}
+										/>
+									</MarkerContent>
+									<MarkerPopup>
+										<div className="p-1.5 text-xs space-y-0.5">
+											<div className="font-semibold">{p.namaPerusahaan}</div>
+											<div className="text-[11px] text-muted-foreground">
+												Tahap {p.currentStage}: {p.locationLabel || "Area"}
+											</div>
+										</div>
+									</MarkerPopup>
+								</MapMarker>
+							);
+						})}
+					</Map>
 					<div className="absolute bottom-2 left-2 z-10 flex flex-wrap items-center gap-2 bg-background/90 backdrop-blur-xs px-2.5 py-1 rounded-md border text-[11px] font-medium shadow-xs">
 						<span className="flex items-center gap-1">
 							<span className="size-2 rounded-full bg-[#64748b]" /> Direktori

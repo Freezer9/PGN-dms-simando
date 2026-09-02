@@ -10,13 +10,12 @@ import {
 	Loader2,
 	Plus,
 	Trash2,
-	UploadCloud,
 	User,
 } from "lucide-react";
 import * as React from "react";
 import { toast } from "sonner";
 import { $api } from "@/api/client";
-import type { AttachmentKind } from "@/api/types";
+import type { AttachmentDetail, AttachmentKind } from "@/api/types";
 import { ATTACHMENT_KIND_LABELS } from "@/components/attachments/attachment-upload-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -36,6 +35,9 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { TableEmptyState } from "@/components/ui/table-empty-state";
+import { TablePagination } from "@/components/ui/table-pagination";
+import { TableSkeleton } from "@/components/ui/table-skeleton";
 
 interface AttachmentListProps {
 	companyId: string;
@@ -59,6 +61,9 @@ export function AttachmentList({
 	const [isConfirmOpen, setIsConfirmOpen] = React.useState(false);
 	const [isDeleting, setIsDeleting] = React.useState(false);
 
+	const [page, setPage] = React.useState(1);
+	const [pageSize, setPageSize] = React.useState(10);
+
 	const { data: attachments = [], isLoading } = $api.useQuery(
 		"get",
 		"/api/companies/{companyId}/attachments",
@@ -71,7 +76,7 @@ export function AttachmentList({
 		},
 	);
 
-	const filteredAttachments = React.useMemo(() => {
+	const filteredAttachments = React.useMemo<AttachmentDetail[]>(() => {
 		if (!filterKind) return attachments;
 		if (Array.isArray(filterKind)) {
 			const set = new Set(filterKind);
@@ -79,6 +84,13 @@ export function AttachmentList({
 		}
 		return attachments.filter((a) => a.kind === filterKind);
 	}, [attachments, filterKind]);
+
+	const totalCount = filteredAttachments.length;
+	const totalPages = Math.ceil(totalCount / pageSize) || 1;
+	const paginatedAttachments = React.useMemo(() => {
+		const start = (page - 1) * pageSize;
+		return filteredAttachments.slice(start, start + pageSize);
+	}, [filteredAttachments, page, pageSize]);
 
 	const handleDelete = async () => {
 		if (!deletingId) return;
@@ -182,62 +194,57 @@ export function AttachmentList({
 				<Table>
 					<TableHeader className="bg-muted/40">
 						<TableRow>
-							<TableHead className="font-semibold text-xs">
+							<TableHead className="font-semibold text-xs py-3">
 								Nama Berkas
 							</TableHead>
-							<TableHead className="font-semibold text-xs">
+							<TableHead className="font-semibold text-xs py-3">
 								Jenis Dokumen
 							</TableHead>
-							<TableHead className="font-semibold text-xs">Versi</TableHead>
-							<TableHead className="font-semibold text-xs">Ukuran</TableHead>
-							<TableHead className="font-semibold text-xs">
+							<TableHead className="font-semibold text-xs py-3">
+								Versi
+							</TableHead>
+							<TableHead className="font-semibold text-xs py-3">
+								Ukuran
+							</TableHead>
+							<TableHead className="font-semibold text-xs py-3">
 								Pengunggah
 							</TableHead>
-							<TableHead className="font-semibold text-xs">
+							<TableHead className="font-semibold text-xs py-3">
 								Waktu Unggah
 							</TableHead>
-							<TableHead className="text-right font-semibold text-xs pr-4">
+							<TableHead className="text-right font-semibold text-xs py-3 pr-4">
 								Tindakan
 							</TableHead>
 						</TableRow>
 					</TableHeader>
 					<TableBody>
 						{isLoading ? (
-							<TableRow>
-								<TableCell colSpan={7} className="text-center py-8">
-									<div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
-										<Loader2 className="h-5 w-5 animate-spin text-primary" />
-										<span className="text-xs">Memuat lampiran dokumen...</span>
-									</div>
-								</TableCell>
-							</TableRow>
+							<TableSkeleton columns={7} rows={4} />
 						) : filteredAttachments.length === 0 ? (
-							<TableRow>
-								<TableCell colSpan={7} className="text-center py-10">
-									<div className="flex flex-col items-center justify-center gap-2 max-w-sm mx-auto text-muted-foreground">
-										<div className="p-2.5 rounded-full bg-muted text-muted-foreground">
-											<UploadCloud className="h-5 w-5" />
-										</div>
-										<p className="text-xs text-muted-foreground text-center">
-											{emptyMessage ||
-												"Belum ada berkas lampiran yang diunggah untuk kategori ini."}
-										</p>
-										{onUploadClick && (
-											<Button
-												size="sm"
-												variant="outline"
-												className="h-7 text-xs mt-1"
-												onClick={onUploadClick}
-											>
-												<Plus className="h-3 w-3 mr-1" />
-												Unggah Berkas Sekarang
-											</Button>
-										)}
-									</div>
-								</TableCell>
-							</TableRow>
+							<TableEmptyState
+								colSpan={7}
+								icon="folder"
+								title="Belum Ada Berkas Lampiran"
+								description={
+									emptyMessage ||
+									"Belum ada berkas lampiran yang diunggah untuk kategori ini."
+								}
+								action={
+									onUploadClick ? (
+										<Button
+											size="sm"
+											variant="outline"
+											className="h-8 text-xs gap-1.5"
+											onClick={onUploadClick}
+										>
+											<Plus className="size-3.5" />
+											<span>Unggah Berkas Sekarang</span>
+										</Button>
+									) : undefined
+								}
+							/>
 						) : (
-							filteredAttachments.map((item) => (
+							paginatedAttachments.map((item) => (
 								<TableRow
 									key={item.id}
 									className="hover:bg-muted/30 transition-colors"
@@ -345,6 +352,24 @@ export function AttachmentList({
 						)}
 					</TableBody>
 				</Table>
+
+				{/* Pagination if multiple pages */}
+				{filteredAttachments.length > 10 && (
+					<TablePagination
+						pageIndex={page - 1}
+						page={page}
+						pageSize={pageSize}
+						totalCount={totalCount}
+						totalPages={totalPages}
+						onPageChange={(newPage) => setPage(newPage)}
+						onPageSizeChange={(newSize) => {
+							setPageSize(newSize);
+							setPage(1);
+						}}
+						pageSizeOptions={[10, 25, 50]}
+						className="border-t px-4"
+					/>
+				)}
 			</div>
 
 			{/* Delete Confirmation Modal */}
@@ -359,7 +384,7 @@ export function AttachmentList({
 							ini tidak dapat dibatalkan.
 						</DialogDescription>
 					</DialogHeader>
-					<DialogFooter className="pt-2">
+					<DialogFooter className="flex justify-end gap-2">
 						<Button
 							variant="outline"
 							size="sm"
@@ -375,16 +400,9 @@ export function AttachmentList({
 							disabled={isDeleting}
 						>
 							{isDeleting ? (
-								<>
-									<Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
-									Menghapus...
-								</>
-							) : (
-								<>
-									<Trash2 className="h-3.5 w-3.5 mr-1.5" />
-									Hapus Berkas
-								</>
-							)}
+								<Loader2 className="h-4 w-4 animate-spin mr-1" />
+							) : null}
+							Hapus Lampiran
 						</Button>
 					</DialogFooter>
 				</DialogContent>

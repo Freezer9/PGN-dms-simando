@@ -29,6 +29,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import {
 	Table,
 	TableBody,
 	TableCell,
@@ -405,22 +412,25 @@ function BreakGlassPage() {
 													onChange={(e) => setCompanySearch(e.target.value)}
 													className="h-8 text-xs"
 												/>
-												<select
-													id={field.name}
-													name={field.name}
+												<Select
 													value={field.state.value}
-													onBlur={field.handleBlur}
-													onChange={(e) => field.handleChange(e.target.value)}
-													className="w-full h-8 px-2.5 rounded-md border bg-background text-xs"
+													onValueChange={(val) => field.handleChange(val)}
 												>
-													<option value="">-- Pilih Perusahaan --</option>
-													{companies.map((c) => (
-														<option key={c.id} value={c.id}>
-															{c.nomor} — {c.namaPerusahaan} (
-															{c.salesUserName || c.locationLabel || "Area"})
-														</option>
-													))}
-												</select>
+													<SelectTrigger
+														id={field.name}
+														className="w-full h-8 text-xs"
+													>
+														<SelectValue placeholder="-- Pilih Perusahaan --" />
+													</SelectTrigger>
+													<SelectContent side="bottom">
+														{companies.map((c) => (
+															<SelectItem key={c.id} value={c.id}>
+																{c.nomor} — {c.namaPerusahaan} (
+																{c.salesUserName || c.locationLabel || "Area"})
+															</SelectItem>
+														))}
+													</SelectContent>
+												</Select>
 											</div>
 										</FormField>
 									);

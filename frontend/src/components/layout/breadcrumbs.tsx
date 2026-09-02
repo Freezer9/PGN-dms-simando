@@ -1,14 +1,28 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { ChevronRight, Home } from "lucide-react";
+import { Home } from "lucide-react";
+import {
+	Breadcrumb,
+	BreadcrumbItem,
+	BreadcrumbLink,
+	BreadcrumbList,
+	BreadcrumbPage,
+	BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 
 const ROUTE_LABELS: Record<string, string> = {
 	"": "Beranda",
 	directory: "Direktori",
 	plotting: "Plotting",
-	map: "Peta",
+	map: "Peta GIS",
 	tasks: "Tugas Saya",
 	blocked: "Tugas Tertahan",
+	history: "Riwayat Tugas",
 	reports: "Laporan",
+	"gas-demand": "Kebutuhan Gas",
+	ageing: "Umur Proses & SLA",
+	funnel: "Konversi Funnel",
+	"survey-productivity": "Produktivitas Survei",
+	"nol-outcomes": "Hasil Surat NOL",
 	master: "Master Data",
 	admin: "Administrasi",
 	organisation: "Organisasi",
@@ -27,6 +41,8 @@ const ROUTE_LABELS: Record<string, string> = {
 	companies: "Perusahaan",
 	new: "Tambah Baru",
 	"change-password": "Ubah Kata Sandi",
+	"access-denied": "Akses Ditolak",
+	"sign-in": "Masuk",
 };
 
 export function Breadcrumbs() {
@@ -42,41 +58,43 @@ export function Breadcrumbs() {
 	let accumulatedPath = "";
 
 	return (
-		<nav
-			aria-label="Breadcrumb"
-			className="flex items-center text-xs text-muted-foreground mb-4"
-		>
-			<Link
-				to="/"
-				className="flex items-center gap-1 hover:text-foreground transition-colors"
-			>
-				<Home className="size-3.5" />
-				<span>Beranda</span>
-			</Link>
+		<Breadcrumb className="mb-4">
+			<BreadcrumbList className="text-xs">
+				<BreadcrumbItem>
+					<BreadcrumbLink asChild>
+						<Link to="/" className="flex items-center gap-1">
+							<Home className="size-3.5" />
+							<span>Beranda</span>
+						</Link>
+					</BreadcrumbLink>
+				</BreadcrumbItem>
 
-			{segments.map((segment, index) => {
-				accumulatedPath += `/${segment}`;
-				const isLast = index === segments.length - 1;
-				const label =
-					ROUTE_LABELS[segment] ||
-					(segment.length > 20 ? `${segment.slice(0, 10)}...` : segment);
+				{segments.map((segment, index) => {
+					accumulatedPath += `/${segment}`;
+					const isLast = index === segments.length - 1;
+					const label =
+						ROUTE_LABELS[segment] ||
+						(segment.length > 20 ? `${segment.slice(0, 10)}...` : segment);
 
-				return (
-					<div key={accumulatedPath} className="flex items-center">
-						<ChevronRight className="size-3.5 mx-1.5 opacity-50" />
-						{isLast ? (
-							<span className="font-medium text-foreground">{label}</span>
-						) : (
-							<Link
-								to={accumulatedPath}
-								className="hover:text-foreground transition-colors"
-							>
-								{label}
-							</Link>
-						)}
-					</div>
-				);
-			})}
-		</nav>
+					return (
+						<div
+							key={accumulatedPath}
+							className="inline-flex items-center gap-1.5"
+						>
+							<BreadcrumbSeparator />
+							<BreadcrumbItem>
+								{isLast ? (
+									<BreadcrumbPage>{label}</BreadcrumbPage>
+								) : (
+									<BreadcrumbLink asChild>
+										<Link to={accumulatedPath}>{label}</Link>
+									</BreadcrumbLink>
+								)}
+							</BreadcrumbItem>
+						</div>
+					);
+				})}
+			</BreadcrumbList>
+		</Breadcrumb>
 	);
 }

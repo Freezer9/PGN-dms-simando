@@ -28,6 +28,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import {
 	Table,
 	TableBody,
 	TableCell,
@@ -349,30 +356,33 @@ function StuckStepsPage() {
 										required
 										error={fieldError}
 									>
-										<select
-											id={field.name}
-											name={field.name}
+										<Select
 											value={field.state.value}
-											onBlur={field.handleBlur}
-											onChange={(e) => field.handleChange(e.target.value)}
-											className="w-full h-9 px-3 rounded-md border bg-background text-xs"
+											onValueChange={(val) => field.handleChange(val)}
 										>
-											<option value="">-- Pilih Pengguna Aktif --</option>
-											{allUsers
-												.filter(
-													(u) =>
-														u.active && u.id !== selectedStep?.assignedUserId,
-												)
-												.map((user) => (
-													<option key={user.id} value={user.id}>
-														{user.fullName} (
-														{user.roles
-															.map((r) => `${r.role} - ${r.scopeLabel}`)
-															.join(", ") || user.username}
-														)
-													</option>
-												))}
-										</select>
+											<SelectTrigger
+												id={field.name}
+												className="w-full h-9 text-xs"
+											>
+												<SelectValue placeholder="-- Pilih Pengguna Aktif --" />
+											</SelectTrigger>
+											<SelectContent side="bottom">
+												{allUsers
+													.filter(
+														(u) =>
+															u.active && u.id !== selectedStep?.assignedUserId,
+													)
+													.map((user) => (
+														<SelectItem key={user.id} value={user.id}>
+															{user.fullName} (
+															{user.roles
+																.map((r) => `${r.role} - ${r.scopeLabel}`)
+																.join(", ") || user.username}
+															)
+														</SelectItem>
+													))}
+											</SelectContent>
+										</Select>
 									</FormField>
 								);
 							}}

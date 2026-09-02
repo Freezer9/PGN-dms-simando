@@ -1,13 +1,18 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
+	type ColumnDef,
+	flexRender,
+	getCoreRowModel,
+	getPaginationRowModel,
+	useReactTable,
+} from "@tanstack/react-table";
+import {
 	Building2,
 	CheckCircle2,
 	Eye,
 	Inbox,
-	Loader2,
 	RotateCcw,
 	Search,
-	Sparkles,
 	User,
 	Users,
 	XCircle,
@@ -40,6 +45,9 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { TableEmptyState } from "@/components/ui/table-empty-state";
+import { TablePagination } from "@/components/ui/table-pagination";
+import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/_auth/tasks/")({
@@ -141,18 +149,155 @@ function TasksInboxPage() {
 		return list;
 	}, [tasks, searchTerm, stepFilter, areaFilter, sortBy]);
 
-	const handleOpenActionModal = (
-		task: TaskListItem,
-		action: NonNullable<TaskActionModalType>,
-	) => {
-		setModalTask(task);
-		setModalAction(action);
-	};
+	const handleOpenActionModal = React.useCallback(
+		(task: TaskListItem, action: NonNullable<TaskActionModalType>) => {
+			setModalTask(task);
+			setModalAction(action);
+		},
+		[],
+	);
 
-	const handleOpenDrawer = (task: TaskListItem) => {
+	const handleOpenDrawer = React.useCallback((task: TaskListItem) => {
 		setDrawerTask(task);
 		setIsDrawerOpen(true);
-	};
+	}, []);
+
+	// Column definitions using OpenAPI TaskListItem DTO
+	const columns = React.useMemo<ColumnDef<TaskListItem>[]>(
+		() => [
+			{
+				accessorKey: "namaPerusahaan",
+				header: "Perusahaan",
+				cell: ({ row }) => {
+					const task = row.original;
+					return (
+						<div className="flex flex-col gap-0.5">
+							<Link
+								to="/directory/$companyId"
+								params={{ companyId: task.companyId }}
+								className="font-medium text-foreground hover:text-primary transition-colors text-sm flex items-center gap-1.5"
+							>
+								<Building2 className="h-3.5 w-3.5 text-primary shrink-0" />
+								<span>{task.namaPerusahaan}</span>
+							</Link>
+							<div className="flex items-center gap-2 text-xs text-muted-foreground">
+								<span className="font-mono text-[11px]">{task.nomor}</span>
+								<span>•</span>
+								<span>{task.industryTypeName || "Industri"}</span>
+							</div>
+						</div>
+					);
+				},
+			},
+			{
+				accessorKey: "stepKind",
+				header: "Tahap Verifikasi",
+				cell: ({ row }) => (
+					<Badge variant="secondary" className="text-xs font-medium">
+						{row.original.stepKind ?? "Persetujuan"}
+					</Badge>
+				),
+			},
+			{
+				id: "location",
+				header: "Wilayah & Area",
+				cell: ({ row }) => (
+					<div className="flex flex-col gap-0.5 text-xs">
+						<span className="font-medium text-foreground">
+							{row.original.areaName}
+						</span>
+						<span className="text-muted-foreground text-[11px]">
+							{row.original.regionName}
+						</span>
+					</div>
+				),
+			},
+			{
+				accessorKey: "submittedByName",
+				header: "Diajukan Oleh",
+				cell: ({ row }) => (
+					<div className="flex items-center gap-1.5 text-xs text-foreground">
+						<User className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+						<span>{row.original.submittedByName || "-"}</span>
+					</div>
+				),
+			},
+			{
+				accessorKey: "waitingSince",
+				header: "Menunggu Sejak (SLA)",
+				cell: ({ row }) => (
+					<SlaClockBadge waitingSince={row.original.waitingSince} />
+				),
+			},
+			{
+				id: "actions",
+				header: () => <div className="text-right pr-4">Tindakan</div>,
+				cell: ({ row }) => {
+					const task = row.original;
+					return (
+						<div className="flex items-center justify-end gap-1.5 pr-2">
+							<Button
+								size="sm"
+								variant="ghost"
+								className="h-8 px-2 text-xs"
+								onClick={() => handleOpenDrawer(task)}
+								title="Tinjau Cepat"
+							>
+								<Eye className="h-3.5 w-3.5 mr-1" />
+								Tinjau
+							</Button>
+							<Button
+								size="sm"
+								variant="outline"
+								className="h-8 px-2 text-xs text-amber-600 border-amber-200 hover:bg-amber-50 dark:hover:bg-amber-950/50"
+								onClick={() => handleOpenActionModal(task, "Revisi")}
+								title="Kembalikan untuk revisi"
+							>
+								<RotateCcw className="h-3.5 w-3.5 mr-1" />
+								Revisi
+							</Button>
+							<Button
+								size="sm"
+								variant="outline"
+								className="h-8 px-2 text-xs text-rose-600 border-rose-200 hover:bg-rose-50 dark:hover:bg-rose-950/50"
+								onClick={() => handleOpenActionModal(task, "Tolak")}
+								title="Tolak berkas"
+							>
+								<XCircle className="h-3.5 w-3.5 mr-1" />
+								Tolak
+							</Button>
+							<Button
+								size="sm"
+								className="h-8 px-2.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
+								onClick={() => handleOpenActionModal(task, "Setuju")}
+								title="Setujui dan lanjutkan"
+							>
+								<CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+								Setuju
+							</Button>
+						</div>
+					);
+				},
+			},
+		],
+		[handleOpenDrawer, handleOpenActionModal],
+	);
+
+	const [pagination, setPagination] = React.useState({
+		pageIndex: 0,
+		pageSize: 10,
+	});
+
+	const table = useReactTable({
+		data: filteredTasks,
+		columns,
+		getCoreRowModel: getCoreRowModel(),
+		getPaginationRowModel: getPaginationRowModel(),
+		onPaginationChange: setPagination,
+		state: {
+			pagination,
+		},
+	});
 
 	return (
 		<div className="space-y-4">
@@ -160,7 +305,10 @@ function TasksInboxPage() {
 			<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
 				<Tabs
 					value={scope}
-					onValueChange={(val) => setScope(val as TaskScope)}
+					onValueChange={(val) => {
+						setScope(val as TaskScope);
+						setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+					}}
 					className="w-full sm:w-auto"
 				>
 					<TabsList className="grid w-full sm:w-auto grid-cols-2">
@@ -195,13 +343,22 @@ function TasksInboxPage() {
 							<Input
 								placeholder="Cari perusahaan, nomor, pengaju..."
 								value={searchTerm}
-								onChange={(e) => setSearchTerm(e.target.value)}
+								onChange={(e) => {
+									setSearchTerm(e.target.value);
+									setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+								}}
 								className="pl-9 h-9 text-xs"
 							/>
 						</div>
 
 						{/* Step Kind Filter */}
-						<Select value={stepFilter} onValueChange={setStepFilter}>
+						<Select
+							value={stepFilter}
+							onValueChange={(val) => {
+								setStepFilter(val);
+								setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+							}}
+						>
 							<SelectTrigger className="h-9 text-xs">
 								<SelectValue placeholder="Semua Tahap Verifikasi" />
 							</SelectTrigger>
@@ -219,7 +376,13 @@ function TasksInboxPage() {
 						</Select>
 
 						{/* Area Filter */}
-						<Select value={areaFilter} onValueChange={setAreaFilter}>
+						<Select
+							value={areaFilter}
+							onValueChange={(val) => {
+								setAreaFilter(val);
+								setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+							}}
+						>
 							<SelectTrigger className="h-9 text-xs">
 								<SelectValue placeholder="Semua Area" />
 							</SelectTrigger>
@@ -253,173 +416,93 @@ function TasksInboxPage() {
 				</CardContent>
 			</Card>
 
-			{/* Task List Table */}
+			{/* Task List Table with TanStack Table */}
 			<div className="rounded-xl border bg-card shadow-xs overflow-hidden">
 				<Table>
 					<TableHeader className="bg-muted/40">
-						<TableRow>
-							<TableHead className="font-semibold text-xs">
-								Perusahaan
-							</TableHead>
-							<TableHead className="font-semibold text-xs">
-								Tahap Verifikasi
-							</TableHead>
-							<TableHead className="font-semibold text-xs">
-								Wilayah & Area
-							</TableHead>
-							<TableHead className="font-semibold text-xs">
-								Diajukan Oleh
-							</TableHead>
-							<TableHead className="font-semibold text-xs">
-								Menunggu Sejak (SLA)
-							</TableHead>
-							<TableHead className="text-right font-semibold text-xs pr-4">
-								Tindakan
-							</TableHead>
-						</TableRow>
+						{table.getHeaderGroups().map((headerGroup) => (
+							<TableRow key={headerGroup.id}>
+								{headerGroup.headers.map((header) => (
+									<TableHead key={header.id} className="font-semibold text-xs">
+										{header.isPlaceholder
+											? null
+											: flexRender(
+													header.column.columnDef.header,
+													header.getContext(),
+												)}
+									</TableHead>
+								))}
+							</TableRow>
+						))}
 					</TableHeader>
 					<TableBody>
 						{isLoading ? (
-							<TableRow>
-								<TableCell colSpan={6} className="text-center py-12">
-									<div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
-										<Loader2 className="h-6 w-6 animate-spin text-primary" />
-										<span className="text-sm font-medium">
-											Memuat antrean tugas...
-										</span>
-									</div>
-								</TableCell>
-							</TableRow>
-						) : filteredTasks.length === 0 ? (
-							<TableRow>
-								<TableCell colSpan={6} className="text-center py-14">
-									<div className="flex flex-col items-center justify-center gap-2.5 max-w-sm mx-auto text-muted-foreground">
-										<div className="p-3 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400">
-											<Sparkles className="h-6 w-6" />
-										</div>
-										<h4 className="font-semibold text-foreground text-base">
-											Tidak Ada Tugas Menunggu
-										</h4>
-										<p className="text-xs text-muted-foreground text-center leading-relaxed">
-											{searchTerm ||
-											stepFilter !== "all" ||
-											areaFilter !== "all"
-												? "Tidak ada tugas yang sesuai dengan filter pencarian yang diterapkan."
-												: scope === "my"
-													? "Semua berkas pada antrean Anda telah selesai ditindaklanjuti. Kerja bagus!"
-													: "Tidak ada berkas aktif yang sedang berproses pada wilayah kerja Anda."}
-										</p>
-									</div>
-								</TableCell>
-							</TableRow>
-						) : (
-							filteredTasks.map((task) => (
+							<TableSkeleton columns={columns.length} rows={5} />
+						) : table.getRowModel().rows?.length ? (
+							table.getRowModel().rows.map((row) => (
 								<TableRow
-									key={task.stepId}
+									key={row.id}
 									className="hover:bg-muted/30 transition-colors"
 								>
-									{/* Perusahaan Info */}
-									<TableCell className="py-3">
-										<div className="flex flex-col gap-0.5">
-											<Link
-												to="/directory/$companyId"
-												params={{ companyId: task.companyId }}
-												className="font-medium text-foreground hover:text-primary transition-colors text-sm flex items-center gap-1.5"
-											>
-												<Building2 className="h-3.5 w-3.5 text-primary shrink-0" />
-												<span>{task.namaPerusahaan}</span>
-											</Link>
-											<div className="flex items-center gap-2 text-xs text-muted-foreground">
-												<span className="font-mono text-[11px]">
-													{task.nomor}
-												</span>
-												<span>•</span>
-												<span>{task.industryTypeName || "Industri"}</span>
-											</div>
-										</div>
-									</TableCell>
-
-									{/* Tahap Step */}
-									<TableCell className="py-3">
-										<Badge variant="secondary" className="text-xs font-medium">
-											{task.stepKind ?? "Persetujuan"}
-										</Badge>
-									</TableCell>
-
-									{/* Wilayah & Area */}
-									<TableCell className="py-3">
-										<div className="flex flex-col gap-0.5 text-xs">
-											<span className="font-medium text-foreground">
-												{task.areaName}
-											</span>
-											<span className="text-muted-foreground text-[11px]">
-												{task.regionName}
-											</span>
-										</div>
-									</TableCell>
-
-									{/* Submitter */}
-									<TableCell className="py-3">
-										<div className="flex items-center gap-1.5 text-xs text-foreground">
-											<User className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-											<span>{task.submittedByName || "-"}</span>
-										</div>
-									</TableCell>
-
-									{/* SLA Duration */}
-									<TableCell className="py-3">
-										<SlaClockBadge waitingSince={task.waitingSince} />
-									</TableCell>
-
-									{/* Actions */}
-									<TableCell className="py-3 text-right pr-4">
-										<div className="flex items-center justify-end gap-1.5">
-											<Button
-												size="sm"
-												variant="ghost"
-												className="h-8 px-2 text-xs"
-												onClick={() => handleOpenDrawer(task)}
-												title="Tinjau Cepat"
-											>
-												<Eye className="h-3.5 w-3.5 mr-1" />
-												Tinjau
-											</Button>
-											<Button
-												size="sm"
-												variant="outline"
-												className="h-8 px-2 text-xs text-amber-600 border-amber-200 hover:bg-amber-50 dark:hover:bg-amber-950/50"
-												onClick={() => handleOpenActionModal(task, "Revisi")}
-												title="Kembalikan untuk revisi"
-											>
-												<RotateCcw className="h-3.5 w-3.5 mr-1" />
-												Revisi
-											</Button>
-											<Button
-												size="sm"
-												variant="outline"
-												className="h-8 px-2 text-xs text-rose-600 border-rose-200 hover:bg-rose-50 dark:hover:bg-rose-950/50"
-												onClick={() => handleOpenActionModal(task, "Tolak")}
-												title="Tolak berkas"
-											>
-												<XCircle className="h-3.5 w-3.5 mr-1" />
-												Tolak
-											</Button>
-											<Button
-												size="sm"
-												className="h-8 px-2.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
-												onClick={() => handleOpenActionModal(task, "Setuju")}
-												title="Setujui dan lanjutkan"
-											>
-												<CheckCircle2 className="h-3.5 w-3.5 mr-1" />
-												Setuju
-											</Button>
-										</div>
-									</TableCell>
+									{row.getVisibleCells().map((cell) => (
+										<TableCell key={cell.id} className="py-3">
+											{flexRender(
+												cell.column.columnDef.cell,
+												cell.getContext(),
+											)}
+										</TableCell>
+									))}
 								</TableRow>
 							))
+						) : (
+							<TableEmptyState
+								colSpan={columns.length}
+								icon={
+									searchTerm || stepFilter !== "all" || areaFilter !== "all"
+										? "search"
+										: "empty"
+								}
+								title={
+									searchTerm || stepFilter !== "all" || areaFilter !== "all"
+										? "Tidak Ada Tugas Ditemukan"
+										: "Tidak Ada Tugas Menunggu"
+								}
+								description={
+									searchTerm || stepFilter !== "all" || areaFilter !== "all"
+										? "Tidak ada tugas yang sesuai dengan filter pencarian yang diterapkan."
+										: scope === "my"
+											? "Semua berkas pada antrean Anda telah selesai ditindaklanjuti. Kerja bagus!"
+											: "Tidak ada berkas aktif yang sedang berproses pada wilayah kerja Anda."
+								}
+								onReset={
+									searchTerm || stepFilter !== "all" || areaFilter !== "all"
+										? () => {
+												setSearchTerm("");
+												setStepFilter("all");
+												setAreaFilter("all");
+											}
+										: undefined
+								}
+								resetLabel="Reset Filter"
+							/>
 						)}
 					</TableBody>
 				</Table>
+
+				{/* Table Pagination */}
+				{filteredTasks.length > 0 && (
+					<TablePagination
+						pageIndex={pagination.pageIndex}
+						page={pagination.pageIndex + 1}
+						pageSize={pagination.pageSize}
+						totalCount={filteredTasks.length}
+						totalPages={table.getPageCount()}
+						onPageChange={(page) => table.setPageIndex(page - 1)}
+						onPageSizeChange={(size) => table.setPageSize(size)}
+						pageSizeOptions={[10, 25, 50]}
+						className="border-t px-4"
+					/>
+				)}
 			</div>
 
 			{/* Action Modal (Setuju / Revisi / Tolak / Reassign) */}

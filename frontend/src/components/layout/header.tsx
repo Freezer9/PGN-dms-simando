@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Bell, KeyRound, LogOut, Search, User as UserIcon } from "lucide-react";
+import { Bell, KeyRound, LogOut, Search } from "lucide-react";
 import { $api } from "@/api/client";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,6 +13,8 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useAuth } from "@/lib/auth";
 
 export function Header() {
@@ -47,11 +50,22 @@ export function Header() {
 				: "Tingkat Area"
 		: "";
 
+	const initials = user?.fullName
+		? user.fullName
+				.split(" ")
+				.map((n) => n[0])
+				.slice(0, 2)
+				.join("")
+				.toUpperCase()
+		: user?.username?.slice(0, 2).toUpperCase() || "U";
+
 	return (
-		<header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 h-14">
+		<header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 h-14 shrink-0">
 			<div className="flex h-14 items-center justify-between px-4 gap-4 max-w-full">
-				{/* Brand */}
-				<div className="flex items-center gap-3 shrink-0">
+				{/* Brand & Sidebar Trigger */}
+				<div className="flex items-center gap-2 shrink-0">
+					<SidebarTrigger className="-ml-1 text-muted-foreground hover:text-foreground" />
+					<Separator orientation="vertical" className="mr-1 h-4" />
 					<Link to="/" className="flex items-center gap-2">
 						<span className="font-bold text-primary tracking-tight text-lg">
 							DMS Simando
@@ -115,15 +129,19 @@ export function Header() {
 						</div>
 					)}
 
-					{/* User Menu Dropdown */}
+					{/* User Menu Dropdown with Avatar */}
 					<DropdownMenu>
 						<DropdownMenuTrigger asChild>
 							<Button
 								variant="ghost"
 								size="icon"
-								className="rounded-full size-9 border bg-muted/50"
+								className="rounded-full size-9 border border-border bg-muted/50 p-0 overflow-hidden"
 							>
-								<UserIcon className="size-4" />
+								<Avatar className="size-8">
+									<AvatarFallback className="bg-primary/10 text-primary font-semibold text-xs">
+										{initials}
+									</AvatarFallback>
+								</Avatar>
 								<span className="sr-only">Menu pengguna</span>
 							</Button>
 						</DropdownMenuTrigger>

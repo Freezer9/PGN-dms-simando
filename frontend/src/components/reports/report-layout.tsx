@@ -1,6 +1,14 @@
 import { Link } from "@tanstack/react-router";
-import { ChevronRight, FileSpreadsheet, RotateCcw } from "lucide-react";
+import { FileSpreadsheet, RotateCcw } from "lucide-react";
 import * as React from "react";
+import {
+	Breadcrumb,
+	BreadcrumbItem,
+	BreadcrumbLink,
+	BreadcrumbList,
+	BreadcrumbPage,
+	BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 
 interface ReportLayoutProps {
@@ -53,17 +61,22 @@ export function ReportLayout({
 		<div className="space-y-6">
 			{/* Breadcrumb Header */}
 			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-card p-5 rounded-xl border shadow-xs">
-				<div className="space-y-1">
-					<div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-						<Link
-							to="/reports"
-							className="hover:underline hover:text-foreground"
-						>
-							Laporan
-						</Link>
-						<ChevronRight className="size-3.5" />
-						<span className="font-semibold text-foreground">{title}</span>
-					</div>
+				<div className="space-y-1.5">
+					<Breadcrumb>
+						<BreadcrumbList className="text-xs">
+							<BreadcrumbItem>
+								<BreadcrumbLink asChild>
+									<Link to="/reports">Laporan</Link>
+								</BreadcrumbLink>
+							</BreadcrumbItem>
+							<BreadcrumbSeparator />
+							<BreadcrumbItem>
+								<BreadcrumbPage className="font-semibold text-foreground">
+									{title}
+								</BreadcrumbPage>
+							</BreadcrumbItem>
+						</BreadcrumbList>
+					</Breadcrumb>
 					<h1 className="text-2xl font-bold tracking-tight">{title}</h1>
 					<p className="text-muted-foreground text-sm">{description}</p>
 				</div>

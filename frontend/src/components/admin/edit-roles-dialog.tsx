@@ -1,12 +1,5 @@
 import { useForm, useStore } from "@tanstack/react-form";
-import {
-	AlertTriangle,
-	Loader2,
-	Plus,
-	Shield,
-	Trash2,
-	UserCog,
-} from "lucide-react";
+import { Loader2, Plus, Shield, Trash2, UserCog } from "lucide-react";
 import * as React from "react";
 import { $api } from "@/api/client";
 import type { AppRole, UserListItemDto } from "@/api/types";
@@ -22,6 +15,13 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { useAuth } from "@/lib/auth";
 import { type AssignRoleFormValues, assignRoleSchema } from "@/lib/schemas";
 
@@ -288,22 +288,26 @@ export function EditRolesDialog({
 									const fieldError = field.state.meta.errors[0]?.message;
 									return (
 										<FormField label="Pilih Peran" error={fieldError}>
-											<select
-												id={field.name}
-												name={field.name}
+											<Select
 												value={field.state.value}
-												onBlur={field.handleBlur}
-												onChange={(e) => {
-													field.handleChange(e.target.value);
-												}}
-												className="w-full h-8 px-2.5 rounded-md border bg-background text-xs"
+												onValueChange={(val) =>
+													field.handleChange(val as AppRole)
+												}
 											>
-												{allowedRoles.map((r) => (
-													<option key={r.value} value={r.value}>
-														{r.label}
-													</option>
-												))}
-											</select>
+												<SelectTrigger
+													id={field.name}
+													className="w-full h-8 text-xs"
+												>
+													<SelectValue placeholder="Pilih Peran" />
+												</SelectTrigger>
+												<SelectContent side="bottom">
+													{allowedRoles.map((r) => (
+														<SelectItem key={r.value} value={r.value}>
+															{r.label}
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
 										</FormField>
 									);
 								}}
@@ -315,28 +319,30 @@ export function EditRolesDialog({
 										const fieldError = field.state.meta.errors[0]?.message;
 										return (
 											<FormField label="Wilayah (Region)" error={fieldError}>
-												<select
-													id={field.name}
-													name={field.name}
+												<Select
 													value={field.state.value || ""}
-													onBlur={field.handleBlur}
-													onChange={(e) => {
-														const regId = e.target.value;
+													onValueChange={(regId) => {
 														field.handleChange(regId);
 														const reg = regions.find((r) => r.id === regId);
 														if (reg && reg.areas.length > 0) {
 															form.setFieldValue("areaId", reg.areas[0].id);
 														}
 													}}
-													className="w-full h-8 px-2.5 rounded-md border bg-background text-xs"
 												>
-													<option value="">-- Pilih Wilayah --</option>
-													{regions.map((r) => (
-														<option key={r.id} value={r.id}>
-															{r.name}
-														</option>
-													))}
-												</select>
+													<SelectTrigger
+														id={field.name}
+														className="w-full h-8 text-xs"
+													>
+														<SelectValue placeholder="-- Pilih Wilayah --" />
+													</SelectTrigger>
+													<SelectContent side="bottom">
+														{regions.map((r) => (
+															<SelectItem key={r.id} value={r.id}>
+																{r.name}
+															</SelectItem>
+														))}
+													</SelectContent>
+												</Select>
 											</FormField>
 										);
 									}}
@@ -350,21 +356,24 @@ export function EditRolesDialog({
 									const fieldError = field.state.meta.errors[0]?.message;
 									return (
 										<FormField label="Sales Area" error={fieldError}>
-											<select
-												id={field.name}
-												name={field.name}
+											<Select
 												value={field.state.value || ""}
-												onBlur={field.handleBlur}
-												onChange={(e) => field.handleChange(e.target.value)}
-												className="w-full h-8 px-2.5 rounded-md border bg-background text-xs"
+												onValueChange={(val) => field.handleChange(val)}
 											>
-												<option value="">-- Pilih Area --</option>
-												{availableAreas.map((a) => (
-													<option key={a.id} value={a.id}>
-														{a.name} ({a.code})
-													</option>
-												))}
-											</select>
+												<SelectTrigger
+													id={field.name}
+													className="w-full h-8 text-xs"
+												>
+													<SelectValue placeholder="-- Pilih Area --" />
+												</SelectTrigger>
+												<SelectContent side="bottom">
+													{availableAreas.map((a) => (
+														<SelectItem key={a.id} value={a.id}>
+															{a.name} ({a.code})
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
 										</FormField>
 									);
 								}}
@@ -387,28 +396,19 @@ export function EditRolesDialog({
 										) : (
 											<Plus className="h-3.5 w-3.5" />
 										)}
-										<span>Tambah Peran</span>
+										<span>Tambahkan Peran</span>
 									</Button>
 								)}
 							</form.Subscribe>
 						</div>
 					</form>
-
-					{/* Warning alert */}
-					<Alert className="border-amber-200 bg-amber-50 dark:border-amber-800/60 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200">
-						<AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-						<AlertDescription className="text-xs leading-relaxed">
-							<strong>Catatan Workflow:</strong> Menonaktifkan peran pengguna
-							yang sedang memegang tugas persetujuan aktif akan menahan langkah
-							tersebut hingga dialihkan melalui menu <em>Tugas Tertahan</em>.
-						</AlertDescription>
-					</Alert>
 				</div>
 
-				<DialogFooter className="pt-2">
+				<DialogFooter className="pt-2 border-t">
 					<Button
 						type="button"
 						variant="outline"
+						size="sm"
 						onClick={() => onOpenChange(false)}
 					>
 						Tutup

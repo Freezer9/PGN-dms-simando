@@ -33,7 +33,6 @@ import { AttachmentList } from "@/components/attachments/attachment-list";
 import { AttachmentUploadDialog } from "@/components/attachments/attachment-upload-dialog";
 import { DocumentDownloadDropdown } from "@/components/documents/document-download-buttons";
 import { FormField } from "@/components/form/form-field";
-import { Map, type MapCoordinates } from "@/components/map";
 import { A1RegistrationForm } from "@/components/stages/a1-registration-form";
 import { NolEvaluationForm } from "@/components/stages/nol-evaluation-form";
 import { NolIssuanceForm } from "@/components/stages/nol-issuance-form";
@@ -49,6 +48,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
 	Dialog,
 	DialogContent,
@@ -59,6 +59,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+	Map,
+	MapControls,
+	type MapCoordinates,
+	MapMarker,
+	MarkerContent,
+} from "@/components/ui/map";
 import {
 	Select,
 	SelectContent,
@@ -880,9 +887,20 @@ function CompanyRecordHubPage() {
 										<Map
 											center={[currentCoords.longitude, currentCoords.latitude]}
 											zoom={13}
-											selectedCoordinates={currentCoords}
 											className="h-full w-full"
-										/>
+										>
+											<MapControls />
+											<MapMarker
+												longitude={currentCoords.longitude}
+												latitude={currentCoords.latitude}
+											>
+												<MarkerContent>
+													<div className="size-6 rounded-full bg-primary flex items-center justify-center text-primary-foreground shadow-md border-2 border-white">
+														<MapPin className="size-3.5" />
+													</div>
+												</MarkerContent>
+											</MapMarker>
+										</Map>
 									) : (
 										<div className="h-full flex items-center justify-center text-xs text-muted-foreground">
 											Koordinat belum ditentukan
@@ -1202,13 +1220,28 @@ function CompanyRecordHubPage() {
 										<Map
 											center={[currentCoords.longitude, currentCoords.latitude]}
 											zoom={14}
-											selectedCoordinates={currentCoords}
-											onCoordinateSelect={(c) => {
-												setCurrentCoords(c);
-												setHasChangedCoords(true);
-											}}
 											className="h-full w-full"
-										/>
+										>
+											<MapControls />
+											<MapMarker
+												longitude={currentCoords.longitude}
+												latitude={currentCoords.latitude}
+												draggable={true}
+												onDragEnd={(coords) => {
+													setCurrentCoords({
+														longitude: coords.lng,
+														latitude: coords.lat,
+													});
+													setHasChangedCoords(true);
+												}}
+											>
+												<MarkerContent>
+													<div className="size-6 rounded-full bg-primary flex items-center justify-center text-primary-foreground shadow-md border-2 border-white ring-2 ring-primary/40 cursor-grab active:cursor-grabbing">
+														<MapPin className="size-3.5" />
+													</div>
+												</MarkerContent>
+											</MapMarker>
+										</Map>
 									</div>
 								) : null}
 
@@ -1552,13 +1585,13 @@ function CompanyRecordHubPage() {
 								<contactForm.Field name="isPrimary">
 									{(field) => (
 										<div className="flex items-center gap-2">
-											<input
-												type="checkbox"
+											<Checkbox
 												id="isPrimary"
 												name={field.name}
 												checked={Boolean(field.state.value)}
-												onChange={(e) => field.handleChange(e.target.checked)}
-												className="rounded border-gray-300 text-primary focus:ring-primary size-4"
+												onCheckedChange={(checked) =>
+													field.handleChange(Boolean(checked))
+												}
 											/>
 											<Label
 												htmlFor="isPrimary"

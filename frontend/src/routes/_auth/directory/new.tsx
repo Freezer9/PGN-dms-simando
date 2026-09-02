@@ -15,7 +15,6 @@ import { toast } from "sonner";
 import { $api } from "@/api/client";
 import type { CreateCompanyRequest } from "@/api/types";
 import { FormField } from "@/components/form/form-field";
-import { Map, type MapCoordinates } from "@/components/map";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,6 +25,13 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import {
+	Map,
+	MapControls,
+	type MapCoordinates,
+	MapMarker,
+	MarkerContent,
+} from "@/components/ui/map";
 import {
 	Select,
 	SelectContent,
@@ -680,13 +686,26 @@ function CreateCompanyPage() {
 						<div className="h-[360px] w-full rounded-md overflow-hidden border">
 							<Map
 								center={[coordinates.longitude, coordinates.latitude]}
-								selectedCoordinates={coordinates}
-								onCoordinateSelect={(coords) => {
-									form.setFieldValue("latitude", coords.latitude);
-									form.setFieldValue("longitude", coords.longitude);
-								}}
+								zoom={12}
 								className="h-full w-full"
-							/>
+							>
+								<MapControls />
+								<MapMarker
+									longitude={coordinates.longitude}
+									latitude={coordinates.latitude}
+									draggable={true}
+									onDragEnd={(coords) => {
+										form.setFieldValue("latitude", coords.lat);
+										form.setFieldValue("longitude", coords.lng);
+									}}
+								>
+									<MarkerContent>
+										<div className="size-7 rounded-full bg-primary flex items-center justify-center text-primary-foreground shadow-md border-2 border-white ring-2 ring-primary/40 cursor-grab active:cursor-grabbing">
+											<MapPin className="size-4" />
+										</div>
+									</MarkerContent>
+								</MapMarker>
+							</Map>
 						</div>
 						<div className="flex items-center justify-between text-xs text-muted-foreground">
 							<div className="flex items-center gap-1.5">

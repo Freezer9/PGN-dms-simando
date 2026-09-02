@@ -13,12 +13,19 @@ import {
 import * as React from "react";
 import { $api } from "@/api/client";
 import type { CompanyMapPinDto } from "@/api/types";
-import { Map, type MapPin } from "@/components/map";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+	Map,
+	MapControls,
+	MapMarker,
+	MarkerContent,
+	MarkerPopup,
+} from "@/components/ui/map";
 import {
 	Select,
 	SelectContent,
@@ -119,20 +126,6 @@ function GeospatialMapPage() {
 		selectedKawasan,
 	]);
 
-	// Convert to Map Component Pin Format
-	const mapPins: MapPin[] = React.useMemo(() => {
-		return filteredPins.map((item) => ({
-			id: item.id,
-			coordinates: {
-				latitude: Number(item.latitude),
-				longitude: Number(item.longitude),
-			},
-			title: item.namaPerusahaan,
-			description: `${item.nomor} — ${item.industryTypeName || "Industri"} (${getStageInfo(item.currentStage).shortName})`,
-			color: STAGE_PIN_COLORS[Number(item.currentStage)] || "#3b82f6",
-		}));
-	}, [filteredPins]);
-
 	const toggleStage = (stage: number) => {
 		setSelectedStages((prev) =>
 			prev.includes(stage) ? prev.filter((s) => s !== stage) : [...prev, stage],
@@ -146,6 +139,19 @@ function GeospatialMapPage() {
 		setSelectedPosisi("ALL");
 		setSelectedKawasan("ALL");
 	};
+
+	const mapCenter: [number, number] = React.useMemo(() => {
+		if (filteredPins.length > 0) {
+			const first = filteredPins[0];
+			if (
+				typeof first.longitude === "number" &&
+				typeof first.latitude === "number"
+			) {
+				return [first.longitude, first.latitude];
+			}
+		}
+		return [106.8456, -6.2088]; // Jakarta center default
+	}, [filteredPins]);
 
 	return (
 		<div className="relative h-[calc(100vh-8rem)] w-full flex flex-col overflow-hidden rounded-lg border shadow-xs">
@@ -192,11 +198,63 @@ function GeospatialMapPage() {
 				) : null}
 
 				<Map
-					pins={mapPins}
-					interactive={true}
+					center={mapCenter}
 					zoom={11}
 					className="h-full w-full rounded-none border-0"
-				/>
+				>
+					<MapControls />
+					{filteredPins.map((item) => {
+						const stageNum = Number(item.currentStage);
+						const stageColor = STAGE_PIN_COLORS[stageNum] || "#3b82f6";
+						const stage = getStageInfo(stageNum);
+
+						return (
+							<MapMarker
+								key={item.id}
+								longitude={Number(item.longitude)}
+								latitude={Number(item.latitude)}
+								onClick={() => setSelectedPin(item)}
+							>
+								<MarkerContent>
+									<div
+										className="size-5 rounded-full border-2 border-white shadow-md flex items-center justify-center cursor-pointer transition-transform hover:scale-125"
+										style={{ backgroundColor: stageColor }}
+										title={`${item.namaPerusahaan} (${stage.shortName})`}
+									>
+										<div className="size-1.5 rounded-full bg-white" />
+									</div>
+								</MarkerContent>
+								<MarkerPopup>
+									<div className="p-2 space-y-1.5 text-xs min-w-[200px]">
+										<div className="font-semibold text-foreground">
+											{item.namaPerusahaan}
+										</div>
+										<div className="text-[11px] text-muted-foreground font-mono">
+											{item.nomor}
+										</div>
+										<div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+											<span
+												className="size-2 rounded-full shrink-0"
+												style={{ backgroundColor: stageColor }}
+											/>
+											<span>{stage.name}</span>
+										</div>
+										<div className="pt-1 border-t">
+											<Link
+												to="/directory/$companyId"
+												params={{ companyId: item.id }}
+												className="text-primary hover:underline font-medium text-[11px] flex items-center gap-1"
+											>
+												<span>Buka Detail Perusahaan</span>
+												<ChevronRight className="size-3" />
+											</Link>
+										</div>
+									</div>
+								</MarkerPopup>
+							</MapMarker>
+						);
+					})}
+				</Map>
 
 				{/* Floating Filter Overlay Panel */}
 				{isFilterOpen && (
@@ -277,20 +335,21 @@ function GeospatialMapPage() {
 								<Label className="text-[11px] font-semibold text-muted-foreground block">
 									Filter Berdasarkan Tahapan
 								</Label>
-								<div className="space-y-1">
+								<div className="space-y-1.5">
 									{[1, 2, 3, 4, 5, 6, 7, 8].map((s) => {
 										const info = STAGE_CONFIG[s];
 										const isChecked = selectedStages.includes(s);
 										return (
 											<label
 												key={s}
+												htmlFor={`stage-filter-${s}`}
 												className="flex items-center gap-2 py-0.5 cursor-pointer hover:bg-muted/40 px-1 rounded transition-colors"
 											>
-												<input
-													type="checkbox"
+												<Checkbox
+													id={`stage-filter-${s}`}
 													checked={isChecked}
-													onChange={() => toggleStage(s)}
-													className="rounded border-gray-300 size-3.5 text-primary focus:ring-primary"
+													onCheckedChange={() => toggleStage(s)}
+													className="size-3.5"
 												/>
 												<span
 													className="size-2.5 rounded-full shrink-0"
@@ -398,10 +457,10 @@ function GeospatialMapPage() {
 					<Card className="absolute top-4 right-4 w-88 max-h-[calc(100%-2rem)] overflow-y-auto z-20 shadow-xl border-border/80 bg-background/95 backdrop-blur-xs">
 						<CardHeader className="p-4 pb-2 flex flex-row items-center justify-between">
 							<div>
-								<Badge variant="outline" className="font-mono text-[10px]">
+								<Badge variant="outline" className="font-mono text-xs mb-1">
 									{selectedPin.nomor}
 								</Badge>
-								<CardTitle className="text-sm font-bold mt-1 text-foreground">
+								<CardTitle className="text-sm font-bold text-foreground">
 									{selectedPin.namaPerusahaan}
 								</CardTitle>
 							</div>
@@ -414,72 +473,87 @@ function GeospatialMapPage() {
 								<X className="size-4" />
 							</Button>
 						</CardHeader>
-						<CardContent className="p-4 space-y-3 text-xs">
-							<div className="flex flex-wrap items-center gap-1.5">
+						<CardContent className="p-4 pt-1 space-y-3 text-xs">
+							<div className="flex items-center gap-2">
 								<Badge
 									variant="outline"
-									className={`text-[10px] ${getStageInfo(selectedPin.currentStage).badgeClass}`}
-								>
-									{getStageInfo(selectedPin.currentStage).name}
-								</Badge>
-								<Badge
-									variant="outline"
-									className={`text-[10px] ${getStatusLabel(selectedPin.status).badgeClass}`}
+									className={`text-[10px] font-normal border ${getStatusLabel(selectedPin.status).badgeClass}`}
 								>
 									{getStatusLabel(selectedPin.status).label}
 								</Badge>
+								<Badge variant="secondary" className="text-[10px]">
+									Tahap {selectedPin.currentStage}:{" "}
+									{getStageInfo(selectedPin.currentStage).shortName}
+								</Badge>
 							</div>
 
-							<div className="space-y-1.5 pt-2 border-t">
-								<div className="flex justify-between">
-									<span className="text-muted-foreground">
-										Sektor Industri:
-									</span>
-									<span className="font-medium text-foreground">
+							<div className="space-y-1 border-t pt-2">
+								<div className="text-muted-foreground text-[11px]">
+									Lokasi Administratif
+								</div>
+								<div className="font-medium text-foreground">
+									{selectedPin.locationLabel || "-"}
+								</div>
+							</div>
+
+							<div className="grid grid-cols-2 gap-2 border-t pt-2">
+								<div>
+									<div className="text-muted-foreground text-[11px]">
+										Sektor Industri
+									</div>
+									<div className="font-medium">
 										{selectedPin.industryTypeName || "-"}
-									</span>
+									</div>
 								</div>
-								<div className="flex justify-between">
-									<span className="text-muted-foreground">Wilayah BPS:</span>
-									<span className="font-medium text-foreground">
-										{selectedPin.locationLabel || "-"}
-									</span>
-								</div>
-								<div className="flex justify-between">
-									<span className="text-muted-foreground">Jalur Pipa:</span>
-									<span className="font-medium text-foreground">
-										{getPosisiPelangganLabel(selectedPin.posisiPelanggan)}
-									</span>
-								</div>
-								<div className="flex justify-between">
-									<span className="text-muted-foreground">Kawasan:</span>
-									<span className="font-medium text-foreground">
-										{getKawasanLabel(selectedPin.kawasan)}
-									</span>
-								</div>
-								<div className="flex justify-between">
-									<span className="text-muted-foreground">Sales PIC:</span>
-									<span className="font-medium text-foreground">
+								<div>
+									<div className="text-muted-foreground text-[11px]">
+										PIC Sales
+									</div>
+									<div className="font-medium">
 										{selectedPin.salesUserName || "Belum Ditugaskan"}
-									</span>
-								</div>
-								<div className="flex justify-between font-mono text-[11px]">
-									<span className="text-muted-foreground">Koordinat:</span>
-									<span>
-										{Number(selectedPin.latitude).toFixed(5)},{" "}
-										{Number(selectedPin.longitude).toFixed(5)}
-									</span>
+									</div>
 								</div>
 							</div>
 
-							<div className="pt-3">
-								<Button asChild size="sm" className="w-full text-xs h-9">
+							<div className="grid grid-cols-2 gap-2 border-t pt-2">
+								<div>
+									<div className="text-muted-foreground text-[11px]">
+										Posisi Jalur
+									</div>
+									<div className="font-medium">
+										{getPosisiPelangganLabel(selectedPin.posisiPelanggan)}
+									</div>
+								</div>
+								<div>
+									<div className="text-muted-foreground text-[11px]">
+										Kawasan
+									</div>
+									<div className="font-medium">
+										{getKawasanLabel(selectedPin.kawasan)}
+									</div>
+								</div>
+							</div>
+
+							<div className="space-y-1 border-t pt-2">
+								<div className="text-muted-foreground text-[11px]">
+									Koordinat Presisi
+								</div>
+								<div className="font-mono text-[11px]">
+									Lat: {Number(selectedPin.latitude).toFixed(6)}, Lng:{" "}
+									{Number(selectedPin.longitude).toFixed(6)}
+								</div>
+							</div>
+
+							<div className="pt-2 border-t">
+								<Button
+									asChild
+									className="w-full h-8 text-xs flex items-center gap-1.5"
+								>
 									<Link
 										to="/directory/$companyId"
 										params={{ companyId: selectedPin.id }}
-										className="flex items-center justify-center gap-1.5"
 									>
-										<span>Buka Company Record Hub</span>
+										<span>Buka Berkas Lengkap</span>
 										<ExternalLink className="size-3.5" />
 									</Link>
 								</Button>

@@ -1,7 +1,8 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { Header } from "@/components/layout/header";
-import { Sidebar } from "@/components/layout/sidebar";
+import { AppSidebar } from "@/components/layout/sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { protectedRoute } from "@/lib/auth-middleware";
 
 export const Route = createFileRoute("/_auth")({
@@ -11,15 +12,15 @@ export const Route = createFileRoute("/_auth")({
 
 function AuthLayout() {
 	return (
-		<div className="flex min-h-screen flex-col bg-background text-foreground">
-			<Header />
-			<div className="flex flex-1 overflow-hidden">
-				<Sidebar />
+		<SidebarProvider>
+			<AppSidebar />
+			<SidebarInset className="flex flex-col min-h-screen bg-background text-foreground">
+				<Header />
 				<main className="flex-1 overflow-y-auto p-6 container max-w-7xl">
 					<Breadcrumbs />
 					<Outlet />
 				</main>
-			</div>
-		</div>
+			</SidebarInset>
+		</SidebarProvider>
 	);
 }

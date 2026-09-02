@@ -144,9 +144,7 @@ describe("Admin and Master Data Frontend Components", () => {
 				/>,
 			);
 
-			expect(
-				screen.getByText("Belum ada data referensi terdaftar."),
-			).toBeInTheDocument();
+			expect(screen.getByText("Belum Ada Data Master")).toBeInTheDocument();
 		});
 	});
 

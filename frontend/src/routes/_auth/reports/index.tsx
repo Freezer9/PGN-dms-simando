@@ -19,6 +19,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/_auth/reports/")({
@@ -193,14 +194,16 @@ function ReportsHubPage() {
 							secara default.
 						</p>
 						{hasPiiCapability && (
-							<label className="flex items-center gap-2 mt-2 cursor-pointer text-xs font-medium text-emerald-950 dark:text-emerald-100">
-								<input
-									type="checkbox"
+							<label
+								htmlFor="include-pii"
+								className="flex items-center gap-2 mt-2 cursor-pointer text-xs font-medium text-emerald-950 dark:text-emerald-100 select-none"
+							>
+								<Checkbox
+									id="include-pii"
 									checked={includePii}
-									onChange={(e) => setIncludePii(e.target.checked)}
-									className="rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500 size-3.5"
+									onCheckedChange={(checked) => setIncludePii(Boolean(checked))}
 								/>
-								Sertakan Data Kontak Lengkap (Akses PII Berwenang)
+								<span>Sertakan Data Kontak Lengkap (Akses PII Berwenang)</span>
 							</label>
 						)}
 					</div>

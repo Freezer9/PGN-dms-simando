@@ -7,8 +7,6 @@ import {
 } from "@tanstack/react-table";
 import {
 	Building2,
-	ChevronLeft,
-	ChevronRight,
 	ExternalLink,
 	Filter,
 	MapPin,
@@ -45,6 +43,9 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { TableEmptyState } from "@/components/ui/table-empty-state";
+import { TablePagination } from "@/components/ui/table-pagination";
+import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { useAuth } from "@/lib/auth";
 import {
 	getKawasanLabel,
@@ -84,27 +85,28 @@ function CompanyDirectoryPage() {
 	);
 
 	// Fetch paged companies list
-	const { data, isLoading, isPlaceholderData } = $api.useQuery(
-		"get",
-		"/api/companies",
-		{
-			params: {
-				query: {
-					page,
-					pageSize,
-					stage: search.stage,
-					industryTypeId: search.industryTypeId,
-					searchTerm: search.searchTerm,
-					posisiPelanggan: search.posisiPelanggan || undefined,
-					kawasan: search.kawasan || undefined,
-				},
+	const { data, isLoading } = $api.useQuery("get", "/api/companies", {
+		params: {
+			query: {
+				page,
+				pageSize,
+				stage: search.stage,
+				industryTypeId: search.industryTypeId,
+				searchTerm: search.searchTerm,
+				posisiPelanggan: search.posisiPelanggan || undefined,
+				kawasan: search.kawasan || undefined,
 			},
 		},
-	);
+	});
 
 	const items = React.useMemo(() => data?.items || [], [data?.items]);
 	const totalCount = Number(data?.totalCount || 0);
 	const totalPages = Math.ceil(totalCount / pageSize) || 1;
+
+	const handleResetFilters = React.useCallback(() => {
+		setSearchInput("");
+		navigate({ search: {} });
+	}, [navigate]);
 
 	// Handle filter changes
 	const updateFilters = React.useCallback(
@@ -464,14 +466,10 @@ function CompanyDirectoryPage() {
 						</TableHeader>
 						<TableBody>
 							{isLoading ? (
-								<TableRow>
-									<TableCell
-										colSpan={columns.length}
-										className="h-32 text-center text-xs text-muted-foreground"
-									>
-										Memuat data direktori industri...
-									</TableCell>
-								</TableRow>
+								<TableSkeleton
+									columns={columns.length}
+									rows={pageSize > 10 ? 10 : pageSize}
+								/>
 							) : table.getRowModel().rows?.length ? (
 								table.getRowModel().rows.map((row) => (
 									<TableRow
@@ -490,65 +488,32 @@ function CompanyDirectoryPage() {
 									</TableRow>
 								))
 							) : (
-								<TableRow>
-									<TableCell
-										colSpan={columns.length}
-										className="h-32 text-center text-xs text-muted-foreground"
-									>
-										Tidak ada data perusahaan yang sesuai dengan kriteria filter
-										Anda.
-									</TableCell>
-								</TableRow>
+								<TableEmptyState
+									colSpan={columns.length}
+									icon="search"
+									title="Tidak Ada Data Perusahaan"
+									description="Tidak ada data perusahaan yang sesuai dengan kriteria filter Anda."
+									onReset={handleResetFilters}
+									resetLabel="Reset Filter"
+								/>
 							)}
 						</TableBody>
 					</Table>
 
-					{/* Pagination Controls */}
-					<div className="flex flex-col sm:flex-row items-center justify-between p-4 border-t gap-3 text-xs">
-						<div className="flex items-center gap-2 text-muted-foreground">
-							<span>Baris per halaman:</span>
-							<Select
-								value={pageSize.toString()}
-								onValueChange={(val) =>
-									updateFilters({ pageSize: Number.parseInt(val, 10), page: 1 })
-								}
-							>
-								<SelectTrigger className="h-8 w-18 text-xs">
-									<SelectValue placeholder={pageSize.toString()} />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="10">10</SelectItem>
-									<SelectItem value="25">25</SelectItem>
-									<SelectItem value="50">50</SelectItem>
-									<SelectItem value="100">100</SelectItem>
-								</SelectContent>
-							</Select>
-						</div>
-
-						<div className="flex items-center gap-1.5">
-							<span className="text-muted-foreground mr-2">
-								Halaman {page} dari {totalPages}
-							</span>
-							<Button
-								variant="outline"
-								size="sm"
-								className="h-8 w-8 p-0"
-								disabled={page <= 1 || isLoading}
-								onClick={() => updateFilters({ page: page - 1 })}
-							>
-								<ChevronLeft className="size-4" />
-							</Button>
-							<Button
-								variant="outline"
-								size="sm"
-								className="h-8 w-8 p-0"
-								disabled={page >= totalPages || isPlaceholderData || isLoading}
-								onClick={() => updateFilters({ page: page + 1 })}
-							>
-								<ChevronRight className="size-4" />
-							</Button>
-						</div>
-					</div>
+					{/* Standardized Table Pagination */}
+					<TablePagination
+						pageIndex={page - 1}
+						page={page}
+						pageSize={pageSize}
+						totalCount={totalCount}
+						totalPages={totalPages}
+						onPageChange={(newPage) => updateFilters({ page: newPage })}
+						onPageSizeChange={(newPageSize) =>
+							updateFilters({ pageSize: newPageSize, page: 1 })
+						}
+						pageSizeOptions={[10, 25, 50, 100]}
+						className="border-t px-4"
+					/>
 				</CardContent>
 			</Card>
 		</div>
