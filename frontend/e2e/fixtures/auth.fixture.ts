@@ -50,32 +50,25 @@ export const USER_CREDENTIALS: Record<string, UserCredentials> = {
  * Navigate to an app path and ensure the React root element is rendered
  */
 export async function gotoApp(page: Page, path: string) {
-	await page.goto(path);
-	await page.waitForSelector("#app > *", { timeout: 15000 });
-	if (
-		path !== "/sign-in" &&
-		!path.startsWith("/sign-in") &&
-		path !== "/access-denied"
-	) {
-		try {
-			await page.waitForSelector("aside nav a", { timeout: 4000 });
-		} catch {
-			// Best effort wait for navigation menu to render
-		}
-	}
+	await page.goto(path, { waitUntil: "domcontentloaded" });
+	await page.waitForSelector("#app > *", { state: "attached", timeout: 30000 });
 }
 
 /**
  * Fill input or textarea using React property setters and synthetic events
  */
 export async function fillInput(page: Page, selector: string, value: string) {
+	await page.waitForSelector(selector, { state: "attached", timeout: 15000 });
 	await page.evaluate(
 		({ sel, val }) => {
 			const el = document.querySelector(sel) as
-				| HTMLInputElement
-				| HTMLTextAreaElement
+				| (HTMLInputElement & { _valueTracker?: { setValue: (v: string) => void } })
+				| (HTMLTextAreaElement & { _valueTracker?: { setValue: (v: string) => void } })
 				| null;
 			if (!el) throw new Error(`Element ${sel} not found to fill`);
+			if (el._valueTracker) {
+				el._valueTracker.setValue(val + "_diff");
+			}
 			const proto =
 				el instanceof HTMLTextAreaElement
 					? HTMLTextAreaElement.prototype
@@ -91,6 +84,7 @@ export async function fillInput(page: Page, selector: string, value: string) {
 			}
 			el.dispatchEvent(new Event("input", { bubbles: true }));
 			el.dispatchEvent(new Event("change", { bubbles: true }));
+			el.dispatchEvent(new Event("blur", { bubbles: true }));
 		},
 		{ sel: selector, val: value },
 	);
@@ -133,6 +127,9 @@ export async function clickElement(page: Page, selectorOrText: string) {
 		if (typeof el.click === "function") {
 			el.click();
 		}
+		if (el instanceof HTMLButtonElement && el.type === "submit" && el.form) {
+			el.form.requestSubmit();
+		}
 	}, selectorOrText);
 }
 
@@ -140,6 +137,7 @@ export async function clickElement(page: Page, selectorOrText: string) {
  * Click a tab element by label (handles Radix UI mousedown activation)
  */
 export async function clickTab(page: Page, tabName: string) {
+	await page.waitForSelector('[role="tab"]', { state: "attached", timeout: 30000 });
 	await page.evaluate((name) => {
 		const tabs = Array.from(
 			document.querySelectorAll('[role="tab"]'),
@@ -148,6 +146,15 @@ export async function clickTab(page: Page, tabName: string) {
 			t.textContent?.toLowerCase().includes(name.toLowerCase()),
 		);
 		if (!target) throw new Error(`Tab matching "${name}" not found`);
+		target.focus();
+		target.dispatchEvent(
+			new PointerEvent("pointerdown", {
+				bubbles: true,
+				cancelable: true,
+				button: 0,
+				pointerId: 1,
+			}),
+		);
 		target.dispatchEvent(
 			new MouseEvent("mousedown", { bubbles: true, cancelable: true, button: 0 }),
 		);
@@ -160,6 +167,13 @@ export async function clickTab(page: Page, tabName: string) {
 		if (typeof target.click === "function") {
 			target.click();
 		}
+		target.dispatchEvent(
+			new KeyboardEvent("keydown", {
+				bubbles: true,
+				cancelable: true,
+				key: "Enter",
+			}),
+		);
 	}, tabName);
 }
 
@@ -171,21 +185,13 @@ export async function authenticateSession(
 	role: keyof typeof USER_CREDENTIALS,
 ) {
 	const creds = USER_CREDENTIALS[role];
-	await page.goto("/sign-in");
-	await page.waitForSelector("#app > *");
-	await page.evaluate(
-		async ({ u, p }) => {
-			const res = await fetch("/api/auth/login", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ username: u, password: p }),
-			});
-			if (!res.ok) {
-				throw new Error(`Login failed for ${u}: status ${res.status}`);
-			}
-		},
-		{ u: creds.username, p: creds.password },
-	);
+	await page.context().clearCookies();
+	const res = await page.request.post("/api/auth/login", {
+		data: { username: creds.username, password: creds.password },
+	});
+	if (!res.ok()) {
+		throw new Error(`Login failed for ${creds.username}: status ${res.status()}`);
+	}
 }
 
 /**
@@ -206,7 +212,7 @@ export async function loginViaUi(
 		{ timeout: 15000 },
 	);
 	try {
-		await page.waitForSelector("aside nav a", { timeout: 5000 });
+		await page.waitForSelector('[data-sidebar="sidebar"] a', { timeout: 5000 });
 		await page.waitForSelector("text=Memuat data", {
 			state: "detached",
 			timeout: 5000,
@@ -230,75 +236,72 @@ export async function createTestCompany(
 	}>,
 	reauthRole?: keyof typeof USER_CREDENTIALS,
 ) {
-	const result = await page.evaluate(async (custom) => {
-		// Log in as demo.salesarea to ensure company creation permission
-		await fetch("/api/auth/login", {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({
-				username: "demo.salesarea",
-				password: "Correct-Horse-Battery-Staple-1",
-			}),
-		});
+	// Log in as demo.salesarea to ensure company creation permission
+	const loginRes = await page.request.post("/api/auth/login", {
+		data: {
+			username: "demo.salesarea",
+			password: "Correct-Horse-Battery-Staple-1",
+		},
+	});
+	if (!loginRes.ok()) {
+		throw new Error(`Login failed for demo.salesarea: ${loginRes.status()}`);
+	}
 
-		const indRes = await fetch("/api/master/industry-types");
-		const industries = await indRes.json();
-		const areaRes = await fetch("/api/master/areas");
-		const areas = await areaRes.json();
-		const provRes = await fetch("/api/geography/provinces");
-		const provinces = await provRes.json();
-		const regRes = await fetch(
-			`/api/geography/regencies?provinceId=${provinces[0].id}`,
-		);
-		const regencies = await regRes.json();
-		const distRes = await fetch(
-			`/api/geography/districts?regencyId=${regencies[0].id}`,
-		);
-		const districts = await distRes.json();
-		const vilRes = await fetch(
-			`/api/geography/villages?districtId=${districts[0].id}`,
-		);
-		const villages = await vilRes.json();
+	const indRes = await page.request.get("/api/master/industry-types");
+	const industries = await indRes.json();
+	const areaRes = await page.request.get("/api/master/areas");
+	const areas = await areaRes.json();
+	const demoArea = areas.find((a: any) => a.code === "DEMO") || areas[0];
+	const provRes = await page.request.get("/api/geography/provinces");
+	const provinces = await provRes.json();
+	const regRes = await page.request.get(
+		`/api/geography/regencies?provinceId=${provinces[0].id}`,
+	);
+	const regencies = await regRes.json();
+	const distRes = await page.request.get(
+		`/api/geography/districts?regencyId=${regencies[0].id}`,
+	);
+	const districts = await distRes.json();
+	const vilRes = await page.request.get(
+		`/api/geography/villages?districtId=${districts[0].id}`,
+	);
+	const villages = await vilRes.json();
 
-		const payload = {
-			namaPerusahaan:
-				custom?.namaPerusahaan ||
-				`PT Test E2E ${Date.now().toString().slice(-6)}`,
-			industryTypeId: custom?.industryTypeId || industries[0].id,
-			areaId: custom?.areaId || areas[0].id,
-			villageId: custom?.villageId || villages[0].id,
-			alamat: custom?.alamat || "Jl. Industri Raya No. 123, Blok B-4",
-			latitude: -6.2088,
-			longitude: 106.8456,
-			npwp: "01.234.567.8-901.000",
-			email: "info@test-company.co.id",
-			telp: "021-5551234",
-			website: "https://test-company.co.id",
-			kodePos: "17530",
-		};
+	const payload = {
+		namaPerusahaan:
+			overrides?.namaPerusahaan ||
+			`PT Test E2E ${Date.now().toString().slice(-6)}`,
+		industryTypeId: overrides?.industryTypeId || industries[0].id,
+		areaId: overrides?.areaId || demoArea.id,
+		villageId: overrides?.villageId || villages[0].id,
+		alamat: overrides?.alamat || "Jl. Industri Raya No. 123, Blok B-4",
+		latitude: -6.2088,
+		longitude: 106.8456,
+		npwp: "01.234.567.8-901.000",
+		email: "info@test-company.co.id",
+		telp: "021-5551234",
+		website: "https://test-company.co.id",
+		kodePos: "17530",
+	};
 
-		const res = await fetch("/api/companies", {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify(payload),
-		});
-		if (!res.ok) {
-			const err = await res.text();
-			throw new Error(`Failed to create test company: ${err}`);
-		}
-		const data = await res.json();
-		return {
-			companyId: data.companyId as string,
-			nomor: data.nomor as string,
-			namaPerusahaan: payload.namaPerusahaan,
-		};
-	}, overrides);
+	const res = await page.request.post("/api/companies", {
+		data: payload,
+	});
+	if (!res.ok()) {
+		const err = await res.text();
+		throw new Error(`Failed to create test company: ${err}`);
+	}
+	const data = await res.json();
 
 	if (reauthRole && reauthRole !== "SalesArea") {
 		await authenticateSession(page, reauthRole);
 	}
 
-	return result;
+	return {
+		companyId: data.companyId as string,
+		nomor: data.nomor as string,
+		namaPerusahaan: payload.namaPerusahaan,
+	};
 }
 
 type Fixtures = {
@@ -317,7 +320,7 @@ const OBSCURA_WS =
 export const test = base.extend<Fixtures>({
 	browser: async ({ playwright }, use) => {
 		const browser = await playwright.chromium.connectOverCDP({
-			endpointURL: OBSCURA_WS,
+			endpointURL: `${OBSCURA_WS}/devtools/browser`,
 		});
 		await use(browser);
 		await browser.close();

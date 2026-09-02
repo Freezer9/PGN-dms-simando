@@ -6,7 +6,7 @@ const router = getRouter();
 
 const rootElement = document.getElementById("app");
 
-if (rootElement && !rootElement.innerHTML) {
+if (rootElement) {
 	const root = ReactDOM.createRoot(rootElement);
 	root.render(<RouterProvider router={router} />);
 }

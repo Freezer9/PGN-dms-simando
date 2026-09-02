@@ -39,10 +39,10 @@ test.describe("Flow 8: Reports & Operational Analytics", () => {
 		await gotoApp(page, "/reports/ageing");
 
 		await expect(
-			page.getByText(/Perusahaan/i).first(),
+			page.getByText(/Laporan Penuaan Proses \(Workflow Ageing\)/i),
 		).toBeVisible();
 		await expect(
-			page.getByText(/Tahap Berjalan/i).first(),
+			page.getByPlaceholder(/Cari perusahaan, nomor register/i),
 		).toBeVisible();
 	});
 

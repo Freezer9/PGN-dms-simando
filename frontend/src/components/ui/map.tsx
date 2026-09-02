@@ -4,7 +4,15 @@ import type { MarkerOptions, PopupOptions } from "maplibre-gl";
 import * as MapLibreGL from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type * as GeoJSON from "geojson";
-import { Loader2, Locate, Maximize, Minus, Plus, X } from "lucide-react";
+import {
+	Loader2,
+	Locate,
+	MapPin,
+	Maximize,
+	Minus,
+	Plus,
+	X,
+} from "lucide-react";
 import {
 	createContext,
 	forwardRef,
@@ -235,6 +243,21 @@ function getViewport(map: MapLibreGL.Map): MapViewport {
 	};
 }
 
+function isWebGLSupported(): boolean {
+	if (typeof window === "undefined") return false;
+	try {
+		const canvas = document.createElement("canvas");
+		return !!(
+			window.WebGL2RenderingContext &&
+			(canvas.getContext("webgl2") ||
+				canvas.getContext("webgl") ||
+				canvas.getContext("experimental-webgl"))
+		);
+	} catch {
+		return false;
+	}
+}
+
 const Map = forwardRef<MapRef, MapProps>(function Map(
 	{
 		children,
@@ -259,6 +282,7 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
 	const styleSwapInFlightRef = useRef(false);
 	const internalUpdateRef = useRef(false);
 	const resolvedTheme = useResolvedTheme(themeProp);
+	const isWebGLAvailable = useMemo(() => isWebGLSupported(), []);
 
 	const isControlled = viewport !== undefined && onViewportChange !== undefined;
 
@@ -287,51 +311,70 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
 
 	// Initialize the map
 	useEffect(() => {
-		if (!containerRef.current) return;
+		if (!isWebGLAvailable || !containerRef.current) return;
 
-		const initialStyle =
-			resolvedTheme === "dark" ? mapStyles.dark : mapStyles.light;
-		currentStyleRef.current = initialStyle;
+		let map: MapLibreGL.Map | null = null;
+		let isMounted = true;
 
-		const map = new MapLibreGL.Map({
-			container: containerRef.current,
-			style: initialStyle,
-			renderWorldCopies: false,
-			attributionControl: {
-				compact: true,
-			},
-			...props,
-			...viewport,
-		});
+		try {
+			const initialStyle =
+				resolvedTheme === "dark" ? mapStyles.dark : mapStyles.light;
+			currentStyleRef.current = initialStyle;
 
-		const styleLoadHandler = () => {
-			styleSwapInFlightRef.current = false;
-			setIsStyleLoaded(true);
-		};
-		const loadHandler = () => setIsLoaded(true);
+			map = new MapLibreGL.Map({
+				container: containerRef.current,
+				style: initialStyle,
+				renderWorldCopies: false,
+				attributionControl: {
+					compact: true,
+				},
+				...props,
+				...viewport,
+			});
 
-		// Viewport change handler - skip if triggered by internal update
-		const handleMove = () => {
-			if (internalUpdateRef.current) return;
-			onViewportChangeRef.current?.(getViewport(map));
-		};
+			const styleLoadHandler = () => {
+				if (!isMounted) return;
+				styleSwapInFlightRef.current = false;
+				setIsStyleLoaded(true);
+			};
+			const loadHandler = () => {
+				if (!isMounted) return;
+				setIsLoaded(true);
+			};
 
-		map.on("load", loadHandler);
-		map.on("style.load", styleLoadHandler);
-		map.on("move", handleMove);
-		setMapInstance(map);
+			// Viewport change handler - skip if triggered by internal update
+			const handleMove = () => {
+				if (!isMounted || internalUpdateRef.current || !map) return;
+				try {
+					onViewportChangeRef.current?.(getViewport(map));
+				} catch {}
+			};
 
-		return () => {
-			map.off("load", loadHandler);
-			map.off("style.load", styleLoadHandler);
-			map.off("move", handleMove);
-			map.remove();
-			setIsLoaded(false);
-			setIsStyleLoaded(false);
+			map.on("load", loadHandler);
+			map.on("style.load", styleLoadHandler);
+			map.on("move", handleMove);
+			setMapInstance(map);
+
+			return () => {
+				isMounted = false;
+				try {
+					map?.off("load", loadHandler);
+					map?.off("style.load", styleLoadHandler);
+					map?.off("move", handleMove);
+					map?.remove();
+				} catch {
+					// Safe unmount when WebGL context or painter is unavailable
+				}
+				setIsLoaded(false);
+				setIsStyleLoaded(false);
+				setMapInstance(null);
+			};
+		} catch (err) {
+			console.warn("MapLibre initialization skipped:", err);
 			setMapInstance(null);
-		};
+		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []);
+	}, [isWebGLAvailable]);
 
 	// Sync controlled viewport to map
 	useEffect(() => {
@@ -401,6 +444,28 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
 		}),
 		[mapInstance, isLoaded, isStyleLoaded, resolvedTheme],
 	);
+
+	if (!isWebGLAvailable) {
+		return (
+			<MapContext.Provider
+				value={{ map: null, isLoaded: false, resolvedTheme }}
+			>
+				<div
+					ref={containerRef}
+					className={cn(
+						"relative h-full w-full min-h-[160px] flex flex-col items-center justify-center bg-muted/20 text-muted-foreground border border-dashed rounded-md p-4 text-center select-none",
+						className,
+					)}
+				>
+					<div className="flex items-center gap-2 text-xs font-medium">
+						<MapPin className="size-4 text-primary shrink-0" />
+						<span>Peta Interaktif GIS (Simulasi / WebGL Mode)</span>
+					</div>
+					<div className="hidden">{children}</div>
+				</div>
+			</MapContext.Provider>
+		);
+	}
 
 	return (
 		<MapContext.Provider value={contextValue}>
@@ -530,10 +595,16 @@ function MapMarker({
 	useEffect(() => {
 		if (!map) return;
 
-		marker.addTo(map);
+		try {
+			marker.addTo(map);
+		} catch {
+			// Safe fallback when map coordinate projection is unavailable
+		}
 
 		return () => {
-			marker.remove();
+			try {
+				marker.remove();
+			} catch {}
 		};
 
 		// eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1059,16 +1130,19 @@ function MapPopup({
 
 		const onCloseProp = () => onCloseRef.current?.();
 
-		popup.on("close", onCloseProp);
-
-		popup.setDOMContent(container);
-		popup.addTo(map);
+		try {
+			popup.on("close", onCloseProp);
+			popup.setDOMContent(container);
+			popup.addTo(map);
+		} catch {}
 
 		return () => {
-			popup.off("close", onCloseProp);
-			if (popup.isOpen()) {
-				popup.remove();
-			}
+			try {
+				popup.off("close", onCloseProp);
+				if (popup.isOpen()) {
+					popup.remove();
+				}
+			} catch {}
 		};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [map]);

@@ -23,7 +23,7 @@ export async function guestOnly({
 	let user: CurrentUserDto | null = null;
 	try {
 		user = await context.queryClient.ensureQueryData(
-			$api.queryOptions("get", "/api/auth/me"),
+			$api.queryOptions("get", "/api/auth/me", undefined, { retry: false }),
 		);
 	} catch (error) {
 		if (isRedirect(error)) {
@@ -52,7 +52,7 @@ export async function protectedRoute({
 	let user: CurrentUserDto | null = null;
 	try {
 		user = await context.queryClient.ensureQueryData(
-			$api.queryOptions("get", "/api/auth/me"),
+			$api.queryOptions("get", "/api/auth/me", undefined, { retry: false }),
 		);
 	} catch (error) {
 		if (isRedirect(error)) {

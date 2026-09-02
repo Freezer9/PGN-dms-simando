@@ -19,6 +19,9 @@ export default defineConfig({
 		tanstackRouter({ target: "react", autoCodeSplitting: true }),
 		viteReact(),
 	],
+	build: {
+		modulePreload: false,
+	},
 	test: {
 		globals: true,
 		environment: "jsdom",
@@ -27,6 +30,34 @@ export default defineConfig({
 	},
 	server: {
 		port: 5173,
+		watch: {
+			ignored: [
+				"**/playwright-report/**",
+				"**/test-results/**",
+				"**/.devtool/**",
+			],
+		},
+		proxy: {
+			"/api": {
+				target: "http://localhost:5000",
+				changeOrigin: true,
+				secure: false,
+			},
+			"/openapi": {
+				target: "http://localhost:5000",
+				changeOrigin: true,
+				secure: false,
+			},
+			"/scalar": {
+				target: "http://localhost:5000",
+				changeOrigin: true,
+				secure: false,
+			},
+		},
+	},
+	preview: {
+		port: 3000,
+		host: "127.0.0.1",
 		proxy: {
 			"/api": {
 				target: "http://localhost:5000",

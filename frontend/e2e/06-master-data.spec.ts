@@ -1,4 +1,4 @@
-import { expect, gotoApp, test } from "./fixtures/auth.fixture";
+import { expect, fillInput, gotoApp, test } from "./fixtures/auth.fixture";
 
 test.describe("Flow 6: Master Data Management", () => {
 	test("6.1 should display Organisation (Regions & Areas)", async ({
@@ -22,6 +22,7 @@ test.describe("Flow 6: Master Data Management", () => {
 		await expect(
 			page.getByRole("heading", { name: /Daftar Negara/i }),
 		).toBeVisible();
+		await fillInput(page, 'input[placeholder="Cari data..."]', "Indonesia");
 		await expect(page.getByText("Indonesia")).toBeVisible();
 		await expect(page.getByText("ID")).toBeVisible();
 	});
@@ -46,6 +47,7 @@ test.describe("Flow 6: Master Data Management", () => {
 		).toBeVisible();
 
 		await gotoApp(page, "/master/units");
+		await page.waitForURL("**/master/units**");
 		await expect(
 			page.getByRole("heading", { name: /Satuan Pengukuran \(Units\)/i }),
 		).toBeVisible();

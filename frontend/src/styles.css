@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+#app {
+	min-height: 100vh;
+	display: flex;
+	flex-direction: column;
+}
+
 @layer base {
 	:root {
 		--background: oklch(1 0 0);

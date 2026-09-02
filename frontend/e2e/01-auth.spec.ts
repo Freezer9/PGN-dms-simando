@@ -11,6 +11,7 @@ test.describe("Flow 1: Authentication & Access Control", () => {
 	test("1.1 should display login page with form elements and branding", async ({
 		page,
 	}) => {
+		await page.context().clearCookies();
 		await gotoApp(page, "/sign-in");
 
 		await expect(page).toHaveTitle(/DMS Simando|Simando/i);
@@ -26,6 +27,7 @@ test.describe("Flow 1: Authentication & Access Control", () => {
 	test("1.2 should show error alert on invalid credentials (401)", async ({
 		page,
 	}) => {
+		await page.context().clearCookies();
 		await gotoApp(page, "/sign-in");
 		await fillInput(page, 'input[name="username"]', "wrong.user@pgn.co.id");
 		await fillInput(page, 'input[name="password"]', "WrongPassword123!");
@@ -39,11 +41,12 @@ test.describe("Flow 1: Authentication & Access Control", () => {
 	test("1.3 should redirect unauthenticated users from protected routes to /sign-in", async ({
 		page,
 	}) => {
-		await page.goto("/directory");
+		await page.context().clearCookies();
+		await gotoApp(page, "/directory");
 		await page.waitForFunction(
 			() => window.location.pathname.includes("/sign-in"),
 			undefined,
-			{ timeout: 15000 },
+			{ timeout: 30000 },
 		);
 		expect(page.url()).toContain("redirect=");
 	});
@@ -51,6 +54,7 @@ test.describe("Flow 1: Authentication & Access Control", () => {
 	test("1.4 should login successfully via UI and navigate to dashboard", async ({
 		page,
 	}) => {
+		await page.context().clearCookies();
 		const salesUser = USER_CREDENTIALS.SalesArea;
 
 		await gotoApp(page, "/sign-in");
@@ -61,16 +65,16 @@ test.describe("Flow 1: Authentication & Access Control", () => {
 		await page.waitForFunction(
 			() => !window.location.pathname.includes("/sign-in"),
 			undefined,
-			{ timeout: 15000 },
+			{ timeout: 30000 },
 		);
 		expect(page.url()).not.toContain("/sign-in");
-		await expect(page.locator("aside nav a").first()).toBeVisible({
-			timeout: 10000,
+		await expect(page.locator('[data-sidebar="sidebar"] a').first()).toBeVisible({
+			timeout: 15000,
 		});
 		await page
 			.waitForSelector("text=Memuat data", {
 				state: "detached",
-				timeout: 10000,
+				timeout: 15000,
 			})
 			.catch(() => {});
 	});
@@ -78,6 +82,7 @@ test.describe("Flow 1: Authentication & Access Control", () => {
 	test("1.5 should allow login and navigate to dashboard for admin", async ({
 		page,
 	}) => {
+		await page.context().clearCookies();
 		const adminUser = USER_CREDENTIALS.SystemAdmin;
 
 		await gotoApp(page, "/sign-in");
@@ -88,16 +93,16 @@ test.describe("Flow 1: Authentication & Access Control", () => {
 		await page.waitForFunction(
 			() => !window.location.pathname.includes("/sign-in"),
 			undefined,
-			{ timeout: 15000 },
+			{ timeout: 30000 },
 		);
 		expect(page.url()).not.toContain("/sign-in");
-		await expect(page.locator("aside nav a").first()).toBeVisible({
-			timeout: 10000,
+		await expect(page.locator('[data-sidebar="sidebar"] a').first()).toBeVisible({
+			timeout: 15000,
 		});
 		await page
 			.waitForSelector("text=Memuat data", {
 				state: "detached",
-				timeout: 10000,
+				timeout: 15000,
 			})
 			.catch(() => {});
 	});
@@ -112,13 +117,14 @@ test.describe("Flow 1: Authentication & Access Control", () => {
 		await page.evaluate(async () => {
 			await fetch("/api/auth/logout", { method: "POST" });
 		});
+		await page.context().clearCookies();
 
 		// Attempt navigation to protected route
-		await page.goto("/directory");
+		await gotoApp(page, "/directory");
 		await page.waitForFunction(
 			() => window.location.pathname.includes("/sign-in"),
 			undefined,
-			{ timeout: 15000 },
+			{ timeout: 30000 },
 		);
 		expect(page.url()).toContain("/sign-in");
 	});

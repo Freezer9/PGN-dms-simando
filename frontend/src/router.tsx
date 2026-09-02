@@ -26,6 +26,11 @@ export function getRouter(queryClient?: QueryClient) {
 		context: {
 			queryClient: qc,
 		},
+		defaultPendingComponent: () => (
+			<div className="flex h-screen w-screen items-center justify-center bg-background">
+				<div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+			</div>
+		),
 		defaultErrorComponent: ({ error }) => (
 			<div className="p-4 text-red-500 bg-red-50 m-4 rounded border border-red-300">
 				<h2 className="font-bold text-lg">Error: {error?.message}</h2>
