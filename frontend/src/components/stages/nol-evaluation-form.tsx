@@ -239,7 +239,7 @@ export function NolEvaluationForm({
 	const form = useForm({
 		defaultValues: getDefaultValues(initialData),
 		validators: {
-			onChange: nolEvaluationSchema,
+			onSubmit: nolEvaluationSchema,
 		},
 		onSubmit: async ({ value }) => {
 			const scenarios: SaveNolEvaluationScenarioRequest[] = (

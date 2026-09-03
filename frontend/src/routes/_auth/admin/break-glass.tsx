@@ -109,7 +109,7 @@ function BreakGlassPage() {
 			reason: "",
 		} as BreakGlassRequestFormValues,
 		validators: {
-			onChange: breakGlassRequestSchema,
+			onSubmit: breakGlassRequestSchema,
 		},
 		onSubmit: async ({ value }) => {
 			setError(null);

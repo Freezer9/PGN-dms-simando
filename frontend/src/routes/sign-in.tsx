@@ -74,7 +74,7 @@ function SignInPage() {
 			password: "",
 		},
 		validators: {
-			onChange: loginSchema,
+			onSubmit: loginSchema,
 		},
 		onSubmit: async ({ value }) => {
 			setErrorMessage(null);

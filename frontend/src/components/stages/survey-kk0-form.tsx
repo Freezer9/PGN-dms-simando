@@ -212,7 +212,7 @@ export function SurveyKk0Form({
 	const form = useForm({
 		defaultValues: getDefaultValues(initialData),
 		validators: {
-			onChange: surveyKk0Schema,
+			onSubmit: surveyKk0Schema,
 		},
 		onSubmit: async ({ value }) => {
 			const request: SaveSurveyRequest = {

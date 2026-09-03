@@ -122,7 +122,7 @@ export function NolIssuanceForm({
 	const form = useForm({
 		defaultValues: getDefaultValues(initialData),
 		validators: {
-			onChange: nolIssuanceSchema,
+			onSubmit: nolIssuanceSchema,
 		},
 		onSubmit: async ({ value }) => {
 			const request: SaveNolIssuanceRequest = {

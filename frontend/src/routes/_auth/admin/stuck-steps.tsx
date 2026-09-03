@@ -80,7 +80,7 @@ function StuckStepsPage() {
 			targetUserId: "",
 		} as ReassignStuckStepFormValues,
 		validators: {
-			onChange: reassignStuckStepSchema,
+			onSubmit: reassignStuckStepSchema,
 		},
 		onSubmit: async ({ value }) => {
 			if (!selectedStep) return;

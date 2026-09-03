@@ -175,7 +175,7 @@ export function NolRequestForm({
 	const form = useForm({
 		defaultValues: getDefaultValues(initialData),
 		validators: {
-			onChange: nolRequestSchema,
+			onSubmit: nolRequestSchema,
 		},
 		onSubmit: async ({ value }) => {
 			const periods: SaveNolRequestPeriodRequest[] = (value.periods || []).map(

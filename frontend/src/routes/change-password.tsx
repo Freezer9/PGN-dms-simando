@@ -80,7 +80,7 @@ function ChangePasswordPage() {
 			confirmPassword: "",
 		},
 		validators: {
-			onChange: changePasswordSchema,
+			onSubmit: changePasswordSchema,
 		},
 		onSubmit: async ({ value }) => {
 			setErrorMessage(null);

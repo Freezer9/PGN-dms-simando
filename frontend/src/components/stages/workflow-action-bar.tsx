@@ -119,7 +119,7 @@ export function WorkflowActionBar({
 			comment: "",
 		} as WorkflowActionBarFormValues,
 		validators: {
-			onChange: workflowActionBarSchema,
+			onSubmit: workflowActionBarSchema,
 		},
 		onSubmit: async ({ value }) => {
 			const commentTrimmed = value.comment?.trim() || "";

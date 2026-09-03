@@ -128,7 +128,7 @@ export function TaskActionModal({
 			newUserId: "",
 		} as TaskActionModalFormValues,
 		validators: {
-			onChange: taskActionModalSchema,
+			onSubmit: taskActionModalSchema,
 		},
 		onSubmit: async ({ value }) => {
 			if (!task) return;

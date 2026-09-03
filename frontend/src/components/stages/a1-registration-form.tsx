@@ -154,7 +154,7 @@ export function A1RegistrationForm({
 	const form = useForm({
 		defaultValues: getDefaultValues(initialData),
 		validators: {
-			onChange: a1RegistrationSchema,
+			onSubmit: a1RegistrationSchema,
 		},
 		onSubmit: async ({ value }) => {
 			const usagePeriods: SaveA1UsagePeriodRequest[] = (

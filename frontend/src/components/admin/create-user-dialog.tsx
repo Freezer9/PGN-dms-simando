@@ -114,7 +114,7 @@ export function CreateUserDialog({
 			areaId: "",
 		} as CreateUserFormValues,
 		validators: {
-			onChange: createUserSchema,
+			onSubmit: createUserSchema,
 		},
 		onSubmit: async ({ value }) => {
 			setServerError(null);

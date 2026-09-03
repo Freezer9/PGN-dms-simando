@@ -88,7 +88,7 @@ export function AttachmentUploadDialog({
 			signatureMethod: "",
 		} as AttachmentUploadFormValues,
 		validators: {
-			onChange: attachmentUploadSchema,
+			onSubmit: attachmentUploadSchema,
 		},
 		onSubmit: async ({ value }) => {
 			if (!selectedFile) {

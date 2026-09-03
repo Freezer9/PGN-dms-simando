@@ -210,6 +210,8 @@ type MapProps = {
 	 * to enable controlled mode where the map viewport is driven by your state.
 	 */
 	onViewportChange?: (viewport: MapViewport) => void;
+	/** Callback fired when the map is clicked */
+	onClick?: (e: MapLibreGL.MapMouseEvent) => void;
 	/** Show a loading indicator on the map */
 	loading?: boolean;
 } & Omit<MapLibreGL.MapOptions, "container" | "style">;
@@ -261,6 +263,7 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
 		projection,
 		viewport,
 		onViewportChange,
+		onClick,
 		loading = false,
 		...props
 	},
@@ -281,6 +284,9 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
 
 	const onViewportChangeRef = useRef(onViewportChange);
 	onViewportChangeRef.current = onViewportChange;
+
+	const onClickRef = useRef(onClick);
+	onClickRef.current = onClick;
 
 	const stableStyles = useStableValue(styles);
 
@@ -343,9 +349,15 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
 				} catch {}
 			};
 
+			const handleClick = (e: MapLibreGL.MapMouseEvent) => {
+				if (!isMounted) return;
+				onClickRef.current?.(e);
+			};
+
 			map.on("load", loadHandler);
 			map.on("style.load", styleLoadHandler);
 			map.on("move", handleMove);
+			map.on("click", handleClick);
 			setMapInstance(map);
 
 			return () => {
@@ -354,6 +366,7 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
 					map?.off("load", loadHandler);
 					map?.off("style.load", styleLoadHandler);
 					map?.off("move", handleMove);
+					map?.off("click", handleClick);
 					map?.remove();
 				} catch {
 					// Safe unmount when WebGL context or painter is unavailable

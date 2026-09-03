@@ -251,7 +251,7 @@ export function OrganisationView() {
 			name: "",
 		} as CreateRegionRequest,
 		validators: {
-			onChange: regionSchema,
+			onSubmit: regionSchema,
 		},
 		onSubmit: async ({ value }) => {
 			if (editingRegion) {
@@ -283,7 +283,7 @@ export function OrganisationView() {
 			name: "",
 		} as CreateAreaRequest,
 		validators: {
-			onChange: areaSchema,
+			onSubmit: areaSchema,
 		},
 		onSubmit: async ({ value }) => {
 			if (editingArea?.area) {

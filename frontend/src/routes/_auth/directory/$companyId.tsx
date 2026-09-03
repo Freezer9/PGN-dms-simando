@@ -371,7 +371,7 @@ function CompanyRecordHubPage() {
 			kawasan: plotting?.kawasan || "",
 		} as SavePlottingFormValues,
 		validators: {
-			onChange: savePlottingSchema,
+			onSubmit: savePlottingSchema,
 		},
 		onSubmit: async ({ value }) => {
 			const payload: SavePlottingRequest = {
@@ -408,7 +408,7 @@ function CompanyRecordHubPage() {
 			isPrimary: false,
 		} as SaveContactFormValues,
 		validators: {
-			onChange: saveContactSchema,
+			onSubmit: saveContactSchema,
 		},
 		onSubmit: async ({ value }) => {
 			const payload: SaveContactRequest = {
@@ -1265,7 +1265,14 @@ function CompanyRecordHubPage() {
 														currentCoords.latitude,
 													]}
 													zoom={14}
-													className="h-full w-full"
+													className="h-full w-full cursor-crosshair"
+													onClick={(e) => {
+														setCurrentCoords({
+															longitude: Number(e.lngLat.lng.toFixed(6)),
+															latitude: Number(e.lngLat.lat.toFixed(6)),
+														});
+														setHasChangedCoords(true);
+													}}
 												>
 													<MapControls />
 													<MapMarker

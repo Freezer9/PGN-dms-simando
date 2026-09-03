@@ -106,7 +106,7 @@ function CreateCompanyPage() {
 			longitude: 106.8456,
 		} as CreateCompanyFormValues,
 		validators: {
-			onChange: createCompanySchema,
+			onSubmit: createCompanySchema,
 		},
 		onSubmit: async ({ value }) => {
 			const payload: CreateCompanyRequest = {
@@ -664,7 +664,17 @@ function CreateCompanyPage() {
 							<Map
 								center={[coordinates.longitude, coordinates.latitude]}
 								zoom={12}
-								className="h-full w-full"
+								className="h-full w-full cursor-crosshair"
+								onClick={(e) => {
+									form.setFieldValue(
+										"latitude",
+										Number(e.lngLat.lat.toFixed(6)),
+									);
+									form.setFieldValue(
+										"longitude",
+										Number(e.lngLat.lng.toFixed(6)),
+									);
+								}}
 							>
 								<MapControls />
 								<MapMarker

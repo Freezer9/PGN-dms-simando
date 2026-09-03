@@ -119,7 +119,7 @@ export function EditRolesDialog({
 			areaId: "",
 		} as AssignRoleFormValues,
 		validators: {
-			onChange: assignRoleSchema,
+			onSubmit: assignRoleSchema,
 		},
 		onSubmit: async ({ value }) => {
 			if (!user) return;
