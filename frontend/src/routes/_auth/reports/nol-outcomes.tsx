@@ -1,12 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import {
-	AlertTriangle,
-	CheckCircle2,
-	FileText,
-	Loader2,
-	PieChart,
-	XCircle,
-} from "lucide-react";
+import { CheckCircle2, FileText, Loader2, XCircle } from "lucide-react";
 import { $api } from "@/api/client";
 import { ReportLayout } from "@/components/reports/report-layout";
 import {
@@ -120,8 +113,7 @@ function NolOutcomesReportPage() {
 					{/* Ratio Bar Card */}
 					<Card className="shadow-xs">
 						<CardHeader className="pb-3">
-							<CardTitle className="text-base font-semibold flex items-center gap-2">
-								<PieChart className="size-4 text-primary" />
+							<CardTitle className="text-base font-semibold">
 								Rasio Persetujuan Permohonan Gas
 							</CardTitle>
 						</CardHeader>
@@ -157,8 +149,7 @@ function NolOutcomesReportPage() {
 					{/* Categorized Rejection Reasons Breakdown */}
 					<Card className="shadow-xs">
 						<CardHeader className="pb-3">
-							<CardTitle className="text-base font-semibold flex items-center gap-2">
-								<AlertTriangle className="size-4 text-amber-500" />
+							<CardTitle className="text-base font-semibold">
 								Kategori Alasan Penolakan (Surat RL)
 							</CardTitle>
 							<CardDescription className="text-xs">

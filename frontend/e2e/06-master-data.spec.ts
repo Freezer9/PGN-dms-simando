@@ -7,7 +7,7 @@ test.describe("Flow 6: Master Data Management", () => {
 		await gotoApp(page, "/master/organisation");
 
 		await expect(
-			page.getByText(/Organisasi — Struktur Wilayah & Sales Area/i),
+			page.getByText(/Struktur Wilayah & Sales Area/i),
 		).toBeVisible();
 		await expect(
 			page.getByRole("button", { name: /Tambah Wilayah/i }),
@@ -59,7 +59,7 @@ test.describe("Flow 6: Master Data Management", () => {
 		await gotoApp(page, "/master/users");
 
 		await expect(
-			page.getByRole("heading", { name: /Pengguna — Manajemen Akun & Hak Akses/i }),
+			page.getByRole("heading", { name: /Manajemen Pengguna & Hak Akses/i }),
 		).toBeVisible();
 		await expect(
 			page.getByPlaceholder(/Cari nama, peran, email/i),

@@ -1,14 +1,10 @@
 import { useForm } from "@tanstack/react-form";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-	Activity,
 	FileSearch,
-	Gauge,
-	LineChart,
 	Loader2,
 	Plus,
 	Save,
-	ShieldCheck,
 	Trash2,
 	UserPlus,
 	Users,
@@ -350,7 +346,7 @@ export function NolEvaluationForm({
 			{/* Top Bar Summary / Save */}
 			<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 bg-muted/40 rounded-lg border">
 				<div className="flex items-center gap-3">
-					<div className="size-10 rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-600 flex items-center justify-center">
+					<div className="size-10 rounded-full bg-purple-100 dark:bg-purple-900/40 text-primary flex items-center justify-center">
 						<FileSearch className="size-5" />
 					</div>
 					<div>
@@ -409,8 +405,7 @@ export function NolEvaluationForm({
 			{/* SECTION 1: STATUS FEED & PERENCANAAN */}
 			<Card className="border-border/60 shadow-xs">
 				<CardHeader className="pb-3">
-					<CardTitle className="text-sm font-semibold flex items-center gap-2">
-						<Activity className="size-4 text-purple-500" />
+					<CardTitle className="text-sm font-semibold">
 						1. Status FEED & Status Penganggaran RKAP
 					</CardTitle>
 				</CardHeader>
@@ -500,8 +495,7 @@ export function NolEvaluationForm({
 			{/* SECTION 2: JALUR PIPA & INFRASTRUKTUR TEKNIS */}
 			<Card className="border-border/60 shadow-xs">
 				<CardHeader className="pb-3">
-					<CardTitle className="text-sm font-semibold flex items-center gap-2">
-						<Gauge className="size-4 text-blue-500" />
+					<CardTitle className="text-sm font-semibold">
 						2. Spesifikasi Pipa Induk, Pipa Servis & MRS
 					</CardTitle>
 				</CardHeader>
@@ -758,8 +752,7 @@ export function NolEvaluationForm({
 			<Card className="border-border/60 shadow-xs">
 				<CardHeader className="pb-3 flex flex-row items-center justify-between">
 					<div>
-						<CardTitle className="text-sm font-semibold flex items-center gap-2">
-							<LineChart className="size-4 text-emerald-500" />
+						<CardTitle className="text-sm font-semibold">
 							3. Analisis Finansial & Skenario Keekonomian Proyek
 						</CardTitle>
 						<CardDescription className="text-xs">
@@ -945,8 +938,7 @@ export function NolEvaluationForm({
 			{/* SECTION 4: KETENTUAN KOMERSIAL & JAMINAN */}
 			<Card className="border-border/60 shadow-xs">
 				<CardHeader className="pb-3">
-					<CardTitle className="text-sm font-semibold flex items-center gap-2">
-						<ShieldCheck className="size-4 text-amber-500" />
+					<CardTitle className="text-sm font-semibold">
 						4. Ketentuan Pembayaran & Jaminan Pasokan
 					</CardTitle>
 				</CardHeader>
@@ -1138,7 +1130,7 @@ export function NolEvaluationForm({
 				<DialogContent className="sm:max-w-md">
 					<DialogHeader>
 						<DialogTitle className="text-base font-semibold flex items-center gap-2">
-							<UserPlus className="size-4 text-purple-600" />
+							<UserPlus className="size-4 text-primary" />
 							Pilih Reviewer Evaluasi NOL
 						</DialogTitle>
 						<DialogDescription className="text-xs">

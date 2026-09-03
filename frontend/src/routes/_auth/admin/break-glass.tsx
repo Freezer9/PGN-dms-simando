@@ -388,7 +388,7 @@ function BreakGlassPage() {
 									const fieldError = field.state.meta.errors[0]?.message;
 									const companyOptions = companies.map((c) => ({
 										value: c.id,
-										label: `${c.nomor} — ${c.namaPerusahaan} (${c.salesUserName || c.locationLabel || "Area"})`,
+										label: `${c.nomor} - ${c.namaPerusahaan} (${c.salesUserName || c.locationLabel || "Area"})`,
 									}));
 
 									return (

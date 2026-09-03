@@ -2,13 +2,11 @@ import { Link } from "@tanstack/react-router";
 import {
 	AlertOctagon,
 	ArrowRight,
-	BarChart3,
 	Building2,
 	Clock,
 	Layers,
 	ListOrdered,
 	OctagonAlert,
-	ShieldAlert,
 } from "lucide-react";
 import type { RegionalAdminDashboardDto } from "@/api/types";
 import { PageHeader } from "@/components/common";
@@ -69,13 +67,13 @@ export function RegionalAdminDashboard({
 						<Button asChild variant="outline" size="sm" className="gap-1.5">
 							<Link to="/reports/ageing">
 								<Clock className="size-4" />
-								Laporan Ageing
+								Laporan Durasi Proses (Ageing)
 							</Link>
 						</Button>
 						<Button asChild variant="outline" size="sm" className="gap-1.5">
 							<Link to="/directory">
 								<Building2 className="size-4" />
-								Direktori Region
+								Direktori Wilayah
 							</Link>
 						</Button>
 					</>
@@ -85,7 +83,7 @@ export function RegionalAdminDashboard({
 			{/* Top KPI Stat Cards */}
 			<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
 				<StatTile
-					title="Total Pipeline Region"
+					title="Total Pipeline Wilayah"
 					value={totalPipeline}
 					description="Akumulasi seluruh Sales Area"
 					icon={Layers}
@@ -96,7 +94,7 @@ export function RegionalAdminDashboard({
 					value={stuckCount}
 					description={
 						stuckCount > 0
-							? `${stuckCount} berkas butuh re-alokasi / tindak lanjut`
+							? `${stuckCount} berkas perlu penugasan ulang atau tindak lanjut`
 							: "Tidak ada tugas tertahan"
 					}
 					icon={OctagonAlert}
@@ -169,8 +167,7 @@ export function RegionalAdminDashboard({
 				<Card className="shadow-xs">
 					<CardHeader className="pb-3">
 						<div className="flex items-center justify-between">
-							<CardTitle className="text-base font-semibold flex items-center gap-2">
-								<ShieldAlert className="size-4 text-rose-500" />
+							<CardTitle className="text-base font-semibold">
 								Daftar Tugas Tertahan & Perlu Intervensi
 							</CardTitle>
 							<Badge
@@ -234,8 +231,7 @@ export function RegionalAdminDashboard({
 				<Card className="shadow-xs flex flex-col justify-between">
 					<CardHeader className="pb-3">
 						<div className="flex items-center justify-between">
-							<CardTitle className="text-base font-semibold flex items-center gap-2">
-								<BarChart3 className="size-4 text-primary" />
+							<CardTitle className="text-base font-semibold">
 								Corong Penjualan Wilayah
 							</CardTitle>
 							<Button variant="ghost" size="sm" asChild className="text-xs">

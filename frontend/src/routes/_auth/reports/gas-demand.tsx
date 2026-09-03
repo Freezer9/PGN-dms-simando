@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Factory, Flame, Globe2, Layers, Loader2 } from "lucide-react";
+import { Flame, Loader2 } from "lucide-react";
 import { $api } from "@/api/client";
 import { ReportLayout } from "@/components/reports/report-layout";
 import { Badge } from "@/components/ui/badge";
@@ -81,7 +81,7 @@ function GasDemandReportPage() {
 							<CardContent className="p-5 flex items-center justify-between">
 								<div className="space-y-1">
 									<p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-										Cakupan Tahapan Pipeline
+										Cakupan Seluruh Tahapan
 									</p>
 									<p className="text-3xl font-bold tracking-tight text-foreground">
 										{report.byStage.reduce(
@@ -103,16 +103,13 @@ function GasDemandReportPage() {
 					{/* Breakdown Tabs */}
 					<Tabs defaultValue="stage" className="space-y-4">
 						<TabsList className="grid grid-cols-3 w-full sm:w-[450px]">
-							<TabsTrigger value="stage" className="gap-1.5 text-xs">
-								<Layers className="size-3.5" />
+							<TabsTrigger value="stage" className="text-xs">
 								Per Tahap
 							</TabsTrigger>
-							<TabsTrigger value="region" className="gap-1.5 text-xs">
-								<Globe2 className="size-3.5" />
+							<TabsTrigger value="region" className="text-xs">
 								Per Wilayah
 							</TabsTrigger>
-							<TabsTrigger value="industry" className="gap-1.5 text-xs">
-								<Factory className="size-3.5" />
+							<TabsTrigger value="industry" className="text-xs">
 								Per Industri
 							</TabsTrigger>
 						</TabsList>

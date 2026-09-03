@@ -28,7 +28,7 @@ function DashboardHome() {
 			<div className="flex flex-col items-center justify-center min-h-[400px] gap-3">
 				<Loader2 className="size-8 animate-spin text-primary" />
 				<p className="text-sm text-muted-foreground">
-					Memuat data dashboard pipeline gas...
+					Memuat data beranda pelanggan gas...
 				</p>
 			</div>
 		);
@@ -42,7 +42,7 @@ function DashboardHome() {
 						Gagal Memuat Data Dashboard
 					</h3>
 					<p className="text-sm text-muted-foreground">
-						Terjadi kendala saat memuat metrik pipeline. Silakan muat ulang
+						Terjadi kendala saat memuat ringkasan data. Silakan muat ulang
 						halaman.
 					</p>
 				</CardContent>

@@ -124,7 +124,7 @@ function StuckStepsPage() {
 		<div className="space-y-4">
 			{/* Top Header */}
 			<PageHeader
-				title="Langkah Tertahan — Lintas Wilayah (System Admin)"
+				title="Langkah Tertahan: Lintas Wilayah (System Admin)"
 				description="Pusat pengawasan dan pemulihan langkah workflow yang terhenti akibat petugas nonaktif atau kendala wilayah."
 				badge={
 					<span className="p-1 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400">

@@ -192,10 +192,10 @@ export function WorkflowActionBar({
 		company.status !== "Draft" &&
 		company.status !== "Discontinued" &&
 		company.canAct;
-	const canDiscontinue = company.status !== "Discontinued" && company.canAct;
+	const canDiscontinue = company.status !== "Discontinued";
 
-	// Only show action banner when the current user has authority to act
-	if (!canAct && !canRework) {
+	// Only show action banner when there are actions available
+	if (!canAct && !canRework && !canDiscontinue) {
 		return null;
 	}
 
@@ -214,7 +214,7 @@ export function WorkflowActionBar({
 					<div>
 						<div className="flex items-center gap-2">
 							<span className="text-xs font-bold text-amber-900 dark:text-amber-300">
-								⚡ TINDAKAN DIPERLUKAN
+								Aksi Alur Kerja (Workflow Gate) - Tindakan Diperlukan
 							</span>
 							{company.currentStepKind && (
 								<Badge
@@ -226,8 +226,9 @@ export function WorkflowActionBar({
 							)}
 						</div>
 						<p className="text-[11px] text-muted-foreground mt-0.5">
-							Berkas ini memerlukan tindakan evaluasi atau persetujuan Anda
-							untuk melanjutkan ke proses berikutnya.
+							{canAct
+								? "Berkas ini memerlukan tindakan evaluasi atau persetujuan Anda untuk melanjutkan ke proses berikutnya."
+								: "Menu tindakan alur kerja untuk pengelolaan berkas."}
 						</p>
 					</div>
 				</div>
@@ -287,10 +288,9 @@ export function WorkflowActionBar({
 							size="sm"
 							variant="ghost"
 							onClick={() => setActiveModal("discontinue")}
-							className="h-8 text-xs text-muted-foreground hover:text-destructive ml-1"
-							title="Hentikan Proses Berkas"
+							className="h-8 text-xs text-muted-foreground hover:text-destructive"
 						>
-							<AlertOctagon className="size-3.5" />
+							<AlertOctagon className="size-3.5 mr-1" /> Hentikan Proses
 						</Button>
 					)}
 				</div>

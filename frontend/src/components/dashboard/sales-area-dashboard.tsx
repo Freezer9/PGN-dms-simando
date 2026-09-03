@@ -7,7 +7,6 @@ import {
 	Clock,
 	FilePlus2,
 	MapPin,
-	Send,
 } from "lucide-react";
 import type { SalesAreaDashboardDto } from "@/api/types";
 import { PageHeader } from "@/components/common";
@@ -46,7 +45,7 @@ export function SalesAreaDashboard({
 			{/* Hero & Quick Action Bar */}
 			<PageHeader
 				title="Beranda Sales Area"
-				description="Ringkasan tugas lapangan, progres verifikasi berkas, dan pipeline pelanggan gas."
+				description="Ringkasan tugas lapangan, progres verifikasi berkas, dan tahapan calon pelanggan gas."
 				badge={
 					<Badge variant="secondary" className="font-semibold">
 						{areaName}
@@ -57,13 +56,13 @@ export function SalesAreaDashboard({
 						<Button asChild size="sm" className="gap-1.5 shadow-xs">
 							<Link to="/directory/new">
 								<FilePlus2 className="size-4" />
-								Tambah Perusahaan Baru
+								Tambah Calon Pelanggan Baru
 							</Link>
 						</Button>
 						<Button asChild variant="outline" size="sm" className="gap-1.5">
 							<Link to="/map">
 								<MapPin className="size-4" />
-								Peta Explorer
+								Peta Spasial
 							</Link>
 						</Button>
 					</>
@@ -85,7 +84,7 @@ export function SalesAreaDashboard({
 					description={
 						returnedCount > 0
 							? `${returnedCount} berkas perlu perbaikan`
-							: "Semua berkas berjalan lancar"
+							: "Semua berkas aman & tidak ada revisi"
 					}
 					icon={AlertTriangle}
 					variant={returnedCount > 0 ? "rose" : "emerald"}
@@ -162,7 +161,7 @@ export function SalesAreaDashboard({
 										to="/directory/$companyId"
 										params={{ companyId: item.companyId }}
 									>
-										Buka Record
+										Buka Berkas
 										<ArrowRight className="size-3.5" />
 									</Link>
 								</Button>
@@ -218,8 +217,7 @@ export function SalesAreaDashboard({
 				<Card className="shadow-xs flex flex-col">
 					<CardHeader className="pb-3">
 						<div className="flex items-center justify-between">
-							<CardTitle className="text-base font-semibold flex items-center gap-2">
-								<Send className="size-4 text-primary" />
+							<CardTitle className="text-base font-semibold">
 								Dalam Proses Persetujuan
 							</CardTitle>
 							<Badge variant="outline" className="text-xs font-mono">

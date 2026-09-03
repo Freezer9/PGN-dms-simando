@@ -264,7 +264,7 @@ function BlockedTasksPage() {
 				</div>
 				<div className="space-y-1 text-xs">
 					<h3 className="font-semibold text-rose-900 dark:text-rose-200 text-sm">
-						Pemantauan Berkas Tertahan & Kemacetan (Bottleneck SLA)
+						Pemantauan Berkas Tertahan & Hambatan Proses (Bottleneck SLA)
 					</h3>
 					<p className="text-rose-700 dark:text-rose-300/90 leading-relaxed">
 						Halaman ini menampilkan seluruh berkas pengajuan pelanggan yang

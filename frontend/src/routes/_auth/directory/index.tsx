@@ -222,7 +222,7 @@ function CompanyDirectoryPage() {
 			},
 			{
 				accessorKey: "salesUserName",
-				header: "Sales PIC",
+				header: "PIC Sales",
 				meta: {
 					headerClassName: "min-w-[100px]",
 					cellClassName: "min-w-[100px]",
@@ -317,7 +317,7 @@ function CompanyDirectoryPage() {
 					<>
 						<Button variant="outline" asChild size="sm" className="h-9">
 							<Link to="/map" className="flex items-center gap-1.5 text-xs">
-								<MapPin className="size-3.5" /> Peta Spatial
+								<MapPin className="size-3.5" /> Peta Spasial
 							</Link>
 						</Button>
 						{hasCapability("CreateCompany") && (

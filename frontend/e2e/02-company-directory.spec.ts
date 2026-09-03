@@ -33,7 +33,7 @@ test.describe("Flow 2: Company Directory & Registration (Stage 1)", () => {
 		await expect(
 			page.getByRole("heading", { name: /Pendaftaran Calon Pelanggan/i }),
 		).toBeVisible();
-		await expect(page.getByText("Tahap 1: Calon Pelanggan")).toBeVisible();
+		await expect(page.getByText("Identitas & Klasifikasi Perusahaan")).toBeVisible();
 
 		// Submit without required fields
 		await clickElement(page, 'button[type="submit"]');

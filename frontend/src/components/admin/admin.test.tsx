@@ -205,7 +205,7 @@ describe("Admin and Master Data Frontend Components", () => {
 			renderWithClient(<UsersView />);
 
 			expect(
-				screen.getByText("Pengguna — Manajemen Akun & Hak Akses"),
+				screen.getByText("Manajemen Pengguna & Hak Akses"),
 			).toBeInTheDocument();
 			expect(
 				screen.getByPlaceholderText("Cari nama, peran, email..."),
@@ -219,7 +219,7 @@ describe("Admin and Master Data Frontend Components", () => {
 			renderWithClient(<OrganisationView />);
 
 			expect(
-				screen.getByText("Organisasi — Struktur Wilayah & Sales Area"),
+				screen.getByText("Struktur Wilayah & Sales Area"),
 			).toBeInTheDocument();
 			expect(screen.getByText("Tambah Wilayah")).toBeInTheDocument();
 			expect(screen.getByText("Tambah Sales Area")).toBeInTheDocument();

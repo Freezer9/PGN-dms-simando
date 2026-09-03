@@ -62,7 +62,7 @@ function ReportsHubPage() {
 			id: "funnel",
 			title: "Corong Penjualan (Funnel)",
 			description:
-				"Analisis tingkat konversi per tahapan (Stage 1 s.d. 8) dan identifikasi kebocoran pipeline penjualan gas.",
+				"Analisis tingkat konversi per tahapan (Stage 1 s.d. 8) dan identifikasi hambatan penurunan berkas calon pelanggan gas.",
 			href: "/reports/funnel",
 			icon: BarChart3,
 			badge: "Stage Conversion",
@@ -71,9 +71,9 @@ function ReportsHubPage() {
 		},
 		{
 			id: "ageing",
-			title: "Penuaan Proses (Ageing)",
+			title: "Durasi Proses & Ageing",
 			description:
-				"Laporan waktu tunggu berkas aktif di seluruh tahapan persetujuan, diurutkan dari wait time terlama.",
+				"Laporan waktu tunggu berkas aktif di seluruh tahapan persetujuan, diurutkan dari waktu tunggu terlama.",
 			href: "/reports/ageing",
 			icon: Clock,
 			badge: "SLA Tracker",
@@ -120,7 +120,7 @@ function ReportsHubPage() {
 			{/* Page Header */}
 			<PageHeader
 				title="Pusat Laporan & Analitik"
-				description="Akses laporan standar operasional, metrik konversi pipeline, pemantauan SLA penuaan berkas, dan ekspor spreadsheet terformat."
+				description="Akses laporan standar operasional, metrik konversi pipeline, pemantauan SLA & ageing berkas, dan ekspor spreadsheet terformat."
 			/>
 
 			{/* 5 Reports Cards Grid */}

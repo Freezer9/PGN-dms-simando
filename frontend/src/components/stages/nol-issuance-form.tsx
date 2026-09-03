@@ -4,11 +4,9 @@ import {
 	AlertTriangle,
 	Award,
 	CheckCircle,
-	FileBadge,
 	Loader2,
 	Plus,
 	Save,
-	ScrollText,
 	Trash2,
 } from "lucide-react";
 import * as React from "react";
@@ -216,8 +214,7 @@ export function NolIssuanceForm({
 			{/* SECTION 1: KEPUTUSAN & NOMOR NOTA DINAS */}
 			<Card className="border-border/60 shadow-xs">
 				<CardHeader className="pb-3">
-					<CardTitle className="text-sm font-semibold flex items-center gap-2">
-						<FileBadge className="size-4 text-emerald-500" />
+					<CardTitle className="text-sm font-semibold">
 						1. Keputusan Akhir & Administrasi Surat Resmi
 					</CardTitle>
 					<CardDescription className="text-xs">
@@ -534,8 +531,7 @@ export function NolIssuanceForm({
 			<Card className="border-border/60 shadow-xs">
 				<CardHeader className="pb-3 flex flex-row items-center justify-between">
 					<div>
-						<CardTitle className="text-sm font-semibold flex items-center gap-2">
-							<ScrollText className="size-4 text-amber-500" />
+						<CardTitle className="text-sm font-semibold">
 							3. Syarat & Ketentuan Tambahan (Kontrak Bersyarat)
 						</CardTitle>
 						<CardDescription className="text-xs">

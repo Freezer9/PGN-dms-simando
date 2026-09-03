@@ -9,7 +9,6 @@ import {
 	DollarSign,
 	Edit2,
 	Flame,
-	Layers,
 	Loader2,
 	MapPin,
 	Paperclip,
@@ -612,14 +611,14 @@ function CompanyRecordHubPage() {
 
 						<div className="flex flex-col items-end gap-2 bg-muted/40 p-3 rounded-lg border text-right">
 							<div className="text-[11px] text-muted-foreground font-medium">
-								Tahapan CRM / Pipeline Saat Ini
+								Tahapan Saat Ini
 							</div>
 							<div className="flex items-center gap-2">
 								<span className="font-mono text-sm font-bold text-primary">
 									Tahap {company.currentStage}:
 								</span>
 								<span className="text-sm font-semibold text-foreground">
-									{stageInfo.name}
+									{stageInfo.shortName}
 								</span>
 							</div>
 							<div className="text-[11px] text-muted-foreground">
@@ -844,7 +843,7 @@ function CompanyRecordHubPage() {
 										</div>
 										<div className="grid grid-cols-3 py-1 border-b">
 											<span className="text-muted-foreground">
-												Telepon / Fax
+												Nomor Telepon
 											</span>
 											<span className="col-span-2">{company.telp || "-"}</span>
 										</div>
@@ -898,9 +897,8 @@ function CompanyRecordHubPage() {
 								{/* Right: Map Location Preview */}
 								<Card className="border-border/60 shadow-xs">
 									<CardHeader className="pb-3 flex flex-row items-center justify-between">
-										<CardTitle className="text-sm font-semibold flex items-center gap-2">
-											<MapPin className="size-4 text-primary" />
-											Lokasi Geospasial Pabrik
+										<CardTitle className="text-sm font-semibold">
+											Lokasi Geospasial Pelanggan
 										</CardTitle>
 										{currentCoords && (
 											<Badge
@@ -946,13 +944,13 @@ function CompanyRecordHubPage() {
 							</div>
 						</TabsContent>
 
-						{/* TAB 2: KONTAK PERSON (PIC) */}
+						{/* TAB 2: KONTAK PIC PELANGGAN */}
 						<TabsContent value="contacts" className="space-y-4 pt-4">
 							<Card className="border-border/60 shadow-xs">
 								<CardHeader className="p-4 flex flex-row items-center justify-between">
 									<div>
 										<CardTitle className="text-base font-semibold">
-											Daftar Kontak Person (PIC) Perusahaan
+											Daftar Kontak PIC Pelanggan
 										</CardTitle>
 										<CardDescription className="text-xs">
 											Informasi penanggung jawab teknis, komersial, dan
@@ -1473,9 +1471,8 @@ function CompanyRecordHubPage() {
 					<Card className="border-border/60 shadow-xs">
 						<CardHeader className="p-4 pb-3 border-b bg-muted/20">
 							<div className="flex items-center justify-between">
-								<CardTitle className="text-sm font-semibold flex items-center gap-2">
-									<Layers className="size-4 text-primary" />
-									<span>Linimasa Berkas</span>
+								<CardTitle className="text-sm font-semibold">
+									Linimasa Berkas
 								</CardTitle>
 								{timeline && (
 									<Badge variant="secondary" className="text-[10px] font-mono">
@@ -1562,7 +1559,7 @@ function CompanyRecordHubPage() {
 					>
 						<DialogHeader>
 							<DialogTitle className="text-base font-semibold">
-								{editingContact ? "Ubah Kontak Person" : "Tambah Kontak Person"}
+								{editingContact ? "Ubah Kontak PIC" : "Tambah Kontak PIC"}
 							</DialogTitle>
 							<DialogDescription className="text-xs">
 								{editingContact
@@ -1601,7 +1598,7 @@ function CompanyRecordHubPage() {
 												<Input
 													id={field.name}
 													name={field.name}
-													placeholder="Contoh: Plant Manager / Purchasing"
+													placeholder="Contoh: Manajer Operasional / Purchasing"
 													value={field.state.value || ""}
 													onBlur={field.handleBlur}
 													onChange={(e) => field.handleChange(e.target.value)}
@@ -1640,7 +1637,7 @@ function CompanyRecordHubPage() {
 									{(field) => {
 										const error = field.state.meta.errors[0]?.message;
 										return (
-											<FormField label="No. Telepon / HP" error={error}>
+											<FormField label="Nomor Telepon / HP" error={error}>
 												<Input
 													id={field.name}
 													name={field.name}

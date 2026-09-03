@@ -45,10 +45,10 @@ function AgeingReportPage() {
 
 	return (
 		<ReportLayout
-			title="Laporan Penuaan Proses (Workflow Ageing)"
+			title="Laporan Durasi Proses & Ageing Berkas"
 			description="Pemantauan berkas aktif di alur kerja persetujuan yang diurutkan berdasarkan waktu tunggu terlama."
 			exportEndpoint="/api/reports/export/ageing"
-			exportFileName="Laporan_Penuaan_Workflow.xlsx"
+			exportFileName="Laporan_Durasi_Ageing_Berkas.xlsx"
 			filterContent={
 				<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
 					<div className="relative flex-1 max-w-md">
@@ -74,12 +74,12 @@ function AgeingReportPage() {
 				<div className="flex flex-col items-center justify-center min-h-[300px] gap-2">
 					<Loader2 className="size-8 animate-spin text-primary" />
 					<p className="text-sm text-muted-foreground">
-						Memuat data penuaan workflow...
+						Memuat data durasi proses berkas...
 					</p>
 				</div>
 			) : error || !rows ? (
 				<div className="text-center py-10 text-destructive text-sm">
-					Gagal memuat data laporan penuaan proses.
+					Gagal memuat data laporan durasi proses berkas.
 				</div>
 			) : (
 				<Card className="shadow-xs">

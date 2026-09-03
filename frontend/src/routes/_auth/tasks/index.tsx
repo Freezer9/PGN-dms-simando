@@ -9,11 +9,9 @@ import {
 	Building2,
 	CheckCircle2,
 	Eye,
-	Inbox,
 	RotateCcw,
 	Search,
 	User,
-	Users,
 	XCircle,
 } from "lucide-react";
 import * as React from "react";
@@ -315,16 +313,11 @@ function TasksInboxPage() {
 					className="w-full sm:w-auto"
 				>
 					<TabsList className="grid w-full sm:w-auto grid-cols-2">
-						<TabsTrigger value="my" className="flex items-center gap-1.5 px-4">
-							<Inbox className="h-4 w-4" />
-							<span>Tugas Saya ({myTasks.length})</span>
+						<TabsTrigger value="my" className="px-4 text-xs">
+							Tugas Saya ({myTasks.length})
 						</TabsTrigger>
-						<TabsTrigger
-							value="region"
-							className="flex items-center gap-1.5 px-4"
-						>
-							<Users className="h-4 w-4" />
-							<span>Semua Tugas Wilayah ({regionTasks.length})</span>
+						<TabsTrigger value="region" className="px-4 text-xs">
+							Semua Tugas Wilayah ({regionTasks.length})
 						</TabsTrigger>
 					</TabsList>
 				</Tabs>
@@ -438,7 +431,7 @@ function TasksInboxPage() {
 					searchTerm || stepFilter !== "all" || areaFilter !== "all"
 						? "Tidak ada tugas yang sesuai dengan filter pencarian yang diterapkan."
 						: scope === "my"
-							? "Semua berkas pada antrean Anda telah selesai ditindaklanjuti. Kerja bagus!"
+							? "Semua berkas pada antrean Anda telah selesai ditindaklanjuti."
 							: "Tidak ada berkas aktif yang sedang berproses pada wilayah kerja Anda."
 				}
 				emptyIcon={

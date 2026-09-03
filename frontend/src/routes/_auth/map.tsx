@@ -261,8 +261,7 @@ function GeospatialMapPage() {
 				{isFilterOpen && (
 					<Card className="absolute top-4 left-4 w-80 max-h-[calc(100%-2rem)] overflow-y-auto z-20 shadow-lg border-border/80 bg-background/95 backdrop-blur-xs">
 						<CardHeader className="p-3 pb-2 flex flex-row items-center justify-between">
-							<CardTitle className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 text-muted-foreground">
-								<Filter className="size-3.5 text-primary" />
+							<CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
 								Filter Peta
 							</CardTitle>
 							<Button

@@ -6,7 +6,7 @@ import {
 	test,
 } from "./fixtures/auth.fixture";
 
-test.describe("Flow 3: Sales Pipeline Stages 2–6 (Sales Area Data Entry)", () => {
+test.describe("Flow 3: Sales Pipeline Stages 2-6 (Sales Area Data Entry)", () => {
 	test("3.1 Stage 2 Plotting: should render plotting tab and form elements", async ({
 		salesAreaPage: page,
 	}) => {
@@ -32,7 +32,7 @@ test.describe("Flow 3: Sales Pipeline Stages 2–6 (Sales Area Data Entry)", () 
 		await clickTab(page, "Kontak");
 
 		await expect(
-			page.getByText("Daftar Kontak Person (PIC) Perusahaan"),
+			page.getByText("Daftar Kontak PIC Pelanggan"),
 		).toBeVisible();
 		await expect(
 			page.getByRole("button", { name: /Tambah Kontak/i }),

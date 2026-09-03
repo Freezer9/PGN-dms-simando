@@ -10,56 +10,56 @@ export interface StageInfo {
 export const STAGE_CONFIG: Record<number, StageInfo> = {
 	1: {
 		stage: 1,
-		name: "Tahap 1 — Calon Pelanggan",
+		name: "Tahap 1: Calon Pelanggan",
 		shortName: "Calon Pelanggan",
 		badgeClass:
 			"bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-300",
 	},
 	2: {
 		stage: 2,
-		name: "Tahap 2 — Plotting",
+		name: "Tahap 2: Plotting",
 		shortName: "Plotting",
 		badgeClass:
 			"bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 border-blue-300",
 	},
 	3: {
 		stage: 3,
-		name: "Tahap 3 — Prospek",
+		name: "Tahap 3: Prospek",
 		shortName: "Prospek",
 		badgeClass:
 			"bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300 border-sky-300",
 	},
 	4: {
 		stage: 4,
-		name: "Tahap 4 — Survei KK0",
+		name: "Tahap 4: Survei KK0",
 		shortName: "Survei KK0",
 		badgeClass:
 			"bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-emerald-300",
 	},
 	5: {
 		stage: 5,
-		name: "Tahap 5 — Registrasi A1",
+		name: "Tahap 5: Registrasi A1",
 		shortName: "Registrasi A1",
 		badgeClass:
 			"bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 border-amber-300",
 	},
 	6: {
 		stage: 6,
-		name: "Tahap 6 — Permohonan NOL",
+		name: "Tahap 6: Permohonan NOL",
 		shortName: "Permohonan NOL",
 		badgeClass:
 			"bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300 border-orange-300",
 	},
 	7: {
 		stage: 7,
-		name: "Tahap 7 — Evaluasi NOL",
+		name: "Tahap 7: Evaluasi NOL",
 		shortName: "Evaluasi NOL",
 		badgeClass:
 			"bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 border-purple-300",
 	},
 	8: {
 		stage: 8,
-		name: "Tahap 8 — Penerbitan NOL",
+		name: "Tahap 8: Penerbitan NOL",
 		shortName: "NOL Terbit",
 		badgeClass:
 			"bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300 border-green-300",

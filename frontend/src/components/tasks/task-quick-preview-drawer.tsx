@@ -150,7 +150,7 @@ export function TaskQuickPreviewDrawer({
 							{primaryContact && (
 								<div className="space-y-1.5">
 									<h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-										Kontak Person (PIC)
+										Kontak PIC Pelanggan
 									</h4>
 									<div className="p-3 rounded-lg border bg-card/60 space-y-2 text-xs">
 										<div className="flex items-center justify-between">

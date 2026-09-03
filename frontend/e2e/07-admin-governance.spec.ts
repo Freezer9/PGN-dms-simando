@@ -26,7 +26,7 @@ test.describe("Flow 7: Admin Governance & Emergency Operations", () => {
 		await gotoApp(page, "/admin/stuck-steps");
 
 		await expect(
-			page.getByText(/Langkah Tertahan — Lintas Wilayah/i),
+			page.getByText(/Langkah Tertahan: Lintas Wilayah/i),
 		).toBeVisible();
 		await expect(
 			page.getByPlaceholder(/Cari perusahaan, wilayah, peran/i),

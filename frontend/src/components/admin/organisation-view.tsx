@@ -362,7 +362,7 @@ export function OrganisationView() {
 		<div className="space-y-4">
 			{/* Top Header */}
 			<PageHeader
-				title="Organisasi — Struktur Wilayah & Sales Area"
+				title="Struktur Wilayah & Sales Area"
 				description="Definisi batas lingkup teritorial (SOR & Sales Area) untuk perizinan dan jalur persetujuan berkas."
 				badge={
 					<span className="p-1 rounded-md bg-primary/10 text-primary">

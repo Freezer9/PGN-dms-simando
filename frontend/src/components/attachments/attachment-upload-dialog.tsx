@@ -36,7 +36,7 @@ export const ATTACHMENT_KIND_LABELS: Record<AttachmentKind, string> = {
 	CapexPreGr3: "Rincian Capex Pre-GR3",
 	BuktiKelayakan: "Bukti / Dokumen Kelayakan",
 	SpreadsheetPeralatanGas: "Spreadsheet Peralatan Gas",
-	GambarSituasiPabrik: "Gambar Situasi Pabrik / Layout",
+	GambarSituasiPabrik: "Gambar Situasi / Layout Lokasi Pelanggan",
 	GambarPipaEksisting: "Gambar Jaringan Pipa Eksisting",
 	TitikTaping: "Foto / Sketsa Titik Taping",
 	DataKompetitor: "Data & Analisis Kompetitor",

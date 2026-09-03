@@ -191,7 +191,7 @@ type MapProps = {
 	};
 	/**
 	 * Use a transparent, tile-less basemap instead of the default Carto street
-	 * basemap — a blank canvas. Used alone it renders nothing; add your own
+	 * basemap (a blank canvas). Used alone it renders nothing; add your own
 	 * layers on top (`<MapGeoJSON>`, `<MapArc>`, markers, etc.). Ideal for data
 	 * visualizations (choropleths, arcs, dot maps).
 	 * Ignored when an explicit `styles` prop is provided.
@@ -465,7 +465,7 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
 				>
 					<div className="flex items-center gap-2 text-xs font-medium">
 						<MapPin className="size-4 text-primary shrink-0" />
-						<span>Peta Interaktif GIS (Simulasi / WebGL Mode)</span>
+						<span>Peta Interaktif GIS</span>
 					</div>
 					<div className="hidden">{children}</div>
 				</div>
@@ -1404,7 +1404,7 @@ const GEOJSON_DEFAULT_COLORS = {
 
 /**
  * Renders arbitrary GeoJSON as fill + outline layers on the map. Composes like
- * `MapRoute` / `MapArc` — drop it inside `<Map>` (typically with `blank`) for
+ * `MapRoute` / `MapArc`: drop it inside `<Map>` (typically with `blank`) for
  * choropleths and region/data maps. For full control over expressions and
  * multiple layers, manage layers directly via `useMap()` instead.
  */

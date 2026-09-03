@@ -10,7 +10,6 @@ import {
 	MapPinned,
 	Network,
 	OctagonAlert,
-	Settings2,
 	ShieldAlert,
 	Users,
 } from "lucide-react";
@@ -42,7 +41,7 @@ export function SystemAdminDashboard({ data }: SystemAdminDashboardProps) {
 				description="Pengelolaan integritas master data, pemeliharaan katalog sistem, pengguna, dan audit keamanan."
 				badge={
 					<Badge variant="outline" className="font-semibold">
-						System Administration
+						Administrator Sistem
 					</Badge>
 				}
 				actions={
@@ -109,8 +108,7 @@ export function SystemAdminDashboard({ data }: SystemAdminDashboardProps) {
 			{/* Master Data Health Checklist */}
 			<Card className="shadow-xs">
 				<CardHeader className="pb-3">
-					<CardTitle className="text-base font-semibold flex items-center gap-2">
-						<Settings2 className="size-4 text-primary" />
+					<CardTitle className="text-base font-semibold">
 						Status Kelengkapan & Kesehatan Master Data
 					</CardTitle>
 					<CardDescription className="text-xs">

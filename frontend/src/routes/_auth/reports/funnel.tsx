@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, BarChart3, Loader2 } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import { $api } from "@/api/client";
 import { IconButton } from "@/components/common";
 import { ReportLayout } from "@/components/reports/report-layout";
@@ -57,7 +57,7 @@ function FunnelReportPage() {
 							<CardContent className="p-4 flex items-center justify-between">
 								<div>
 									<p className="text-xs font-semibold text-muted-foreground uppercase">
-										Total Record Masuk
+										Total Berkas Terdaftar
 									</p>
 									<p className="text-2xl font-bold mt-1 text-foreground">
 										{report.totalRecords}
@@ -89,14 +89,13 @@ function FunnelReportPage() {
 					{/* Funnel Visual Bars Card */}
 					<Card className="shadow-xs">
 						<CardHeader className="pb-3">
-							<CardTitle className="text-base font-semibold flex items-center gap-2">
-								<BarChart3 className="size-4 text-primary" />
+							<CardTitle className="text-base font-semibold">
 								Visualisasi Konversi Antar Tahap
 							</CardTitle>
 							<CardDescription className="text-xs">
-								Persentase konversi dihitung terhadap jumlah record pada tahap
-								sebelumnya untuk mendeteksi potensi hambatan (pipeline
-								drop-off).
+								Persentase konversi dihitung terhadap jumlah berkas pada tahap
+								sebelumnya untuk mendeteksi potensi hambatan atau penurunan
+								berkas.
 							</CardDescription>
 						</CardHeader>
 						<CardContent className="space-y-3">
@@ -125,7 +124,7 @@ function FunnelReportPage() {
 											</div>
 											<div className="flex items-center gap-3">
 												<span className="font-bold text-foreground">
-													{stage.recordCount} record
+													{stage.recordCount} berkas
 												</span>
 												<Badge
 													variant={
@@ -155,7 +154,7 @@ function FunnelReportPage() {
 					<Card className="shadow-xs">
 						<CardHeader className="pb-3">
 							<CardTitle className="text-base font-semibold">
-								Rincian Data Konversi & Turnaround Time
+								Rincian Konversi & Waktu Proses (Turnaround Time)
 							</CardTitle>
 						</CardHeader>
 						<CardContent className="p-0">
@@ -164,7 +163,7 @@ function FunnelReportPage() {
 									<TableRow>
 										<TableHead className="w-16">Tahap</TableHead>
 										<TableHead>Nama Tahapan</TableHead>
-										<TableHead className="text-right">Jumlah Record</TableHead>
+										<TableHead className="text-right">Jumlah Berkas</TableHead>
 										<TableHead className="text-right">
 											Tingkat Konversi (%)
 										</TableHead>

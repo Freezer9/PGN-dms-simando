@@ -1,16 +1,6 @@
 import { useForm, useStore } from "@tanstack/react-form";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import {
-	ArrowLeft,
-	Building2,
-	Globe,
-	Info,
-	Loader2,
-	Mail,
-	MapPin,
-	Phone,
-	Save,
-} from "lucide-react";
+import { ArrowLeft, Loader2, MapPin, Save } from "lucide-react";
 import { toast } from "sonner";
 import { $api } from "@/api/client";
 import type { CreateCompanyRequest } from "@/api/types";
@@ -184,12 +174,7 @@ function CreateCompanyPage() {
 			{/* Page Header */}
 			<PageHeader
 				title="Pendaftaran Calon Pelanggan Baru"
-				description="Formulir registrasi tahap 1 direktori calon pelanggan industri & komersial PGN"
-				badge={
-					<Badge variant="outline" className="text-xs px-2.5 py-0.5 font-mono">
-						Tahap 1: Calon Pelanggan
-					</Badge>
-				}
+				description="Formulir pendaftaran calon pelanggan baru industri & komersial"
 				actions={
 					<Button
 						variant="outline"
@@ -216,8 +201,7 @@ function CreateCompanyPage() {
 				{/* Section 1: Data Identitas Perusahaan */}
 				<Card className="border-border/60 shadow-xs">
 					<CardHeader className="pb-3">
-						<CardTitle className="text-base font-semibold flex items-center gap-2">
-							<Building2 className="size-4 text-primary" />
+						<CardTitle className="text-base font-semibold">
 							Identitas & Klasifikasi Perusahaan
 						</CardTitle>
 						<CardDescription className="text-xs">
@@ -334,15 +318,7 @@ function CreateCompanyPage() {
 									{(field) => {
 										const error = getFieldError(field.state.meta.errors);
 										return (
-											<FormField
-												label={
-													<span className="flex items-center gap-1">
-														<Globe className="size-3 text-muted-foreground" />{" "}
-														Website
-													</span>
-												}
-												error={error}
-											>
+											<FormField label="Website" error={error}>
 												<Input
 													id={field.name}
 													name={field.name}
@@ -365,15 +341,7 @@ function CreateCompanyPage() {
 									{(field) => {
 										const error = getFieldError(field.state.meta.errors);
 										return (
-											<FormField
-												label={
-													<span className="flex items-center gap-1">
-														<Mail className="size-3 text-muted-foreground" />{" "}
-														Email Kontak
-													</span>
-												}
-												error={error}
-											>
+											<FormField label="Email Kontak" error={error}>
 												<Input
 													id={field.name}
 													name={field.name}
@@ -396,15 +364,7 @@ function CreateCompanyPage() {
 									{(field) => {
 										const error = getFieldError(field.state.meta.errors);
 										return (
-											<FormField
-												label={
-													<span className="flex items-center gap-1">
-														<Phone className="size-3 text-muted-foreground" />{" "}
-														No. Telepon / Hunting
-													</span>
-												}
-												error={error}
-											>
+											<FormField label="Nomor Telepon" error={error}>
 												<Input
 													id={field.name}
 													name={field.name}
@@ -426,13 +386,12 @@ function CreateCompanyPage() {
 				{/* Section 2: Lokasi Administratif (Cascading Dropdowns) */}
 				<Card className="border-border/60 shadow-xs">
 					<CardHeader className="pb-3">
-						<CardTitle className="text-base font-semibold flex items-center gap-2">
-							<MapPin className="size-4 text-primary" />
-							Lokasi Administratif & Alamat Pabrik / Plant
+						<CardTitle className="text-base font-semibold">
+							Lokasi Administratif & Alamat Pelanggan
 						</CardTitle>
 						<CardDescription className="text-xs">
-							Hierarki administratif wilayah BPS untuk penomoran sequence
-							registrasi
+							Pilih wilayah administratif dan masukkan alamat lengkap calon
+							pelanggan
 						</CardDescription>
 					</CardHeader>
 					<CardContent className="space-y-4">
@@ -637,18 +596,17 @@ function CreateCompanyPage() {
 					</CardContent>
 				</Card>
 
-				{/* Section 3: Titik Koordinat Spasial (Map Pin Drop) */}
+				{/* Section 3: Titik Koordinat Spasial */}
 				<Card className="border-border/60 shadow-xs">
 					<CardHeader className="pb-3">
 						<div className="flex items-center justify-between">
 							<div>
-								<CardTitle className="text-base font-semibold flex items-center gap-2">
-									<MapPin className="size-4 text-primary" />
-									Penetapan Titik Koordinat Lokasi (Pin Drop)
+								<CardTitle className="text-base font-semibold">
+									Penetapan Titik Koordinat Lokasi
 								</CardTitle>
 								<CardDescription className="text-xs">
-									Klik pada peta atau geser pin penanda untuk menentukan
-									koordinat presisi pabrik / calon pelanggan
+									Klik pada peta atau geser pin penanda untuk menentukan titik
+									koordinat lokasi calon pelanggan
 								</CardDescription>
 							</div>
 							<div className="flex items-center gap-2">
@@ -693,15 +651,6 @@ function CreateCompanyPage() {
 									</MarkerContent>
 								</MapMarker>
 							</Map>
-						</div>
-						<div className="flex items-center justify-between text-xs text-muted-foreground">
-							<div className="flex items-center gap-1.5">
-								<Info className="size-3.5 text-primary" />
-								<span>
-									Koordinat ini digunakan untuk analisis jarak jaringan pipa gas
-									existing pada Tahap 2 (Plotting).
-								</span>
-							</div>
 						</div>
 					</CardContent>
 				</Card>

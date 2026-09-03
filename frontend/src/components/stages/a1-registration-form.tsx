@@ -1,14 +1,6 @@
 import { useForm } from "@tanstack/react-form";
 import { useQueryClient } from "@tanstack/react-query";
-import {
-	Building2,
-	FileText,
-	Loader2,
-	Plus,
-	Save,
-	Trash2,
-	UserCheck,
-} from "lucide-react";
+import { FileText, Loader2, Plus, Save, Trash2 } from "lucide-react";
 import * as React from "react";
 import { toast } from "sonner";
 import { $api } from "@/api/client";
@@ -276,8 +268,7 @@ export function A1RegistrationForm({
 			{/* SECTION 1: DATA PIC & PENANGGUNG JAWAB */}
 			<Card className="border-border/60 shadow-xs">
 				<CardHeader className="pb-3">
-					<CardTitle className="text-sm font-semibold flex items-center gap-2">
-						<UserCheck className="size-4 text-blue-500" />
+					<CardTitle className="text-sm font-semibold">
 						1. Data Penanggung Jawab & Pendaftaran
 					</CardTitle>
 					<CardDescription className="text-xs">
@@ -302,10 +293,10 @@ export function A1RegistrationForm({
 							)}
 						</form.Field>
 
-						{/* Kanal Pendaftaran */}
+						{/* Jalur Pendaftaran */}
 						<form.Field name="registrasiSource">
 							{(field) => (
-								<FormField label="Kanal Pendaftaran">
+								<FormField label="Jalur Pendaftaran">
 									<Select
 										value={field.state.value || "Manual"}
 										onValueChange={(val) =>
@@ -409,8 +400,7 @@ export function A1RegistrationForm({
 			{/* SECTION 2: SKEMA HARGA & KONTRAK */}
 			<Card className="border-border/60 shadow-xs">
 				<CardHeader className="pb-3">
-					<CardTitle className="text-sm font-semibold flex items-center gap-2">
-						<Building2 className="size-4 text-indigo-500" />
+					<CardTitle className="text-sm font-semibold">
 						2. Skema Harga, Kontrak & Status Bangunan
 					</CardTitle>
 					<CardDescription className="text-xs">
@@ -527,12 +517,29 @@ export function A1RegistrationForm({
 							)}
 						</form.Field>
 
+						{/* Capex Awal */}
+						<form.Field name="capexAwal">
+							{(field) => (
+								<FormField label="Capex Awal / Estimasi (USD)">
+									<Input
+										type="number"
+										step="0.01"
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										placeholder="contoh: 75000"
+										disabled={!canEdit}
+										className="text-xs h-9 font-mono"
+									/>
+								</FormField>
+							)}
+						</form.Field>
+
 						{/* Harga Nilai & Currency & Unit */}
-						<div className="space-y-1.5">
-							<Label className="text-xs font-medium">
-								Tarif / Harga Jual Gas
-							</Label>
-							<div className="flex gap-2">
+						<FormField
+							label="Tarif / Harga Jual Gas"
+							className="sm:col-span-2 md:col-span-2"
+						>
+							<div className="flex items-center gap-2">
 								<form.Field name="hargaNilai">
 									{(field) => (
 										<Input
@@ -542,7 +549,7 @@ export function A1RegistrationForm({
 											onChange={(e) => field.handleChange(e.target.value)}
 											placeholder="contoh: 9.85"
 											disabled={!canEdit}
-											className="text-xs h-9 font-mono"
+											className="text-xs h-9 font-mono flex-1 min-w-0"
 										/>
 									)}
 								</form.Field>
@@ -554,7 +561,7 @@ export function A1RegistrationForm({
 											onValueChange={(val) => field.handleChange(val)}
 											disabled={!canEdit}
 										>
-											<SelectTrigger className="text-xs h-9 w-20">
+											<SelectTrigger className="text-xs h-9 w-[80px] shrink-0 px-2.5">
 												<SelectValue />
 											</SelectTrigger>
 											<SelectContent>
@@ -572,7 +579,7 @@ export function A1RegistrationForm({
 											onValueChange={(val) => field.handleChange(val)}
 											disabled={!canEdit}
 										>
-											<SelectTrigger className="text-xs h-9 w-24">
+											<SelectTrigger className="text-xs h-9 w-[110px] shrink-0 px-2.5">
 												<SelectValue />
 											</SelectTrigger>
 											<SelectContent>
@@ -583,24 +590,7 @@ export function A1RegistrationForm({
 									)}
 								</form.Field>
 							</div>
-						</div>
-
-						{/* Capex Awal */}
-						<form.Field name="capexAwal">
-							{(field) => (
-								<FormField label="Capex Awal / Estimasi (USD)">
-									<Input
-										type="number"
-										step="0.01"
-										value={field.state.value}
-										onChange={(e) => field.handleChange(e.target.value)}
-										placeholder="contoh: 75000"
-										disabled={!canEdit}
-										className="text-xs h-9"
-									/>
-								</FormField>
-							)}
-						</form.Field>
+						</FormField>
 
 						{/* Status Bangunan */}
 						<form.Field name="statusBangunan">

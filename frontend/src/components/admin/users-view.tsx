@@ -366,7 +366,7 @@ export function UsersView() {
 		<div className="space-y-4">
 			{/* Standard Page Header */}
 			<PageHeader
-				title="Pengguna — Manajemen Akun & Hak Akses"
+				title="Manajemen Pengguna & Hak Akses"
 				description="Daftar pengguna dan penugasan peran dalam lingkup administrasi Anda."
 				badge={
 					<span className="p-1 rounded-md bg-primary/10 text-primary">

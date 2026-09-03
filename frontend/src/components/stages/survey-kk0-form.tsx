@@ -1,6 +1,6 @@
 import { useForm } from "@tanstack/react-form";
 import { useQueryClient } from "@tanstack/react-query";
-import { Flame, Loader2, Plus, Save, Trash2, Zap } from "lucide-react";
+import { Flame, Loader2, Plus, Save, Trash2 } from "lucide-react";
 import * as React from "react";
 import { toast } from "sonner";
 import { $api } from "@/api/client";
@@ -418,7 +418,7 @@ export function SurveyKk0Form({
 						1. Data Pelaksanaan Survei & Jam Kerja Operasional
 					</CardTitle>
 					<CardDescription className="text-xs">
-						Petugas surveyor dan jadwal operasional harian pabrik/fasilitas
+						Petugas surveyor dan jadwal operasional calon pelanggan
 					</CardDescription>
 				</CardHeader>
 				<CardContent className="space-y-4">
@@ -911,7 +911,7 @@ export function SurveyKk0Form({
 											</SelectItem>
 											<SelectItem value="BahanBaku">Bahan Baku</SelectItem>
 											<SelectItem value="EkspansiPabrik">
-												Ekspansi Pabrik Baru
+												Ekspansi Fasilitas / Pabrik Baru
 											</SelectItem>
 											<SelectItem value="Lainnya">Lainnya</SelectItem>
 										</SelectContent>
@@ -993,8 +993,7 @@ export function SurveyKk0Form({
 			<Card className="border-border/60 shadow-xs">
 				<CardHeader className="pb-3 flex flex-row items-center justify-between">
 					<div>
-						<CardTitle className="text-sm font-semibold flex items-center gap-2">
-							<Zap className="size-4 text-amber-500" />
+						<CardTitle className="text-sm font-semibold">
 							4. Daftar Peralatan Pembakar & Konversi ke Gas
 						</CardTitle>
 						<CardDescription className="text-xs">

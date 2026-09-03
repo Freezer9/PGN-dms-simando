@@ -7,7 +7,7 @@ import {
 	test,
 } from "./fixtures/auth.fixture";
 
-test.describe("Flow 4: Multi-Actor Approval Workflow (Stages 6–8)", () => {
+test.describe("Flow 4: Multi-Actor Approval Workflow (Stages 6-8)", () => {
 	test("4.1 Area Head: should access tasks and view workflow action bar on company hub", async ({
 		areaHeadPage: page,
 	}) => {
@@ -39,7 +39,9 @@ test.describe("Flow 4: Multi-Actor Approval Workflow (Stages 6–8)", () => {
 		await gotoApp(page, `/directory/${company.companyId}`);
 
 		await expect(page.getByText(company.namaPerusahaan)).toBeVisible();
-		await expect(page.getByText(/Tahapan CRM/i)).toBeVisible();
+		await expect(
+			page.getByText(/Tahapan Saat Ini|Tahapan CRM/i),
+		).toBeVisible();
 	});
 
 	test("4.4 Division Head: should access company hub and view issuance tab", async ({

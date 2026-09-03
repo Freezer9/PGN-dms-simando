@@ -1,13 +1,11 @@
 import { Link } from "@tanstack/react-router";
 import {
-	Activity,
 	ArrowRight,
 	Building2,
 	CheckCircle2,
 	Clock,
 	FileCheck,
 	ListChecks,
-	Sparkles,
 	TrendingUp,
 } from "lucide-react";
 import type { ApproverDashboardDto } from "@/api/types";
@@ -85,9 +83,9 @@ export function ApproverDashboard({
 					badge={totalPending > 0 ? "Pending" : "Selesai"}
 				/>
 				<StatTile
-					title="Total Record Aktif"
+					title="Total Berkas Aktif"
 					value={data.totalActiveRecords}
-					description="Record dalam cakupan kewenangan"
+					description="Berkas dalam cakupan kewenangan"
 					icon={Building2}
 					variant="default"
 				/>
@@ -111,13 +109,11 @@ export function ApproverDashboard({
 			<Card className="shadow-xs">
 				<CardHeader className="flex flex-row items-center justify-between pb-3">
 					<div>
-						<CardTitle className="text-base font-semibold flex items-center gap-2">
-							<Clock className="size-4 text-amber-500" />
+						<CardTitle className="text-base font-semibold">
 							Menunggu Persetujuan Anda ({pendingCount})
 						</CardTitle>
 						<CardDescription className="text-xs">
-							Berkas yang dialokasikan kepada Anda untuk diverifikasi atau
-							disetujui.
+							Berkas dalam antrean Anda untuk diverifikasi atau disetujui.
 						</CardDescription>
 					</div>
 					<Button variant="ghost" size="sm" asChild className="text-xs">
@@ -131,7 +127,7 @@ export function ApproverDashboard({
 							<p className="font-medium text-sm text-foreground">
 								Tidak ada tugas yang menunggu persetujuan
 							</p>
-							<p>Semua berkas yang dialokasikan telah selesai diproses.</p>
+							<p>Semua berkas dalam antrean Anda telah selesai diproses.</p>
 						</div>
 					) : (
 						<Table>
@@ -212,8 +208,7 @@ export function ApproverDashboard({
 				{/* Kinerja Persetujuan Card */}
 				<Card className="shadow-xs">
 					<CardHeader className="pb-3">
-						<CardTitle className="text-base font-semibold flex items-center gap-2">
-							<Sparkles className="size-4 text-primary" />
+						<CardTitle className="text-base font-semibold">
 							Kinerja Persetujuan Saya
 						</CardTitle>
 						<CardDescription className="text-xs">
@@ -259,8 +254,7 @@ export function ApproverDashboard({
 				{/* Aktivitas Terbaru Timeline Card */}
 				<Card className="shadow-xs">
 					<CardHeader className="pb-3">
-						<CardTitle className="text-base font-semibold flex items-center gap-2">
-							<Activity className="size-4 text-primary" />
+						<CardTitle className="text-base font-semibold">
 							Aktivitas Terbaru
 						</CardTitle>
 						<CardDescription className="text-xs">

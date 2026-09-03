@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { ExternalLink, MapPin as MapPinIcon } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import * as React from "react";
 import { $api } from "@/api/client";
 import { Button } from "@/components/ui/button";
@@ -50,8 +50,7 @@ export function DashboardMapPreview() {
 		<Card className="shadow-xs overflow-hidden">
 			<CardHeader className="flex flex-row items-center justify-between pb-3">
 				<div>
-					<CardTitle className="text-base font-semibold flex items-center gap-2">
-						<MapPinIcon className="size-4 text-primary" />
+					<CardTitle className="text-base font-semibold">
 						Peta Sebaran Pelanggan & Prospek
 					</CardTitle>
 					<p className="text-xs text-muted-foreground mt-0.5">

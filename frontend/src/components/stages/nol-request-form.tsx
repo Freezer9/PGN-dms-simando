@@ -1,15 +1,6 @@
 import { useForm } from "@tanstack/react-form";
 import { useQueryClient } from "@tanstack/react-query";
-import {
-	Coins,
-	FileCheck,
-	FileText,
-	Layers,
-	Loader2,
-	Plus,
-	Save,
-	Trash2,
-} from "lucide-react";
+import { FileCheck, Loader2, Plus, Save, Trash2 } from "lucide-react";
 import * as React from "react";
 import { toast } from "sonner";
 import { $api } from "@/api/client";
@@ -300,8 +291,7 @@ export function NolRequestForm({
 			{/* SECTION 1: NOTA DINAS & TIPE REGISTRASI */}
 			<Card className="border-border/60 shadow-xs">
 				<CardHeader className="pb-3">
-					<CardTitle className="text-sm font-semibold flex items-center gap-2">
-						<FileText className="size-4 text-amber-500" />
+					<CardTitle className="text-sm font-semibold">
 						1. Data Nota Dinas & Status Registrasi
 					</CardTitle>
 				</CardHeader>
@@ -495,8 +485,7 @@ export function NolRequestForm({
 			{/* SECTION 2: BIAYA PENYAMBUNGAN & CAPEX PRE-GR3 */}
 			<Card className="border-border/60 shadow-xs">
 				<CardHeader className="pb-3">
-					<CardTitle className="text-sm font-semibold flex items-center gap-2">
-						<Coins className="size-4 text-emerald-500" />
+					<CardTitle className="text-sm font-semibold">
 						2. Biaya Penyambungan & Capex Pre-GR3
 					</CardTitle>
 					<CardDescription className="text-xs">
@@ -538,10 +527,7 @@ export function NolRequestForm({
 						</form.Field>
 
 						{/* Total Biaya Penyambungan (Subscribed Calculation) */}
-						<div className="space-y-1.5">
-							<Label className="text-xs font-medium text-primary">
-								Total Biaya Penyambungan (IDR)
-							</Label>
+						<FormField label="Total Biaya Penyambungan (IDR)">
 							<form.Subscribe
 								selector={(state) => {
 									const reg =
@@ -551,12 +537,12 @@ export function NolRequestForm({
 								}}
 							>
 								{(totalBiayaPenyambungan) => (
-									<div className="h-9 px-3 flex items-center bg-muted/60 border rounded-md font-mono text-xs font-semibold">
+									<div className="h-9 px-3 flex items-center bg-muted/60 border border-input rounded-md font-mono text-xs font-semibold text-foreground">
 										Rp {totalBiayaPenyambungan.toLocaleString("id-ID")}
 									</div>
 								)}
 							</form.Subscribe>
-						</div>
+						</FormField>
 
 						{/* Capex Pre-GR3 */}
 						<form.Field name="capexPreGr3">
@@ -814,8 +800,7 @@ export function NolRequestForm({
 			{/* SECTION 4: DOKUMEN REFERENSI */}
 			<Card className="border-border/60 shadow-xs">
 				<CardHeader className="pb-3">
-					<CardTitle className="text-sm font-semibold flex items-center gap-2">
-						<Layers className="size-4 text-purple-500" />
+					<CardTitle className="text-sm font-semibold">
 						5. Dokumen Referensi Kebijakan / Ketentuan Acuan
 					</CardTitle>
 					<CardDescription className="text-xs">
