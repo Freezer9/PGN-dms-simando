@@ -168,11 +168,11 @@ function SidebarNavGroupComponent({ group }: { group: NavGroup }) {
 										to={subItem.href}
 										activeProps={{
 											className:
-												"bg-accent text-accent-foreground font-semibold",
+												"bg-primary text-primary-foreground font-medium shadow-xs hover:bg-primary/95 hover:text-primary-foreground",
 										}}
 										inactiveProps={{
 											className:
-												"text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+												"text-muted-foreground hover:bg-muted/80 hover:text-foreground",
 										}}
 									>
 										<span className="text-xs">{subItem.title}</span>

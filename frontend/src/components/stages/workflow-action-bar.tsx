@@ -4,10 +4,10 @@ import {
 	AlertOctagon,
 	CheckCircle2,
 	Loader2,
-	MessageSquare,
 	RotateCcw,
 	Undo2,
 	XCircle,
+	Zap,
 } from "lucide-react";
 import * as React from "react";
 import { toast } from "sonner";
@@ -189,10 +189,13 @@ export function WorkflowActionBar({
 	// Determine available actions
 	const canAct = company.canAct && !!currentStepId;
 	const canRework =
-		company.status !== "Draft" && company.status !== "Discontinued";
-	const canDiscontinue = company.status !== "Discontinued";
+		company.status !== "Draft" &&
+		company.status !== "Discontinued" &&
+		company.canAct;
+	const canDiscontinue = company.status !== "Discontinued" && company.canAct;
 
-	if (!canAct && !canRework && !canDiscontinue) {
+	// Only show action banner when the current user has authority to act
+	if (!canAct && !canRework) {
 		return null;
 	}
 
@@ -203,29 +206,27 @@ export function WorkflowActionBar({
 
 	return (
 		<>
-			<div className="flex flex-wrap items-center justify-between gap-3 p-3.5 bg-card/95 backdrop-blur-xs border border-primary/20 rounded-xl shadow-sm">
+			<div className="flex flex-wrap items-center justify-between gap-3 p-3.5 bg-amber-500/10 dark:bg-amber-950/30 border border-amber-500/30 rounded-xl shadow-xs">
 				<div className="flex items-center gap-3">
-					<div className="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-						<MessageSquare className="size-4" />
+					<div className="size-8 rounded-lg bg-amber-500/20 text-amber-700 dark:text-amber-400 flex items-center justify-center shrink-0">
+						<Zap className="size-4" />
 					</div>
 					<div>
 						<div className="flex items-center gap-2">
-							<span className="text-xs font-semibold text-foreground">
-								Aksi Alur Kerja (Workflow Gate)
+							<span className="text-xs font-bold text-amber-900 dark:text-amber-300">
+								⚡ TINDAKAN DIPERLUKAN
 							</span>
 							{company.currentStepKind && (
 								<Badge
 									variant="outline"
-									className="text-[10px] bg-primary/5 text-primary border-primary/20"
+									className="text-[10px] bg-background text-amber-800 dark:text-amber-300 border-amber-400 font-mono"
 								>
 									Tahap: {company.currentStepKind}
 								</Badge>
 							)}
 						</div>
-						<p className="text-[11px] text-muted-foreground">
-							{canAct
-								? "Anda memiliki wewenang untuk meninjau dan mengambil keputusan pada tahap ini"
-								: "Menu tindakan lanjutan untuk status berkas pelanggan"}
+						<p className="text-[11px] text-muted-foreground mt-0.5">
+							Berkas ini memerlukan tindakan evaluasi atau persetujuan Anda untuk melanjutkan ke proses berikutnya.
 						</p>
 					</div>
 				</div>
@@ -249,7 +250,7 @@ export function WorkflowActionBar({
 								size="sm"
 								variant="outline"
 								onClick={() => setActiveModal("revise")}
-								className="h-8 text-xs text-amber-600 border-amber-300 dark:text-amber-400 dark:border-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/30"
+								className="h-8 text-xs text-amber-700 border-amber-300 dark:text-amber-400 dark:border-amber-700 hover:bg-amber-100 dark:hover:bg-amber-950/40"
 							>
 								<RotateCcw className="size-3.5" /> Minta Revisi
 							</Button>
@@ -272,7 +273,7 @@ export function WorkflowActionBar({
 							size="sm"
 							variant="outline"
 							onClick={() => setActiveModal("rework")}
-							className="h-8 text-xs text-amber-600 border-amber-300 hover:bg-amber-50"
+							className="h-8 text-xs text-amber-700 border-amber-300 hover:bg-amber-50"
 						>
 							<Undo2 className="size-3.5" /> Rework
 						</Button>
@@ -285,9 +286,10 @@ export function WorkflowActionBar({
 							size="sm"
 							variant="ghost"
 							onClick={() => setActiveModal("discontinue")}
-							className="h-8 text-xs text-muted-foreground hover:text-destructive"
+							className="h-8 text-xs text-muted-foreground hover:text-destructive ml-1"
+							title="Hentikan Proses Berkas"
 						>
-							<AlertOctagon className="size-3.5" /> Hentikan Proses
+							<AlertOctagon className="size-3.5" />
 						</Button>
 					)}
 				</div>

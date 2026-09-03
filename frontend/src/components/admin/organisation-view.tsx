@@ -8,6 +8,7 @@ import {
 	MapPin,
 	Network,
 	Plus,
+	Search,
 	Trash2,
 } from "lucide-react";
 import * as React from "react";
@@ -21,7 +22,7 @@ import type {
 	UpdateAreaRequest,
 	UpdateRegionRequest,
 } from "@/api/types";
-import { PageHeader } from "@/components/common";
+import { PageHeader, StatCard } from "@/components/common";
 import { FormField } from "@/components/form/form-field";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -43,6 +44,14 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@/components/ui/table";
 
 const regionSchema = z.object({
 	code: z
@@ -88,6 +97,7 @@ export function OrganisationView() {
 		name: string;
 	} | null>(null);
 
+	const [searchTerm, setSearchTerm] = React.useState("");
 	const [error, setError] = React.useState<string | null>(null);
 
 	// Fetch organisation hierarchy
@@ -203,6 +213,41 @@ export function OrganisationView() {
 	);
 
 	const regions = React.useMemo(() => orgData || [], [orgData]);
+
+	const totalAreas = React.useMemo(
+		() => regions.reduce((acc, r) => acc + (r.areas?.length || 0), 0),
+		[regions],
+	);
+
+	const activeAreas = React.useMemo(
+		() =>
+			regions.reduce(
+				(acc, r) =>
+					acc + (r.areas?.filter((a) => a.active ?? true).length || 0),
+				0,
+			),
+		[regions],
+	);
+
+	const filteredRegions = React.useMemo(() => {
+		if (!searchTerm.trim()) return regions;
+		const q = searchTerm.toLowerCase();
+		return regions
+			.map((r) => {
+				const matchesRegion =
+					r.name.toLowerCase().includes(q) || r.code.toLowerCase().includes(q);
+				const matchingAreas = (r.areas || []).filter(
+					(a) =>
+						a.name.toLowerCase().includes(q) || a.code.toLowerCase().includes(q),
+				);
+				if (matchesRegion) return r;
+				if (matchingAreas.length > 0) {
+					return { ...r, areas: matchingAreas };
+				}
+				return null;
+			})
+			.filter(Boolean) as RegionWithAreasDto[];
+	}, [regions, searchTerm]);
 
 	// TanStack Form for Region
 	const regionForm = useForm({
@@ -360,6 +405,48 @@ export function OrganisationView() {
 				</Alert>
 			)}
 
+			{/* Executive Stat Summary */}
+			{!isLoading && regions.length > 0 && (
+				<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+					<StatCard
+						title="Total Wilayah (SOR)"
+						value={regions.length}
+						description="Wilayah operasional teritorial"
+						icon={Building2}
+						variant="primary"
+					/>
+					<StatCard
+						title="Total Sales Area"
+						value={totalAreas}
+						description="Unit pelayanan penjualan gas"
+						icon={MapPin}
+						variant="blue"
+					/>
+					<StatCard
+						title="Sales Area Aktif"
+						value={`${activeAreas} / ${totalAreas}`}
+						description="Unit operasional aktif"
+						icon={Network}
+						variant="emerald"
+					/>
+				</div>
+			)}
+
+			{/* Search & Filter Toolbar */}
+			{!isLoading && regions.length > 0 && (
+				<div className="flex items-center justify-between gap-3">
+					<div className="relative w-full max-w-sm">
+						<Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+						<Input
+							placeholder="Cari wilayah atau sales area..."
+							value={searchTerm}
+							onChange={(e) => setSearchTerm(e.target.value)}
+							className="pl-8 h-9 text-xs bg-background"
+						/>
+					</div>
+				</div>
+			)}
+
 			{/* Loading State */}
 			{isLoading ? (
 				<div className="rounded-xl border bg-card p-12 text-center flex flex-col items-center justify-center gap-2 text-muted-foreground">
@@ -386,35 +473,69 @@ export function OrganisationView() {
 						Buat Wilayah Pertama
 					</Button>
 				</div>
+			) : filteredRegions.length === 0 ? (
+				<div className="rounded-xl border bg-card p-8 text-center flex flex-col items-center justify-center gap-2 text-muted-foreground">
+					<Search className="h-6 w-6 text-muted-foreground/60" />
+					<h3 className="font-semibold text-foreground text-sm">
+						Data Tidak Ditemukan
+					</h3>
+					<p className="text-xs max-w-sm">
+						Tidak ada wilayah atau sales area yang cocok dengan kata kunci "{searchTerm}".
+					</p>
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={() => setSearchTerm("")}
+						className="mt-1 text-xs"
+					>
+						Reset Pencarian
+					</Button>
+				</div>
 			) : (
-				<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-					{regions.map((region) => (
-						<Card key={region.id} className="overflow-hidden shadow-xs">
-							<CardHeader className="bg-muted/40 p-4 border-b flex flex-row items-center justify-between space-y-0">
-								<div className="flex items-center gap-2 min-w-0">
-									<Building2 className="h-4 w-4 text-primary shrink-0" />
+				<div className="space-y-4">
+					{filteredRegions.map((region) => (
+						<Card key={region.id} className="overflow-hidden shadow-xs border-border/70">
+							<CardHeader className="bg-muted/30 p-4 border-b flex flex-row items-center justify-between space-y-0">
+								<div className="flex items-center gap-3 min-w-0">
+									<div className="size-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+										<Building2 className="size-4.5" />
+									</div>
 									<div className="min-w-0">
-										<CardTitle className="text-sm font-bold truncate">
-											{region.name}
-										</CardTitle>
-										<span className="font-mono text-[11px] text-muted-foreground">
-											Kode: {region.code}
-										</span>
+										<div className="flex items-center gap-2">
+											<CardTitle className="text-sm sm:text-base font-bold truncate">
+												{region.name}
+											</CardTitle>
+											<Badge variant="outline" className="font-mono text-[10px] bg-background">
+												{region.code}
+											</Badge>
+											<Badge variant="secondary" className="text-[10px]">
+												{region.areas.length} Sales Area
+											</Badge>
+										</div>
+										<p className="text-xs text-muted-foreground mt-0.5">
+											Wilayah Operasional Teritorial PGN
+										</p>
 									</div>
 								</div>
 
 								<div className="flex items-center gap-1.5 shrink-0">
-									<Badge variant="secondary" className="text-[10px]">
-										{region.areas.length} Area
-									</Badge>
+									<Button
+										variant="outline"
+										size="sm"
+										onClick={() => handleOpenCreateArea(region.id)}
+										className="h-8 text-xs gap-1.5"
+									>
+										<Plus className="size-3.5" />
+										<span className="hidden sm:inline">Tambah Sales Area</span>
+									</Button>
 									<Button
 										variant="ghost"
 										size="icon"
 										onClick={() => handleOpenEditRegion(region)}
-										className="h-7 w-7 text-muted-foreground hover:text-foreground"
+										className="h-8 w-8 text-muted-foreground hover:text-foreground"
 										title="Ubah Wilayah"
 									>
-										<Edit2 className="h-3.5 w-3.5" />
+										<Edit2 className="size-3.5" />
 									</Button>
 									<Button
 										variant="ghost"
@@ -426,77 +547,106 @@ export function OrganisationView() {
 												name: region.name,
 											})
 										}
-										className="h-7 w-7 text-muted-foreground hover:text-destructive"
+										className="h-8 w-8 text-muted-foreground hover:text-destructive"
 										title="Hapus Wilayah"
 									>
-										<Trash2 className="h-3.5 w-3.5" />
+										<Trash2 className="size-3.5" />
 									</Button>
 								</div>
 							</CardHeader>
 
-							<CardContent className="p-3 space-y-2">
+							<CardContent className="p-0">
 								{region.areas.length === 0 ? (
-									<div className="text-center py-4 text-xs text-muted-foreground border border-dashed rounded-lg">
-										Belum ada Sales Area di wilayah ini.
-										<div className="mt-1">
-											<Button
-												variant="link"
-												size="sm"
-												onClick={() => handleOpenCreateArea(region.id)}
-												className="h-auto p-0 text-xs text-primary"
-											>
-												+ Tambah Sales Area
-											</Button>
-										</div>
+									<div className="text-center py-8 px-4 text-xs text-muted-foreground">
+										<p>Belum ada Sales Area yang terdaftar pada wilayah {region.name}.</p>
+										<Button
+											variant="link"
+											size="sm"
+											onClick={() => handleOpenCreateArea(region.id)}
+											className="mt-1 text-xs text-primary"
+										>
+											+ Tambah Sales Area Pertama
+										</Button>
 									</div>
 								) : (
-									<div className="divide-y rounded-lg border bg-muted/20">
-										{region.areas.map((area) => (
-											<div
-												key={area.id}
-												className="flex items-center justify-between p-2.5 text-xs hover:bg-muted/40 transition-colors"
-											>
-												<div className="flex items-center gap-2 min-w-0">
-													<MapPin className="h-3.5 w-3.5 text-primary shrink-0" />
-													<div className="min-w-0">
-														<span className="font-semibold text-foreground">
-															{area.name}
-														</span>
-														<span className="font-mono text-[11px] text-muted-foreground ml-2">
-															({area.code})
-														</span>
-													</div>
-												</div>
-
-												<div className="flex items-center gap-1 shrink-0">
-													<Button
-														variant="ghost"
-														size="icon"
-														onClick={() => handleOpenEditArea(area, region.id)}
-														className="h-6 w-6 text-muted-foreground hover:text-foreground"
-														title="Ubah Sales Area"
-													>
-														<Edit2 className="h-3 w-3" />
-													</Button>
-													<Button
-														variant="ghost"
-														size="icon"
-														onClick={() =>
-															setDeleteConfirm({
-																type: "area",
-																id: area.id,
-																name: area.name,
-															})
-														}
-														className="h-6 w-6 text-muted-foreground hover:text-destructive"
-														title="Hapus Sales Area"
-													>
-														<Trash2 className="h-3 w-3" />
-													</Button>
-												</div>
-											</div>
-										))}
-									</div>
+									<Table>
+										<TableHeader className="bg-muted/15">
+											<TableRow>
+												<TableHead className="w-48 font-semibold text-xs py-2.5 pl-4">
+													Kode Area
+												</TableHead>
+												<TableHead className="font-semibold text-xs py-2.5">
+													Nama Sales Area
+												</TableHead>
+												<TableHead className="w-32 font-semibold text-xs py-2.5">
+													Status
+												</TableHead>
+												<TableHead className="w-28 text-right font-semibold text-xs py-2.5 pr-4">
+													Tindakan
+												</TableHead>
+											</TableRow>
+										</TableHeader>
+										<TableBody>
+											{region.areas.map((area) => (
+												<TableRow
+													key={area.id}
+													className="hover:bg-muted/30 transition-colors"
+												>
+													<TableCell className="font-mono text-xs font-semibold pl-4">
+														{area.code}
+													</TableCell>
+													<TableCell className="text-xs font-medium text-foreground">
+														<div className="flex items-center gap-2">
+															<MapPin className="size-3.5 text-primary shrink-0" />
+															<span>{area.name}</span>
+														</div>
+													</TableCell>
+													<TableCell className="text-xs">
+														<Badge
+															variant="outline"
+															className={
+																area.active !== false
+																	? "text-[10px] bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
+																	: "text-[10px] bg-muted text-muted-foreground"
+															}
+														>
+															{area.active !== false ? "Aktif" : "Nonaktif"}
+														</Badge>
+													</TableCell>
+													<TableCell className="text-right pr-4 py-2">
+														<div className="flex items-center justify-end gap-1">
+															<Button
+																variant="ghost"
+																size="icon"
+																onClick={() =>
+																	handleOpenEditArea(area, region.id)
+																}
+																className="h-7 w-7 text-muted-foreground hover:text-foreground"
+																title="Ubah Sales Area"
+															>
+																<Edit2 className="size-3.5" />
+															</Button>
+															<Button
+																variant="ghost"
+																size="icon"
+																onClick={() =>
+																	setDeleteConfirm({
+																		type: "area",
+																		id: area.id,
+																		name: area.name,
+																	})
+																}
+																className="h-7 w-7 text-muted-foreground hover:text-destructive"
+																title="Hapus Sales Area"
+															>
+																<Trash2 className="size-3.5" />
+															</Button>
+														</div>
+													</TableCell>
+												</TableRow>
+											))}
+										</TableBody>
+									</Table>
 								)}
 							</CardContent>
 						</Card>

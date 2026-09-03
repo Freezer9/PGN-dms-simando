@@ -87,9 +87,17 @@ export function Breadcrumbs({ className }: { className?: string }) {
 				{segments.map((segment, index) => {
 					accumulatedPath += `/${segment}`;
 					const isLast = index === segments.length - 1;
+					const isUuid =
+						/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+							segment,
+						);
 					const label =
 						ROUTE_LABELS[segment] ||
-						(segment.length > 20 ? `${segment.slice(0, 10)}...` : segment);
+						(isUuid
+							? "Detail Berkas"
+							: segment.length > 20
+								? `${segment.slice(0, 10)}...`
+								: segment);
 
 					return (
 						<React.Fragment key={accumulatedPath}>

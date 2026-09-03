@@ -2,12 +2,13 @@ import { useForm } from "@tanstack/react-form";
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
+	Activity,
 	AlertCircle,
 	ArrowLeft,
 	Building2,
-	CheckCircle2,
-	Clock,
+	DollarSign,
 	Edit2,
+	Flame,
 	Layers,
 	Loader2,
 	MapPin,
@@ -37,6 +38,7 @@ import { A1RegistrationForm } from "@/components/stages/a1-registration-form";
 import { NolEvaluationForm } from "@/components/stages/nol-evaluation-form";
 import { NolIssuanceForm } from "@/components/stages/nol-issuance-form";
 import { NolRequestForm } from "@/components/stages/nol-request-form";
+import { StageStepper } from "@/components/stages/stage-stepper";
 import { SurveyKk0Form } from "@/components/stages/survey-kk0-form";
 import { WorkflowActionBar } from "@/components/stages/workflow-action-bar";
 import { Badge } from "@/components/ui/badge";
@@ -85,7 +87,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
 	getStageInfo,
 	getStatusLabel,
-	STAGE_CONFIG,
 } from "@/lib/directory-utils";
 import {
 	type SaveContactFormValues,
@@ -503,7 +504,7 @@ function CompanyRecordHubPage() {
 	const statusInfo = getStatusLabel(company.status);
 
 	return (
-		<div className="max-w-7xl mx-auto space-y-6 pb-16">
+		<div className="w-full space-y-6 pb-16">
 			{/* Top Navigation & Breadcrumb */}
 			<div className="flex items-center justify-between">
 				<div className="flex items-center gap-2">
@@ -632,155 +633,145 @@ function CompanyRecordHubPage() {
 					</div>
 				</div>
 
-				{/* 8-Stage Progress Tracker Bar */}
-				<div className="border-t bg-muted/20 px-6 py-3">
-					<div className="grid grid-cols-4 md:grid-cols-8 gap-2">
-						{Object.values(STAGE_CONFIG).map((st) => {
-							const isCompleted = Number(company.currentStage) > st.stage;
-							const isCurrent = Number(company.currentStage) === st.stage;
-
-							return (
-								<button
-									type="button"
-									key={st.stage}
-									onClick={() => {
-										if (st.stage === 1) setActiveTab("overview");
-										else if (st.stage === 2) setActiveTab("plotting");
-										else if (st.stage === 3) setActiveTab("contacts");
-										else if (st.stage === 4) setActiveTab("survey");
-										else if (st.stage === 5) setActiveTab("registration");
-										else if (st.stage === 6) setActiveTab("nol-req");
-										else if (st.stage === 7) setActiveTab("nol-eval");
-										else if (st.stage === 8) setActiveTab("nol-issue");
-									}}
-									className={`flex flex-col items-center text-center p-2 rounded-md transition-all ${
-										isCurrent
-											? "bg-primary text-primary-foreground font-semibold shadow-xs"
-											: isCompleted
-												? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
-												: "bg-muted/40 text-muted-foreground opacity-60 hover:opacity-100"
-									}`}
-								>
-									<div className="flex items-center gap-1 text-[11px]">
-										{isCompleted ? (
-											<CheckCircle2 className="size-3 shrink-0 text-emerald-600 dark:text-emerald-400" />
-										) : isCurrent ? (
-											<Clock className="size-3 shrink-0" />
-										) : null}
-										<span>Tahap {st.stage}</span>
-									</div>
-									<span className="text-[10px] truncate max-w-full">
-										{st.shortName}
-									</span>
-								</button>
-							);
-						})}
-					</div>
+				{/* 8-Stage Visual Milestone Pipeline Stepper */}
+				<div className="border-t bg-muted/20 px-4 sm:px-6 py-2">
+					<StageStepper
+						currentStage={Number(company.currentStage)}
+						activeTab={activeTab}
+						onSelectStage={(_stageNum, tabKey) => setActiveTab(tabKey)}
+					/>
 				</div>
 			</Card>
 
-			{/* Main Content Tabs */}
-			<Tabs
-				value={activeTab}
-				onValueChange={setActiveTab}
-				className="space-y-4"
-			>
-				<TabsList className="grid grid-cols-5 md:grid-cols-9 h-auto p-1 bg-muted/60">
-					<TabsTrigger value="overview" className="text-xs py-2">
-						Ringkasan
-					</TabsTrigger>
-					<TabsTrigger value="contacts" className="text-xs py-2">
-						Kontak ({contacts?.length || 0})
-					</TabsTrigger>
-					<TabsTrigger value="plotting" className="text-xs py-2">
-						Plotting
-					</TabsTrigger>
-					<TabsTrigger value="survey" className="text-xs py-2">
-						Survei KK0
-					</TabsTrigger>
-					<TabsTrigger value="registration" className="text-xs py-2">
-						Registrasi A1
-					</TabsTrigger>
-					<TabsTrigger value="nol-req" className="text-xs py-2">
-						Permohonan
-					</TabsTrigger>
-					<TabsTrigger value="nol-eval" className="text-xs py-2">
-						Evaluasi
-					</TabsTrigger>
-					<TabsTrigger value="nol-issue" className="text-xs py-2">
-						Penerbitan
-					</TabsTrigger>
-					<TabsTrigger
-						value="attachments"
-						className="text-xs py-2 flex items-center justify-center gap-1"
+			{/* 2-Column Responsive Layout: Left Tabs + Right Persistent Linimasa */}
+			<div className="flex flex-col xl:flex-row gap-6 items-start w-full">
+				{/* Left Column: Main Operational Stage Tabs */}
+				<div className="flex-1 min-w-0 w-full space-y-4">
+					<Tabs
+						value={activeTab}
+						onValueChange={setActiveTab}
+						className="space-y-4"
 					>
-						<span>Lampiran</span>
-						{attachments.length > 0 && (
-							<Badge
-								variant="secondary"
-								className="text-[10px] h-4 px-1 rounded-full font-mono"
+						<TabsList className="flex flex-wrap items-center gap-1.5 w-full group-data-[orientation=horizontal]/tabs:h-auto p-1.5 bg-muted/60 rounded-xl border border-border/50">
+							<TabsTrigger value="overview" className="h-7 text-xs px-2.5 rounded-lg">
+								Ringkasan
+							</TabsTrigger>
+							<TabsTrigger value="contacts" className="h-7 text-xs px-2.5 rounded-lg">
+								Kontak ({contacts?.length || 0})
+							</TabsTrigger>
+							<TabsTrigger value="plotting" className="h-7 text-xs px-2.5 rounded-lg">
+								Plotting
+							</TabsTrigger>
+							<TabsTrigger value="survey" className="h-7 text-xs px-2.5 rounded-lg">
+								Survei KK0
+							</TabsTrigger>
+							<TabsTrigger value="registration" className="h-7 text-xs px-2.5 rounded-lg">
+								Registrasi A1
+							</TabsTrigger>
+							<TabsTrigger value="nol-req" className="h-7 text-xs px-2.5 rounded-lg">
+								Permohonan
+							</TabsTrigger>
+							<TabsTrigger value="nol-eval" className="h-7 text-xs px-2.5 rounded-lg">
+								Evaluasi
+							</TabsTrigger>
+							<TabsTrigger value="nol-issue" className="h-7 text-xs px-2.5 rounded-lg">
+								Penerbitan
+							</TabsTrigger>
+							<TabsTrigger
+								value="attachments"
+								className="h-7 text-xs px-2.5 rounded-lg flex items-center justify-center gap-1"
 							>
-								{attachments.length}
-							</Badge>
-						)}
-					</TabsTrigger>
-					<TabsTrigger value="timeline" className="text-xs py-2">
-						Lini Masa
-					</TabsTrigger>
-				</TabsList>
+								<span>Lampiran</span>
+								{attachments.length > 0 && (
+									<Badge
+										variant="secondary"
+										className="text-[10px] h-4 px-1 rounded-full font-mono"
+									>
+										{attachments.length}
+									</Badge>
+								)}
+							</TabsTrigger>
+						</TabsList>
 
 				{/* TAB 1: RINGKASAN (OVERVIEW) */}
 				<TabsContent value="overview" className="space-y-6 pt-4">
-					{/* 4 Executive KPI Cards */}
-					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+					{/* 4 Executive Commercial & Technical KPI Cards */}
+					<div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-4 gap-3">
 						<Card className="border-border/60 shadow-xs">
 							<CardContent className="p-4 space-y-1">
-								<span className="text-xs text-muted-foreground">
-									Sektor Industri
-								</span>
-								<div className="text-base font-bold text-foreground">
-									{company.industryTypeName || "-"}
+								<div className="flex items-center justify-between">
+									<span className="text-xs font-medium text-muted-foreground">
+										Est. Kebutuhan Gas
+									</span>
+									<Flame className="size-4 text-orange-500" />
 								</div>
-								<span className="text-[11px] text-muted-foreground">
-									Klasifikasi Usaha
+								<div className="text-base font-bold text-foreground truncate">
+									{surveyData?.jumlahKebutuhanEnergi != null &&
+									Number(surveyData.jumlahKebutuhanEnergi) > 0
+										? `${Number(surveyData.jumlahKebutuhanEnergi).toLocaleString("id-ID")} MMBTU/bln`
+										: "Belum Disurvei"}
+								</div>
+								<span className="text-[11px] text-muted-foreground block truncate">
+									{surveyData?.rencanaPemanfaatanGas || "Survei Teknis KK0 (Tahap 4)"}
 								</span>
 							</CardContent>
 						</Card>
 
 						<Card className="border-border/60 shadow-xs">
 							<CardContent className="p-4 space-y-1">
-								<span className="text-xs text-muted-foreground">
-									Wilayah & Area
-								</span>
-								<div className="text-base font-bold text-foreground">
-									{company.areaName}
+								<div className="flex items-center justify-between">
+									<span className="text-xs font-medium text-muted-foreground">
+										Posisi & Kawasan
+									</span>
+									<MapPin className="size-4 text-primary" />
 								</div>
-								<span className="text-[11px] text-muted-foreground">
-									{company.regionName}
+								<div className="text-base font-bold text-foreground truncate">
+									{plotting?.posisiPelanggan
+										? plotting.posisiPelanggan === "JalurExisting"
+											? "Jalur Existing"
+											: "Pengembangan"
+										: "Belum Ditetapkan"}
+								</div>
+								<span className="text-[11px] text-muted-foreground block truncate">
+									{plotting?.kawasan
+										? `Kawasan: ${plotting.kawasan}`
+										: "Di luar kawasan industri"}
 								</span>
 							</CardContent>
 						</Card>
 
 						<Card className="border-border/60 shadow-xs">
 							<CardContent className="p-4 space-y-1">
-								<span className="text-xs text-muted-foreground">
-									Sales Representative PIC
-								</span>
-								<div className="text-base font-bold text-foreground">
-									{company.salesRepName || "Belum Ditugaskan"}
+								<div className="flex items-center justify-between">
+									<span className="text-xs font-medium text-muted-foreground">
+										Indikasi Harga Gas
+									</span>
+									<DollarSign className="size-4 text-emerald-600" />
 								</div>
-								<span className="text-[11px] text-muted-foreground">
-									Petugas Penanggung Jawab
+								<div className="text-base font-bold text-foreground truncate">
+									{registrationData?.hargaNilai != null
+										? `${registrationData.hargaCurrency || "USD"} ${Number(registrationData.hargaNilai).toLocaleString("id-ID")}`
+										: surveyData?.willingnessToPayUsdMmbtu != null
+											? `USD ${Number(surveyData.willingnessToPayUsdMmbtu).toLocaleString("id-ID")} (WTP)`
+											: "Belum Ditetapkan"}
+								</div>
+								<span className="text-[11px] text-muted-foreground block truncate">
+									{registrationData?.skemaHarga
+										? `Skema: ${registrationData.skemaHarga}`
+										: "Menunggu Registrasi A1"}
 								</span>
 							</CardContent>
 						</Card>
 
 						<Card className="border-border/60 shadow-xs">
 							<CardContent className="p-4 space-y-1">
-								<span className="text-xs text-muted-foreground">
-									Status Berkas
-								</span>
-								<div className="text-base font-bold text-foreground flex items-center gap-1.5">
+								<div className="flex items-center justify-between">
+									<span className="text-xs font-medium text-muted-foreground">
+										Status Alur Kerja
+									</span>
+									<Activity className="size-4 text-primary" />
+								</div>
+								<div className="text-base font-bold text-foreground flex items-center gap-1.5 truncate">
 									<Badge
 										variant="outline"
 										className={`text-[11px] font-normal border ${statusInfo.badgeClass}`}
@@ -788,8 +779,8 @@ function CompanyRecordHubPage() {
 										{statusInfo.label}
 									</Badge>
 								</div>
-								<span className="text-[11px] text-muted-foreground">
-									Tahap {company.currentStage} dari 8
+								<span className="text-[11px] text-muted-foreground block truncate">
+									Tahap {company.currentStage} · {stageInfo.shortName}
 								</span>
 							</CardContent>
 						</Card>
@@ -1414,50 +1405,71 @@ function CompanyRecordHubPage() {
 					<AttachmentList companyId={company.id} />
 				</TabsContent>
 
-				{/* TAB 10: LINI MASA & AUDIT TRAIL */}
-				<TabsContent value="timeline" className="pt-4 space-y-4">
+					</Tabs>
+				</div>
+
+				{/* Right: Persistent Linimasa (Audit Trail & Activity Stream) */}
+				<aside className="w-full xl:w-80 2xl:w-96 shrink-0 xl:sticky xl:top-4 space-y-4">
 					<Card className="border-border/60 shadow-xs">
-						<CardHeader className="pb-3">
-							<CardTitle className="text-base font-semibold flex items-center gap-2">
-								<Layers className="size-4 text-primary" />
-								Lini Masa Perubahan Berkas & Audit Trail
-							</CardTitle>
-							<CardDescription className="text-xs">
-								Jejak audit permanen setiap transisi status, persetujuan, dan
-								catatan review
+						<CardHeader className="p-4 pb-3 border-b bg-muted/20">
+							<div className="flex items-center justify-between">
+								<CardTitle className="text-sm font-semibold flex items-center gap-2">
+									<Layers className="size-4 text-primary" />
+									<span>Linimasa Berkas</span>
+								</CardTitle>
+								{timeline && (
+									<Badge variant="secondary" className="text-[10px] font-mono">
+										{timeline.length} Aktivitas
+									</Badge>
+								)}
+							</div>
+							<CardDescription className="text-xs mt-1">
+								Jejak audit alur kerja & riwayat transisi status
 							</CardDescription>
 						</CardHeader>
-						<CardContent>
+						<CardContent className="p-4">
 							{timeline && timeline.length > 0 ? (
-								<div className="space-y-6 relative before:absolute before:inset-0 before:left-3.5 before:w-0.5 before:bg-border">
+								<div className="space-y-4 max-h-[calc(100vh-14rem)] overflow-y-auto pr-1 relative before:absolute before:inset-0 before:left-2 before:w-0.5 before:bg-border">
 									{timeline.map((entry) => (
 										<div
 											key={entry.id}
-											className="flex items-start gap-4 relative pl-8"
+											className="flex items-start gap-3 relative pl-6 text-xs"
 										>
-											<div className="absolute left-2 top-1 size-3 rounded-full bg-primary border-2 border-background" />
-											<div className="space-y-1 bg-muted/30 p-3 rounded-lg border flex-1 text-xs">
-												<div className="flex items-center justify-between gap-2">
-													<div className="flex items-center gap-2">
-														<span className="font-semibold text-foreground">
-															{entry.action}
-														</span>
-														<span className="text-muted-foreground">oleh</span>
-														<span className="font-medium text-foreground">
-															{entry.actorName} ({entry.roleLabel})
-														</span>
-													</div>
-													<span className="text-[11px] text-muted-foreground font-mono">
-														{new Date(entry.occurredAt).toLocaleString("id-ID")}
+											<div className="absolute left-0.5 top-1.5 size-3 rounded-full bg-primary border-2 border-background" />
+											<div className="space-y-1 bg-muted/30 hover:bg-muted/50 transition-colors p-2.5 rounded-lg border border-border/60 flex-1">
+												<div className="flex items-start justify-between gap-1">
+													<span className="font-semibold text-foreground leading-tight">
+														{entry.action}
+													</span>
+													<span className="text-[10px] text-muted-foreground font-mono shrink-0 whitespace-nowrap">
+														{new Date(entry.occurredAt).toLocaleDateString(
+															"id-ID",
+															{
+																day: "numeric",
+																month: "short",
+																hour: "2-digit",
+																minute: "2-digit",
+															},
+														)}
 													</span>
 												</div>
-												<div className="flex items-center gap-2 text-muted-foreground pt-1">
-													<span>
-														Status Tujuan: <strong>{entry.toStatus}</strong>
-													</span>
+												<div className="text-[11px] text-muted-foreground">
+													<span>{entry.actorName}</span>
+													{entry.roleLabel && (
+														<span className="opacity-80"> ({entry.roleLabel})</span>
+													)}
+												</div>
+												<div className="text-[11px] text-muted-foreground pt-0.5 flex items-center gap-1.5">
+													<span>Status:</span>
+													<Badge
+														variant="outline"
+														className="text-[10px] py-0 h-4 px-1.5 font-mono bg-background"
+													>
+														{entry.toStatus}
+													</Badge>
 												</div>
 												{entry.comment && (
-													<p className="text-muted-foreground pt-1 italic">
+													<p className="text-[11px] text-muted-foreground/90 pt-1 italic border-t border-border/50 mt-1">
 														"{entry.comment}"
 													</p>
 												)}
@@ -1467,13 +1479,13 @@ function CompanyRecordHubPage() {
 								</div>
 							) : (
 								<div className="text-center py-8 text-xs text-muted-foreground">
-									Belum ada riwayat perubahan status pada berkas ini.
+									Belum ada riwayat aktivitas pada berkas ini.
 								</div>
 							)}
 						</CardContent>
 					</Card>
-				</TabsContent>
-			</Tabs>
+				</aside>
+			</div>
 
 			{/* Contact Modal (Add / Edit) */}
 			<Dialog open={contactModalOpen} onOpenChange={setContactModalOpen}>
