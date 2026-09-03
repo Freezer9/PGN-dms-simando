@@ -90,62 +90,55 @@ function mergeHoverPaint<T extends Record<string, unknown>>(
 
 type Theme = "light" | "dark";
 
-// Check the document for an explicit theme (works with next-themes, etc.).
-// Covers both `attribute="class"` (the default) and `attribute="data-theme"`.
-function getDocumentTheme(): Theme | null {
-	if (typeof document === "undefined") return null;
+// Check the document or container element for an active theme.
+// The app uses class-based theming with light mode default (@custom-variant dark (&:is(.dark *)); in Tailwind v4).
+// Dark mode is only active if an ancestor container or document element explicitly has the `.dark` class
+// or `data-theme="dark"`. Otherwise, it resolves to "light".
+function getActiveTheme(element?: HTMLElement | null): Theme {
+	if (typeof document === "undefined") return "light";
+	if (element?.closest(".dark")) return "dark";
 	const root = document.documentElement;
 	if (root.classList.contains("dark")) return "dark";
-	if (root.classList.contains("light")) return "light";
-	const dataTheme = root.dataset.theme;
-	if (dataTheme === "dark" || dataTheme === "light") return dataTheme;
-	return null;
+	if (root.dataset.theme === "dark") return "dark";
+	return "light";
 }
 
-// Get system preference
-function getSystemTheme(): Theme {
-	if (typeof window === "undefined") return "light";
-	return window.matchMedia("(prefers-color-scheme: dark)").matches
-		? "dark"
-		: "light";
-}
-
-function useResolvedTheme(themeProp?: "light" | "dark"): Theme {
-	const [detectedTheme, setDetectedTheme] = useState<Theme>(
-		() => getDocumentTheme() ?? getSystemTheme(),
+function useResolvedTheme(
+	themeProp?: "light" | "dark",
+	containerRef?: React.RefObject<HTMLDivElement | null>,
+): Theme {
+	const [detectedTheme, setDetectedTheme] = useState<Theme>(() =>
+		getActiveTheme(containerRef?.current),
 	);
 
 	useEffect(() => {
 		if (themeProp) return; // Skip detection if theme is provided via prop
 
-		// Watch for document theme changes (e.g., next-themes toggling the class
-		// or the data-theme attribute).
-		const observer = new MutationObserver(() => {
-			const docTheme = getDocumentTheme();
-			if (docTheme) {
-				setDetectedTheme(docTheme);
-			}
-		});
+		const updateTheme = () => {
+			setDetectedTheme(getActiveTheme(containerRef?.current));
+		};
+
+		// Check on mount now that containerRef is attached
+		updateTheme();
+
+		// Watch for document theme changes (e.g., toggling .dark or data-theme)
+		const observer = new MutationObserver(updateTheme);
 		observer.observe(document.documentElement, {
 			attributes: true,
 			attributeFilter: ["class", "data-theme"],
 		});
 
-		// Also watch for system preference changes
-		const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-		const handleSystemChange = (e: MediaQueryListEvent) => {
-			// Only use system preference if no document class is set
-			if (!getDocumentTheme()) {
-				setDetectedTheme(e.matches ? "dark" : "light");
-			}
-		};
-		mediaQuery.addEventListener("change", handleSystemChange);
+		if (containerRef?.current) {
+			observer.observe(containerRef.current, {
+				attributes: true,
+				attributeFilter: ["class"],
+			});
+		}
 
 		return () => {
 			observer.disconnect();
-			mediaQuery.removeEventListener("change", handleSystemChange);
 		};
-	}, [themeProp]);
+	}, [themeProp, containerRef]);
 
 	return themeProp ?? detectedTheme;
 }
@@ -281,7 +274,7 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
 	const currentStyleRef = useRef<MapStyleOption | null>(null);
 	const styleSwapInFlightRef = useRef(false);
 	const internalUpdateRef = useRef(false);
-	const resolvedTheme = useResolvedTheme(themeProp);
+	const resolvedTheme = useResolvedTheme(themeProp, containerRef);
 	const isWebGLAvailable = useMemo(() => isWebGLSupported(), []);
 
 	const isControlled = viewport !== undefined && onViewportChange !== undefined;
@@ -2286,9 +2279,12 @@ export {
 	MapArc,
 	MapGeoJSON,
 	MapClusterLayer,
+	useResolvedTheme,
+	getActiveTheme,
 };
 
 export type {
+	Theme,
 	MapRef,
 	MapViewport,
 	MapStyleOption,
