@@ -51,7 +51,15 @@ export const USER_CREDENTIALS: Record<string, UserCredentials> = {
  */
 export async function gotoApp(page: Page, path: string) {
 	await page.goto(path, { waitUntil: "domcontentloaded" });
-	await page.waitForSelector("#app > *", { state: "attached", timeout: 30000 });
+	await page.waitForSelector("#app", { state: "attached", timeout: 30000 });
+	await page.waitForFunction(
+		() => {
+			const app = document.getElementById("app");
+			return app !== null && app.children.length > 0;
+		},
+		undefined,
+		{ timeout: 45000 },
+	);
 }
 
 /**
@@ -302,6 +310,131 @@ export async function createTestCompany(
 		nomor: data.nomor as string,
 		namaPerusahaan: payload.namaPerusahaan,
 	};
+}
+
+/**
+ * Setup plotting configuration and promote company to stage 3 (Prospek)
+ */
+export async function setupPlottingForCompany(page: Page, companyId: string) {
+	const salesUsersRes = await page.request.get("/api/master/sales-users");
+	const salesUsers = await salesUsersRes.json();
+	const salesUser = salesUsers[0] || {
+		id: "00000000-0000-0000-0000-000000000001",
+	};
+
+	await page.request.put(`/api/companies/${companyId}/plotting`, {
+		data: {
+			salesUserId: salesUser.id,
+			posisiPelanggan: "JalurExisting",
+			kawasan: "KawasanIndustri",
+		},
+	});
+
+	await page.request.post(`/api/companies/${companyId}/promote-to-prospek`);
+}
+
+/**
+ * Add a primary contact for the company
+ */
+export async function addContactForCompany(
+	page: Page,
+	companyId: string,
+	contact?: Partial<{
+		nama: string;
+		jabatan: string;
+		email: string;
+		noHp: string;
+	}>,
+) {
+	await page.request.post(`/api/companies/${companyId}/contacts`, {
+		data: {
+			nama: contact?.nama || "Budi Santoso",
+			jabatan: contact?.jabatan || "Manager Operasional",
+			email: contact?.email || "budi.santoso@company.co.id",
+			noHp: contact?.noHp || "081234567890",
+			isPrimary: true,
+		},
+	});
+}
+
+/**
+ * Save dummy survey for company to advance to Stage 4 (Survey completed)
+ */
+export async function completeSurveyForCompany(page: Page, companyId: string) {
+	const res = await page.request.put(`/api/companies/${companyId}/survey`, {
+		data: {
+			request: {
+				tanggalSurvey: "2026-09-01",
+				jumlahKaryawan: 50,
+			},
+			products: [],
+			rawMaterials: [],
+			markets: [],
+			equipment: [],
+		},
+	});
+	if (!res.ok()) {
+		throw new Error(
+			`Save survey failed: ${res.status()} ${await res.text()}`,
+		);
+	}
+}
+
+/**
+ * Save dummy registration for company to advance to Stage 5 (A1 Registration completed)
+ */
+export async function completeRegistrationForCompany(
+	page: Page,
+	companyId: string,
+) {
+	const res = await page.request.put(
+		`/api/companies/${companyId}/registration`,
+		{
+			data: {
+				tanggalRegistrasi: "2026-09-01",
+				namaPenanggungJawab: "Budi Santoso",
+				skemaHarga: "Reguler",
+				usagePeriods: [],
+			},
+		},
+	);
+	if (!res.ok()) {
+		throw new Error(
+			`Save registration failed: ${res.status()} ${await res.text()}`,
+		);
+	}
+}
+
+/**
+ * Upload a dummy attachment for the company
+ */
+export async function uploadCompanyAttachment(
+	page: Page,
+	companyId: string,
+	kind: string,
+) {
+	const dummyPdfBuffer = Buffer.from(
+		"%PDF-1.4\n1 0 obj<</Type/Catalog>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF",
+	);
+	const res = await page.request.post(
+		`/api/companies/${companyId}/attachments`,
+		{
+			multipart: {
+				file: {
+					name: `${kind.toLowerCase()}-doc.pdf`,
+					mimeType: "application/pdf",
+					buffer: dummyPdfBuffer,
+				},
+				kind: kind,
+				signatureMethod: "Digital",
+			},
+		},
+	);
+	if (!res.ok()) {
+		throw new Error(
+			`Upload failed for ${kind}: ${res.status()} ${await res.text()}`,
+		);
+	}
 }
 
 type Fixtures = {

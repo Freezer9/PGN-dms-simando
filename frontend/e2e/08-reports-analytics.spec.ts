@@ -10,7 +10,7 @@ test.describe("Flow 8: Reports & Operational Analytics", () => {
 			page.getByText(/Corong Penjualan \(Funnel\)/i),
 		).toBeVisible();
 		await expect(
-			page.getByText(/Penuaan Proses \(Ageing\)/i),
+			page.getByText(/Durasi Proses & Ageing/i),
 		).toBeVisible();
 		await expect(
 			page.getByText(/Potensi Kebutuhan Gas/i),
@@ -39,7 +39,7 @@ test.describe("Flow 8: Reports & Operational Analytics", () => {
 		await gotoApp(page, "/reports/ageing");
 
 		await expect(
-			page.getByText(/Laporan Penuaan Proses \(Workflow Ageing\)/i),
+			page.getByText(/Laporan Durasi Proses & Ageing/i),
 		).toBeVisible();
 		await expect(
 			page.getByPlaceholder(/Cari perusahaan, nomor register/i),

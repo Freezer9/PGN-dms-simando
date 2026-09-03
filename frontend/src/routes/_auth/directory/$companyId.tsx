@@ -10,6 +10,7 @@ import {
 	Edit2,
 	Flame,
 	Loader2,
+	Lock,
 	MapPin,
 	Paperclip,
 	Plus,
@@ -38,6 +39,7 @@ import { A1RegistrationForm } from "@/components/stages/a1-registration-form";
 import { NolEvaluationForm } from "@/components/stages/nol-evaluation-form";
 import { NolIssuanceForm } from "@/components/stages/nol-issuance-form";
 import { NolRequestForm } from "@/components/stages/nol-request-form";
+import { StageGateLockedCard } from "@/components/stages/stage-gate-locked-card";
 import { StageStepper } from "@/components/stages/stage-stepper";
 import { SurveyKk0Form } from "@/components/stages/survey-kk0-form";
 import { WorkflowActionBar } from "@/components/stages/workflow-action-bar";
@@ -92,6 +94,7 @@ import {
 	saveContactSchema,
 	savePlottingSchema,
 } from "@/lib/schemas";
+import { evaluateStageGates } from "@/lib/stage-gates";
 
 export const Route = createFileRoute("/_auth/directory/$companyId")({
 	component: CompanyRecordHubPage,
@@ -192,6 +195,18 @@ function CompanyRecordHubPage() {
 			params: { path: { companyId } },
 		},
 	);
+
+	// Evaluate Stage Gates based on canonical domain rules
+	const gates = React.useMemo(() => {
+		return evaluateStageGates({
+			currentStage: Number(company?.currentStage) || 1,
+			status: company?.status || "Draft",
+			plotting,
+			contactsCount: contacts?.length || 0,
+			attachments: attachments.map((a) => ({ kind: a.kind })),
+			skemaHarga: registrationData?.skemaHarga,
+		});
+	}, [company, plotting, contacts, attachments, registrationData]);
 
 	// State for Upload Attachment Modal
 	const [uploadDialogOpen, setUploadDialogOpen] = React.useState(false);
@@ -636,6 +651,7 @@ function CompanyRecordHubPage() {
 					<StageStepper
 						currentStage={Number(company.currentStage)}
 						activeTab={activeTab}
+						gates={gates}
 						onSelectStage={(_stageNum, tabKey) => setActiveTab(tabKey)}
 					/>
 				</div>
@@ -658,46 +674,67 @@ function CompanyRecordHubPage() {
 								Ringkasan
 							</TabsTrigger>
 							<TabsTrigger
-								value="contacts"
-								className="h-7 text-xs px-2.5 rounded-lg"
+								value="plotting"
+								className="h-7 text-xs px-2.5 rounded-lg flex items-center gap-1"
 							>
-								Kontak ({contacts?.length || 0})
+								<span>Plotting</span>
+								{!gates[2].isUnlocked && (
+									<Lock className="size-3 text-muted-foreground/70" />
+								)}
 							</TabsTrigger>
 							<TabsTrigger
-								value="plotting"
-								className="h-7 text-xs px-2.5 rounded-lg"
+								value="contacts"
+								className="h-7 text-xs px-2.5 rounded-lg flex items-center gap-1"
 							>
-								Plotting
+								<span>Prospek ({contacts?.length || 0})</span>
+								{!gates[3].isUnlocked && (
+									<Lock className="size-3 text-muted-foreground/70" />
+								)}
 							</TabsTrigger>
 							<TabsTrigger
 								value="survey"
-								className="h-7 text-xs px-2.5 rounded-lg"
+								className="h-7 text-xs px-2.5 rounded-lg flex items-center gap-1"
 							>
-								Survei KK0
+								<span>Survei KK0</span>
+								{!gates[4].isUnlocked && (
+									<Lock className="size-3 text-muted-foreground/70" />
+								)}
 							</TabsTrigger>
 							<TabsTrigger
 								value="registration"
-								className="h-7 text-xs px-2.5 rounded-lg"
+								className="h-7 text-xs px-2.5 rounded-lg flex items-center gap-1"
 							>
-								Registrasi A1
+								<span>Registrasi A1</span>
+								{!gates[5].isUnlocked && (
+									<Lock className="size-3 text-muted-foreground/70" />
+								)}
 							</TabsTrigger>
 							<TabsTrigger
 								value="nol-req"
-								className="h-7 text-xs px-2.5 rounded-lg"
+								className="h-7 text-xs px-2.5 rounded-lg flex items-center gap-1"
 							>
-								Permohonan
+								<span>Permohonan</span>
+								{!gates[6].isUnlocked && (
+									<Lock className="size-3 text-muted-foreground/70" />
+								)}
 							</TabsTrigger>
 							<TabsTrigger
 								value="nol-eval"
-								className="h-7 text-xs px-2.5 rounded-lg"
+								className="h-7 text-xs px-2.5 rounded-lg flex items-center gap-1"
 							>
-								Evaluasi
+								<span>Evaluasi</span>
+								{!gates[7].isUnlocked && (
+									<Lock className="size-3 text-muted-foreground/70" />
+								)}
 							</TabsTrigger>
 							<TabsTrigger
 								value="nol-issue"
-								className="h-7 text-xs px-2.5 rounded-lg"
+								className="h-7 text-xs px-2.5 rounded-lg flex items-center gap-1"
 							>
-								Penerbitan
+								<span>Penerbitan</span>
+								{!gates[8].isUnlocked && (
+									<Lock className="size-3 text-muted-foreground/70" />
+								)}
 							</TabsTrigger>
 							<TabsTrigger
 								value="attachments"
@@ -944,497 +981,565 @@ function CompanyRecordHubPage() {
 							</div>
 						</TabsContent>
 
-						{/* TAB 2: KONTAK PIC PELANGGAN */}
-						<TabsContent value="contacts" className="space-y-4 pt-4">
-							<Card className="border-border/60 shadow-xs">
-								<CardHeader className="p-4 flex flex-row items-center justify-between">
-									<div>
-										<CardTitle className="text-base font-semibold">
-											Daftar Kontak PIC Pelanggan
-										</CardTitle>
-										<CardDescription className="text-xs">
-											Informasi penanggung jawab teknis, komersial, dan
-											manajemen calon pelanggan
-										</CardDescription>
-									</div>
-									<Button
-										size="sm"
-										onClick={handleOpenAddContact}
-										className="h-8 text-xs flex items-center gap-1.5"
-									>
-										<Plus className="size-3.5" /> Tambah Kontak
-									</Button>
-								</CardHeader>
-								<CardContent className="p-0">
-									<Table>
-										<TableHeader>
-											<TableRow className="bg-muted/30">
-												<TableHead className="text-xs font-semibold">
-													Nama
-												</TableHead>
-												<TableHead className="text-xs font-semibold">
-													Jabatan
-												</TableHead>
-												<TableHead className="text-xs font-semibold">
-													Email
-												</TableHead>
-												<TableHead className="text-xs font-semibold">
-													Telepon
-												</TableHead>
-												<TableHead className="text-xs font-semibold text-center">
-													Kontak Utama
-												</TableHead>
-												<TableHead className="text-xs font-semibold text-right">
-													Aksi
-												</TableHead>
-											</TableRow>
-										</TableHeader>
-										<TableBody>
-											{loadingContacts ? (
-												<TableRow>
-													<TableCell
-														colSpan={6}
-														className="h-24 text-center text-xs text-muted-foreground"
-													>
-														Memuat kontak...
-													</TableCell>
-												</TableRow>
-											) : contacts && contacts.length > 0 ? (
-												contacts.map((c) => (
-													<TableRow key={c.id}>
-														<TableCell className="font-medium text-xs">
-															{c.nama}
-														</TableCell>
-														<TableCell className="text-xs text-muted-foreground">
-															{c.jabatan || "-"}
-														</TableCell>
-														<TableCell className="text-xs">
-															{c.email || "-"}
-														</TableCell>
-														<TableCell className="text-xs">
-															{c.noHp || "-"}
-														</TableCell>
-														<TableCell className="text-xs text-center">
-															{c.isPrimary && (
-																<Badge
-																	variant="outline"
-																	className="bg-amber-50 text-amber-700 border-amber-300 text-[10px]"
-																>
-																	<Star className="size-3 mr-1 fill-amber-500 text-amber-500" />{" "}
-																	Utama
-																</Badge>
-															)}
-														</TableCell>
-														<TableCell className="text-right">
-															<div className="flex items-center justify-end gap-1">
-																<IconButton
-																	tooltip="Ubah Kontak"
-																	className="size-7"
-																	onClick={() => handleOpenEditContact(c)}
-																>
-																	<Edit2 className="size-3.5" />
-																</IconButton>
-																<IconButton
-																	tooltip="Hapus Kontak"
-																	danger
-																	className="size-7"
-																	onClick={() =>
-																		deleteContactMutation.mutate({
-																			params: {
-																				path: {
-																					id: companyId,
-																					contactId: c.id,
-																				},
-																			},
-																		})
-																	}
-																>
-																	<Trash2 className="size-3.5" />
-																</IconButton>
-															</div>
-														</TableCell>
-													</TableRow>
-												))
-											) : (
-												<TableRow>
-													<TableCell
-														colSpan={6}
-														className="h-24 text-center text-xs text-muted-foreground"
-													>
-														Belum ada kontak terdaftar. Silakan klik tombol
-														Tambah Kontak.
-													</TableCell>
-												</TableRow>
-											)}
-										</TableBody>
-									</Table>
-								</CardContent>
-							</Card>
-						</TabsContent>
-
-						{/* TAB 3: PLOTTING (STAGE 2) */}
+						{/* TAB 2: PLOTTING (STAGE 2) */}
 						<TabsContent value="plotting" className="space-y-6 pt-4">
-							<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-								{/* Plotting Configuration Form */}
-								<Card className="border-border/60 shadow-xs">
-									<CardHeader className="pb-3">
-										<CardTitle className="text-base font-semibold">
-											Konfigurasi Plotting & Jalur Pipa
-										</CardTitle>
-										<CardDescription className="text-xs">
-											Penetapan Sales Representative dan skema jalur pipa
-											transmisi/distribusi
-										</CardDescription>
-									</CardHeader>
-									<CardContent>
-										<form
-											onSubmit={(e) => {
-												e.preventDefault();
-												e.stopPropagation();
-												plottingForm.handleSubmit();
-											}}
-											className="space-y-4"
-										>
-											{/* Sales Representative */}
-											<div>
-												<plottingForm.Field name="salesUserId">
-													{(field) => {
-														const error = field.state.meta.errors[0]?.message;
-														return (
-															<FormField
-																label="Sales Representative Penanggung Jawab"
-																required
-																error={error}
-															>
-																<Combobox
-																	id={field.name}
-																	value={field.state.value || ""}
-																	onValueChange={(val) =>
-																		field.handleChange(val)
-																	}
-																	options={[
-																		{ value: "", label: "Belum Ditugaskan" },
-																		...(salesUsers?.map((u) => ({
-																			value: u.id,
-																			label: `${u.fullName} (${u.username})`,
-																		})) || []),
-																	]}
-																	placeholder="Pilih Sales Representative"
-																	searchPlaceholder="Cari sales representative..."
-																	emptyText="Sales representative tidak ditemukan."
-																	aria-label="Pilih Sales Representative"
-																/>
-															</FormField>
-														);
-													}}
-												</plottingForm.Field>
-											</div>
-
-											{/* Posisi Pelanggan */}
-											<div>
-												<plottingForm.Field name="posisiPelanggan">
-													{(field) => {
-														const error = field.state.meta.errors[0]?.message;
-														return (
-															<FormField
-																label="Posisi Pelanggan Terhadap Jalur Pipa"
-																error={error}
-															>
-																<Select
-																	value={field.state.value || "NONE"}
-																	onValueChange={(val) =>
-																		field.handleChange(
-																			val === "NONE" ? "" : val,
-																		)
-																	}
-																>
-																	<SelectTrigger className="text-xs h-9">
-																		<SelectValue placeholder="Pilih Posisi Pelanggan" />
-																	</SelectTrigger>
-																	<SelectContent>
-																		<SelectItem value="NONE">
-																			Belum Ditetapkan
-																		</SelectItem>
-																		<SelectItem value="JalurExisting">
-																			Jalur Existing (Dekat Pipa Eksisting)
-																		</SelectItem>
-																		<SelectItem value="Pengembangan">
-																			Pengembangan (Perlu Jaringan Baru)
-																		</SelectItem>
-																	</SelectContent>
-																</Select>
-															</FormField>
-														);
-													}}
-												</plottingForm.Field>
-											</div>
-
-											{/* Kawasan */}
-											<div>
-												<plottingForm.Field name="kawasan">
-													{(field) => {
-														const error = field.state.meta.errors[0]?.message;
-														return (
-															<FormField
-																label="Klasifikasi Kawasan"
-																error={error}
-															>
-																<Select
-																	value={field.state.value || "NONE"}
-																	onValueChange={(val) =>
-																		field.handleChange(
-																			val === "NONE" ? "" : val,
-																		)
-																	}
-																>
-																	<SelectTrigger className="text-xs h-9">
-																		<SelectValue placeholder="Pilih Klasifikasi Kawasan" />
-																	</SelectTrigger>
-																	<SelectContent>
-																		<SelectItem value="NONE">
-																			Belum Ditetapkan
-																		</SelectItem>
-																		<SelectItem value="KawasanIndustri">
-																			Kawasan Industri
-																		</SelectItem>
-																		<SelectItem value="NonKawasanIndustri">
-																			Non Kawasan Industri
-																		</SelectItem>
-																	</SelectContent>
-																</Select>
-															</FormField>
-														);
-													}}
-												</plottingForm.Field>
-											</div>
-
-											<plottingForm.Subscribe
-												selector={(state) => [
-													state.canSubmit,
-													state.isSubmitting,
-												]}
+							{!gates[2].isUnlocked ? (
+								<StageGateLockedCard
+									stageTitle="Tahap 2: Plotting & Jalur Pipa"
+									gate={gates[2]}
+									onNavigateToTab={setActiveTab}
+								/>
+							) : (
+								<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+									{/* Plotting Configuration Form */}
+									<Card className="border-border/60 shadow-xs">
+										<CardHeader className="pb-3">
+											<CardTitle className="text-base font-semibold">
+												Konfigurasi Plotting & Jalur Pipa
+											</CardTitle>
+											<CardDescription className="text-xs">
+												Penetapan Sales Representative dan skema jalur pipa
+												transmisi/distribusi
+											</CardDescription>
+										</CardHeader>
+										<CardContent>
+											<form
+												onSubmit={(e) => {
+													e.preventDefault();
+													e.stopPropagation();
+													plottingForm.handleSubmit();
+												}}
+												className="space-y-4"
 											>
-												{([canSubmit, isSubmitting]) => (
-													<Button
-														type="submit"
-														disabled={!canSubmit || isSubmitting}
-														className="text-xs h-9 w-full flex items-center justify-center gap-1.5 mt-2"
-													>
-														{isSubmitting ? (
-															<Loader2 className="size-4 animate-spin" />
-														) : (
-															<Save className="size-4" />
-														)}
-														Simpan Konfigurasi Plotting
-													</Button>
-												)}
-											</plottingForm.Subscribe>
-										</form>
-									</CardContent>
-								</Card>
+												{/* Sales Representative */}
+												<div>
+													<plottingForm.Field name="salesUserId">
+														{(field) => {
+															const error = field.state.meta.errors[0]?.message;
+															return (
+																<FormField
+																	label="Sales Representative Penanggung Jawab"
+																	required
+																	error={error}
+																>
+																	<Combobox
+																		id={field.name}
+																		value={field.state.value || ""}
+																		onValueChange={(val) =>
+																			field.handleChange(val)
+																		}
+																		options={[
+																			{ value: "", label: "Belum Ditugaskan" },
+																			...(salesUsers?.map((u) => ({
+																				value: u.id,
+																				label: `${u.fullName} (${u.username})`,
+																			})) || []),
+																		]}
+																		placeholder="Pilih Sales Representative"
+																		searchPlaceholder="Cari sales representative..."
+																		emptyText="Sales representative tidak ditemukan."
+																		aria-label="Pilih Sales Representative"
+																	/>
+																</FormField>
+															);
+														}}
+													</plottingForm.Field>
+												</div>
 
-								{/* Coordinate Adjustment Card */}
-								<Card className="border-border/60 shadow-xs">
-									<CardHeader className="pb-3">
-										<div className="flex items-center justify-between">
-											<div>
-												<CardTitle className="text-base font-semibold">
-													Penyesuaian Koordinat Spasial
-												</CardTitle>
-												<CardDescription className="text-xs">
-													Geser pin penanda pada peta untuk memperbarui
-													koordinat
-												</CardDescription>
-											</div>
-											{currentCoords && (
-												<Badge variant="outline" className="font-mono text-xs">
-													{currentCoords.latitude.toFixed(6)},{" "}
-													{currentCoords.longitude.toFixed(6)}
-												</Badge>
-											)}
-										</div>
-									</CardHeader>
-									<CardContent className="space-y-3">
-										{currentCoords ? (
-											<div className="h-[240px] w-full rounded-md overflow-hidden border">
-												<Map
-													center={[
-														currentCoords.longitude,
-														currentCoords.latitude,
+												{/* Posisi Pelanggan */}
+												<div>
+													<plottingForm.Field name="posisiPelanggan">
+														{(field) => {
+															const error = field.state.meta.errors[0]?.message;
+															return (
+																<FormField
+																	label="Posisi Pelanggan Terhadap Jalur Pipa"
+																	error={error}
+																>
+																	<Select
+																		value={field.state.value || "NONE"}
+																		onValueChange={(val) =>
+																			field.handleChange(
+																				val === "NONE" ? "" : val,
+																			)
+																		}
+																	>
+																		<SelectTrigger className="text-xs h-9">
+																			<SelectValue placeholder="Pilih Posisi Pelanggan" />
+																		</SelectTrigger>
+																		<SelectContent>
+																			<SelectItem value="NONE">
+																				Belum Ditetapkan
+																			</SelectItem>
+																			<SelectItem value="JalurExisting">
+																				Jalur Existing (Dekat Pipa Eksisting)
+																			</SelectItem>
+																			<SelectItem value="Pengembangan">
+																				Pengembangan (Perlu Jaringan Baru)
+																			</SelectItem>
+																		</SelectContent>
+																	</Select>
+																</FormField>
+															);
+														}}
+													</plottingForm.Field>
+												</div>
+
+												{/* Kawasan */}
+												<div>
+													<plottingForm.Field name="kawasan">
+														{(field) => {
+															const error = field.state.meta.errors[0]?.message;
+															return (
+																<FormField
+																	label="Klasifikasi Kawasan"
+																	error={error}
+																>
+																	<Select
+																		value={field.state.value || "NONE"}
+																		onValueChange={(val) =>
+																			field.handleChange(
+																				val === "NONE" ? "" : val,
+																			)
+																		}
+																	>
+																		<SelectTrigger className="text-xs h-9">
+																			<SelectValue placeholder="Pilih Klasifikasi Kawasan" />
+																		</SelectTrigger>
+																		<SelectContent>
+																			<SelectItem value="NONE">
+																				Belum Ditetapkan
+																			</SelectItem>
+																			<SelectItem value="KawasanIndustri">
+																				Kawasan Industri
+																			</SelectItem>
+																			<SelectItem value="NonKawasanIndustri">
+																				Non Kawasan Industri
+																			</SelectItem>
+																		</SelectContent>
+																	</Select>
+																</FormField>
+															);
+														}}
+													</plottingForm.Field>
+												</div>
+
+												<plottingForm.Subscribe
+													selector={(state) => [
+														state.canSubmit,
+														state.isSubmitting,
 													]}
-													zoom={14}
-													className="h-full w-full cursor-crosshair"
-													onClick={(e) => {
-														setCurrentCoords({
-															longitude: Number(e.lngLat.lng.toFixed(6)),
-															latitude: Number(e.lngLat.lat.toFixed(6)),
-														});
-														setHasChangedCoords(true);
-													}}
 												>
-													<MapControls />
-													<MapMarker
-														longitude={currentCoords.longitude}
-														latitude={currentCoords.latitude}
-														draggable={true}
-														onDragEnd={(coords) => {
+													{([canSubmit, isSubmitting]) => (
+														<Button
+															type="submit"
+															disabled={!canSubmit || isSubmitting}
+															className="text-xs h-9 w-full flex items-center justify-center gap-1.5 mt-2"
+														>
+															{isSubmitting ? (
+																<Loader2 className="size-4 animate-spin" />
+															) : (
+																<Save className="size-4" />
+															)}
+															Simpan Konfigurasi Plotting
+														</Button>
+													)}
+												</plottingForm.Subscribe>
+											</form>
+										</CardContent>
+									</Card>
+
+									{/* Coordinate Adjustment Card */}
+									<Card className="border-border/60 shadow-xs">
+										<CardHeader className="pb-3">
+											<div className="flex items-center justify-between">
+												<div>
+													<CardTitle className="text-base font-semibold">
+														Penyesuaian Koordinat Spasial
+													</CardTitle>
+													<CardDescription className="text-xs">
+														Geser pin penanda pada peta untuk memperbarui
+														koordinat
+													</CardDescription>
+												</div>
+												{currentCoords && (
+													<Badge
+														variant="outline"
+														className="font-mono text-xs"
+													>
+														{currentCoords.latitude.toFixed(6)},{" "}
+														{currentCoords.longitude.toFixed(6)}
+													</Badge>
+												)}
+											</div>
+										</CardHeader>
+										<CardContent className="space-y-3">
+											{currentCoords ? (
+												<div className="h-[240px] w-full rounded-md overflow-hidden border">
+													<Map
+														center={[
+															currentCoords.longitude,
+															currentCoords.latitude,
+														]}
+														zoom={14}
+														className="h-full w-full cursor-crosshair"
+														onClick={(e) => {
 															setCurrentCoords({
-																longitude: coords.lng,
-																latitude: coords.lat,
+																longitude: Number(e.lngLat.lng.toFixed(6)),
+																latitude: Number(e.lngLat.lat.toFixed(6)),
 															});
 															setHasChangedCoords(true);
 														}}
 													>
-														<MarkerContent>
-															<div className="size-6 rounded-full bg-primary flex items-center justify-center text-primary-foreground shadow-md border-2 border-white ring-2 ring-primary/40 cursor-grab active:cursor-grabbing">
-																<MapPin className="size-3.5" />
-															</div>
-														</MarkerContent>
-													</MapMarker>
-												</Map>
-											</div>
-										) : null}
+														<MapControls />
+														<MapMarker
+															longitude={currentCoords.longitude}
+															latitude={currentCoords.latitude}
+															draggable={true}
+															onDragEnd={(coords) => {
+																setCurrentCoords({
+																	longitude: coords.lng,
+																	latitude: coords.lat,
+																});
+																setHasChangedCoords(true);
+															}}
+														>
+															<MarkerContent>
+																<div className="size-6 rounded-full bg-primary flex items-center justify-center text-primary-foreground shadow-md border-2 border-white ring-2 ring-primary/40 cursor-grab active:cursor-grabbing">
+																	<MapPin className="size-3.5" />
+																</div>
+															</MarkerContent>
+														</MapMarker>
+													</Map>
+												</div>
+											) : null}
 
-										<div className="flex items-center justify-end">
-											<Button
-												size="sm"
-												onClick={handleSaveLocation}
-												disabled={
-													!hasChangedCoords || updateLocationMutation.isPending
-												}
-												className="h-8 text-xs flex items-center gap-1.5"
-											>
-												{updateLocationMutation.isPending ? (
-													<Loader2 className="size-3.5 animate-spin" />
-												) : (
-													<MapPin className="size-3.5" />
-												)}
-												Perbarui Koordinat Lokasi
-											</Button>
+											<div className="flex items-center justify-end">
+												<Button
+													size="sm"
+													onClick={handleSaveLocation}
+													disabled={
+														!hasChangedCoords ||
+														updateLocationMutation.isPending
+													}
+													className="h-8 text-xs flex items-center gap-1.5"
+												>
+													{updateLocationMutation.isPending ? (
+														<Loader2 className="size-3.5 animate-spin" />
+													) : (
+														<MapPin className="size-3.5" />
+													)}
+													Perbarui Koordinat Lokasi
+												</Button>
+											</div>
+										</CardContent>
+									</Card>
+								</div>
+							)}
+						</TabsContent>
+
+						{/* TAB 3: PROSPEK / KONTAK PIC (STAGE 3) */}
+						<TabsContent value="contacts" className="space-y-4 pt-4">
+							{!gates[3].isUnlocked ? (
+								<StageGateLockedCard
+									stageTitle="Tahap 3: Prospek (Kontak PIC)"
+									gate={gates[3]}
+									onNavigateToTab={setActiveTab}
+								/>
+							) : (
+								<Card className="border-border/60 shadow-xs">
+									<CardHeader className="p-4 flex flex-row items-center justify-between">
+										<div>
+											<CardTitle className="text-base font-semibold">
+												Daftar Kontak PIC Pelanggan
+											</CardTitle>
+											<CardDescription className="text-xs">
+												Informasi penanggung jawab teknis, komersial, dan
+												manajemen calon pelanggan
+											</CardDescription>
 										</div>
+										<Button
+											size="sm"
+											onClick={handleOpenAddContact}
+											className="h-8 text-xs flex items-center gap-1.5"
+										>
+											<Plus className="size-3.5" /> Tambah Kontak
+										</Button>
+									</CardHeader>
+									<CardContent className="p-0">
+										<Table>
+											<TableHeader>
+												<TableRow className="bg-muted/30">
+													<TableHead className="text-xs font-semibold">
+														Nama
+													</TableHead>
+													<TableHead className="text-xs font-semibold">
+														Jabatan
+													</TableHead>
+													<TableHead className="text-xs font-semibold">
+														Email
+													</TableHead>
+													<TableHead className="text-xs font-semibold">
+														Telepon
+													</TableHead>
+													<TableHead className="text-xs font-semibold text-center">
+														Kontak Utama
+													</TableHead>
+													<TableHead className="text-xs font-semibold text-right">
+														Aksi
+													</TableHead>
+												</TableRow>
+											</TableHeader>
+											<TableBody>
+												{loadingContacts ? (
+													<TableRow>
+														<TableCell
+															colSpan={6}
+															className="h-24 text-center text-xs text-muted-foreground"
+														>
+															Memuat kontak...
+														</TableCell>
+													</TableRow>
+												) : contacts && contacts.length > 0 ? (
+													contacts.map((c) => (
+														<TableRow key={c.id}>
+															<TableCell className="font-medium text-xs">
+																{c.nama}
+															</TableCell>
+															<TableCell className="text-xs text-muted-foreground">
+																{c.jabatan || "-"}
+															</TableCell>
+															<TableCell className="text-xs">
+																{c.email || "-"}
+															</TableCell>
+															<TableCell className="text-xs">
+																{c.noHp || "-"}
+															</TableCell>
+															<TableCell className="text-xs text-center">
+																{c.isPrimary && (
+																	<Badge
+																		variant="outline"
+																		className="bg-amber-50 text-amber-700 border-amber-300 text-[10px]"
+																	>
+																		<Star className="size-3 mr-1 fill-amber-500 text-amber-500" />{" "}
+																		Utama
+																	</Badge>
+																)}
+															</TableCell>
+															<TableCell className="text-right">
+																<div className="flex items-center justify-end gap-1">
+																	<IconButton
+																		tooltip="Ubah Kontak"
+																		className="size-7"
+																		onClick={() => handleOpenEditContact(c)}
+																	>
+																		<Edit2 className="size-3.5" />
+																	</IconButton>
+																	<IconButton
+																		tooltip="Hapus Kontak"
+																		danger
+																		className="size-7"
+																		onClick={() =>
+																			deleteContactMutation.mutate({
+																				params: {
+																					path: {
+																						id: companyId,
+																						contactId: c.id,
+																					},
+																				},
+																			})
+																		}
+																	>
+																		<Trash2 className="size-3.5" />
+																	</IconButton>
+																</div>
+															</TableCell>
+														</TableRow>
+													))
+												) : (
+													<TableRow>
+														<TableCell
+															colSpan={6}
+															className="h-24 text-center text-xs text-muted-foreground"
+														>
+															Belum ada kontak terdaftar. Silakan klik tombol
+															Tambah Kontak.
+														</TableCell>
+													</TableRow>
+												)}
+											</TableBody>
+										</Table>
 									</CardContent>
 								</Card>
-							</div>
+							)}
 						</TabsContent>
 
 						{/* TAB 4: SURVEI KK0 (STAGE 4) */}
 						<TabsContent value="survey" className="pt-4">
-							<SurveyKk0Form
-								companyId={company.id}
-								initialData={surveyData}
-								onSaved={() => {
-									queryClient.invalidateQueries({
-										queryKey: [
-											"get",
-											"/api/companies/{id}/survey",
-											{ params: { path: { id: company.id } } },
-										],
-									});
-									queryClient.invalidateQueries({
-										queryKey: [
-											"get",
-											"/api/companies/{id}",
-											{ params: { path: { id: company.id } } },
-										],
-									});
-								}}
-							/>
+							{!gates[4].isUnlocked ? (
+								<StageGateLockedCard
+									stageTitle="Tahap 4: Survei KK0"
+									gate={gates[4]}
+									onNavigateToTab={setActiveTab}
+								/>
+							) : (
+								<SurveyKk0Form
+									companyId={company.id}
+									initialData={surveyData}
+									onSaved={() => {
+										queryClient.invalidateQueries({
+											queryKey: [
+												"get",
+												"/api/companies/{id}/survey",
+												{ params: { path: { id: company.id } } },
+											],
+										});
+										queryClient.invalidateQueries({
+											queryKey: [
+												"get",
+												"/api/companies/{id}",
+												{ params: { path: { id: company.id } } },
+											],
+										});
+									}}
+								/>
+							)}
 						</TabsContent>
 
 						{/* TAB 5: REGISTRASI A1 (STAGE 5) */}
 						<TabsContent value="registration" className="pt-4">
-							<A1RegistrationForm
-								companyId={company.id}
-								initialData={registrationData}
-								onSaved={() => {
-									queryClient.invalidateQueries({
-										queryKey: [
-											"get",
-											"/api/companies/{id}/registration",
-											{ params: { path: { id: company.id } } },
-										],
-									});
-									queryClient.invalidateQueries({
-										queryKey: [
-											"get",
-											"/api/companies/{id}",
-											{ params: { path: { id: company.id } } },
-										],
-									});
-								}}
-							/>
+							{!gates[5].isUnlocked ? (
+								<StageGateLockedCard
+									stageTitle="Tahap 5: Registrasi A1"
+									gate={gates[5]}
+									onNavigateToTab={setActiveTab}
+									onOpenUploadDialog={() => {
+										setUploadDialogKind("Kk0");
+										setUploadDialogOpen(true);
+									}}
+								/>
+							) : (
+								<A1RegistrationForm
+									companyId={company.id}
+									initialData={registrationData}
+									onSaved={() => {
+										queryClient.invalidateQueries({
+											queryKey: [
+												"get",
+												"/api/companies/{id}/registration",
+												{ params: { path: { id: company.id } } },
+											],
+										});
+										queryClient.invalidateQueries({
+											queryKey: [
+												"get",
+												"/api/companies/{id}",
+												{ params: { path: { id: company.id } } },
+											],
+										});
+									}}
+								/>
+							)}
 						</TabsContent>
 
 						{/* TAB 6: PERMOHONAN NOL (STAGE 6) */}
 						<TabsContent value="nol-req" className="pt-4">
-							<NolRequestForm
-								companyId={company.id}
-								initialData={nolRequestData}
-								onSaved={() => {
-									queryClient.invalidateQueries({
-										queryKey: [
-											"get",
-											"/api/companies/{id}/nol-request",
-											{ params: { path: { id: company.id } } },
-										],
-									});
-									queryClient.invalidateQueries({
-										queryKey: [
-											"get",
-											"/api/companies/{id}",
-											{ params: { path: { id: company.id } } },
-										],
-									});
-								}}
-							/>
+							{!gates[6].isUnlocked ? (
+								<StageGateLockedCard
+									stageTitle="Tahap 6: Permohonan NOL"
+									gate={gates[6]}
+									onNavigateToTab={setActiveTab}
+									onOpenUploadDialog={() => {
+										setUploadDialogKind("A1");
+										setUploadDialogOpen(true);
+									}}
+								/>
+							) : (
+								<NolRequestForm
+									companyId={company.id}
+									initialData={nolRequestData}
+									onSaved={() => {
+										queryClient.invalidateQueries({
+											queryKey: [
+												"get",
+												"/api/companies/{id}/nol-request",
+												{ params: { path: { id: company.id } } },
+											],
+										});
+										queryClient.invalidateQueries({
+											queryKey: [
+												"get",
+												"/api/companies/{id}",
+												{ params: { path: { id: company.id } } },
+											],
+										});
+									}}
+								/>
+							)}
 						</TabsContent>
 
 						{/* TAB 7: EVALUASI NOL (STAGE 7) */}
 						<TabsContent value="nol-eval" className="pt-4">
-							<NolEvaluationForm
-								companyId={company.id}
-								initialData={nolEvaluationData}
-								onSaved={() => {
-									queryClient.invalidateQueries({
-										queryKey: [
-											"get",
-											"/api/companies/{id}/nol-evaluation",
-											{ params: { path: { id: company.id } } },
-										],
-									});
-									queryClient.invalidateQueries({
-										queryKey: [
-											"get",
-											"/api/companies/{id}",
-											{ params: { path: { id: company.id } } },
-										],
-									});
-								}}
-							/>
+							{!gates[7].isUnlocked ? (
+								<StageGateLockedCard
+									stageTitle="Tahap 7: Evaluasi NOL"
+									gate={gates[7]}
+									onNavigateToTab={setActiveTab}
+								/>
+							) : (
+								<NolEvaluationForm
+									companyId={company.id}
+									initialData={nolEvaluationData}
+									onSaved={() => {
+										queryClient.invalidateQueries({
+											queryKey: [
+												"get",
+												"/api/companies/{id}/nol-evaluation",
+												{ params: { path: { id: company.id } } },
+											],
+										});
+										queryClient.invalidateQueries({
+											queryKey: [
+												"get",
+												"/api/companies/{id}",
+												{ params: { path: { id: company.id } } },
+											],
+										});
+									}}
+								/>
+							)}
 						</TabsContent>
 
 						{/* TAB 8: PENERBITAN NOL (STAGE 8) */}
 						<TabsContent value="nol-issue" className="pt-4">
-							<NolIssuanceForm
-								companyId={company.id}
-								initialData={nolIssuanceData}
-								onSaved={() => {
-									queryClient.invalidateQueries({
-										queryKey: [
-											"get",
-											"/api/companies/{id}/nol-issuance",
-											{ params: { path: { id: company.id } } },
-										],
-									});
-									queryClient.invalidateQueries({
-										queryKey: [
-											"get",
-											"/api/companies/{id}",
-											{ params: { path: { id: company.id } } },
-										],
-									});
-								}}
-							/>
+							{!gates[8].isUnlocked ? (
+								<StageGateLockedCard
+									stageTitle="Tahap 8: Penerbitan NOL"
+									gate={gates[8]}
+									onNavigateToTab={setActiveTab}
+								/>
+							) : (
+								<NolIssuanceForm
+									companyId={company.id}
+									initialData={nolIssuanceData}
+									onSaved={() => {
+										queryClient.invalidateQueries({
+											queryKey: [
+												"get",
+												"/api/companies/{id}/nol-issuance",
+												{ params: { path: { id: company.id } } },
+											],
+										});
+										queryClient.invalidateQueries({
+											queryKey: [
+												"get",
+												"/api/companies/{id}",
+												{ params: { path: { id: company.id } } },
+											],
+										});
+									}}
+								/>
+							)}
 						</TabsContent>
 
 						{/* TAB 9: LAMPIRAN & BERKAS (ATTACHMENTS) */}

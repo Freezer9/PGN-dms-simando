@@ -1,15 +1,17 @@
-import { Check } from "lucide-react";
+import { Check, Lock } from "lucide-react";
 import { STAGE_CONFIG } from "@/lib/directory-utils";
+import type { StageGateResult } from "@/lib/stage-gates";
 import { cn } from "@/lib/utils";
 
 interface StageStepperProps {
 	currentStage: number;
 	activeTab?: string;
+	gates?: Record<number, StageGateResult>;
 	onSelectStage?: (stageNumber: number, tabKey: string) => void;
 	className?: string;
 }
 
-const STAGE_TAB_MAP: Record<number, string> = {
+export const STAGE_TAB_MAP: Record<number, string> = {
 	1: "overview",
 	2: "plotting",
 	3: "contacts",
@@ -23,6 +25,7 @@ const STAGE_TAB_MAP: Record<number, string> = {
 export function StageStepper({
 	currentStage,
 	activeTab,
+	gates,
 	onSelectStage,
 	className,
 }: StageStepperProps) {
@@ -33,11 +36,19 @@ export function StageStepper({
 			<div className="w-full px-1 py-2">
 				<ol className="grid grid-cols-8 gap-0 w-full items-start">
 					{stages.map((st, index) => {
+						const gate = gates?.[st.stage];
+						const isUnlocked = gate
+							? gate.isUnlocked
+							: currentStage >= st.stage;
 						const isCompleted = currentStage > st.stage;
 						const isCurrent = currentStage === st.stage;
 						const isUpcoming = currentStage < st.stage;
 						const isTabActive = activeTab === STAGE_TAB_MAP[st.stage];
 						const isLast = index === stages.length - 1;
+
+						const tooltipTitle = !isUnlocked
+							? `${st.name} (Terkunci: ${gate?.reason || "Prasyarat belum terpenuhi"})`
+							: `Buka ${st.name}`;
 
 						return (
 							<li
@@ -66,28 +77,41 @@ export function StageStepper({
 								{/* Step Node Button */}
 								<button
 									type="button"
-									onClick={() =>
-										onSelectStage?.(st.stage, STAGE_TAB_MAP[st.stage])
-									}
-									className="relative z-10 flex flex-col items-center focus:outline-hidden group/btn text-center w-full px-1"
-									title={`Buka ${st.name}`}
+									onClick={() => {
+										onSelectStage?.(st.stage, STAGE_TAB_MAP[st.stage]);
+									}}
+									className={cn(
+										"relative z-10 flex flex-col items-center focus:outline-hidden group/btn text-center w-full px-1 cursor-pointer",
+										!isUnlocked && "opacity-75 hover:opacity-100",
+									)}
+									title={tooltipTitle}
 								>
 									{/* Circle Indicator */}
 									<div
 										style={{ borderRadius: "9999px" }}
 										className={cn(
-											"h-8 w-8 rounded-full shrink-0 flex items-center justify-center text-xs font-semibold transition-all duration-200 cursor-pointer shadow-xs",
-											isCompleted &&
-												"bg-emerald-600 text-white hover:bg-emerald-700",
-											isCurrent &&
-												"bg-primary text-primary-foreground ring-4 ring-primary/25 font-bold scale-105",
-											isUpcoming &&
-												"bg-background text-muted-foreground border-2 border-border/90 hover:border-primary/50 hover:text-foreground",
-											isTabActive && !isCurrent && "ring-2 ring-primary/60",
+											"h-8 w-8 rounded-full shrink-0 flex items-center justify-center text-xs font-semibold transition-all duration-200 shadow-xs",
+											!isUnlocked &&
+												"bg-muted/60 text-muted-foreground/50 border-2 border-border/60 cursor-not-allowed",
+											isUnlocked &&
+												isCompleted &&
+												"bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer",
+											isUnlocked &&
+												isCurrent &&
+												"bg-primary text-primary-foreground ring-4 ring-primary/25 font-bold scale-105 cursor-pointer",
+											isUnlocked &&
+												isUpcoming &&
+												"bg-background text-muted-foreground border-2 border-border/90 hover:border-primary/50 hover:text-foreground cursor-pointer",
+											isUnlocked &&
+												isTabActive &&
+												!isCurrent &&
+												"ring-2 ring-primary/60",
 										)}
 									>
 										{isCompleted ? (
 											<Check className="size-4 stroke-[2.5]" />
+										) : !isUnlocked ? (
+											<Lock className="size-3 text-muted-foreground/70" />
 										) : (
 											<span className="font-mono text-xs">{st.stage}</span>
 										)}
@@ -98,11 +122,13 @@ export function StageStepper({
 										<p
 											className={cn(
 												"text-[11px] font-medium truncate transition-colors",
-												isCurrent
-													? "text-primary font-bold"
-													: isCompleted
-														? "text-foreground font-semibold"
-														: "text-muted-foreground group-hover/btn:text-foreground",
+												!isUnlocked
+													? "text-muted-foreground/50"
+													: isCurrent
+														? "text-primary font-bold"
+														: isCompleted
+															? "text-foreground font-semibold"
+															: "text-muted-foreground group-hover/btn:text-foreground",
 											)}
 										>
 											{st.shortName}

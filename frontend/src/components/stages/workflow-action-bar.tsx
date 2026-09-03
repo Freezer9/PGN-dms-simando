@@ -5,6 +5,7 @@ import {
 	CheckCircle2,
 	Loader2,
 	RotateCcw,
+	Send,
 	Undo2,
 	XCircle,
 	Zap,
@@ -36,6 +37,7 @@ interface WorkflowActionBarProps {
 }
 
 type ActionModalType =
+	| "submit"
 	| "approve"
 	| "revise"
 	| "reject"
@@ -114,6 +116,22 @@ export function WorkflowActionBar({
 		},
 	);
 
+	// Submit to Workflow Mutation (Tahap 6 -> AreaHead)
+	const startWorkflowMutation = $api.useMutation(
+		"post",
+		"/api/companies/{id}/workflow/start",
+		{
+			onSuccess: () => {
+				toast.success("Berkas berhasil diajukan untuk persetujuan!");
+				setActiveModal(null);
+				invalidateCompany();
+			},
+			onError: (error) => {
+				toast.error(error.detail || error.title || "Gagal mengajukan berkas");
+			},
+		},
+	);
+
 	const form = useForm({
 		defaultValues: {
 			comment: "",
@@ -123,6 +141,13 @@ export function WorkflowActionBar({
 		},
 		onSubmit: async ({ value }) => {
 			const commentTrimmed = value.comment?.trim() || "";
+
+			if (activeModal === "submit") {
+				await startWorkflowMutation.mutateAsync({
+					params: { path: { id: company.id } },
+				});
+				return;
+			}
 
 			if (activeModal === "approve" && currentStepId) {
 				await actOnStepMutation.mutateAsync({
@@ -187,6 +212,7 @@ export function WorkflowActionBar({
 	}, [activeModal, form]);
 
 	// Determine available actions
+	const canSubmitWorkflow = company.canSubmit;
 	const canAct = company.canAct && !!currentStepId;
 	const canRework =
 		company.status !== "Draft" &&
@@ -195,7 +221,7 @@ export function WorkflowActionBar({
 	const canDiscontinue = company.status !== "Discontinued";
 
 	// Only show action banner when there are actions available
-	if (!canAct && !canRework && !canDiscontinue) {
+	if (!canSubmitWorkflow && !canAct && !canRework && !canDiscontinue) {
 		return null;
 	}
 
@@ -226,14 +252,28 @@ export function WorkflowActionBar({
 							)}
 						</div>
 						<p className="text-[11px] text-muted-foreground mt-0.5">
-							{canAct
-								? "Berkas ini memerlukan tindakan evaluasi atau persetujuan Anda untuk melanjutkan ke proses berikutnya."
-								: "Menu tindakan alur kerja untuk pengelolaan berkas."}
+							{canSubmitWorkflow
+								? "Seluruh prasyarat Tahap 6 telah terpenuhi. Anda dapat mengajukan berkas ini ke alur persetujuan."
+								: canAct
+									? "Berkas ini memerlukan tindakan evaluasi atau persetujuan Anda untuk melanjutkan ke proses berikutnya."
+									: "Menu tindakan alur kerja untuk pengelolaan berkas."}
 						</p>
 					</div>
 				</div>
 
 				<div className="flex flex-wrap items-center gap-2">
+					{/* Submit to Workflow Button (Stage 6 -> AreaHead) */}
+					{canSubmitWorkflow && (
+						<Button
+							type="button"
+							size="sm"
+							onClick={() => setActiveModal("submit")}
+							className="h-8 text-xs bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs flex items-center gap-1.5"
+						>
+							<Send className="size-3.5" /> Ajukan untuk Persetujuan
+						</Button>
+					)}
+
 					{/* Act on Step Buttons */}
 					{canAct && (
 						<>
@@ -304,6 +344,12 @@ export function WorkflowActionBar({
 				<DialogContent className="sm:max-w-md">
 					<DialogHeader>
 						<DialogTitle className="text-base flex items-center gap-2">
+							{activeModal === "submit" && (
+								<>
+									<Send className="size-4 text-primary" />
+									Ajukan Berkas untuk Persetujuan
+								</>
+							)}
 							{activeModal === "approve" && (
 								<>
 									<CheckCircle2 className="size-4 text-emerald-600" />
@@ -336,6 +382,8 @@ export function WorkflowActionBar({
 							)}
 						</DialogTitle>
 						<DialogDescription className="text-xs">
+							{activeModal === "submit" &&
+								"Pengajuan ini akan mengunci berkas dari penyuntingan lebih lanjut dan memulai alur persetujuan ke Head of Area. Pastikan data teknis dan dokumen prasyarat telah valid."}
 							{activeModal === "approve" &&
 								"Apakah Anda yakin ingin menyetujui langkah evaluasi ini dan melanjutkannya ke tahap berikutnya?"}
 							{activeModal === "revise" &&
@@ -357,38 +405,40 @@ export function WorkflowActionBar({
 						}}
 						className="space-y-4 py-2"
 					>
-						<form.Field name="comment">
-							{(field) => {
-								const error = field.state.meta.errors[0]?.message;
-								const labelText =
-									activeModal === "approve"
-										? "Catatan Tambahan (Opsional)"
-										: "Catatan / Alasan Keputusan";
+						{activeModal !== "submit" && (
+							<form.Field name="comment">
+								{(field) => {
+									const error = field.state.meta.errors[0]?.message;
+									const labelText =
+										activeModal === "approve"
+											? "Catatan Tambahan (Opsional)"
+											: "Catatan / Alasan Keputusan";
 
-								return (
-									<FormField
-										label={labelText}
-										htmlFor="workflow-action-comment"
-										required={isCommentRequired}
-										error={error}
-									>
-										<Textarea
-											id="workflow-action-comment"
-											name={field.name}
-											value={field.state.value || ""}
-											onBlur={field.handleBlur}
-											onChange={(e) => field.handleChange(e.target.value)}
-											placeholder={
-												activeModal === "approve"
-													? "Tuliskan catatan opsional..."
-													: "Tuliskan alasan/keterangan yang jelas..."
-											}
-											className="text-xs min-h-[80px]"
-										/>
-									</FormField>
-								);
-							}}
-						</form.Field>
+									return (
+										<FormField
+											label={labelText}
+											htmlFor="workflow-action-comment"
+											required={isCommentRequired}
+											error={error}
+										>
+											<Textarea
+												id="workflow-action-comment"
+												name={field.name}
+												value={field.state.value || ""}
+												onBlur={field.handleBlur}
+												onChange={(e) => field.handleChange(e.target.value)}
+												placeholder={
+													activeModal === "approve"
+														? "Tuliskan catatan opsional..."
+														: "Tuliskan alasan/keterangan yang jelas..."
+												}
+												className="text-xs min-h-[80px]"
+											/>
+										</FormField>
+									);
+								}}
+							</form.Field>
+						)}
 
 						<DialogFooter className="flex items-center justify-end gap-2 pt-2">
 							<Button
@@ -407,18 +457,23 @@ export function WorkflowActionBar({
 									<Button
 										type="submit"
 										size="sm"
-										disabled={!canSubmit || isSubmitting}
+										disabled={
+											(!canSubmit && activeModal !== "submit") || isSubmitting
+										}
 										className={`text-xs text-white ${
-											activeModal === "approve"
-												? "bg-emerald-600 hover:bg-emerald-700"
-												: activeModal === "revise" || activeModal === "rework"
-													? "bg-amber-600 hover:bg-amber-700"
-													: "bg-destructive hover:bg-destructive/90"
+											activeModal === "submit"
+												? "bg-primary hover:bg-primary/90"
+												: activeModal === "approve"
+													? "bg-emerald-600 hover:bg-emerald-700"
+													: activeModal === "revise" || activeModal === "rework"
+														? "bg-amber-600 hover:bg-amber-700"
+														: "bg-destructive hover:bg-destructive/90"
 										}`}
 									>
 										{isSubmitting && (
 											<Loader2 className="size-3 animate-spin mr-1.5" />
 										)}
+										{activeModal === "submit" && "Konfirmasi & Ajukan"}
 										{activeModal === "approve" && "Setujui"}
 										{activeModal === "revise" && "Kirim Permintaan Revisi"}
 										{activeModal === "reject" && "Tolak Berkas"}
