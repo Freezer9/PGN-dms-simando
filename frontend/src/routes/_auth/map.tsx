@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Combobox } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -290,22 +291,22 @@ function GeospatialMapPage() {
 								<Label className="text-[11px] font-medium text-muted-foreground">
 									Sektor Industri
 								</Label>
-								<Select
-									value={selectedIndustry}
-									onValueChange={setSelectedIndustry}
-								>
-									<SelectTrigger className="h-8 text-xs">
-										<SelectValue placeholder="Semua Sektor" />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value="ALL">Semua Sektor Industri</SelectItem>
-										{industryTypes?.map((it) => (
-											<SelectItem key={it.id} value={it.name}>
-												{it.name}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
+								<Combobox
+									value={selectedIndustry === "ALL" ? "" : selectedIndustry}
+									onValueChange={(val) => setSelectedIndustry(val || "ALL")}
+									options={[
+										{ value: "", label: "Semua Sektor Industri" },
+										...(industryTypes?.map((it) => ({
+											value: it.name,
+											label: it.name,
+										})) || []),
+									]}
+									placeholder="Semua Sektor"
+									searchPlaceholder="Cari sektor..."
+									emptyText="Sektor tidak ditemukan."
+									aria-label="Sektor Industri"
+									className="h-8 text-xs"
+								/>
 							</div>
 
 							{/* Posisi Pelanggan */}

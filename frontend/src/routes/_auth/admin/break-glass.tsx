@@ -20,6 +20,7 @@ import { FormField } from "@/components/form/form-field";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Combobox } from "@/components/ui/combobox";
 import {
 	Dialog,
 	DialogContent,
@@ -28,14 +29,6 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import {
 	Table,
 	TableBody,
@@ -56,7 +49,6 @@ export const Route = createFileRoute("/_auth/admin/break-glass")({
 
 function BreakGlassPage() {
 	const [requestDialogOpen, setRequestDialogOpen] = React.useState(false);
-	const [companySearch, setCompanySearch] = React.useState("");
 	const [page, setPage] = React.useState(1);
 	const [pageSize] = React.useState(20);
 	const [error, setError] = React.useState<string | null>(null);
@@ -83,7 +75,6 @@ function BreakGlassPage() {
 			params: {
 				query: {
 					pageSize: 100,
-					searchTerm: companySearch || undefined,
 				},
 			},
 		},
@@ -395,40 +386,27 @@ function BreakGlassPage() {
 							<form.Field name="companyId">
 								{(field) => {
 									const fieldError = field.state.meta.errors[0]?.message;
+									const companyOptions = companies.map((c) => ({
+										value: c.id,
+										label: `${c.nomor} — ${c.namaPerusahaan} (${c.salesUserName || c.locationLabel || "Area"})`,
+									}));
+
 									return (
 										<FormField
 											label="Pilih Berkas Pelanggan"
 											required
 											error={fieldError}
 										>
-											<div className="space-y-1.5">
-												<Input
-													id="company-search"
-													placeholder="Ketik untuk memfilter nama perusahaan..."
-													value={companySearch}
-													onChange={(e) => setCompanySearch(e.target.value)}
-													className="h-8 text-xs"
-												/>
-												<Select
-													value={field.state.value}
-													onValueChange={(val) => field.handleChange(val)}
-												>
-													<SelectTrigger
-														id={field.name}
-														className="w-full h-8 text-xs"
-													>
-														<SelectValue placeholder="-- Pilih Perusahaan --" />
-													</SelectTrigger>
-													<SelectContent side="bottom">
-														{companies.map((c) => (
-															<SelectItem key={c.id} value={c.id}>
-																{c.nomor} — {c.namaPerusahaan} (
-																{c.salesUserName || c.locationLabel || "Area"})
-															</SelectItem>
-														))}
-													</SelectContent>
-												</Select>
-											</div>
+											<Combobox
+												id={field.name}
+												value={field.state.value}
+												onValueChange={(val) => field.handleChange(val)}
+												options={companyOptions}
+												placeholder="-- Pilih Perusahaan --"
+												searchPlaceholder="Cari nomor atau nama perusahaan..."
+												emptyText="Perusahaan tidak ditemukan."
+												className="h-9 text-xs"
+											/>
 										</FormField>
 									);
 								}}

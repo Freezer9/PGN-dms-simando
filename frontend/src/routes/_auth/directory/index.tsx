@@ -25,6 +25,7 @@ import {
 } from "@/components/common";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Combobox } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
 import {
 	Select,
@@ -396,27 +397,26 @@ function CompanyDirectoryPage() {
 					/>
 				</div>
 
-				<div className="w-[180px]">
-					<Select
-						value={search.industryTypeId || "ALL"}
+				<div className="w-[200px]">
+					<Combobox
+						value={search.industryTypeId || ""}
 						onValueChange={(val) =>
 							updateFilters({
-								industryTypeId: val === "ALL" ? undefined : val,
+								industryTypeId: val ? val : undefined,
 							})
 						}
-					>
-						<SelectTrigger className="h-9 text-xs w-full">
-							<SelectValue placeholder="Sektor Industri" />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="ALL">Semua Sektor Industri</SelectItem>
-							{industryTypes?.map((it) => (
-								<SelectItem key={it.id} value={it.id}>
-									{it.name}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
+						options={[
+							{ value: "", label: "Semua Sektor Industri" },
+							...(industryTypes?.map((it) => ({
+								value: it.id,
+								label: it.name,
+							})) || []),
+						]}
+						placeholder="Sektor Industri"
+						searchPlaceholder="Cari sektor industri..."
+						emptyText="Sektor industri tidak ditemukan."
+						aria-label="Filter Sektor Industri"
+					/>
 				</div>
 
 				<div className="w-[160px]">

@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import type { AttachmentDetail, AttachmentKind } from "@/api/types";
 import { FormField } from "@/components/form/form-field";
 import { Button } from "@/components/ui/button";
+import { Combobox } from "@/components/ui/combobox";
 import {
 	Dialog,
 	DialogContent,
@@ -247,6 +248,16 @@ export function AttachmentUploadDialog({
 					<form.Field name="kind">
 						{(field) => {
 							const error = field.state.meta.errors[0]?.message;
+							const kindOptions = (
+								Object.entries(ATTACHMENT_KIND_LABELS) as [
+									AttachmentKind,
+									string,
+								][]
+							).map(([key, label]) => ({
+								value: key,
+								label,
+							}));
+
 							return (
 								<FormField
 									label="Jenis Dokumen"
@@ -254,28 +265,18 @@ export function AttachmentUploadDialog({
 									required
 									error={error}
 								>
-									<Select
+									<Combobox
+										id="attachment-kind"
 										value={field.state.value}
 										onValueChange={(val) =>
 											field.handleChange(val as AttachmentKind)
 										}
-									>
-										<SelectTrigger id="attachment-kind" className="text-xs">
-											<SelectValue placeholder="Pilih jenis dokumen" />
-										</SelectTrigger>
-										<SelectContent className="max-h-60">
-											{(
-												Object.entries(ATTACHMENT_KIND_LABELS) as [
-													AttachmentKind,
-													string,
-												][]
-											).map(([key, label]) => (
-												<SelectItem key={key} value={key} className="text-xs">
-													{label}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
+										options={kindOptions}
+										placeholder="Pilih jenis dokumen"
+										searchPlaceholder="Cari jenis dokumen..."
+										emptyText="Jenis dokumen tidak ditemukan."
+										className="h-9 text-xs"
+									/>
 								</FormField>
 							);
 						}}

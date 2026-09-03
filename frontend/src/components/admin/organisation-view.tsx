@@ -28,6 +28,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Combobox } from "@/components/ui/combobox";
 import {
 	Dialog,
 	DialogContent,
@@ -37,13 +38,6 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import {
 	Table,
 	TableBody,
@@ -812,21 +806,19 @@ export function OrganisationView() {
 										required
 										error={fieldError}
 									>
-										<Select
+										<Combobox
+											id="area-reg"
 											value={field.state.value}
 											onValueChange={(val) => field.handleChange(val)}
-										>
-											<SelectTrigger id="area-reg" className="h-8 text-xs">
-												<SelectValue placeholder="-- Pilih Wilayah --" />
-											</SelectTrigger>
-											<SelectContent side="bottom">
-												{regions.map((r) => (
-													<SelectItem key={r.id} value={r.id}>
-														{r.name} ({r.code})
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
+											options={regions.map((r) => ({
+												value: r.id,
+												label: `${r.name} (${r.code})`,
+											}))}
+											placeholder="-- Pilih Wilayah --"
+											searchPlaceholder="Cari wilayah..."
+											emptyText="Wilayah tidak ditemukan."
+											className="h-8 text-xs"
+										/>
 									</FormField>
 								);
 							}}

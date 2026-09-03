@@ -52,6 +52,7 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Combobox } from "@/components/ui/combobox";
 import {
 	Dialog,
 	DialogContent,
@@ -1107,28 +1108,24 @@ function CompanyRecordHubPage() {
 																required
 																error={error}
 															>
-																<Select
-																	value={field.state.value || "NONE"}
+																<Combobox
+																	id={field.name}
+																	value={field.state.value || ""}
 																	onValueChange={(val) =>
-																		field.handleChange(
-																			val === "NONE" ? "" : val,
-																		)
+																		field.handleChange(val)
 																	}
-																>
-																	<SelectTrigger className="text-xs h-9">
-																		<SelectValue placeholder="Pilih Sales Representative" />
-																	</SelectTrigger>
-																	<SelectContent>
-																		<SelectItem value="NONE">
-																			Belum Ditugaskan
-																		</SelectItem>
-																		{salesUsers?.map((u) => (
-																			<SelectItem key={u.id} value={u.id}>
-																				{u.fullName} ({u.username})
-																			</SelectItem>
-																		))}
-																	</SelectContent>
-																</Select>
+																	options={[
+																		{ value: "", label: "Belum Ditugaskan" },
+																		...(salesUsers?.map((u) => ({
+																			value: u.id,
+																			label: `${u.fullName} (${u.username})`,
+																		})) || []),
+																	]}
+																	placeholder="Pilih Sales Representative"
+																	searchPlaceholder="Cari sales representative..."
+																	emptyText="Sales representative tidak ditemukan."
+																	aria-label="Pilih Sales Representative"
+																/>
 															</FormField>
 														);
 													}}

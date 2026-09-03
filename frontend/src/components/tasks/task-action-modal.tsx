@@ -14,6 +14,7 @@ import { $api } from "@/api/client";
 import type { TaskListItem } from "@/api/types";
 import { FormField } from "@/components/form/form-field";
 import { Button } from "@/components/ui/button";
+import { Combobox } from "@/components/ui/combobox";
 import {
 	Dialog,
 	DialogContent,
@@ -22,13 +23,6 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
 	type TaskActionModalFormValues,
@@ -304,21 +298,19 @@ export function TaskActionModal({
 										required
 										error={error}
 									>
-										<Select
-											value={field.state.value || undefined}
+										<Combobox
+											id="new-reviewer-select"
+											value={field.state.value || ""}
 											onValueChange={(val) => field.handleChange(val)}
-										>
-											<SelectTrigger id="new-reviewer-select">
-												<SelectValue placeholder="-- Pilih Reviewer --" />
-											</SelectTrigger>
-											<SelectContent>
-												{reviewers.map((r) => (
-													<SelectItem key={r.id} value={r.id}>
-														{r.fullName} ({r.role}) - {r.email}
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
+											options={reviewers.map((r) => ({
+												value: r.id,
+												label: `${r.fullName} (${r.role}) - ${r.email}`,
+											}))}
+											placeholder="-- Pilih Reviewer --"
+											searchPlaceholder="Cari reviewer..."
+											emptyText="Reviewer tidak ditemukan."
+											className="h-9 text-xs"
+										/>
 									</FormField>
 								);
 							}}

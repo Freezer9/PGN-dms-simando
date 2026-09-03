@@ -26,6 +26,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
+import { Combobox } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -441,25 +442,23 @@ export function SurveyKk0Form({
 						<form.Field name="surveyorUserId">
 							{(field) => (
 								<FormField label="Petugas Surveyor">
-									<Select
-										value={field.state.value || "NONE"}
-										onValueChange={(val) =>
-											field.handleChange(val === "NONE" ? "" : val)
-										}
+									<Combobox
+										id="surveyorUserId"
+										value={field.state.value || ""}
 										disabled={!canEdit}
-									>
-										<SelectTrigger className="text-xs h-9">
-											<SelectValue placeholder="Pilih Surveyor" />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value="NONE">Belum Dipilih</SelectItem>
-											{salesUsers?.map((u) => (
-												<SelectItem key={u.id} value={u.id}>
-													{u.fullName}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
+										onValueChange={(val) => field.handleChange(val)}
+										options={[
+											{ value: "", label: "Belum Dipilih" },
+											...(salesUsers?.map((u) => ({
+												value: u.id,
+												label: u.fullName,
+											})) || []),
+										]}
+										placeholder="Pilih Surveyor"
+										searchPlaceholder="Cari petugas surveyor..."
+										emptyText="Petugas surveyor tidak ditemukan."
+										aria-label="Pilih Petugas Surveyor"
+									/>
 								</FormField>
 							)}
 						</form.Field>

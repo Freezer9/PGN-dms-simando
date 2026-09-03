@@ -25,6 +25,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
+import { Combobox } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
 import {
 	Map,
@@ -33,13 +34,6 @@ import {
 	MapMarker,
 	MarkerContent,
 } from "@/components/ui/map";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import { requireCapabilities } from "@/lib/auth-middleware";
 import {
 	type CreateCompanyFormValues,
@@ -186,7 +180,7 @@ function CreateCompanyPage() {
 	};
 
 	return (
-		<div className="max-w-5xl mx-auto space-y-6 pb-12">
+		<div className="w-full space-y-6 pb-12">
 			{/* Page Header */}
 			<PageHeader
 				title="Pendaftaran Calon Pelanggan Baru"
@@ -261,24 +255,20 @@ function CreateCompanyPage() {
 										const error = getFieldError(field.state.meta.errors);
 										return (
 											<FormField label="Sektor Industri" required error={error}>
-												<Select
+												<Combobox
+													id={field.name}
 													value={field.state.value}
 													onValueChange={(val) => field.handleChange(val)}
-												>
-													<SelectTrigger
-														id={field.name}
-														className="text-xs h-9"
-													>
-														<SelectValue placeholder="Pilih Sektor Industri" />
-													</SelectTrigger>
-													<SelectContent>
-														{industryTypes?.map((it) => (
-															<SelectItem key={it.id} value={it.id}>
-																{it.name}
-															</SelectItem>
-														))}
-													</SelectContent>
-												</Select>
+													options={
+														industryTypes?.map((it) => ({
+															value: it.id,
+															label: it.name,
+														})) || []
+													}
+													placeholder="Pilih Sektor Industri"
+													searchPlaceholder="Cari sektor industri..."
+													emptyText="Sektor industri tidak ditemukan."
+												/>
 											</FormField>
 										);
 									}}
@@ -296,24 +286,20 @@ function CreateCompanyPage() {
 												required
 												error={error}
 											>
-												<Select
+												<Combobox
+													id={field.name}
 													value={field.state.value}
 													onValueChange={(val) => field.handleChange(val)}
-												>
-													<SelectTrigger
-														id={field.name}
-														className="text-xs h-9"
-													>
-														<SelectValue placeholder="Pilih Area Kerja" />
-													</SelectTrigger>
-													<SelectContent>
-														{areas?.map((a) => (
-															<SelectItem key={a.id} value={a.id}>
-																{a.name} ({a.code})
-															</SelectItem>
-														))}
-													</SelectContent>
-												</Select>
+													options={
+														areas?.map((a) => ({
+															value: a.id,
+															label: `${a.name} (${a.code})`,
+														})) || []
+													}
+													placeholder="Pilih Area Kerja"
+													searchPlaceholder="Cari Area Kerja..."
+													aria-label="Pilih Wilayah Area Kerja PGN"
+												/>
 											</FormField>
 										);
 									}}
@@ -458,7 +444,8 @@ function CreateCompanyPage() {
 										const error = getFieldError(field.state.meta.errors);
 										return (
 											<FormField label="Provinsi" required error={error}>
-												<Select
+												<Combobox
+													id={field.name}
 													value={field.state.value}
 													onValueChange={(val) => {
 														field.handleChange(val);
@@ -466,18 +453,16 @@ function CreateCompanyPage() {
 														form.setFieldValue("districtId", "");
 														form.setFieldValue("villageId", "");
 													}}
-												>
-													<SelectTrigger className="text-xs h-9">
-														<SelectValue placeholder="Pilih Provinsi" />
-													</SelectTrigger>
-													<SelectContent>
-														{provinces?.map((p) => (
-															<SelectItem key={p.id} value={p.id}>
-																{p.name}
-															</SelectItem>
-														))}
-													</SelectContent>
-												</Select>
+													options={
+														provinces?.map((p) => ({
+															value: p.id,
+															label: p.name,
+														})) || []
+													}
+													placeholder="Pilih Provinsi"
+													searchPlaceholder="Cari provinsi..."
+													emptyText="Provinsi tidak ditemukan."
+												/>
 											</FormField>
 										);
 									}}
@@ -495,7 +480,8 @@ function CreateCompanyPage() {
 												required
 												error={error}
 											>
-												<Select
+												<Combobox
+													id={field.name}
 													value={field.state.value}
 													disabled={!provinceId || loadingRegencies}
 													onValueChange={(val) => {
@@ -503,26 +489,22 @@ function CreateCompanyPage() {
 														form.setFieldValue("districtId", "");
 														form.setFieldValue("villageId", "");
 													}}
-												>
-													<SelectTrigger className="text-xs h-9">
-														<SelectValue
-															placeholder={
-																loadingRegencies
-																	? "Memuat..."
-																	: !provinceId
-																		? "Pilih Provinsi Dahulu"
-																		: "Pilih Kota/Kabupaten"
-															}
-														/>
-													</SelectTrigger>
-													<SelectContent>
-														{regencies?.map((r) => (
-															<SelectItem key={r.id} value={r.id}>
-																{r.name}
-															</SelectItem>
-														))}
-													</SelectContent>
-												</Select>
+													options={
+														regencies?.map((r) => ({
+															value: r.id,
+															label: r.name,
+														})) || []
+													}
+													placeholder={
+														loadingRegencies
+															? "Memuat..."
+															: !provinceId
+																? "Pilih Provinsi Dahulu"
+																: "Pilih Kota/Kabupaten"
+													}
+													searchPlaceholder="Cari Kota / Kabupaten..."
+													aria-label="Pilih Kota atau Kabupaten"
+												/>
 											</FormField>
 										);
 									}}
@@ -536,33 +518,30 @@ function CreateCompanyPage() {
 										const error = getFieldError(field.state.meta.errors);
 										return (
 											<FormField label="Kecamatan" required error={error}>
-												<Select
+												<Combobox
+													id={field.name}
 													value={field.state.value}
 													disabled={!regencyId || loadingDistricts}
 													onValueChange={(val) => {
 														field.handleChange(val);
 														form.setFieldValue("villageId", "");
 													}}
-												>
-													<SelectTrigger className="text-xs h-9">
-														<SelectValue
-															placeholder={
-																loadingDistricts
-																	? "Memuat..."
-																	: !regencyId
-																		? "Pilih Kota/Kab Dahulu"
-																		: "Pilih Kecamatan"
-															}
-														/>
-													</SelectTrigger>
-													<SelectContent>
-														{districts?.map((d) => (
-															<SelectItem key={d.id} value={d.id}>
-																{d.name}
-															</SelectItem>
-														))}
-													</SelectContent>
-												</Select>
+													options={
+														districts?.map((d) => ({
+															value: d.id,
+															label: d.name,
+														})) || []
+													}
+													placeholder={
+														loadingDistricts
+															? "Memuat..."
+															: !regencyId
+																? "Pilih Kota/Kab Dahulu"
+																: "Pilih Kecamatan"
+													}
+													searchPlaceholder="Cari kecamatan..."
+													emptyText="Kecamatan tidak ditemukan."
+												/>
 											</FormField>
 										);
 									}}
@@ -580,30 +559,27 @@ function CreateCompanyPage() {
 												required
 												error={error}
 											>
-												<Select
+												<Combobox
+													id={field.name}
 													value={field.state.value}
 													disabled={!districtId || loadingVillages}
 													onValueChange={(val) => field.handleChange(val)}
-												>
-													<SelectTrigger className="text-xs h-9">
-														<SelectValue
-															placeholder={
-																loadingVillages
-																	? "Memuat..."
-																	: !districtId
-																		? "Pilih Kecamatan Dahulu"
-																		: "Pilih Kelurahan/Desa"
-															}
-														/>
-													</SelectTrigger>
-													<SelectContent>
-														{villages?.map((v) => (
-															<SelectItem key={v.id} value={v.id}>
-																{v.name}
-															</SelectItem>
-														))}
-													</SelectContent>
-												</Select>
+													options={
+														villages?.map((v) => ({
+															value: v.id,
+															label: v.name,
+														})) || []
+													}
+													placeholder={
+														loadingVillages
+															? "Memuat..."
+															: !districtId
+																? "Pilih Kecamatan Dahulu"
+																: "Pilih Kelurahan/Desa"
+													}
+													searchPlaceholder="Cari Kelurahan / Desa..."
+													aria-label="Pilih Kelurahan atau Desa"
+												/>
 											</FormField>
 										);
 									}}

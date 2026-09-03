@@ -13,6 +13,7 @@ import type { AppRole, CreateUserResponse } from "@/api/types";
 import { FormField } from "@/components/form/form-field";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Combobox } from "@/components/ui/combobox";
 import {
 	Dialog,
 	DialogContent,
@@ -405,30 +406,27 @@ export function CreateUserDialog({
 										const error = field.state.meta.errors[0]?.message;
 										return (
 											<FormField label="Wilayah (SOR)" required error={error}>
-												<Select
+												<Combobox
+													id={field.name}
 													value={field.state.value || ""}
 													onValueChange={(regId) => {
 														field.handleChange(regId);
 														const reg = regions.find((r) => r.id === regId);
 														if (reg && reg.areas.length > 0) {
 															form.setFieldValue("areaId", reg.areas[0].id);
+														} else {
+															form.setFieldValue("areaId", "");
 														}
 													}}
-												>
-													<SelectTrigger
-														id={field.name}
-														className="w-full h-8 text-xs"
-													>
-														<SelectValue placeholder="-- Pilih Wilayah --" />
-													</SelectTrigger>
-													<SelectContent side="bottom">
-														{regions.map((r) => (
-															<SelectItem key={r.id} value={r.id}>
-																{r.name} ({r.code})
-															</SelectItem>
-														))}
-													</SelectContent>
-												</Select>
+													options={regions.map((r) => ({
+														value: r.id,
+														label: `${r.name} (${r.code})`,
+													}))}
+													placeholder="-- Pilih Wilayah --"
+													searchPlaceholder="Cari wilayah..."
+													emptyText="Wilayah tidak ditemukan."
+													className="h-8 text-xs"
+												/>
 											</FormField>
 										);
 									}}
@@ -440,24 +438,19 @@ export function CreateUserDialog({
 											const error = field.state.meta.errors[0]?.message;
 											return (
 												<FormField label="Sales Area" required error={error}>
-													<Select
+													<Combobox
+														id={field.name}
 														value={field.state.value || ""}
 														onValueChange={(val) => field.handleChange(val)}
-													>
-														<SelectTrigger
-															id={field.name}
-															className="w-full h-8 text-xs"
-														>
-															<SelectValue placeholder="-- Pilih Area --" />
-														</SelectTrigger>
-														<SelectContent side="bottom">
-															{availableAreas.map((a) => (
-																<SelectItem key={a.id} value={a.id}>
-																	{a.name} ({a.code})
-																</SelectItem>
-															))}
-														</SelectContent>
-													</Select>
+														options={availableAreas.map((a) => ({
+															value: a.id,
+															label: `${a.name} (${a.code})`,
+														}))}
+														placeholder="-- Pilih Area --"
+														searchPlaceholder="Cari sales area..."
+														emptyText="Sales area tidak ditemukan."
+														className="h-8 text-xs"
+													/>
 												</FormField>
 											);
 										}}

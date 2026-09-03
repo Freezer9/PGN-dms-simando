@@ -19,6 +19,7 @@ import { FormField } from "@/components/form/form-field";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Combobox } from "@/components/ui/combobox";
 import {
 	Dialog,
 	DialogContent,
@@ -28,13 +29,6 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import {
 	Table,
 	TableBody,
@@ -346,39 +340,34 @@ function StuckStepsPage() {
 						<form.Field name="targetUserId">
 							{(field) => {
 								const fieldError = field.state.meta.errors[0]?.message;
+								const eligibleUsers = allUsers
+									.filter(
+										(u) => u.active && u.id !== selectedStep?.assignedUserId,
+									)
+									.map((user) => ({
+										value: user.id,
+										label: `${user.fullName} (${
+											user.roles
+												.map((r) => `${r.role} - ${r.scopeLabel}`)
+												.join(", ") || user.username
+										})`,
+									}));
+
 								return (
 									<FormField
 										label="Pilih Petugas Baru"
 										required
 										error={fieldError}
 									>
-										<Select
+										<Combobox
+											id={field.name}
 											value={field.state.value}
 											onValueChange={(val) => field.handleChange(val)}
-										>
-											<SelectTrigger
-												id={field.name}
-												className="w-full h-9 text-xs"
-											>
-												<SelectValue placeholder="-- Pilih Pengguna Aktif --" />
-											</SelectTrigger>
-											<SelectContent side="bottom">
-												{allUsers
-													.filter(
-														(u) =>
-															u.active && u.id !== selectedStep?.assignedUserId,
-													)
-													.map((user) => (
-														<SelectItem key={user.id} value={user.id}>
-															{user.fullName} (
-															{user.roles
-																.map((r) => `${r.role} - ${r.scopeLabel}`)
-																.join(", ") || user.username}
-															)
-														</SelectItem>
-													))}
-											</SelectContent>
-										</Select>
+											options={eligibleUsers}
+											placeholder="-- Pilih Pengguna Aktif --"
+											searchPlaceholder="Cari nama pengguna atau peran..."
+											emptyText="Pengguna aktif tidak ditemukan."
+										/>
 									</FormField>
 								);
 							}}
