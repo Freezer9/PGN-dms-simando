@@ -124,11 +124,15 @@ function SidebarMenuItemComponent({ item }: { item: NavItem }) {
 		<SidebarMenuItem>
 			<SidebarMenuButton asChild tooltip={item.title} size="sm">
 				<Link
-					to={item.href}
-					activeOptions={{ exact: item.href === "/" }}
+					to={item.to ?? item.href}
+					search={item.search}
+					activeOptions={{
+						exact: item.href === "/",
+						...item.activeOptions,
+					}}
 					activeProps={{
 						className:
-							"bg-primary text-primary-foreground font-medium shadow-xs hover:bg-primary/95 hover:text-primary-foreground",
+							"bg-primary text-primary-foreground font-medium shadow-xs hover:bg-primary/90! hover:text-primary-foreground! data-[status=active]:hover:bg-primary/90 data-[status=active]:hover:text-primary-foreground",
 					}}
 					inactiveProps={{
 						className:
@@ -153,7 +157,11 @@ function SidebarNavGroupComponent({ group }: { group: NavGroup }) {
 		<Collapsible defaultOpen className="group/collapsible">
 			<SidebarMenuItem>
 				<CollapsibleTrigger asChild>
-					<SidebarMenuButton tooltip={group.title} size="sm">
+					<SidebarMenuButton
+						tooltip={group.title}
+						size="sm"
+						className="text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+					>
 						<DynamicIcon name={group.icon} className="size-4 shrink-0" />
 						<span className="truncate text-xs">{group.title}</span>
 						<ChevronDown className="ml-auto size-3.5 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-180 opacity-60" />
@@ -165,10 +173,15 @@ function SidebarNavGroupComponent({ group }: { group: NavGroup }) {
 							<SidebarMenuSubItem key={subItem.href}>
 								<SidebarMenuSubButton asChild size="sm">
 									<Link
-										to={subItem.href}
+										to={subItem.to ?? subItem.href}
+										search={subItem.search}
+										activeOptions={{
+											exact: subItem.href === "/",
+											...subItem.activeOptions,
+										}}
 										activeProps={{
 											className:
-												"bg-primary text-primary-foreground font-medium shadow-xs hover:bg-primary/95 hover:text-primary-foreground",
+												"bg-primary text-primary-foreground font-medium shadow-xs hover:bg-primary/90! hover:text-primary-foreground! data-[status=active]:hover:bg-primary/90 data-[status=active]:hover:text-primary-foreground",
 										}}
 										inactiveProps={{
 											className:

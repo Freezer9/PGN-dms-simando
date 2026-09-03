@@ -4,6 +4,13 @@ export interface NavItem {
 	type: "item";
 	title: string;
 	href: string;
+	to?: string;
+	search?: Record<string, unknown>;
+	activeOptions?: {
+		exact?: boolean;
+		explicitUndefined?: boolean;
+		includeSearch?: boolean;
+	};
 	icon: string;
 	badge?: string | number | null;
 }
@@ -94,12 +101,17 @@ export function buildNavigationMenu(
 			type: "item",
 			title: "Direktori",
 			href: "/directory",
+			to: "/directory",
+			search: { stage: undefined },
+			activeOptions: { explicitUndefined: true },
 			icon: "building-2",
 		});
 		caseWorkNodes.push({
 			type: "item",
 			title: "Plotting",
 			href: "/directory?stage=2",
+			to: "/directory",
+			search: { stage: 2 },
 			icon: "map-pin",
 		});
 	}
@@ -118,6 +130,8 @@ export function buildNavigationMenu(
 			type: "item",
 			title: "Evaluasi",
 			href: "/directory?stage=7",
+			to: "/directory",
+			search: { stage: 7 },
 			icon: "calculator",
 		});
 	}
