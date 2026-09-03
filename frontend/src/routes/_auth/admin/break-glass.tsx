@@ -15,6 +15,7 @@ import {
 import * as React from "react";
 import { $api } from "@/api/client";
 import type { BreakGlassAccessDto } from "@/api/types";
+import { PageHeader } from "@/components/common";
 import { FormField } from "@/components/form/form-field";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -147,29 +148,25 @@ function BreakGlassPage() {
 	return (
 		<div className="space-y-6">
 			{/* Page Header */}
-			<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-				<div className="space-y-1">
-					<div className="flex items-center gap-2">
-						<ShieldAlert className="h-6 w-6 text-destructive" />
-						<h1 className="text-2xl font-bold tracking-tight text-foreground">
-							Akses Darurat (Break-Glass Protocol)
-						</h1>
-					</div>
-					<p className="text-sm text-muted-foreground">
-						Audit log dan permohonan akses darurat bypass wewenang berkas untuk
-						kondisi luar biasa. Seluruh aktivitas tercatat dan diaudit secara
-						ketat.
-					</p>
-				</div>
-				<Button
-					onClick={handleOpenRequest}
-					variant="destructive"
-					className="shadow-xs"
-				>
-					<KeyRound className="h-4 w-4 mr-1.5" />
-					Buka Akses Darurat
-				</Button>
-			</div>
+			<PageHeader
+				title="Akses Darurat (Break-Glass Protocol)"
+				description="Audit log dan permohonan akses darurat bypass wewenang berkas untuk kondisi luar biasa. Seluruh aktivitas tercatat dan diaudit secara ketat."
+				badge={
+					<span className="p-1 rounded-md bg-destructive/10 text-destructive">
+						<ShieldAlert className="h-4 w-4" />
+					</span>
+				}
+				actions={
+					<Button
+						onClick={handleOpenRequest}
+						variant="destructive"
+						className="shadow-xs"
+					>
+						<KeyRound className="h-4 w-4 mr-1.5" />
+						Buka Akses Darurat
+					</Button>
+				}
+			/>
 
 			{/* Security Notice Alert */}
 			<Alert

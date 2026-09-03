@@ -57,6 +57,7 @@ function MeterSizesPage() {
 		{
 			key: "gSize",
 			header: "G-Size",
+			width: "w-36",
 			render: (row) => (
 				<span className="font-mono font-semibold text-foreground">
 					{row.gSize}
@@ -66,6 +67,7 @@ function MeterSizesPage() {
 		{
 			key: "nominalFlow",
 			header: "Aliran Nominal (Qnom m³/jam)",
+			width: "w-64",
 			render: (row) => (
 				<span className="font-mono">
 					{row.nominalFlow !== null && row.nominalFlow !== undefined
@@ -77,6 +79,7 @@ function MeterSizesPage() {
 		{
 			key: "maxFlow",
 			header: "Aliran Maksimum (Qmax m³/jam)",
+			width: "w-64",
 			render: (row) => (
 				<span className="font-mono">
 					{row.maxFlow !== null && row.maxFlow !== undefined
@@ -88,6 +91,7 @@ function MeterSizesPage() {
 		{
 			key: "pressureRating",
 			header: "Pressure Rating (Bar)",
+			width: "w-52",
 			render: (row) => (
 				<span className="text-muted-foreground font-mono">
 					{row.pressureRating != null ? `${row.pressureRating} Bar` : "-"}

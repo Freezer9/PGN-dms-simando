@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
 	type ColumnDef,
-	flexRender,
 	getCoreRowModel,
 	getPaginationRowModel,
 	useReactTable,
@@ -20,6 +19,7 @@ import {
 import * as React from "react";
 import { $api } from "@/api/client";
 import type { TaskListItem } from "@/api/types";
+import { DataTable, DataTableToolbar } from "@/components/common";
 import { SlaClockBadge } from "@/components/tasks/sla-clock-badge";
 import {
 	TaskActionModal,
@@ -28,7 +28,6 @@ import {
 import { TaskQuickPreviewDrawer } from "@/components/tasks/task-quick-preview-drawer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
 	Select,
@@ -37,17 +36,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@/components/ui/table";
-import { TableEmptyState } from "@/components/ui/table-empty-state";
-import { TablePagination } from "@/components/ui/table-pagination";
-import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/_auth/tasks/")({
@@ -168,6 +156,10 @@ function TasksInboxPage() {
 			{
 				accessorKey: "namaPerusahaan",
 				header: "Perusahaan",
+				meta: {
+					headerClassName: "min-w-[280px]",
+					cellClassName: "min-w-[280px]",
+				},
 				cell: ({ row }) => {
 					const task = row.original;
 					return (
@@ -192,6 +184,10 @@ function TasksInboxPage() {
 			{
 				accessorKey: "stepKind",
 				header: "Tahap Verifikasi",
+				meta: {
+					headerClassName: "min-w-[150px]",
+					cellClassName: "min-w-[150px]",
+				},
 				cell: ({ row }) => (
 					<Badge variant="secondary" className="text-xs font-medium">
 						{row.original.stepKind ?? "Persetujuan"}
@@ -201,6 +197,10 @@ function TasksInboxPage() {
 			{
 				id: "location",
 				header: "Wilayah & Area",
+				meta: {
+					headerClassName: "min-w-[150px]",
+					cellClassName: "min-w-[150px]",
+				},
 				cell: ({ row }) => (
 					<div className="flex flex-col gap-0.5 text-xs">
 						<span className="font-medium text-foreground">
@@ -215,6 +215,10 @@ function TasksInboxPage() {
 			{
 				accessorKey: "submittedByName",
 				header: "Diajukan Oleh",
+				meta: {
+					headerClassName: "min-w-[140px]",
+					cellClassName: "min-w-[140px]",
+				},
 				cell: ({ row }) => (
 					<div className="flex items-center gap-1.5 text-xs text-foreground">
 						<User className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
@@ -225,6 +229,10 @@ function TasksInboxPage() {
 			{
 				accessorKey: "waitingSince",
 				header: "Menunggu Sejak (SLA)",
+				meta: {
+					headerClassName: "min-w-[170px]",
+					cellClassName: "min-w-[170px]",
+				},
 				cell: ({ row }) => (
 					<SlaClockBadge waitingSince={row.original.waitingSince} />
 				),
@@ -232,6 +240,10 @@ function TasksInboxPage() {
 			{
 				id: "actions",
 				header: () => <div className="text-right pr-4">Tindakan</div>,
+				meta: {
+					headerClassName: "min-w-[244px] text-right",
+					cellClassName: "min-w-[244px]",
+				},
 				cell: ({ row }) => {
 					const task = row.original;
 					return (
@@ -239,40 +251,40 @@ function TasksInboxPage() {
 							<Button
 								size="sm"
 								variant="ghost"
-								className="h-8 px-2 text-xs"
+								className="h-8 text-xs"
 								onClick={() => handleOpenDrawer(task)}
 								title="Tinjau Cepat"
 							>
-								<Eye className="h-3.5 w-3.5 mr-1" />
+								<Eye className="size-3.5" />
 								Tinjau
 							</Button>
 							<Button
 								size="sm"
 								variant="outline"
-								className="h-8 px-2 text-xs text-amber-600 border-amber-200 hover:bg-amber-50 dark:hover:bg-amber-950/50"
+								className="h-8 text-xs text-amber-600 border-amber-200 hover:bg-amber-50 dark:hover:bg-amber-950/50"
 								onClick={() => handleOpenActionModal(task, "Revisi")}
 								title="Kembalikan untuk revisi"
 							>
-								<RotateCcw className="h-3.5 w-3.5 mr-1" />
+								<RotateCcw className="size-3.5" />
 								Revisi
 							</Button>
 							<Button
 								size="sm"
 								variant="outline"
-								className="h-8 px-2 text-xs text-rose-600 border-rose-200 hover:bg-rose-50 dark:hover:bg-rose-950/50"
+								className="h-8 text-xs text-rose-600 border-rose-200 hover:bg-rose-50 dark:hover:bg-rose-950/50"
 								onClick={() => handleOpenActionModal(task, "Tolak")}
 								title="Tolak berkas"
 							>
-								<XCircle className="h-3.5 w-3.5 mr-1" />
+								<XCircle className="size-3.5" />
 								Tolak
 							</Button>
 							<Button
 								size="sm"
-								className="h-8 px-2.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
+								className="h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
 								onClick={() => handleOpenActionModal(task, "Setuju")}
 								title="Setujui dan lanjutkan"
 							>
-								<CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+								<CheckCircle2 className="size-3.5" />
 								Setuju
 							</Button>
 						</div>
@@ -325,185 +337,148 @@ function TasksInboxPage() {
 						</TabsTrigger>
 					</TabsList>
 				</Tabs>
-
-				<div className="text-xs text-muted-foreground self-end sm:self-auto">
-					Menampilkan{" "}
-					<strong className="text-foreground">{filteredTasks.length}</strong>{" "}
-					tugas aktif
-				</div>
 			</div>
 
-			{/* Filter & Search Bar */}
-			<Card className="shadow-xs border bg-card/60">
-				<CardContent className="p-3.5 space-y-3">
-					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-						{/* Search Input */}
-						<div className="relative">
-							<Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-							<Input
-								placeholder="Cari perusahaan, nomor, pengaju..."
-								value={searchTerm}
-								onChange={(e) => {
-									setSearchTerm(e.target.value);
-									setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-								}}
-								className="pl-9 h-9 text-xs"
-							/>
-						</div>
-
-						{/* Step Kind Filter */}
-						<Select
-							value={stepFilter}
-							onValueChange={(val) => {
-								setStepFilter(val);
-								setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-							}}
-						>
-							<SelectTrigger className="h-9 text-xs">
-								<SelectValue placeholder="Semua Tahap Verifikasi" />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="all">Semua Tahap Verifikasi</SelectItem>
-								<SelectItem value="AreaHead">Area Head</SelectItem>
-								<SelectItem value="RegionalAdmin">Regional Admin</SelectItem>
-								<SelectItem value="Reviewer1">
-									Reviewer 1 (Sales/Mkt)
-								</SelectItem>
-								<SelectItem value="Reviewer2">Reviewer 2 (Teknik)</SelectItem>
-								<SelectItem value="Reviewer3">Reviewer 3 (Keuangan)</SelectItem>
-								<SelectItem value="DivisionHead">Division Head</SelectItem>
-							</SelectContent>
-						</Select>
-
-						{/* Area Filter */}
-						<Select
-							value={areaFilter}
-							onValueChange={(val) => {
-								setAreaFilter(val);
-								setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-							}}
-						>
-							<SelectTrigger className="h-9 text-xs">
-								<SelectValue placeholder="Semua Area" />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="all">Semua Area</SelectItem>
-								{availableAreas.map((area) => (
-									<SelectItem key={area} value={area}>
-										{area}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-
-						{/* Sort Selector */}
-						<Select
-							value={sortBy}
-							onValueChange={(val) => setSortBy(val as SortOption)}
-						>
-							<SelectTrigger className="h-9 text-xs">
-								<SelectValue placeholder="Urutkan Berdasarkan" />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="sla_desc">
-									Terlama Menunggu (Prioritas SLA)
-								</SelectItem>
-								<SelectItem value="sla_asc">Terbaru Diajukan</SelectItem>
-								<SelectItem value="name_asc">Nama Perusahaan (A-Z)</SelectItem>
-							</SelectContent>
-						</Select>
+			{/* Filter & Search Toolbar */}
+			<DataTableToolbar
+				actions={
+					<div className="text-xs text-muted-foreground">
+						Menampilkan{" "}
+						<strong className="text-foreground font-semibold">
+							{filteredTasks.length}
+						</strong>{" "}
+						tugas aktif
 					</div>
-				</CardContent>
-			</Card>
-
-			{/* Task List Table with TanStack Table */}
-			<div className="rounded-xl border bg-card shadow-xs overflow-hidden">
-				<Table>
-					<TableHeader className="bg-muted/40">
-						{table.getHeaderGroups().map((headerGroup) => (
-							<TableRow key={headerGroup.id}>
-								{headerGroup.headers.map((header) => (
-									<TableHead key={header.id} className="font-semibold text-xs">
-										{header.isPlaceholder
-											? null
-											: flexRender(
-													header.column.columnDef.header,
-													header.getContext(),
-												)}
-									</TableHead>
-								))}
-							</TableRow>
-						))}
-					</TableHeader>
-					<TableBody>
-						{isLoading ? (
-							<TableSkeleton columns={columns.length} rows={5} />
-						) : table.getRowModel().rows?.length ? (
-							table.getRowModel().rows.map((row) => (
-								<TableRow
-									key={row.id}
-									className="hover:bg-muted/30 transition-colors"
-								>
-									{row.getVisibleCells().map((cell) => (
-										<TableCell key={cell.id} className="py-3">
-											{flexRender(
-												cell.column.columnDef.cell,
-												cell.getContext(),
-											)}
-										</TableCell>
-									))}
-								</TableRow>
-							))
-						) : (
-							<TableEmptyState
-								colSpan={columns.length}
-								icon={
-									searchTerm || stepFilter !== "all" || areaFilter !== "all"
-										? "search"
-										: "empty"
-								}
-								title={
-									searchTerm || stepFilter !== "all" || areaFilter !== "all"
-										? "Tidak Ada Tugas Ditemukan"
-										: "Tidak Ada Tugas Menunggu"
-								}
-								description={
-									searchTerm || stepFilter !== "all" || areaFilter !== "all"
-										? "Tidak ada tugas yang sesuai dengan filter pencarian yang diterapkan."
-										: scope === "my"
-											? "Semua berkas pada antrean Anda telah selesai ditindaklanjuti. Kerja bagus!"
-											: "Tidak ada berkas aktif yang sedang berproses pada wilayah kerja Anda."
-								}
-								onReset={
-									searchTerm || stepFilter !== "all" || areaFilter !== "all"
-										? () => {
-												setSearchTerm("");
-												setStepFilter("all");
-												setAreaFilter("all");
-											}
-										: undefined
-								}
-								resetLabel="Reset Filter"
-							/>
-						)}
-					</TableBody>
-				</Table>
-
-				{/* Table Pagination */}
-				{filteredTasks.length > 0 && (
-					<TablePagination
-						pageIndex={pagination.pageIndex}
-						page={pagination.pageIndex + 1}
-						pageSize={pagination.pageSize}
-						totalCount={filteredTasks.length}
-						totalPages={table.getPageCount()}
-						onPageChange={(page) => table.setPageIndex(page - 1)}
-						onPageSizeChange={(size) => table.setPageSize(size)}
-						pageSizeOptions={[10, 25, 50]}
-						className="border-t px-4"
+				}
+			>
+				{/* Search Input */}
+				<div className="relative min-w-[220px] flex-1 max-w-sm">
+					<Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+					<Input
+						placeholder="Cari perusahaan, nomor, pengaju..."
+						value={searchTerm}
+						onChange={(e) => {
+							setSearchTerm(e.target.value);
+							setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+						}}
+						className="pl-9 h-9 text-xs"
 					/>
-				)}
-			</div>
+				</div>
+
+				{/* Step Kind Filter */}
+				<div className="w-[180px]">
+					<Select
+						value={stepFilter}
+						onValueChange={(val) => {
+							setStepFilter(val);
+							setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+						}}
+					>
+						<SelectTrigger className="h-9 text-xs w-full">
+							<SelectValue placeholder="Semua Tahap Verifikasi" />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="all">Semua Tahap Verifikasi</SelectItem>
+							<SelectItem value="AreaHead">Area Head</SelectItem>
+							<SelectItem value="RegionalAdmin">Regional Admin</SelectItem>
+							<SelectItem value="Reviewer1">Reviewer 1 (Sales/Mkt)</SelectItem>
+							<SelectItem value="Reviewer2">Reviewer 2 (Teknik)</SelectItem>
+							<SelectItem value="Reviewer3">Reviewer 3 (Keuangan)</SelectItem>
+							<SelectItem value="DivisionHead">Division Head</SelectItem>
+						</SelectContent>
+					</Select>
+				</div>
+
+				{/* Area Filter */}
+				<div className="w-[150px]">
+					<Select
+						value={areaFilter}
+						onValueChange={(val) => {
+							setAreaFilter(val);
+							setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+						}}
+					>
+						<SelectTrigger className="h-9 text-xs w-full">
+							<SelectValue placeholder="Semua Area" />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="all">Semua Area</SelectItem>
+							{availableAreas.map((area) => (
+								<SelectItem key={area} value={area}>
+									{area}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				</div>
+
+				{/* Sort Selector */}
+				<div className="w-[180px]">
+					<Select
+						value={sortBy}
+						onValueChange={(val) => setSortBy(val as SortOption)}
+					>
+						<SelectTrigger className="h-9 text-xs w-full">
+							<SelectValue placeholder="Urutkan Berdasarkan" />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="sla_desc">
+								Terlama Menunggu (Prioritas SLA)
+							</SelectItem>
+							<SelectItem value="sla_asc">Terbaru Diajukan</SelectItem>
+							<SelectItem value="name_asc">Nama Perusahaan (A-Z)</SelectItem>
+						</SelectContent>
+					</Select>
+				</div>
+			</DataTableToolbar>
+
+			{/* Task List Table with DataTable */}
+			<DataTable
+				table={table}
+				columnsCount={columns.length}
+				isLoading={isLoading}
+				skeletonRows={5}
+				emptyTitle={
+					searchTerm || stepFilter !== "all" || areaFilter !== "all"
+						? "Tidak Ada Tugas Ditemukan"
+						: "Tidak Ada Tugas Menunggu"
+				}
+				emptyDescription={
+					searchTerm || stepFilter !== "all" || areaFilter !== "all"
+						? "Tidak ada tugas yang sesuai dengan filter pencarian yang diterapkan."
+						: scope === "my"
+							? "Semua berkas pada antrean Anda telah selesai ditindaklanjuti. Kerja bagus!"
+							: "Tidak ada berkas aktif yang sedang berproses pada wilayah kerja Anda."
+				}
+				emptyIcon={
+					searchTerm || stepFilter !== "all" || areaFilter !== "all"
+						? "search"
+						: "empty"
+				}
+				onResetFilters={
+					searchTerm || stepFilter !== "all" || areaFilter !== "all"
+						? () => {
+								setSearchTerm("");
+								setStepFilter("all");
+								setAreaFilter("all");
+							}
+						: undefined
+				}
+				resetLabel="Reset Filter"
+				pagination={
+					filteredTasks.length > 0
+						? {
+								page: pagination.pageIndex + 1,
+								pageSize: pagination.pageSize,
+								totalCount: filteredTasks.length,
+								totalPages: table.getPageCount(),
+								onPageChange: (p) => table.setPageIndex(p - 1),
+								onPageSizeChange: (size) => table.setPageSize(size),
+								pageSizeOptions: [10, 25, 50],
+							}
+						: undefined
+				}
+			/>
 
 			{/* Action Modal (Setuju / Revisi / Tolak / Reassign) */}
 			<TaskActionModal

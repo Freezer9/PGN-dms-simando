@@ -402,8 +402,8 @@ function GeospatialMapPage() {
 					</Card>
 				)}
 
-				{/* Floating Results Quick List (Bottom Left) */}
-				<div className="absolute bottom-4 left-4 right-4 sm:right-auto sm:w-96 max-h-48 overflow-y-auto z-10 flex flex-col gap-1.5 p-1 bg-background/80 backdrop-blur-xs rounded-lg border shadow-md">
+				{/* Floating Results Quick List (Bottom Right) */}
+				<div className="absolute bottom-4 right-4 left-4 sm:left-auto sm:w-80 max-h-48 overflow-y-auto z-10 flex flex-col gap-1.5 p-1 bg-background/90 backdrop-blur-xs rounded-lg border shadow-md">
 					<div className="px-2 py-1 text-[11px] font-semibold text-muted-foreground flex justify-between items-center border-b">
 						<span>Daftar Titik ({filteredPins.length})</span>
 						<span className="text-[10px] text-primary">

@@ -11,6 +11,7 @@ import {
 	TrendingUp,
 } from "lucide-react";
 import type { ApproverDashboardDto } from "@/api/types";
+import { PageHeader } from "@/components/common";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,44 +40,39 @@ export function ApproverDashboard({
 	return (
 		<div className="space-y-6">
 			{/* Hero & Quick Action Bar */}
-			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-card p-5 rounded-xl border shadow-xs">
-				<div>
-					<div className="flex items-center gap-2">
-						<h1 className="text-2xl font-bold tracking-tight">
-							Beranda Persetujuan
-						</h1>
-						<Badge variant="secondary" className="font-semibold">
-							{roleTitle}
-						</Badge>
-					</div>
-					<p className="text-muted-foreground mt-1 text-sm">
-						Daftar tugas verifikasi berkas, persetujuan syarat teknis/komersial,
-						dan metrik waktu tinjau.
-					</p>
-				</div>
-				<div className="flex flex-wrap items-center gap-2.5">
-					<Button asChild size="sm" className="gap-1.5 shadow-xs">
-						<Link to="/tasks">
-							<ListChecks className="size-4" />
-							Antrean Tugas Saya
-							{pendingCount > 0 && (
-								<Badge
-									variant="secondary"
-									className="ml-1 bg-primary-foreground text-primary font-mono text-[10px]"
-								>
-									{pendingCount}
-								</Badge>
-							)}
-						</Link>
-					</Button>
-					<Button asChild variant="outline" size="sm" className="gap-1.5">
-						<Link to="/directory">
-							<Building2 className="size-4" />
-							Direktori
-						</Link>
-					</Button>
-				</div>
-			</div>
+			<PageHeader
+				title="Beranda Persetujuan"
+				description="Daftar tugas verifikasi berkas, persetujuan syarat teknis/komersial, dan metrik waktu tinjau."
+				badge={
+					<Badge variant="secondary" className="font-semibold">
+						{roleTitle}
+					</Badge>
+				}
+				actions={
+					<>
+						<Button asChild size="sm" className="gap-1.5 shadow-xs">
+							<Link to="/tasks">
+								<ListChecks className="size-4" />
+								Antrean Tugas Saya
+								{pendingCount > 0 && (
+									<Badge
+										variant="secondary"
+										className="ml-1 bg-primary-foreground text-primary font-mono text-[10px]"
+									>
+										{pendingCount}
+									</Badge>
+								)}
+							</Link>
+						</Button>
+						<Button asChild variant="outline" size="sm" className="gap-1.5">
+							<Link to="/directory">
+								<Building2 className="size-4" />
+								Direktori
+							</Link>
+						</Button>
+					</>
+				}
+			/>
 
 			{/* Top KPI Stat Cards */}
 			<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

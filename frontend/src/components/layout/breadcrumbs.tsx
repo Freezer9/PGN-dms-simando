@@ -1,5 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Home } from "lucide-react";
+import * as React from "react";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -16,7 +17,7 @@ const ROUTE_LABELS: Record<string, string> = {
 	map: "Peta GIS",
 	tasks: "Tugas Saya",
 	blocked: "Tugas Tertahan",
-	history: "Riwayat Tugas",
+	history: "Riwayat Tindakan",
 	reports: "Laporan",
 	"gas-demand": "Kebutuhan Gas",
 	ageing: "Umur Proses & SLA",
@@ -45,26 +46,40 @@ const ROUTE_LABELS: Record<string, string> = {
 	"sign-in": "Masuk",
 };
 
-export function Breadcrumbs() {
+export function Breadcrumbs({ className }: { className?: string }) {
 	const routerState = useRouterState();
 	const pathname = routerState.location.pathname;
 
 	const segments = pathname.split("/").filter(Boolean);
 
 	if (segments.length === 0) {
-		return null;
+		return (
+			<Breadcrumb className={className}>
+				<BreadcrumbList className="text-xs flex-nowrap whitespace-nowrap">
+					<BreadcrumbItem>
+						<BreadcrumbPage className="font-medium text-foreground flex items-center gap-1.5">
+							<Home className="size-3.5 text-muted-foreground" />
+							<span>Beranda</span>
+						</BreadcrumbPage>
+					</BreadcrumbItem>
+				</BreadcrumbList>
+			</Breadcrumb>
+		);
 	}
 
 	let accumulatedPath = "";
 
 	return (
-		<Breadcrumb className="mb-4">
-			<BreadcrumbList className="text-xs">
+		<Breadcrumb className={className}>
+			<BreadcrumbList className="text-xs flex-nowrap whitespace-nowrap">
 				<BreadcrumbItem>
 					<BreadcrumbLink asChild>
-						<Link to="/" className="flex items-center gap-1">
+						<Link
+							to="/"
+							className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
+						>
 							<Home className="size-3.5" />
-							<span>Beranda</span>
+							<span className="hidden sm:inline">Beranda</span>
 						</Link>
 					</BreadcrumbLink>
 				</BreadcrumbItem>
@@ -77,21 +92,25 @@ export function Breadcrumbs() {
 						(segment.length > 20 ? `${segment.slice(0, 10)}...` : segment);
 
 					return (
-						<div
-							key={accumulatedPath}
-							className="inline-flex items-center gap-1.5"
-						>
-							<BreadcrumbSeparator />
+						<React.Fragment key={accumulatedPath}>
+							<BreadcrumbSeparator className="opacity-60" />
 							<BreadcrumbItem>
 								{isLast ? (
-									<BreadcrumbPage>{label}</BreadcrumbPage>
+									<BreadcrumbPage className="font-semibold text-foreground">
+										{label}
+									</BreadcrumbPage>
 								) : (
 									<BreadcrumbLink asChild>
-										<Link to={accumulatedPath}>{label}</Link>
+										<Link
+											to={accumulatedPath}
+											className="text-muted-foreground hover:text-foreground transition-colors"
+										>
+											{label}
+										</Link>
 									</BreadcrumbLink>
 								)}
 							</BreadcrumbItem>
-						</div>
+						</React.Fragment>
 					);
 				})}
 			</BreadcrumbList>

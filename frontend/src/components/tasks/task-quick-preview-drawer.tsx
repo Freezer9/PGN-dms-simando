@@ -210,7 +210,7 @@ export function TaskQuickPreviewDrawer({
 							className="text-rose-600 border-rose-200 hover:bg-rose-50 dark:hover:bg-rose-950/50"
 							onClick={() => onTakeAction(task, "Tolak")}
 						>
-							<XCircle className="h-4 w-4 mr-1.5" />
+							<XCircle className="size-4" />
 							Tolak
 						</Button>
 						<Button
@@ -219,7 +219,7 @@ export function TaskQuickPreviewDrawer({
 							className="text-amber-600 border-amber-200 hover:bg-amber-50 dark:hover:bg-amber-950/50"
 							onClick={() => onTakeAction(task, "Revisi")}
 						>
-							<RotateCcw className="h-4 w-4 mr-1.5" />
+							<RotateCcw className="size-4" />
 							Minta Revisi
 						</Button>
 						<Button
@@ -227,7 +227,7 @@ export function TaskQuickPreviewDrawer({
 							className="bg-emerald-600 hover:bg-emerald-700 text-white"
 							onClick={() => onTakeAction(task, "Setuju")}
 						>
-							<CheckCircle2 className="h-4 w-4 mr-1.5" />
+							<CheckCircle2 className="size-4" />
 							Setujui
 						</Button>
 					</div>
@@ -242,7 +242,7 @@ export function TaskQuickPreviewDrawer({
 							to="/directory/$companyId"
 							params={{ companyId: task.companyId }}
 						>
-							<ExternalLink className="h-3.5 w-3.5 mr-1.5" />
+							<ExternalLink className="size-3.5" />
 							Buka Berkas Lengkap Pelanggan
 						</Link>
 					</Button>

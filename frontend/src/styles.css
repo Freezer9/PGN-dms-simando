@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:is(.dark *));
+
 #app {
 	min-height: 100vh;
 	display: flex;
@@ -103,6 +105,15 @@
 	--radius-xl: calc(var(--radius) + 4px);
 }
 
+@layer base {
+	* {
+		@apply border-border outline-ring/50;
+	}
+	body {
+		@apply bg-background text-foreground;
+	}
+}
+
 * {
 	box-sizing: border-box;
 }
@@ -112,3 +123,35 @@ body,
 #app {
 	min-height: 100%;
 }
+
+table {
+	display: table;
+	width: 100%;
+	border-collapse: collapse;
+}
+
+thead {
+	display: table-header-group;
+}
+
+tbody {
+	display: table-row-group;
+}
+
+tfoot {
+	display: table-footer-group;
+}
+
+tr {
+	display: table-row;
+}
+
+th,
+td {
+	display: table-cell;
+}
+
+caption {
+	display: table-caption;
+}
+

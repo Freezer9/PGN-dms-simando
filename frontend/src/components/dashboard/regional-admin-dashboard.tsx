@@ -11,6 +11,7 @@ import {
 	ShieldAlert,
 } from "lucide-react";
 import type { RegionalAdminDashboardDto } from "@/api/types";
+import { PageHeader } from "@/components/common";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -41,50 +42,45 @@ export function RegionalAdminDashboard({
 	return (
 		<div className="space-y-6">
 			{/* Hero & Quick Action Bar */}
-			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-card p-5 rounded-xl border shadow-xs">
-				<div>
-					<div className="flex items-center gap-2">
-						<h1 className="text-2xl font-bold tracking-tight">
-							Beranda Admin Regional
-						</h1>
-						<Badge variant="secondary" className="font-semibold">
-							{regionName}
-						</Badge>
-					</div>
-					<p className="text-muted-foreground mt-1 text-sm">
-						Pengawasan seluruh Sales Area di wilayah, penanganan tugas tertahan,
-						dan kelancaran SLA persetujuan.
-					</p>
-				</div>
-				<div className="flex flex-wrap items-center gap-2.5">
-					<Button asChild size="sm" className="gap-1.5 shadow-xs">
-						<Link to="/tasks/blocked">
-							<AlertOctagon className="size-4 text-rose-300" />
-							Kelola Tugas Tertahan
-							{stuckCount > 0 && (
-								<Badge
-									variant="destructive"
-									className="ml-1 text-[10px] font-mono px-1.5 py-0"
-								>
-									{stuckCount}
-								</Badge>
-							)}
-						</Link>
-					</Button>
-					<Button asChild variant="outline" size="sm" className="gap-1.5">
-						<Link to="/reports/ageing">
-							<Clock className="size-4" />
-							Laporan Ageing
-						</Link>
-					</Button>
-					<Button asChild variant="outline" size="sm" className="gap-1.5">
-						<Link to="/directory">
-							<Building2 className="size-4" />
-							Direktori Region
-						</Link>
-					</Button>
-				</div>
-			</div>
+			<PageHeader
+				title="Beranda Admin Regional"
+				description="Pengawasan seluruh Sales Area di wilayah, penanganan tugas tertahan, dan kelancaran SLA persetujuan."
+				badge={
+					<Badge variant="secondary" className="font-semibold">
+						{regionName}
+					</Badge>
+				}
+				actions={
+					<>
+						<Button asChild size="sm" className="gap-1.5 shadow-xs">
+							<Link to="/tasks/blocked">
+								<AlertOctagon className="size-4 text-rose-300" />
+								Kelola Tugas Tertahan
+								{stuckCount > 0 && (
+									<Badge
+										variant="destructive"
+										className="ml-1 text-[10px] font-mono px-1.5 py-0"
+									>
+										{stuckCount}
+									</Badge>
+								)}
+							</Link>
+						</Button>
+						<Button asChild variant="outline" size="sm" className="gap-1.5">
+							<Link to="/reports/ageing">
+								<Clock className="size-4" />
+								Laporan Ageing
+							</Link>
+						</Button>
+						<Button asChild variant="outline" size="sm" className="gap-1.5">
+							<Link to="/directory">
+								<Building2 className="size-4" />
+								Direktori Region
+							</Link>
+						</Button>
+					</>
+				}
+			/>
 
 			{/* Top KPI Stat Cards */}
 			<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

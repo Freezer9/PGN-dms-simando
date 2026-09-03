@@ -21,6 +21,7 @@ import type {
 	UpdateAreaRequest,
 	UpdateRegionRequest,
 } from "@/api/types";
+import { PageHeader } from "@/components/common";
 import { FormField } from "@/components/form/form-field";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -320,39 +321,37 @@ export function OrganisationView() {
 	return (
 		<div className="space-y-4">
 			{/* Top Header */}
-			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-				<div className="space-y-0.5">
-					<h2 className="text-lg font-bold tracking-tight text-foreground flex items-center gap-2">
-						<Network className="h-5 w-5 text-primary" />
-						<span>Organisasi — Struktur Wilayah & Sales Area</span>
-					</h2>
-					<p className="text-xs text-muted-foreground">
-						Definisi batas lingkup teritorial (SOR & Sales Area) untuk perizinan
-						dan jalur persetujuan berkas.
-					</p>
-				</div>
-
-				<div className="flex items-center gap-2">
-					<Button
-						variant="outline"
-						size="sm"
-						onClick={handleOpenCreateRegion}
-						className="h-9 gap-1.5 text-xs"
-					>
-						<Plus className="h-4 w-4" />
-						<span>Tambah Wilayah</span>
-					</Button>
-					<Button
-						size="sm"
-						onClick={() => handleOpenCreateArea()}
-						disabled={regions.length === 0}
-						className="h-9 gap-1.5 text-xs"
-					>
-						<Plus className="h-4 w-4" />
-						<span>Tambah Sales Area</span>
-					</Button>
-				</div>
-			</div>
+			<PageHeader
+				title="Organisasi — Struktur Wilayah & Sales Area"
+				description="Definisi batas lingkup teritorial (SOR & Sales Area) untuk perizinan dan jalur persetujuan berkas."
+				badge={
+					<span className="p-1 rounded-md bg-primary/10 text-primary">
+						<Network className="h-4 w-4" />
+					</span>
+				}
+				actions={
+					<div className="flex items-center gap-2">
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={handleOpenCreateRegion}
+							className="h-9 gap-1.5 text-xs"
+						>
+							<Plus className="h-4 w-4" />
+							<span>Tambah Wilayah</span>
+						</Button>
+						<Button
+							size="sm"
+							onClick={() => handleOpenCreateArea()}
+							disabled={regions.length === 0}
+							className="h-9 gap-1.5 text-xs"
+						>
+							<Plus className="h-4 w-4" />
+							<span>Tambah Sales Area</span>
+						</Button>
+					</div>
+				}
+			/>
 
 			{error && (
 				<Alert variant="destructive">

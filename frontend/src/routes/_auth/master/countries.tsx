@@ -27,6 +27,7 @@ function CountriesPage() {
 		{
 			key: "isoCode",
 			header: "Kode Negara (ISO)",
+			width: "w-52",
 			render: (row) => (
 				<span className="font-mono font-semibold text-foreground">
 					{row.isoCode}

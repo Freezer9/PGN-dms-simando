@@ -1,7 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
 	type ColumnDef,
-	flexRender,
 	getCoreRowModel,
 	useReactTable,
 } from "@tanstack/react-table";
@@ -18,15 +17,9 @@ import * as React from "react";
 import { z } from "zod";
 import { $api } from "@/api/client";
 import type { CompanyListItem } from "@/api/types";
+import { DataTable, DataTableToolbar, PageHeader } from "@/components/common";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
 	Select,
@@ -35,17 +28,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@/components/ui/table";
-import { TableEmptyState } from "@/components/ui/table-empty-state";
-import { TablePagination } from "@/components/ui/table-pagination";
-import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { useAuth } from "@/lib/auth";
 import {
 	getKawasanLabel,
@@ -137,6 +119,10 @@ function CompanyDirectoryPage() {
 			{
 				accessorKey: "nomor",
 				header: "Nomor Registrasi",
+				meta: {
+					headerClassName: "min-w-[130px]",
+					cellClassName: "min-w-[130px]",
+				},
 				cell: ({ row }) => {
 					const item = row.original;
 					return (
@@ -154,6 +140,10 @@ function CompanyDirectoryPage() {
 			{
 				accessorKey: "namaPerusahaan",
 				header: "Nama Perusahaan",
+				meta: {
+					headerClassName: "min-w-[230px]",
+					cellClassName: "min-w-[230px]",
+				},
 				cell: ({ row }) => {
 					const item = row.original;
 					return (
@@ -175,6 +165,10 @@ function CompanyDirectoryPage() {
 			{
 				accessorKey: "locationLabel",
 				header: "Lokasi",
+				meta: {
+					headerClassName: "min-w-[140px]",
+					cellClassName: "min-w-[140px]",
+				},
 				cell: ({ row }) => (
 					<div className="flex items-center gap-1 text-xs text-muted-foreground">
 						<MapPin className="size-3 shrink-0 text-muted-foreground" />
@@ -185,6 +179,10 @@ function CompanyDirectoryPage() {
 			{
 				accessorKey: "currentStage",
 				header: "Tahapan",
+				meta: {
+					headerClassName: "min-w-[120px]",
+					cellClassName: "min-w-[120px]",
+				},
 				cell: ({ row }) => {
 					const stageInfo = getStageInfo(row.original.currentStage);
 					return (
@@ -200,6 +198,10 @@ function CompanyDirectoryPage() {
 			{
 				accessorKey: "status",
 				header: "Status",
+				meta: {
+					headerClassName: "min-w-[85px]",
+					cellClassName: "min-w-[85px]",
+				},
 				cell: ({ row }) => {
 					const status = getStatusLabel(row.original.status);
 					return (
@@ -215,6 +217,10 @@ function CompanyDirectoryPage() {
 			{
 				accessorKey: "salesUserName",
 				header: "Sales PIC",
+				meta: {
+					headerClassName: "min-w-[100px]",
+					cellClassName: "min-w-[100px]",
+				},
 				cell: ({ row }) => (
 					<span className="text-xs text-muted-foreground">
 						{row.original.salesUserName || "-"}
@@ -224,6 +230,10 @@ function CompanyDirectoryPage() {
 			{
 				accessorKey: "posisiPelanggan",
 				header: "Jalur Pipa",
+				meta: {
+					headerClassName: "min-w-[100px]",
+					cellClassName: "min-w-[100px]",
+				},
 				cell: ({ row }) => (
 					<span className="text-xs">
 						{getPosisiPelangganLabel(row.original.posisiPelanggan)}
@@ -233,6 +243,10 @@ function CompanyDirectoryPage() {
 			{
 				accessorKey: "kawasan",
 				header: "Kawasan",
+				meta: {
+					headerClassName: "min-w-[100px]",
+					cellClassName: "min-w-[100px]",
+				},
 				cell: ({ row }) => (
 					<span className="text-xs">
 						{getKawasanLabel(row.original.kawasan)}
@@ -241,7 +255,11 @@ function CompanyDirectoryPage() {
 			},
 			{
 				id: "actions",
-				header: "Aksi",
+				header: () => <div className="text-right pr-2">Aksi</div>,
+				meta: {
+					headerClassName: "min-w-[95px] text-right",
+					cellClassName: "min-w-[95px]",
+				},
 				cell: ({ row }) => {
 					const item = row.original;
 					return (
@@ -286,37 +304,32 @@ function CompanyDirectoryPage() {
 
 	return (
 		<div className="space-y-6">
-			{/* Page Header */}
-			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-				<div>
-					<h1 className="text-2xl font-bold tracking-tight text-foreground">
-						Direktori Industri
-					</h1>
-					<p className="text-sm text-muted-foreground">
-						Manajemen calon pelanggan, plotting jaringan pipa gas, dan tracking
-						dokumen berlangganan
-					</p>
-				</div>
-				<div className="flex items-center gap-2">
-					<Button variant="outline" asChild size="sm" className="h-9">
-						<Link to="/map" className="flex items-center gap-1.5 text-xs">
-							<MapPin className="size-3.5" /> Peta Spatial
-						</Link>
-					</Button>
-					{hasCapability("CreateCompany") && (
-						<Button asChild size="sm" className="h-9">
-							<Link
-								to="/directory/new"
-								className="flex items-center gap-1.5 text-xs"
-							>
-								<Plus className="size-4" /> Tambah Calon Pelanggan
+			{/* Standard Page Header */}
+			<PageHeader
+				title="Direktori Industri"
+				description="Manajemen calon pelanggan, plotting jaringan pipa gas, dan tracking dokumen berlangganan"
+				actions={
+					<>
+						<Button variant="outline" asChild size="sm" className="h-9">
+							<Link to="/map" className="flex items-center gap-1.5 text-xs">
+								<MapPin className="size-3.5" /> Peta Spatial
 							</Link>
 						</Button>
-					)}
-				</div>
-			</div>
+						{hasCapability("CreateCompany") && (
+							<Button asChild size="sm" className="h-9">
+								<Link
+									to="/directory/new"
+									className="flex items-center gap-1.5 text-xs"
+								>
+									<Plus className="size-4" /> Tambah Calon Pelanggan
+								</Link>
+							</Button>
+						)}
+					</>
+				}
+			/>
 
-			{/* Stage Filters Bar */}
+			{/* Stage Filter Pills */}
 			<div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
 				{stagePills.map((pill) => {
 					const isActive = search.stage === pill.value;
@@ -327,7 +340,7 @@ function CompanyDirectoryPage() {
 							size="sm"
 							onClick={() => updateFilters({ stage: pill.value })}
 							className={`text-xs h-8 whitespace-nowrap rounded-full px-3.5 transition-all ${
-								isActive ? "shadow-sm font-semibold" : "text-muted-foreground"
+								isActive ? "shadow-xs font-semibold" : "text-muted-foreground"
 							}`}
 						>
 							{pill.label}
@@ -336,79 +349,20 @@ function CompanyDirectoryPage() {
 				})}
 			</div>
 
-			{/* Filter & Search Bar */}
-			<Card className="border-border/60 shadow-xs">
-				<CardContent className="p-4 space-y-3">
-					<div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-						{/* Search Input */}
-						<div className="relative md:col-span-2">
-							<Search className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
-							<Input
-								placeholder="Cari nama perusahaan atau nomor registrasi..."
-								value={searchInput}
-								onChange={(e) => setSearchInput(e.target.value)}
-								className="pl-9 h-9 text-xs"
-							/>
-						</div>
-
-						{/* Industry Type Filter */}
-						<div>
-							<Select
-								value={search.industryTypeId || "ALL"}
-								onValueChange={(val) =>
-									updateFilters({
-										industryTypeId: val === "ALL" ? undefined : val,
-									})
-								}
-							>
-								<SelectTrigger className="h-9 text-xs w-full">
-									<SelectValue placeholder="Sektor Industri" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="ALL">Semua Sektor Industri</SelectItem>
-									{industryTypes?.map((it) => (
-										<SelectItem key={it.id} value={it.id}>
-											{it.name}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</div>
-
-						{/* Posisi Pelanggan Filter */}
-						<div>
-							<Select
-								value={search.posisiPelanggan || "ALL"}
-								onValueChange={(val) =>
-									updateFilters({
-										posisiPelanggan:
-											val === "ALL"
-												? undefined
-												: (val as "Pengembangan" | "JalurExisting"),
-									})
-								}
-							>
-								<SelectTrigger className="h-9 text-xs w-full">
-									<SelectValue placeholder="Jalur Pipa" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="ALL">Semua Jalur Pipa</SelectItem>
-									<SelectItem value="JalurExisting">Jalur Existing</SelectItem>
-									<SelectItem value="Pengembangan">Pengembangan</SelectItem>
-								</SelectContent>
-							</Select>
-						</div>
-					</div>
-
-					{/* Active Filter Indicators & Reset */}
-					<div className="flex items-center justify-between pt-1 border-t text-xs text-muted-foreground">
-						<div className="flex items-center gap-2">
-							<Filter className="size-3.5" />
+			{/* Search & Filter Toolbar */}
+			<DataTableToolbar
+				actions={
+					<div className="flex items-center gap-3 text-xs text-muted-foreground">
+						<div className="flex items-center gap-1.5">
+							<Filter className="size-3.5 text-muted-foreground" />
 							<span>
-								Menampilkan{" "}
-								<strong className="text-foreground">{items.length}</strong> dari{" "}
-								<strong className="text-foreground">{totalCount}</strong>{" "}
-								perusahaan
+								<strong className="text-foreground font-semibold">
+									{items.length}
+								</strong>{" "}
+								dari{" "}
+								<strong className="text-foreground font-semibold">
+									{totalCount}
+								</strong>
 							</span>
 						</div>
 						{(search.searchTerm ||
@@ -419,103 +373,93 @@ function CompanyDirectoryPage() {
 							<Button
 								variant="ghost"
 								size="sm"
-								onClick={() => {
-									setSearchInput("");
-									navigate({ search: {} });
-								}}
-								className="h-7 text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+								onClick={handleResetFilters}
+								className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
 							>
-								<RotateCcw className="size-3" /> Reset Filter
+								<RotateCcw className="size-3" /> Reset
 							</Button>
 						)}
 					</div>
-				</CardContent>
-			</Card>
-
-			{/* Data Table */}
-			<Card className="border-border/60 shadow-xs">
-				<CardHeader className="p-4 pb-2">
-					<CardTitle className="text-sm font-semibold">
-						Daftar Pelanggan & Prospek
-					</CardTitle>
-					<CardDescription className="text-xs">
-						Daftar seluruh calon pelanggan yang terdaftar dalam lingkup area
-						kerja Anda
-					</CardDescription>
-				</CardHeader>
-				<CardContent className="p-0">
-					<Table>
-						<TableHeader>
-							{table.getHeaderGroups().map((headerGroup) => (
-								<TableRow key={headerGroup.id} className="bg-muted/30">
-									{headerGroup.headers.map((header) => (
-										<TableHead
-											key={header.id}
-											className="h-10 text-xs font-semibold"
-										>
-											{header.isPlaceholder
-												? null
-												: flexRender(
-														header.column.columnDef.header,
-														header.getContext(),
-													)}
-										</TableHead>
-									))}
-								</TableRow>
-							))}
-						</TableHeader>
-						<TableBody>
-							{isLoading ? (
-								<TableSkeleton
-									columns={columns.length}
-									rows={pageSize > 10 ? 10 : pageSize}
-								/>
-							) : table.getRowModel().rows?.length ? (
-								table.getRowModel().rows.map((row) => (
-									<TableRow
-										key={row.id}
-										data-state={row.getIsSelected() && "selected"}
-										className="hover:bg-muted/40 transition-colors"
-									>
-										{row.getVisibleCells().map((cell) => (
-											<TableCell key={cell.id} className="py-2.5">
-												{flexRender(
-													cell.column.columnDef.cell,
-													cell.getContext(),
-												)}
-											</TableCell>
-										))}
-									</TableRow>
-								))
-							) : (
-								<TableEmptyState
-									colSpan={columns.length}
-									icon="search"
-									title="Tidak Ada Data Perusahaan"
-									description="Tidak ada data perusahaan yang sesuai dengan kriteria filter Anda."
-									onReset={handleResetFilters}
-									resetLabel="Reset Filter"
-								/>
-							)}
-						</TableBody>
-					</Table>
-
-					{/* Standardized Table Pagination */}
-					<TablePagination
-						pageIndex={page - 1}
-						page={page}
-						pageSize={pageSize}
-						totalCount={totalCount}
-						totalPages={totalPages}
-						onPageChange={(newPage) => updateFilters({ page: newPage })}
-						onPageSizeChange={(newPageSize) =>
-							updateFilters({ pageSize: newPageSize, page: 1 })
-						}
-						pageSizeOptions={[10, 25, 50, 100]}
-						className="border-t px-4"
+				}
+			>
+				<div className="relative flex-1 min-w-[240px] max-w-md">
+					<Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
+					<Input
+						placeholder="Cari nama perusahaan atau nomor registrasi..."
+						value={searchInput}
+						onChange={(e) => setSearchInput(e.target.value)}
+						className="pl-9 h-9 text-xs"
 					/>
-				</CardContent>
-			</Card>
+				</div>
+
+				<div className="w-[180px]">
+					<Select
+						value={search.industryTypeId || "ALL"}
+						onValueChange={(val) =>
+							updateFilters({
+								industryTypeId: val === "ALL" ? undefined : val,
+							})
+						}
+					>
+						<SelectTrigger className="h-9 text-xs w-full">
+							<SelectValue placeholder="Sektor Industri" />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="ALL">Semua Sektor Industri</SelectItem>
+							{industryTypes?.map((it) => (
+								<SelectItem key={it.id} value={it.id}>
+									{it.name}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				</div>
+
+				<div className="w-[160px]">
+					<Select
+						value={search.posisiPelanggan || "ALL"}
+						onValueChange={(val) =>
+							updateFilters({
+								posisiPelanggan:
+									val === "ALL"
+										? undefined
+										: (val as "Pengembangan" | "JalurExisting"),
+							})
+						}
+					>
+						<SelectTrigger className="h-9 text-xs w-full">
+							<SelectValue placeholder="Jalur Pipa" />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="ALL">Semua Jalur Pipa</SelectItem>
+							<SelectItem value="JalurExisting">Jalur Existing</SelectItem>
+							<SelectItem value="Pengembangan">Pengembangan</SelectItem>
+						</SelectContent>
+					</Select>
+				</div>
+			</DataTableToolbar>
+
+			{/* Clean Data Table */}
+			<DataTable
+				table={table}
+				columnsCount={columns.length}
+				isLoading={isLoading}
+				skeletonRows={pageSize > 10 ? 10 : pageSize}
+				emptyTitle="Tidak Ada Data Perusahaan"
+				emptyDescription="Tidak ada data perusahaan yang sesuai dengan kriteria filter Anda."
+				onResetFilters={handleResetFilters}
+				resetLabel="Reset Filter"
+				pagination={{
+					page,
+					pageSize,
+					totalCount,
+					totalPages,
+					onPageChange: (newPage) => updateFilters({ page: newPage }),
+					onPageSizeChange: (newPageSize) =>
+						updateFilters({ pageSize: newPageSize, page: 1 }),
+					pageSizeOptions: [10, 25, 50, 100],
+				}}
+			/>
 		</div>
 	);
 }

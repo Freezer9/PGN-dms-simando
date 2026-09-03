@@ -1,7 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
 	type ColumnDef,
-	flexRender,
 	getCoreRowModel,
 	useReactTable,
 } from "@tanstack/react-table";
@@ -21,19 +20,9 @@ import * as React from "react";
 import { z } from "zod";
 import { $api } from "@/api/client";
 import type { StatusEventAction, TaskHistoryItem } from "@/api/types";
+import { DataTable, PageHeader } from "@/components/common";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@/components/ui/table";
-import { TableEmptyState } from "@/components/ui/table-empty-state";
-import { TablePagination } from "@/components/ui/table-pagination";
-import { TableSkeleton } from "@/components/ui/table-skeleton";
 
 const historySearchSchema = z.object({
 	page: z.number().default(1).optional(),
@@ -91,12 +80,16 @@ function TaskHistoryPage() {
 			{
 				accessorKey: "namaPerusahaan",
 				header: "Perusahaan",
+				meta: {
+					headerClassName: "min-w-[260px]",
+					cellClassName: "min-w-[260px]",
+				},
 				cell: ({ row }) => {
 					const item = row.original;
 					return (
 						<div className="space-y-0.5">
 							<div className="flex items-center gap-1.5 font-medium text-foreground text-xs">
-								<Building2 className="h-3.5 w-3.5 text-primary shrink-0" />
+								<Building2 className="size-3.5 text-primary shrink-0" />
 								<span>{item.namaPerusahaan}</span>
 							</div>
 							<span className="text-[11px] font-mono text-muted-foreground block pl-5">
@@ -109,11 +102,19 @@ function TaskHistoryPage() {
 			{
 				accessorKey: "action",
 				header: "Tindakan",
+				meta: {
+					headerClassName: "min-w-[130px]",
+					cellClassName: "min-w-[130px]",
+				},
 				cell: ({ row }) => <ActionBadge action={row.original.action} />,
 			},
 			{
 				accessorKey: "toStatus",
 				header: "Menuju Status",
+				meta: {
+					headerClassName: "min-w-[140px]",
+					cellClassName: "min-w-[140px]",
+				},
 				cell: ({ row }) => (
 					<Badge variant="outline" className="text-[11px]">
 						{row.original.toStatus}
@@ -123,11 +124,15 @@ function TaskHistoryPage() {
 			{
 				accessorKey: "comment",
 				header: "Catatan / Alasan",
+				meta: {
+					headerClassName: "min-w-[310px]",
+					cellClassName: "min-w-[310px]",
+				},
 				cell: ({ row }) => {
 					const comment = row.original.comment;
 					return comment ? (
 						<div className="flex items-start gap-1.5 text-xs text-muted-foreground max-w-[280px]">
-							<MessageSquare className="h-3.5 w-3.5 mt-0.5 shrink-0 text-muted-foreground/60" />
+							<MessageSquare className="size-3.5 mt-0.5 shrink-0 text-muted-foreground/60" />
 							<span className="line-clamp-2 italic">"{comment}"</span>
 						</div>
 					) : (
@@ -138,6 +143,10 @@ function TaskHistoryPage() {
 			{
 				accessorKey: "actedAt",
 				header: "Waktu Proses",
+				meta: {
+					headerClassName: "min-w-[170px]",
+					cellClassName: "min-w-[170px]",
+				},
 				cell: ({ row }) => (
 					<span className="text-xs text-muted-foreground">
 						{new Date(row.original.actedAt).toLocaleDateString("id-ID", {
@@ -153,6 +162,10 @@ function TaskHistoryPage() {
 			{
 				id: "actions",
 				header: () => <div className="text-right pr-2">Aksi</div>,
+				meta: {
+					headerClassName: "min-w-[124px] text-right",
+					cellClassName: "min-w-[124px]",
+				},
 				cell: ({ row }) => (
 					<div className="text-right">
 						<Button asChild size="sm" variant="ghost" className="h-7 text-xs">
@@ -160,7 +173,7 @@ function TaskHistoryPage() {
 								to="/directory/$companyId"
 								params={{ companyId: row.original.companyId }}
 							>
-								<ExternalLink className="h-3.5 w-3.5 mr-1" />
+								<ExternalLink className="size-3.5" />
 								Buka Berkas
 							</Link>
 						</Button>
@@ -179,86 +192,46 @@ function TaskHistoryPage() {
 
 	return (
 		<div className="space-y-4">
-			{/* Header info */}
-			<div className="flex items-center justify-between">
-				<div className="space-y-0.5">
-					<h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-						<History className="h-4 w-4 text-primary" />
-						<span>Log Riwayat Keputusan Workflow</span>
-					</h3>
-					<p className="text-xs text-muted-foreground">
-						Daftar seluruh tindakan verifikasi dan keputusan yang telah Anda
-						proses pada sistem.
-					</p>
-				</div>
-				<div className="text-xs text-muted-foreground">
-					Total: <strong className="text-foreground">{totalCount}</strong>{" "}
-					riwayat
-				</div>
-			</div>
+			{/* Page Header */}
+			<PageHeader
+				title="Log Riwayat Keputusan Workflow"
+				description="Daftar seluruh tindakan verifikasi dan keputusan yang telah Anda proses pada sistem."
+				badge={
+					<span className="p-1 rounded-md bg-primary/10 text-primary">
+						<History className="h-4 w-4" />
+					</span>
+				}
+				actions={
+					<div className="text-xs text-muted-foreground">
+						Total: <strong className="text-foreground">{totalCount}</strong>{" "}
+						riwayat
+					</div>
+				}
+			/>
 
-			{/* History Table with TanStack Table */}
-			<div className="rounded-xl border bg-card shadow-xs overflow-hidden">
-				<Table>
-					<TableHeader className="bg-muted/40">
-						{table.getHeaderGroups().map((headerGroup) => (
-							<TableRow key={headerGroup.id}>
-								{headerGroup.headers.map((header) => (
-									<TableHead key={header.id} className="font-semibold text-xs">
-										{header.isPlaceholder
-											? null
-											: flexRender(
-													header.column.columnDef.header,
-													header.getContext(),
-												)}
-									</TableHead>
-								))}
-							</TableRow>
-						))}
-					</TableHeader>
-					<TableBody>
-						{isLoading ? (
-							<TableSkeleton columns={columns.length} rows={5} />
-						) : table.getRowModel().rows?.length ? (
-							table.getRowModel().rows.map((row) => (
-								<TableRow
-									key={row.id}
-									className="hover:bg-muted/30 transition-colors"
-								>
-									{row.getVisibleCells().map((cell) => (
-										<TableCell key={cell.id} className="py-3">
-											{flexRender(
-												cell.column.columnDef.cell,
-												cell.getContext(),
-											)}
-										</TableCell>
-									))}
-								</TableRow>
-							))
-						) : (
-							<TableEmptyState
-								colSpan={columns.length}
-								icon="empty"
-								title="Belum Ada Riwayat Tindakan"
-								description="Tindakan persetujuan atau revisi yang Anda lakukan akan tercatat di sini."
-							/>
-						)}
-					</TableBody>
-				</Table>
-
-				{/* Standardized Table Pagination */}
-				<TablePagination
-					pageIndex={page - 1}
-					page={page}
-					pageSize={pageSize}
-					totalCount={totalCount}
-					totalPages={totalPages}
-					onPageChange={handlePageChange}
-					onPageSizeChange={handlePageSizeChange}
-					pageSizeOptions={[10, 25, 50, 100]}
-					className="border-t px-4"
-				/>
-			</div>
+			{/* History Table with DataTable */}
+			<DataTable
+				table={table}
+				columnsCount={columns.length}
+				isLoading={isLoading}
+				skeletonRows={5}
+				emptyTitle="Belum Ada Riwayat Tindakan"
+				emptyDescription="Tindakan persetujuan atau revisi yang Anda lakukan akan tercatat di sini."
+				emptyIcon="empty"
+				pagination={
+					totalCount > 0
+						? {
+								page,
+								pageSize,
+								totalCount,
+								totalPages,
+								onPageChange: handlePageChange,
+								onPageSizeChange: handlePageSizeChange,
+								pageSizeOptions: [10, 25, 50, 100],
+							}
+						: undefined
+				}
+			/>
 		</div>
 	);
 }

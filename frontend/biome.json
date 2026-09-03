@@ -12,6 +12,8 @@
 			"**/.vscode/**/*",
 			"index.html",
 			"**/vite.config.ts",
+			"!**/src/components/ui/**/*",
+			"!**/src/hooks/**/*",
 			"!**/src/routeTree.gen.ts",
 			"!**/src/api/schema.d.ts",
 			"!**/*.css",
@@ -39,26 +41,6 @@
 			}
 		}
 	},
-	"overrides": [
-		{
-			"includes": ["**/src/components/ui/**/*"],
-			"linter": {
-				"rules": {
-					"suspicious": {
-						"noDocumentCookie": "off"
-					},
-					"a11y": {
-						"useFocusableInteractive": "off",
-						"useSemanticElements": "off",
-						"noSvgWithoutTitle": "off"
-					},
-					"correctness": {
-						"useExhaustiveDependencies": "off"
-					}
-				}
-			}
-		}
-	],
 	"javascript": {
 		"formatter": {
 			"quoteStyle": "double"

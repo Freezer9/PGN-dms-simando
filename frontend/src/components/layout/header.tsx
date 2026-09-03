@@ -1,12 +1,14 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Bell, KeyRound, LogOut, Search } from "lucide-react";
 import { $api } from "@/api/client";
+import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
+	DropdownMenuGroup,
 	DropdownMenuItem,
 	DropdownMenuLabel,
 	DropdownMenuSeparator,
@@ -60,136 +62,121 @@ export function Header() {
 		: user?.username?.slice(0, 2).toUpperCase() || "U";
 
 	return (
-		<header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 h-14 shrink-0">
-			<div className="flex h-14 items-center justify-between px-4 gap-4 max-w-full">
-				{/* Brand & Sidebar Trigger */}
-				<div className="flex items-center gap-2 shrink-0">
-					<SidebarTrigger className="-ml-1 text-muted-foreground hover:text-foreground" />
-					<Separator orientation="vertical" className="mr-1 h-4" />
-					<Link to="/" className="flex items-center gap-2">
-						<span className="font-bold text-primary tracking-tight text-lg">
-							DMS Simando
-						</span>
-						<span className="text-[11px] bg-primary text-primary-foreground px-2 py-0.5 rounded font-mono font-semibold shadow-xs">
-							PGN
-						</span>
-					</Link>
-				</div>
+		<header className="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+			{/* Left: Sidebar Toggle + Breadcrumb Navigation */}
+			<div className="flex items-center gap-2 min-w-0">
+				<SidebarTrigger className="-ml-1 text-muted-foreground hover:text-foreground shrink-0" />
+				<Separator orientation="vertical" className="mr-2 h-4 shrink-0" />
+				<Breadcrumbs className="hidden sm:flex min-w-0" />
+			</div>
 
+			{/* Right: Search, Notifications, and Quick User Profile */}
+			<div className="flex items-center gap-3">
 				{/* Global Search Bar */}
-				<div className="flex-1 max-w-md hidden md:block">
-					<div className="relative">
-						<Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
-						<Input
-							type="search"
-							placeholder="Cari perusahaan / nomor registrasi..."
-							className="pl-9 h-9 text-xs bg-muted/40 w-full"
-							readOnly
-						/>
-					</div>
+				<div className="relative hidden md:block w-48 lg:w-64">
+					<Search className="absolute left-2.5 top-2.5 size-3.5 text-muted-foreground" />
+					<Input
+						type="search"
+						placeholder="Cari perusahaan..."
+						className="h-8 pl-8 text-xs bg-muted/30 focus-visible:bg-background border-border/80"
+						readOnly
+						onClick={() => navigate({ to: "/directory" })}
+					/>
 				</div>
 
-				{/* User Info & Actions */}
-				<div className="flex items-center gap-3">
-					{/* Notification Bell with Pending Count */}
-					<Button
-						asChild
-						variant="ghost"
-						size="icon"
-						className="relative size-9 text-muted-foreground hover:text-foreground"
-						title={
-							pendingCount > 0
-								? `${pendingCount} tugas menunggu tindakan Anda`
-								: "Tugas & Notifikasi"
-						}
-					>
-						<Link to="/tasks">
-							<Bell className="size-4" />
-							{pendingCount > 0 ? (
-								<span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white">
-									{pendingCount > 99 ? "99+" : pendingCount}
-								</span>
-							) : (
-								<span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-primary/40" />
-							)}
-						</Link>
-					</Button>
-
-					{/* Role & Scope Pill */}
-					{user && (
-						<div className="hidden lg:flex flex-col items-end text-xs leading-tight mr-1">
-							<span className="font-semibold text-foreground">
-								{user.fullName || user.username}
+				{/* Notification Bell with Pending Count */}
+				<Button
+					asChild
+					variant="ghost"
+					size="icon"
+					className="relative size-8 text-muted-foreground hover:text-foreground"
+					title={
+						pendingCount > 0
+							? `${pendingCount} tugas menunggu tindakan Anda`
+							: "Tugas & Notifikasi"
+					}
+				>
+					<Link to="/tasks">
+						<Bell className="size-4" />
+						{pendingCount > 0 ? (
+							<span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[9px] font-bold text-white shadow-xs">
+								{pendingCount > 99 ? "99+" : pendingCount}
 							</span>
-							<div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-0.5">
-								<span>{user.roles?.[0] || "User"}</span>
-								<span>•</span>
-								<span className="text-primary font-medium">{scopeLabel}</span>
-							</div>
-						</div>
-					)}
+						) : null}
+					</Link>
+				</Button>
 
-					{/* User Menu Dropdown with Avatar */}
-					<DropdownMenu>
-						<DropdownMenuTrigger asChild>
-							<Button
-								variant="ghost"
-								size="icon"
-								className="rounded-full size-9 border border-border bg-muted/50 p-0 overflow-hidden"
-							>
-								<Avatar className="size-8">
-									<AvatarFallback className="bg-primary/10 text-primary font-semibold text-xs">
-										{initials}
-									</AvatarFallback>
-								</Avatar>
-								<span className="sr-only">Menu pengguna</span>
-							</Button>
-						</DropdownMenuTrigger>
-						<DropdownMenuContent align="end" className="w-56">
-							<DropdownMenuLabel className="font-normal">
-								<div className="flex flex-col space-y-1">
-									<p className="text-sm font-medium leading-none">
-										{user?.fullName || user?.username}
-									</p>
-									<p className="text-xs leading-none text-muted-foreground">
-										{user?.email}
-									</p>
-									{user?.roles && user.roles.length > 0 && (
-										<div className="flex flex-wrap gap-1 mt-1.5">
-											{user.roles.map((role) => (
-												<Badge
-													key={role}
-													variant="outline"
-													className="text-[10px] py-0 px-1.5 font-normal"
-												>
-													{role}
-												</Badge>
-											))}
-										</div>
-									)}
-								</div>
-							</DropdownMenuLabel>
-							<DropdownMenuSeparator />
+				<Separator orientation="vertical" className="h-4 hidden sm:block" />
+
+				{/* User Avatar & Menu */}
+				<DropdownMenu>
+					<DropdownMenuTrigger asChild>
+						<Button
+							variant="ghost"
+							size="sm"
+							className="relative flex items-center gap-2 p-1 px-2 h-8 rounded-full hover:bg-muted/70"
+						>
+							<Avatar className="size-6 rounded-full">
+								<AvatarFallback className="bg-primary/10 text-primary font-bold text-[10px]">
+									{initials}
+								</AvatarFallback>
+							</Avatar>
+							<div className="hidden lg:flex flex-col text-left text-xs leading-none">
+								<span className="font-medium text-foreground truncate max-w-[120px]">
+									{user?.fullName || user?.username}
+								</span>
+								<span className="text-[10px] text-muted-foreground">
+									{scopeLabel}
+								</span>
+							</div>
+						</Button>
+					</DropdownMenuTrigger>
+					<DropdownMenuContent align="end" className="w-56 p-1.5 shadow-lg">
+						<DropdownMenuLabel className="p-2 font-normal bg-muted/40 rounded-md">
+							<div className="flex flex-col space-y-1">
+								<p className="text-xs font-semibold leading-none text-foreground">
+									{user?.fullName || user?.username}
+								</p>
+								<p className="text-[11px] leading-none text-muted-foreground">
+									{user?.email}
+								</p>
+								{user?.roles && user.roles.length > 0 && (
+									<div className="flex flex-wrap gap-1 mt-1.5">
+										{user.roles.map((role) => (
+											<Badge
+												key={role}
+												variant="secondary"
+												className="text-[9px] py-0 px-1.5 font-normal h-4"
+											>
+												{role}
+											</Badge>
+										))}
+									</div>
+								)}
+							</div>
+						</DropdownMenuLabel>
+						<DropdownMenuSeparator className="my-1" />
+						<DropdownMenuGroup>
 							<DropdownMenuItem asChild>
 								<Link
 									to="/change-password"
-									className="flex items-center cursor-pointer"
+									className="flex items-center gap-2 px-2 py-1.5 text-xs cursor-pointer rounded-sm"
 								>
-									<KeyRound className="mr-2 size-4 text-muted-foreground" />
+									<KeyRound className="size-3.5 text-muted-foreground" />
 									<span>Ubah Kata Sandi</span>
 								</Link>
 							</DropdownMenuItem>
-							<DropdownMenuSeparator />
-							<DropdownMenuItem
-								onClick={handleLogout}
-								className="text-destructive focus:text-destructive cursor-pointer"
-							>
-								<LogOut className="mr-2 size-4" />
-								<span>Keluar (Sign Out)</span>
-							</DropdownMenuItem>
-						</DropdownMenuContent>
-					</DropdownMenu>
-				</div>
+						</DropdownMenuGroup>
+						<DropdownMenuSeparator className="my-1" />
+						<DropdownMenuItem
+							onClick={handleLogout}
+							className="flex items-center gap-2 px-2 py-1.5 text-xs cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10 rounded-sm"
+						>
+							<LogOut className="size-3.5" />
+							<span>Keluar (Sign Out)</span>
+						</DropdownMenuItem>
+					</DropdownMenuContent>
+				</DropdownMenu>
 			</div>
 		</header>
 	);

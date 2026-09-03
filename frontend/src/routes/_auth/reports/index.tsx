@@ -10,12 +10,14 @@ import {
 	ShieldCheck,
 } from "lucide-react";
 import * as React from "react";
+import { PageHeader } from "@/components/common";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
 	CardContent,
 	CardDescription,
+	CardFooter,
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
@@ -116,15 +118,10 @@ function ReportsHubPage() {
 	return (
 		<div className="space-y-8">
 			{/* Page Header */}
-			<div className="bg-card p-6 rounded-xl border shadow-xs space-y-1">
-				<h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-					Pusat Laporan & Analitik
-				</h1>
-				<p className="text-muted-foreground text-sm">
-					Akses laporan standar operasional, metrik konversi pipeline,
-					pemantauan SLA penuaan berkas, dan ekspor spreadsheet terformat.
-				</p>
-			</div>
+			<PageHeader
+				title="Pusat Laporan & Analitik"
+				description="Akses laporan standar operasional, metrik konversi pipeline, pemantauan SLA penuaan berkas, dan ekspor spreadsheet terformat."
+			/>
 
 			{/* 5 Reports Cards Grid */}
 			<div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -149,29 +146,29 @@ function ReportsHubPage() {
 									{r.description}
 								</CardDescription>
 							</CardHeader>
-							<CardContent className="pt-2 flex items-center justify-between gap-2 border-t">
+							<CardFooter className="py-3 px-6 flex items-center justify-between gap-2 border-t bg-muted/20">
 								<Button
 									asChild
-									variant="ghost"
+									variant="outline"
 									size="sm"
-									className="gap-1 px-2"
+									className="h-8 gap-1.5 text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 text-xs border-emerald-200 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
 								>
 									<a
 										href={r.exportUrl}
 										download={r.exportName}
-										className="text-emerald-700 dark:text-emerald-400 text-xs hover:underline flex items-center gap-1.5"
+										className="flex items-center gap-1.5"
 									>
 										<FileSpreadsheet className="size-3.5" />
-										Excel
+										<span>Excel</span>
 									</a>
 								</Button>
-								<Button asChild size="sm" className="gap-1.5 shadow-xs">
+								<Button asChild size="sm" className="h-8 gap-1.5 shadow-xs">
 									<Link to={r.href}>
-										Buka Laporan
+										<span>Buka Laporan</span>
 										<ArrowRight className="size-3.5" />
 									</Link>
 								</Button>
-							</CardContent>
+							</CardFooter>
 						</Card>
 					);
 				})}

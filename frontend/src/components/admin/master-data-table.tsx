@@ -9,6 +9,7 @@ import {
 	Trash2,
 } from "lucide-react";
 import * as React from "react";
+import { PageHeader } from "@/components/common";
 import { FormField } from "@/components/form/form-field";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -41,12 +42,14 @@ import { TableEmptyState } from "@/components/ui/table-empty-state";
 import { TablePagination } from "@/components/ui/table-pagination";
 import { TableSkeleton } from "@/components/ui/table-skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 
 export interface ColumnDef<TItem> {
 	key: Extract<keyof TItem, string> | string;
 	header: string;
 	render?: (row: TItem) => React.ReactNode;
 	className?: string;
+	width?: string;
 }
 
 export type FieldInputType =
@@ -244,38 +247,39 @@ export function MasterDataTable<
 	return (
 		<div className="space-y-4">
 			{/* Top Header */}
-			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-				<div className="space-y-0.5">
-					<h2 className="text-lg font-bold tracking-tight text-foreground flex items-center gap-2">
-						<Icon className="h-5 w-5 text-primary" />
-						<span>{title}</span>
-					</h2>
-					<p className="text-xs text-muted-foreground">{description}</p>
-				</div>
-
-				<div className="flex items-center gap-2">
-					<div className="relative w-64">
-						<Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-						<Input
-							placeholder="Cari data..."
-							value={searchTerm}
-							onChange={(e) => {
-								setSearchTerm(e.target.value);
-								setPage(1);
-							}}
-							className="pl-8 h-9 text-xs"
-						/>
+			<PageHeader
+				title={title}
+				description={description}
+				badge={
+					<span className="p-1 rounded-md bg-primary/10 text-primary">
+						<Icon className="h-4 w-4" />
+					</span>
+				}
+				actions={
+					<div className="flex items-center gap-2">
+						<div className="relative w-64">
+							<Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+							<Input
+								placeholder="Cari data..."
+								value={searchTerm}
+								onChange={(e) => {
+									setSearchTerm(e.target.value);
+									setPage(1);
+								}}
+								className="pl-8 h-9 text-xs"
+							/>
+						</div>
+						<Button
+							onClick={handleOpenCreate}
+							size="sm"
+							className="h-9 gap-1.5 text-xs shrink-0"
+						>
+							<Plus className="h-4 w-4" />
+							<span>Tambah Data</span>
+						</Button>
 					</div>
-					<Button
-						onClick={handleOpenCreate}
-						size="sm"
-						className="h-9 gap-1.5 text-xs shrink-0"
-					>
-						<Plus className="h-4 w-4" />
-						<span>Tambah Data</span>
-					</Button>
-				</div>
-			</div>
+				}
+			/>
 
 			{error && (
 				<Alert variant="destructive">
@@ -286,18 +290,27 @@ export function MasterDataTable<
 
 			{/* Table */}
 			<div className="rounded-xl border bg-card shadow-xs overflow-hidden">
-				<Table>
+				<Table className="w-full">
 					<TableHeader className="bg-muted/40">
 						<TableRow>
 							{columns.map((col) => (
 								<TableHead
 									key={col.key}
-									className={`font-semibold text-xs py-3 ${col.className || ""}`}
+									style={
+										col.width && !col.width.startsWith("w-")
+											? { width: col.width }
+											: undefined
+									}
+									className={cn(
+										"font-semibold text-xs py-3",
+										col.width?.startsWith("w-") && col.width,
+										col.className,
+									)}
 								>
 									{col.header}
 								</TableHead>
 							))}
-							<TableHead className="text-right font-semibold text-xs py-3 pr-4">
+							<TableHead className="w-24 sm:w-28 text-right font-semibold text-xs py-3 pr-4">
 								Tindakan
 							</TableHead>
 						</TableRow>
@@ -333,7 +346,13 @@ export function MasterDataTable<
 											return (
 												<TableCell
 													key={`${row.id}-${col.key}`}
-													className={`py-3 text-xs ${col.className || ""}`}
+													className={cn(
+														"py-3 text-xs truncate",
+														col.className,
+													)}
+													title={
+														typeof cellVal === "string" ? cellVal : undefined
+													}
 												>
 													{col.render
 														? col.render(row)
@@ -343,7 +362,7 @@ export function MasterDataTable<
 												</TableCell>
 											);
 										})}
-										<TableCell className="py-3 text-right pr-4">
+										<TableCell className="w-24 sm:w-28 py-3 text-right pr-4">
 											<div className="flex items-center justify-end gap-1">
 												<Button
 													variant="ghost"

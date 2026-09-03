@@ -15,6 +15,7 @@ import {
 	Users,
 } from "lucide-react";
 import type { SystemAdminDashboardDto } from "@/api/types";
+import { PageHeader } from "@/components/common";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,42 +37,37 @@ export function SystemAdminDashboard({ data }: SystemAdminDashboardProps) {
 	return (
 		<div className="space-y-6">
 			{/* Hero & Quick Action Bar */}
-			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-card p-5 rounded-xl border shadow-xs">
-				<div>
-					<div className="flex items-center gap-2">
-						<h1 className="text-2xl font-bold tracking-tight">
-							Beranda Administrator Sistem
-						</h1>
-						<Badge variant="outline" className="font-semibold">
-							System Administration
-						</Badge>
-					</div>
-					<p className="text-muted-foreground mt-1 text-sm">
-						Pengelolaan integritas master data, pemeliharaan katalog sistem,
-						pengguna, dan audit keamanan.
-					</p>
-				</div>
-				<div className="flex flex-wrap items-center gap-2.5">
-					<Button asChild size="sm" variant="outline" className="gap-1.5">
-						<Link to="/tasks/blocked">
-							<OctagonAlert className="size-4" />
-							Langkah Tertahan
-						</Link>
-					</Button>
-					<Button asChild size="sm" variant="outline" className="gap-1.5">
-						<Link to="/admin/break-glass">
-							<ShieldAlert className="size-4" />
-							Audit Break-Glass
-						</Link>
-					</Button>
-					<Button asChild size="sm" className="gap-1.5 shadow-xs">
-						<Link to="/master/users">
-							<Users className="size-4" />
-							Organisasi & Akses
-						</Link>
-					</Button>
-				</div>
-			</div>
+			<PageHeader
+				title="Beranda Administrator Sistem"
+				description="Pengelolaan integritas master data, pemeliharaan katalog sistem, pengguna, dan audit keamanan."
+				badge={
+					<Badge variant="outline" className="font-semibold">
+						System Administration
+					</Badge>
+				}
+				actions={
+					<>
+						<Button asChild size="sm" variant="outline" className="gap-1.5">
+							<Link to="/tasks/blocked">
+								<OctagonAlert className="size-4" />
+								Langkah Tertahan
+							</Link>
+						</Button>
+						<Button asChild size="sm" variant="outline" className="gap-1.5">
+							<Link to="/admin/break-glass">
+								<ShieldAlert className="size-4" />
+								Audit Break-Glass
+							</Link>
+						</Button>
+						<Button asChild size="sm" className="gap-1.5 shadow-xs">
+							<Link to="/master/users">
+								<Users className="size-4" />
+								Organisasi & Akses
+							</Link>
+						</Button>
+					</>
+				}
+			/>
 
 			{/* Top KPI Stat Cards */}
 			<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

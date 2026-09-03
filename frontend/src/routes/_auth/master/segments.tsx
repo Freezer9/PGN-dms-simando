@@ -58,6 +58,7 @@ function SegmentsPage() {
 		{
 			key: "sortOrder",
 			header: "Urutan (Sort Order)",
+			width: "w-48",
 			render: (row) => (
 				<span className="font-mono text-muted-foreground">{row.sortOrder}</span>
 			),

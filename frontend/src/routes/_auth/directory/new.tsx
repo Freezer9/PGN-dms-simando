@@ -14,6 +14,7 @@ import {
 import { toast } from "sonner";
 import { $api } from "@/api/client";
 import type { CreateCompanyRequest } from "@/api/types";
+import { PageHeader } from "@/components/common";
 import { FormField } from "@/components/form/form-field";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -187,28 +188,28 @@ function CreateCompanyPage() {
 	return (
 		<div className="max-w-5xl mx-auto space-y-6 pb-12">
 			{/* Page Header */}
-			<div className="flex items-center justify-between border-b pb-4">
-				<div className="flex items-center gap-3">
-					<Button variant="ghost" size="icon" asChild className="h-9 w-9">
+			<PageHeader
+				title="Pendaftaran Calon Pelanggan Baru"
+				description="Formulir registrasi tahap 1 direktori calon pelanggan industri & komersial PGN"
+				badge={
+					<Badge variant="outline" className="text-xs px-2.5 py-0.5 font-mono">
+						Tahap 1: Calon Pelanggan
+					</Badge>
+				}
+				actions={
+					<Button
+						variant="outline"
+						size="sm"
+						asChild
+						className="gap-1.5 h-9 text-xs"
+					>
 						<Link to="/directory">
 							<ArrowLeft className="size-4" />
+							Kembali ke Direktori
 						</Link>
 					</Button>
-					<div>
-						<h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-							<Building2 className="size-6 text-primary" />
-							Pendaftaran Calon Pelanggan Baru
-						</h1>
-						<p className="text-xs text-muted-foreground">
-							Formulir registrasi tahap 1 direktori calon pelanggan industri &
-							komersial PGN
-						</p>
-					</div>
-				</div>
-				<Badge variant="outline" className="text-xs px-3 py-1 font-mono">
-					Tahap 1: Calon Pelanggan
-				</Badge>
-			</div>
+				}
+			/>
 
 			<form
 				onSubmit={(e) => {

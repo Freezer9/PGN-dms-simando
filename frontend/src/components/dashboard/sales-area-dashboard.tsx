@@ -10,6 +10,7 @@ import {
 	Send,
 } from "lucide-react";
 import type { SalesAreaDashboardDto } from "@/api/types";
+import { PageHeader } from "@/components/common";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -43,36 +44,31 @@ export function SalesAreaDashboard({
 	return (
 		<div className="space-y-6">
 			{/* Hero & Quick Action Bar */}
-			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-card p-5 rounded-xl border shadow-xs">
-				<div>
-					<div className="flex items-center gap-2">
-						<h1 className="text-2xl font-bold tracking-tight">
-							Beranda Sales Area
-						</h1>
-						<Badge variant="secondary" className="font-semibold">
-							{areaName}
-						</Badge>
-					</div>
-					<p className="text-muted-foreground mt-1 text-sm">
-						Ringkasan tugas lapangan, progres verifikasi berkas, dan pipeline
-						pelanggan gas.
-					</p>
-				</div>
-				<div className="flex flex-wrap items-center gap-2.5">
-					<Button asChild size="sm" className="gap-1.5 shadow-xs">
-						<Link to="/directory/new">
-							<FilePlus2 className="size-4" />
-							Tambah Perusahaan Baru
-						</Link>
-					</Button>
-					<Button asChild variant="outline" size="sm" className="gap-1.5">
-						<Link to="/map">
-							<MapPin className="size-4" />
-							Peta Explorer
-						</Link>
-					</Button>
-				</div>
-			</div>
+			<PageHeader
+				title="Beranda Sales Area"
+				description="Ringkasan tugas lapangan, progres verifikasi berkas, dan pipeline pelanggan gas."
+				badge={
+					<Badge variant="secondary" className="font-semibold">
+						{areaName}
+					</Badge>
+				}
+				actions={
+					<>
+						<Button asChild size="sm" className="gap-1.5 shadow-xs">
+							<Link to="/directory/new">
+								<FilePlus2 className="size-4" />
+								Tambah Perusahaan Baru
+							</Link>
+						</Button>
+						<Button asChild variant="outline" size="sm" className="gap-1.5">
+							<Link to="/map">
+								<MapPin className="size-4" />
+								Peta Explorer
+							</Link>
+						</Button>
+					</>
+				}
+			/>
 
 			{/* Top KPI Stat Cards */}
 			<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

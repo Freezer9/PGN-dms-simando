@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import * as React from "react";
 import { toast } from "sonner";
-import { Button, type ButtonProps } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -192,7 +192,8 @@ export function DocumentDownloadDropdown({
 	);
 }
 
-interface DocumentDownloadButtonProps extends Omit<ButtonProps, "onClick"> {
+interface DocumentDownloadButtonProps
+	extends Omit<React.ComponentProps<typeof Button>, "onClick"> {
 	companyId: string;
 	documentType: DocumentType;
 	label?: string;

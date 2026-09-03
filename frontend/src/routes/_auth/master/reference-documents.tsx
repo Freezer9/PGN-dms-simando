@@ -64,6 +64,7 @@ function ReferenceDocumentsPage() {
 		{
 			key: "version",
 			header: "Versi Dokumen",
+			width: "w-32",
 			render: (row) => (
 				<span className="font-mono text-xs">v{row.version}</span>
 			),
@@ -71,6 +72,7 @@ function ReferenceDocumentsPage() {
 		{
 			key: "effectiveFrom",
 			header: "Berlaku Mulai",
+			width: "w-40",
 			render: (row) => (
 				<span className="text-xs">
 					{row.effectiveFrom
@@ -82,6 +84,7 @@ function ReferenceDocumentsPage() {
 		{
 			key: "effectiveTo",
 			header: "Berlaku Sampai",
+			width: "w-40",
 			render: (row) => (
 				<span className="text-xs text-muted-foreground">
 					{row.effectiveTo

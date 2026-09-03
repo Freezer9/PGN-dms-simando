@@ -65,8 +65,8 @@ export function TableEmptyState({
 
 	if (colSpan !== undefined) {
 		return (
-			<TableRow>
-				<TableCell colSpan={colSpan} className="h-48 p-0">
+			<TableRow className="hover:bg-transparent">
+				<TableCell colSpan={colSpan} className="h-64 sm:h-80 py-12 p-0 w-full text-center">
 					{content}
 				</TableCell>
 			</TableRow>

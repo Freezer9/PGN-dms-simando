@@ -241,7 +241,7 @@ export function WorkflowActionBar({
 								onClick={() => setActiveModal("reject")}
 								className="h-8 text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
 							>
-								<XCircle className="size-3.5 mr-1" /> Tolak
+								<XCircle className="size-3.5" /> Tolak
 							</Button>
 
 							<Button
@@ -251,7 +251,7 @@ export function WorkflowActionBar({
 								onClick={() => setActiveModal("revise")}
 								className="h-8 text-xs text-amber-600 border-amber-300 dark:text-amber-400 dark:border-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/30"
 							>
-								<RotateCcw className="size-3.5 mr-1" /> Minta Revisi
+								<RotateCcw className="size-3.5" /> Minta Revisi
 							</Button>
 
 							<Button
@@ -260,7 +260,7 @@ export function WorkflowActionBar({
 								onClick={() => setActiveModal("approve")}
 								className="h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
 							>
-								<CheckCircle2 className="size-3.5 mr-1" /> Setujui Langkah
+								<CheckCircle2 className="size-3.5" /> Setujui Langkah
 							</Button>
 						</>
 					)}
@@ -274,7 +274,7 @@ export function WorkflowActionBar({
 							onClick={() => setActiveModal("rework")}
 							className="h-8 text-xs text-amber-600 border-amber-300 hover:bg-amber-50"
 						>
-							<Undo2 className="size-3.5 mr-1" /> Rework
+							<Undo2 className="size-3.5" /> Rework
 						</Button>
 					)}
 
@@ -287,7 +287,7 @@ export function WorkflowActionBar({
 							onClick={() => setActiveModal("discontinue")}
 							className="h-8 text-xs text-muted-foreground hover:text-destructive"
 						>
-							<AlertOctagon className="size-3.5 mr-1" /> Hentikan Proses
+							<AlertOctagon className="size-3.5" /> Hentikan Proses
 						</Button>
 					)}
 				</div>

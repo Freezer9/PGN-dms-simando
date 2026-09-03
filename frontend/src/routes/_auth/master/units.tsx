@@ -48,6 +48,7 @@ function UnitsPage() {
 		{
 			key: "code",
 			header: "Kode Satuan",
+			width: "w-40",
 			render: (row) => (
 				<span className="font-mono font-semibold text-foreground">
 					{row.code}
@@ -62,6 +63,7 @@ function UnitsPage() {
 		{
 			key: "dimension",
 			header: "Dimensi / Kategori",
+			width: "w-52",
 			render: (row) => (
 				<span className="text-muted-foreground">{row.dimension || "-"}</span>
 			),

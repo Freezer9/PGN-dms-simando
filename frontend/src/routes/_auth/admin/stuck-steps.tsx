@@ -14,6 +14,7 @@ import {
 import * as React from "react";
 import { $api } from "@/api/client";
 import type { StuckStepItemDto } from "@/api/types";
+import { PageHeader } from "@/components/common";
 import { FormField } from "@/components/form/form-field";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -128,19 +129,15 @@ function StuckStepsPage() {
 	return (
 		<div className="space-y-4">
 			{/* Top Header */}
-			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-				<div className="space-y-0.5">
-					<h2 className="text-lg font-bold tracking-tight text-foreground flex items-center gap-2">
-						<OctagonAlert className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-						<span>Langkah Tertahan — Lintas Wilayah (System Admin)</span>
-					</h2>
-					<p className="text-xs text-muted-foreground">
-						Pusat pengawasan dan pemulihan langkah workflow yang terhenti akibat
-						petugas nonaktif atau kendala wilayah.
-					</p>
-				</div>
-
-				<div className="flex items-center gap-2">
+			<PageHeader
+				title="Langkah Tertahan — Lintas Wilayah (System Admin)"
+				description="Pusat pengawasan dan pemulihan langkah workflow yang terhenti akibat petugas nonaktif atau kendala wilayah."
+				badge={
+					<span className="p-1 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400">
+						<OctagonAlert className="h-4 w-4" />
+					</span>
+				}
+				actions={
 					<div className="relative w-64">
 						<Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
 						<Input
@@ -150,8 +147,8 @@ function StuckStepsPage() {
 							className="pl-8 h-9 text-xs"
 						/>
 					</div>
-				</div>
-			</div>
+				}
+			/>
 
 			{/* Info Box */}
 			<Alert className="bg-muted/40 border-muted text-muted-foreground py-2.5">

@@ -55,6 +55,7 @@ function IndustryTypesPage() {
 		{
 			key: "name",
 			header: "Jenis Industri",
+			width: "w-72",
 			render: (row) => (
 				<span className="font-semibold text-foreground">{row.name}</span>
 			),
@@ -62,6 +63,7 @@ function IndustryTypesPage() {
 		{
 			key: "contohProduk",
 			header: "Contoh Produk",
+			className: "whitespace-normal break-words",
 			render: (row) => (
 				<span className="text-muted-foreground">{row.contohProduk || "-"}</span>
 			),

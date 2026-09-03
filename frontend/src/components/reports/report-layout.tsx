@@ -1,14 +1,6 @@
-import { Link } from "@tanstack/react-router";
 import { FileSpreadsheet, RotateCcw } from "lucide-react";
 import * as React from "react";
-import {
-	Breadcrumb,
-	BreadcrumbItem,
-	BreadcrumbLink,
-	BreadcrumbList,
-	BreadcrumbPage,
-	BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
+import { PageHeader } from "@/components/common";
 import { Button } from "@/components/ui/button";
 
 interface ReportLayoutProps {
@@ -59,50 +51,35 @@ export function ReportLayout({
 
 	return (
 		<div className="space-y-6">
-			{/* Breadcrumb Header */}
-			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-card p-5 rounded-xl border shadow-xs">
-				<div className="space-y-1.5">
-					<Breadcrumb>
-						<BreadcrumbList className="text-xs">
-							<BreadcrumbItem>
-								<BreadcrumbLink asChild>
-									<Link to="/reports">Laporan</Link>
-								</BreadcrumbLink>
-							</BreadcrumbItem>
-							<BreadcrumbSeparator />
-							<BreadcrumbItem>
-								<BreadcrumbPage className="font-semibold text-foreground">
-									{title}
-								</BreadcrumbPage>
-							</BreadcrumbItem>
-						</BreadcrumbList>
-					</Breadcrumb>
-					<h1 className="text-2xl font-bold tracking-tight">{title}</h1>
-					<p className="text-muted-foreground text-sm">{description}</p>
-				</div>
-				<div className="flex items-center gap-2.5 shrink-0">
-					{onResetFilters && (
+			{/* Page Header */}
+			<PageHeader
+				title={title}
+				description={description}
+				actions={
+					<div className="flex items-center gap-2.5 shrink-0">
+						{onResetFilters && (
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={onResetFilters}
+								className="gap-1.5 h-9 text-xs"
+							>
+								<RotateCcw className="size-3.5" />
+								Reset Filter
+							</Button>
+						)}
 						<Button
-							variant="outline"
+							onClick={handleExportExcel}
+							disabled={isExporting}
 							size="sm"
-							onClick={onResetFilters}
-							className="gap-1.5 h-9"
+							className="gap-1.5 h-9 bg-emerald-700 hover:bg-emerald-800 text-white shadow-xs text-xs"
 						>
-							<RotateCcw className="size-3.5" />
-							Reset Filter
+							<FileSpreadsheet className="size-4" />
+							{isExporting ? "Mengunduh..." : "Unduh Excel (.xlsx)"}
 						</Button>
-					)}
-					<Button
-						onClick={handleExportExcel}
-						disabled={isExporting}
-						size="sm"
-						className="gap-1.5 h-9 bg-emerald-700 hover:bg-emerald-800 text-white shadow-xs"
-					>
-						<FileSpreadsheet className="size-4" />
-						{isExporting ? "Mengunduh..." : "Unduh Excel (.xlsx)"}
-					</Button>
-				</div>
-			</div>
+					</div>
+				}
+			/>
 
 			{/* Filter Toolbar (if any) */}
 			{filterContent && (

@@ -1,6 +1,5 @@
 import {
 	type ColumnDef,
-	flexRender,
 	getCoreRowModel,
 	getPaginationRowModel,
 	useReactTable,
@@ -27,6 +26,7 @@ import type { UserListItemDto } from "@/api/types";
 import { CreateUserDialog } from "@/components/admin/create-user-dialog";
 import { EditRolesDialog } from "@/components/admin/edit-roles-dialog";
 import { ResetPasswordDialog } from "@/components/admin/reset-password-dialog";
+import { DataTable, PageHeader } from "@/components/common";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -38,17 +38,6 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@/components/ui/table";
-import { TableEmptyState } from "@/components/ui/table-empty-state";
-import { TablePagination } from "@/components/ui/table-pagination";
-import { TableSkeleton } from "@/components/ui/table-skeleton";
 
 export function UsersView() {
 	const [searchTerm, setSearchTerm] = React.useState("");
@@ -154,6 +143,10 @@ export function UsersView() {
 			{
 				accessorKey: "fullName",
 				header: "Nama",
+				meta: {
+					headerClassName: "min-w-[240px]",
+					cellClassName: "min-w-[240px]",
+				},
 				cell: ({ row }) => {
 					const u = row.original;
 					return (
@@ -177,6 +170,10 @@ export function UsersView() {
 			{
 				id: "roles",
 				header: "Peran & Lingkup",
+				meta: {
+					headerClassName: "min-w-[320px]",
+					cellClassName: "min-w-[320px]",
+				},
 				cell: ({ row }) => {
 					const u = row.original;
 					return (
@@ -191,7 +188,7 @@ export function UsersView() {
 										variant="outline"
 										className="text-[11px] bg-background/80 py-0.5"
 									>
-										<Shield className="h-3 w-3 mr-1 text-primary shrink-0" />
+										<Shield className="size-3 mr-1 text-primary shrink-0" />
 										<strong className="text-foreground">{r.role}</strong>
 										<span className="text-muted-foreground ml-1">
 											({r.scopeLabel || "Nasional"})
@@ -206,6 +203,10 @@ export function UsersView() {
 			{
 				accessorKey: "active",
 				header: "Status",
+				meta: {
+					headerClassName: "min-w-[130px]",
+					cellClassName: "min-w-[130px]",
+				},
 				cell: ({ row }) => {
 					const u = row.original;
 					const lastLogin = formatLastLogin(u.lastLoginAt);
@@ -245,6 +246,10 @@ export function UsersView() {
 			{
 				accessorKey: "lastLoginAt",
 				header: "Login Terakhir",
+				meta: {
+					headerClassName: "min-w-[160px]",
+					cellClassName: "min-w-[160px]",
+				},
 				cell: ({ row }) => {
 					const lastLogin = formatLastLogin(row.original.lastLoginAt);
 					return (
@@ -268,6 +273,10 @@ export function UsersView() {
 			{
 				id: "actions",
 				header: () => <div className="text-right pr-4">Tindakan</div>,
+				meta: {
+					headerClassName: "min-w-[80px] text-right",
+					cellClassName: "min-w-[80px]",
+				},
 				cell: ({ row }) => {
 					const u = row.original;
 					return (
@@ -344,41 +353,40 @@ export function UsersView() {
 
 	return (
 		<div className="space-y-4">
-			{/* Header */}
-			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-				<div className="space-y-0.5">
-					<h2 className="text-lg font-bold tracking-tight text-foreground flex items-center gap-2">
-						<Users className="h-5 w-5 text-primary" />
-						<span>Pengguna — Manajemen Akun & Hak Akses</span>
-					</h2>
-					<p className="text-xs text-muted-foreground">
-						Daftar pengguna dan penugasan peran dalam lingkup administrasi Anda.
-					</p>
-				</div>
-
-				<div className="flex items-center gap-2">
-					<div className="relative w-64">
-						<Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-						<Input
-							placeholder="Cari nama, peran, email..."
-							value={searchTerm}
-							onChange={(e) => {
-								setSearchTerm(e.target.value);
-								setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-							}}
-							className="pl-8 h-9 text-xs"
-						/>
+			{/* Standard Page Header */}
+			<PageHeader
+				title="Pengguna — Manajemen Akun & Hak Akses"
+				description="Daftar pengguna dan penugasan peran dalam lingkup administrasi Anda."
+				badge={
+					<span className="p-1 rounded-md bg-primary/10 text-primary">
+						<Users className="h-4 w-4" />
+					</span>
+				}
+				actions={
+					<div className="flex items-center gap-2">
+						<div className="relative w-64">
+							<Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+							<Input
+								placeholder="Cari nama, peran, email..."
+								value={searchTerm}
+								onChange={(e) => {
+									setSearchTerm(e.target.value);
+									setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+								}}
+								className="pl-8 h-9 text-xs"
+							/>
+						</div>
+						<Button
+							onClick={() => setCreateUserOpen(true)}
+							size="sm"
+							className="h-9 gap-1.5 text-xs shrink-0"
+						>
+							<Plus className="h-4 w-4" />
+							<span>Tambah Pengguna</span>
+						</Button>
 					</div>
-					<Button
-						onClick={() => setCreateUserOpen(true)}
-						size="sm"
-						className="h-9 gap-1.5 text-xs shrink-0"
-					>
-						<Plus className="h-4 w-4" />
-						<span>Tambah Pengguna</span>
-					</Button>
-				</div>
-			</div>
+				}
+			/>
 
 			{/* Info Notice */}
 			<Alert className="bg-muted/40 border-muted text-muted-foreground py-2.5">
@@ -390,83 +398,37 @@ export function UsersView() {
 				</AlertDescription>
 			</Alert>
 
-			{/* Users Table with TanStack Table */}
-			<div className="rounded-xl border bg-card shadow-xs overflow-hidden">
-				<Table>
-					<TableHeader className="bg-muted/40">
-						{table.getHeaderGroups().map((headerGroup) => (
-							<TableRow key={headerGroup.id}>
-								{headerGroup.headers.map((header) => (
-									<TableHead
-										key={header.id}
-										className="font-semibold text-xs py-3"
-									>
-										{header.isPlaceholder
-											? null
-											: flexRender(
-													header.column.columnDef.header,
-													header.getContext(),
-												)}
-									</TableHead>
-								))}
-							</TableRow>
-						))}
-					</TableHeader>
-					<TableBody>
-						{isLoading ? (
-							<TableSkeleton columns={columns.length} rows={5} />
-						) : table.getRowModel().rows?.length ? (
-							table.getRowModel().rows.map((row) => (
-								<TableRow
-									key={row.id}
-									className="hover:bg-muted/30 transition-colors"
-								>
-									{row.getVisibleCells().map((cell) => (
-										<TableCell key={cell.id} className="py-3">
-											{flexRender(
-												cell.column.columnDef.cell,
-												cell.getContext(),
-											)}
-										</TableCell>
-									))}
-								</TableRow>
-							))
-						) : (
-							<TableEmptyState
-								colSpan={columns.length}
-								icon={searchTerm ? "search" : "empty"}
-								title={
-									searchTerm
-										? "Tidak Ada Pengguna Ditemukan"
-										: "Belum Ada Pengguna"
-								}
-								description={
-									searchTerm
-										? "Coba ubah kata kunci pencarian Anda."
-										: "Belum ada pengguna terdaftar dalam sistem."
-								}
-								onReset={searchTerm ? () => setSearchTerm("") : undefined}
-								resetLabel="Reset Pencarian"
-							/>
-						)}
-					</TableBody>
-				</Table>
-
-				{/* Table Pagination */}
-				{filteredUsers.length > 0 && (
-					<TablePagination
-						pageIndex={pagination.pageIndex}
-						page={pagination.pageIndex + 1}
-						pageSize={pagination.pageSize}
-						totalCount={filteredUsers.length}
-						totalPages={table.getPageCount()}
-						onPageChange={(page) => table.setPageIndex(page - 1)}
-						onPageSizeChange={(size) => table.setPageSize(size)}
-						pageSizeOptions={[10, 25, 50]}
-						className="border-t px-4"
-					/>
-				)}
-			</div>
+			{/* Users Table with DataTable */}
+			<DataTable
+				table={table}
+				columnsCount={columns.length}
+				isLoading={isLoading}
+				skeletonRows={5}
+				emptyTitle={
+					searchTerm ? "Tidak Ada Pengguna Ditemukan" : "Belum Ada Pengguna"
+				}
+				emptyDescription={
+					searchTerm
+						? "Coba ubah kata kunci pencarian Anda."
+						: "Belum ada pengguna terdaftar dalam sistem."
+				}
+				emptyIcon={searchTerm ? "search" : "empty"}
+				onResetFilters={searchTerm ? () => setSearchTerm("") : undefined}
+				resetLabel="Reset Pencarian"
+				pagination={
+					filteredUsers.length > 0
+						? {
+								page: pagination.pageIndex + 1,
+								pageSize: pagination.pageSize,
+								totalCount: filteredUsers.length,
+								totalPages: table.getPageCount(),
+								onPageChange: (p) => table.setPageIndex(p - 1),
+								onPageSizeChange: (size) => table.setPageSize(size),
+								pageSizeOptions: [10, 25, 50],
+							}
+						: undefined
+				}
+			/>
 
 			{/* Dormant / New Account Warning Banner */}
 			{(neverLoggedInCount > 0 || dormant90DaysCount > 0) && (
