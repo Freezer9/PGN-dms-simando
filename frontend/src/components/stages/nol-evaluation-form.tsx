@@ -25,6 +25,7 @@ import type {
 	SkemaPembayaran,
 	StatusRkap,
 } from "@/api/types";
+import { IconButton } from "@/components/common";
 import { DocumentDownloadButton } from "@/components/documents/document-download-buttons";
 import { FormField } from "@/components/form/form-field";
 import { Button } from "@/components/ui/button";
@@ -811,7 +812,7 @@ export function NolEvaluationForm({
 												</TableHead>
 												{canEdit && (
 													<TableHead className="text-xs text-center w-12">
-														Hapus
+														Aksi
 													</TableHead>
 												)}
 											</TableRow>
@@ -914,19 +915,20 @@ export function NolEvaluationForm({
 													</TableCell>
 													{canEdit && (
 														<TableCell className="text-center">
-															<Button
+															<IconButton
 																type="button"
-																variant="ghost"
-																size="icon"
+																tooltip="Hapus Skenario"
+																danger
+																className="size-7"
 																onClick={() => {
 																	field.handleChange(
 																		scenarioList.filter((_, i) => i !== idx),
 																	);
 																}}
-																className="size-7 text-destructive hover:text-destructive"
+																aria-label="Hapus Skenario"
 															>
 																<Trash2 className="size-3.5" />
-															</Button>
+															</IconButton>
 														</TableCell>
 													)}
 												</TableRow>

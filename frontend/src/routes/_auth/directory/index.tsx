@@ -17,7 +17,12 @@ import * as React from "react";
 import { z } from "zod";
 import { $api } from "@/api/client";
 import type { CompanyListItem } from "@/api/types";
-import { DataTable, DataTableToolbar, PageHeader } from "@/components/common";
+import {
+	DataTable,
+	DataTableToolbar,
+	IconButton,
+	PageHeader,
+} from "@/components/common";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -257,23 +262,22 @@ function CompanyDirectoryPage() {
 				id: "actions",
 				header: () => <div className="text-right pr-2">Aksi</div>,
 				meta: {
-					headerClassName: "min-w-[95px] text-right",
-					cellClassName: "min-w-[95px]",
+					headerClassName: "min-w-[70px] text-right",
+					cellClassName: "min-w-[70px]",
 				},
 				cell: ({ row }) => {
 					const item = row.original;
 					return (
-						<div className="flex items-center justify-end gap-1">
-							<Button variant="ghost" size="sm" asChild className="h-8 px-2.5">
+						<div className="flex items-center justify-end pr-1">
+							<IconButton tooltip="Lihat Detail" asChild>
 								<Link
 									to="/directory/$companyId"
 									params={{ companyId: item.id }}
-									className="text-xs flex items-center gap-1"
+									aria-label="Lihat detail perusahaan"
 								>
-									<span>Detail</span>
-									<ExternalLink className="size-3 text-muted-foreground" />
+									<ExternalLink className="size-4" />
 								</Link>
-							</Button>
+							</IconButton>
 						</div>
 					);
 				},

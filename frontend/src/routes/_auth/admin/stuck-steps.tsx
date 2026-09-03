@@ -14,7 +14,7 @@ import {
 import * as React from "react";
 import { $api } from "@/api/client";
 import type { StuckStepItemDto } from "@/api/types";
-import { PageHeader } from "@/components/common";
+import { IconButton, PageHeader } from "@/components/common";
 import { FormField } from "@/components/form/form-field";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -181,7 +181,7 @@ function StuckStepsPage() {
 								Lama Tertahan
 							</TableHead>
 							<TableHead className="text-right font-semibold text-xs py-3 pr-4">
-								Tindakan
+								Aksi
 							</TableHead>
 						</TableRow>
 					</TableHeader>
@@ -270,15 +270,14 @@ function StuckStepsPage() {
 
 									{/* Action */}
 									<TableCell className="py-3 text-right pr-4">
-										<Button
-											size="sm"
-											variant="outline"
+										<IconButton
+											tooltip="Alihkan Tugas"
 											onClick={() => handleOpenReassign(step)}
-											className="h-8 gap-1.5 text-xs border-amber-300 hover:bg-amber-50 dark:border-amber-800 dark:hover:bg-amber-950/40"
+											className="size-8 border-amber-300 text-amber-600 hover:bg-amber-50 hover:text-amber-700 dark:border-amber-800 dark:hover:bg-amber-950/40"
+											aria-label="Alihkan Tugas"
 										>
-											<ArrowRightLeft className="h-3.5 w-3.5 text-amber-600" />
-											<span>Alihkan Tugas</span>
-										</Button>
+											<ArrowRightLeft className="size-4" />
+										</IconButton>
 									</TableCell>
 								</TableRow>
 							))

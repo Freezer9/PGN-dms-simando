@@ -38,6 +38,11 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export function UsersView() {
 	const [searchTerm, setSearchTerm] = React.useState("");
@@ -272,7 +277,7 @@ export function UsersView() {
 			},
 			{
 				id: "actions",
-				header: () => <div className="text-right pr-4">Tindakan</div>,
+				header: () => <div className="text-right pr-4">Aksi</div>,
 				meta: {
 					headerClassName: "min-w-[80px] text-right",
 					cellClassName: "min-w-[80px]",
@@ -282,15 +287,21 @@ export function UsersView() {
 					return (
 						<div className="text-right pr-2">
 							<DropdownMenu>
-								<DropdownMenuTrigger asChild>
-									<Button
-										variant="ghost"
-										size="icon"
-										className="h-8 w-8 text-muted-foreground hover:text-foreground"
-									>
-										<MoreVertical className="h-4 w-4" />
-									</Button>
-								</DropdownMenuTrigger>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<DropdownMenuTrigger asChild>
+											<Button
+												variant="outline"
+												size="icon"
+												className="size-8 text-muted-foreground hover:text-foreground"
+												aria-label="Menu Aksi"
+											>
+												<MoreVertical className="size-4" />
+											</Button>
+										</DropdownMenuTrigger>
+									</TooltipTrigger>
+									<TooltipContent>Menu Aksi</TooltipContent>
+								</Tooltip>
 								<DropdownMenuContent align="end" className="w-48">
 									<DropdownMenuItem
 										onClick={() => setSelectedUserForRoles(u)}

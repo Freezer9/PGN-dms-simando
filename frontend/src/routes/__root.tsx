@@ -5,6 +5,7 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { createRootRouteWithContext, Outlet } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/lib/auth";
 
 import "../styles.css";
@@ -23,8 +24,10 @@ function RootComponent() {
 	return (
 		<QueryClientProvider client={queryClient}>
 			<AuthProvider>
-				<Outlet />
-				<Toaster position="top-right" richColors />
+				<TooltipProvider delayDuration={200}>
+					<Outlet />
+					<Toaster position="top-right" richColors />
+				</TooltipProvider>
 				{import.meta.env.DEV &&
 					typeof window !== "undefined" &&
 					window.location.search.includes("devtools") && (

@@ -9,7 +9,7 @@ import {
 	Trash2,
 } from "lucide-react";
 import * as React from "react";
-import { PageHeader } from "@/components/common";
+import { IconButton, PageHeader } from "@/components/common";
 import { FormField } from "@/components/form/form-field";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -311,7 +311,7 @@ export function MasterDataTable<
 								</TableHead>
 							))}
 							<TableHead className="w-24 sm:w-28 text-right font-semibold text-xs py-3 pr-4">
-								Tindakan
+								Aksi
 							</TableHead>
 						</TableRow>
 					</TableHeader>
@@ -346,10 +346,7 @@ export function MasterDataTable<
 											return (
 												<TableCell
 													key={`${row.id}-${col.key}`}
-													className={cn(
-														"py-3 text-xs truncate",
-														col.className,
-													)}
+													className={cn("py-3 text-xs truncate", col.className)}
 													title={
 														typeof cellVal === "string" ? cellVal : undefined
 													}
@@ -364,25 +361,24 @@ export function MasterDataTable<
 										})}
 										<TableCell className="w-24 sm:w-28 py-3 text-right pr-4">
 											<div className="flex items-center justify-end gap-1">
-												<Button
-													variant="ghost"
-													size="icon"
+												<IconButton
+													tooltip="Ubah Data"
 													onClick={() => handleOpenEdit(row)}
-													className="h-7 w-7 text-muted-foreground hover:text-foreground"
-													title="Ubah Data"
+													className="size-7"
+													aria-label="Ubah Data"
 												>
-													<Edit2 className="h-3.5 w-3.5" />
-												</Button>
+													<Edit2 className="size-3.5" />
+												</IconButton>
 												{onDelete && (
-													<Button
-														variant="ghost"
-														size="icon"
+													<IconButton
+														tooltip="Hapus Data"
+														danger
 														onClick={() => setDeleteConfirm(row)}
-														className="h-7 w-7 text-muted-foreground hover:text-destructive"
-														title="Hapus Data"
+														className="size-7"
+														aria-label="Hapus Data"
 													>
-														<Trash2 className="h-3.5 w-3.5" />
-													</Button>
+														<Trash2 className="size-3.5" />
+													</IconButton>
 												)}
 											</div>
 										</TableCell>

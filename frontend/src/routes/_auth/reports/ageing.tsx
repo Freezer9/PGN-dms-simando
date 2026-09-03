@@ -2,9 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, Loader2, Search } from "lucide-react";
 import * as React from "react";
 import { $api } from "@/api/client";
+import { IconButton } from "@/components/common";
 import { ReportLayout } from "@/components/reports/report-layout";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
@@ -172,21 +172,16 @@ function AgeingReportPage() {
 														⏱ {waitingDays} hari
 													</span>
 												</TableCell>
-												<TableCell className="text-right">
-													<Button
-														asChild
-														size="sm"
-														variant="default"
-														className="h-8 gap-1 text-xs"
-													>
+												<TableCell className="text-right pr-4">
+													<IconButton tooltip="Periksa Berkas" asChild>
 														<Link
 															to="/directory/$companyId"
 															params={{ companyId: r.companyId }}
+															aria-label="Periksa berkas perusahaan"
 														>
-															Periksa
-															<ArrowRight className="size-3.5" />
+															<ArrowRight className="size-4" />
 														</Link>
-													</Button>
+													</IconButton>
 												</TableCell>
 											</TableRow>
 										);

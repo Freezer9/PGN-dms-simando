@@ -226,7 +226,8 @@ export function WorkflowActionBar({
 							)}
 						</div>
 						<p className="text-[11px] text-muted-foreground mt-0.5">
-							Berkas ini memerlukan tindakan evaluasi atau persetujuan Anda untuk melanjutkan ke proses berikutnya.
+							Berkas ini memerlukan tindakan evaluasi atau persetujuan Anda
+							untuk melanjutkan ke proses berikutnya.
 						</p>
 					</div>
 				</div>

@@ -1,3 +1,4 @@
+export { IconButton } from "@/components/ui/icon-button";
 export {
 	DataTable,
 	DataTableContainer,

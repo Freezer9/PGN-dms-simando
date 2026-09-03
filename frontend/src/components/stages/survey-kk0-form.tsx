@@ -15,6 +15,7 @@ import type {
 	SaveSurveyRequest,
 	SurveyDetail,
 } from "@/api/types";
+import { IconButton } from "@/components/common";
 import { DocumentDownloadButton } from "@/components/documents/document-download-buttons";
 import { FormField } from "@/components/form/form-field";
 import { Button } from "@/components/ui/button";
@@ -1049,7 +1050,11 @@ export function SurveyKk0Form({
 												<TableHead>Bahan Bakar</TableHead>
 												<TableHead>Konsumsi / Bln</TableHead>
 												<TableHead>Konversi Gas (MMBTU/Bln)</TableHead>
-												{canEdit && <TableHead className="w-10" />}
+												{canEdit && (
+													<TableHead className="w-12 text-center text-xs font-semibold">
+														Aksi
+													</TableHead>
+												)}
 											</TableRow>
 										</TableHeader>
 										<TableBody>
@@ -1281,20 +1286,21 @@ export function SurveyKk0Form({
 															/>
 														</TableCell>
 														{canEdit && (
-															<TableCell>
-																<Button
+															<TableCell className="text-center">
+																<IconButton
 																	type="button"
-																	size="icon"
-																	variant="ghost"
+																	tooltip="Hapus Alat"
+																	danger
+																	className="size-7"
 																	onClick={() => {
 																		field.handleChange(
 																			equipmentList.filter((_, i) => i !== idx),
 																		);
 																	}}
-																	className="size-7 text-destructive hover:bg-destructive/10"
+																	aria-label="Hapus Alat"
 																>
 																	<Trash2 className="size-3.5" />
-																</Button>
+																</IconButton>
 															</TableCell>
 														)}
 													</TableRow>

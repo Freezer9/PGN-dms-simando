@@ -20,9 +20,8 @@ import * as React from "react";
 import { z } from "zod";
 import { $api } from "@/api/client";
 import type { StatusEventAction, TaskHistoryItem } from "@/api/types";
-import { DataTable, PageHeader } from "@/components/common";
+import { DataTable, IconButton, PageHeader } from "@/components/common";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 
 const historySearchSchema = z.object({
 	page: z.number().default(1).optional(),
@@ -163,20 +162,20 @@ function TaskHistoryPage() {
 				id: "actions",
 				header: () => <div className="text-right pr-2">Aksi</div>,
 				meta: {
-					headerClassName: "min-w-[124px] text-right",
-					cellClassName: "min-w-[124px]",
+					headerClassName: "min-w-[70px] text-right",
+					cellClassName: "min-w-[70px]",
 				},
 				cell: ({ row }) => (
-					<div className="text-right">
-						<Button asChild size="sm" variant="ghost" className="h-7 text-xs">
+					<div className="text-right pr-1">
+						<IconButton tooltip="Buka Berkas" asChild>
 							<Link
 								to="/directory/$companyId"
 								params={{ companyId: row.original.companyId }}
+								aria-label="Buka berkas perusahaan"
 							>
-								<ExternalLink className="size-3.5" />
-								Buka Berkas
+								<ExternalLink className="size-4" />
 							</Link>
-						</Button>
+						</IconButton>
 					</div>
 				),
 			},

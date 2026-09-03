@@ -11,7 +11,7 @@ import {
 	TrendingUp,
 } from "lucide-react";
 import type { ApproverDashboardDto } from "@/api/types";
-import { PageHeader } from "@/components/common";
+import { IconButton, PageHeader } from "@/components/common";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -187,21 +187,16 @@ export function ApproverDashboard({
 													⏱ {waitingDays} hari
 												</span>
 											</TableCell>
-											<TableCell className="text-right">
-												<Button
-													asChild
-													size="sm"
-													variant="default"
-													className="gap-1"
-												>
+											<TableCell className="text-right pr-4">
+												<IconButton tooltip="Tinjau Berkas" asChild>
 													<Link
 														to="/directory/$companyId"
 														params={{ companyId: item.companyId }}
+														aria-label="Tinjau berkas perusahaan"
 													>
-														Tinjau
-														<ArrowRight className="size-3.5" />
+														<ArrowRight className="size-4" />
 													</Link>
-												</Button>
+												</IconButton>
 											</TableCell>
 										</TableRow>
 									);

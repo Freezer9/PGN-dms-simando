@@ -124,7 +124,9 @@ describe("Attachments & Document Components", () => {
 			expect(screen.getByText("Salinan NPWP Perusahaan")).toBeInTheDocument();
 			expect(screen.getAllByText("v1").length).toBe(2);
 			expect(screen.getByText("TTE")).toBeInTheDocument();
-			expect(screen.getAllByText("Unduh").length).toBe(2);
+			expect(screen.getAllByRole("link", { name: "Unduh Berkas" }).length).toBe(
+				2,
+			);
 		});
 
 		it("renders with filterKind property", () => {

@@ -19,7 +19,7 @@ import {
 import * as React from "react";
 import { $api } from "@/api/client";
 import type { TaskListItem } from "@/api/types";
-import { DataTable, DataTableToolbar } from "@/components/common";
+import { DataTable, DataTableToolbar, IconButton } from "@/components/common";
 import { SlaClockBadge } from "@/components/tasks/sla-clock-badge";
 import {
 	TaskActionModal,
@@ -27,7 +27,6 @@ import {
 } from "@/components/tasks/task-action-modal";
 import { TaskQuickPreviewDrawer } from "@/components/tasks/task-quick-preview-drawer";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
 	Select,
@@ -239,54 +238,46 @@ function TasksInboxPage() {
 			},
 			{
 				id: "actions",
-				header: () => <div className="text-right pr-4">Tindakan</div>,
+				header: () => <div className="text-right pr-4">Aksi</div>,
 				meta: {
-					headerClassName: "min-w-[244px] text-right",
-					cellClassName: "min-w-[244px]",
+					headerClassName: "min-w-[160px] text-right",
+					cellClassName: "min-w-[160px]",
 				},
 				cell: ({ row }) => {
 					const task = row.original;
 					return (
 						<div className="flex items-center justify-end gap-1.5 pr-2">
-							<Button
-								size="sm"
-								variant="ghost"
-								className="h-8 text-xs"
+							<IconButton
+								tooltip="Tinjau Cepat"
 								onClick={() => handleOpenDrawer(task)}
-								title="Tinjau Cepat"
+								aria-label="Tinjau Cepat"
 							>
-								<Eye className="size-3.5" />
-								Tinjau
-							</Button>
-							<Button
-								size="sm"
-								variant="outline"
-								className="h-8 text-xs text-amber-600 border-amber-200 hover:bg-amber-50 dark:hover:bg-amber-950/50"
+								<Eye className="size-4" />
+							</IconButton>
+							<IconButton
+								tooltip="Kembalikan untuk Revisi"
+								className="text-amber-600 border-amber-200 hover:bg-amber-50 hover:text-amber-700 dark:border-amber-800/60 dark:hover:bg-amber-950/50"
 								onClick={() => handleOpenActionModal(task, "Revisi")}
-								title="Kembalikan untuk revisi"
+								aria-label="Kembalikan untuk revisi"
 							>
-								<RotateCcw className="size-3.5" />
-								Revisi
-							</Button>
-							<Button
-								size="sm"
-								variant="outline"
-								className="h-8 text-xs text-rose-600 border-rose-200 hover:bg-rose-50 dark:hover:bg-rose-950/50"
+								<RotateCcw className="size-4" />
+							</IconButton>
+							<IconButton
+								tooltip="Tolak Berkas"
+								danger
 								onClick={() => handleOpenActionModal(task, "Tolak")}
-								title="Tolak berkas"
+								aria-label="Tolak berkas"
 							>
-								<XCircle className="size-3.5" />
-								Tolak
-							</Button>
-							<Button
-								size="sm"
-								className="h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
+								<XCircle className="size-4" />
+							</IconButton>
+							<IconButton
+								tooltip="Setujui dan Lanjutkan"
+								className="text-emerald-600 border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700 dark:border-emerald-800/60 dark:hover:bg-emerald-950/50"
 								onClick={() => handleOpenActionModal(task, "Setuju")}
-								title="Setujui dan lanjutkan"
+								aria-label="Setujui dan lanjutkan"
 							>
-								<CheckCircle2 className="size-3.5" />
-								Setuju
-							</Button>
+								<CheckCircle2 className="size-4" />
+							</IconButton>
 						</div>
 					);
 				},

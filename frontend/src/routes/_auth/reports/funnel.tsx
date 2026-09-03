@@ -1,9 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, BarChart3, Loader2 } from "lucide-react";
 import { $api } from "@/api/client";
+import { IconButton } from "@/components/common";
 import { ReportLayout } from "@/components/reports/report-layout";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
 	Card,
 	CardContent,
@@ -196,21 +196,16 @@ function FunnelReportPage() {
 													? `${Number(st.avgTurnaroundDays).toFixed(1)} hari`
 													: "-"}
 											</TableCell>
-											<TableCell className="text-right">
-												<Button
-													asChild
-													size="sm"
-													variant="ghost"
-													className="h-7 text-xs"
-												>
+											<TableCell className="text-right pr-4">
+												<IconButton tooltip="Lihat Tahap Ini" asChild>
 													<Link
 														to="/directory"
 														search={{ stage: Number(st.stage) }}
+														aria-label="Lihat direktori tahap ini"
 													>
-														Lihat
-														<ArrowRight className="size-3 ml-1" />
+														<ArrowRight className="size-4" />
 													</Link>
-												</Button>
+												</IconButton>
 											</TableCell>
 										</TableRow>
 									))}

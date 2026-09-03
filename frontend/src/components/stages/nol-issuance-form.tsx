@@ -19,6 +19,7 @@ import type {
 	NolOutcome,
 	SaveNolIssuanceRequest,
 } from "@/api/types";
+import { IconButton } from "@/components/common";
 import { DocumentDownloadButton } from "@/components/documents/document-download-buttons";
 import { FormField } from "@/components/form/form-field";
 import { Button } from "@/components/ui/button";
@@ -501,19 +502,20 @@ export function NolIssuanceForm({
 														</TableCell>
 														{canEdit && (
 															<TableCell className="text-center">
-																<Button
+																<IconButton
 																	type="button"
-																	variant="ghost"
-																	size="icon"
+																	tooltip="Hapus Ketentuan"
+																	danger
+																	className="size-7"
 																	onClick={() => {
 																		field.handleChange(
 																			terms.filter((_, i) => i !== idx),
 																		);
 																	}}
-																	className="size-7 text-destructive hover:text-destructive"
+																	aria-label="Hapus Ketentuan"
 																>
 																	<Trash2 className="size-3.5" />
-																</Button>
+																</IconButton>
 															</TableCell>
 														)}
 													</TableRow>

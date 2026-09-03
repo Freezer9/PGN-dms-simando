@@ -196,9 +196,7 @@ describe("Stage Form Components", () => {
 
 		renderWithClient(<WorkflowActionBar company={mockCompany} />);
 
-		expect(
-			screen.getByText(/TINDAKAN DIPERLUKAN/i),
-		).toBeInTheDocument();
+		expect(screen.getByText(/TINDAKAN DIPERLUKAN/i)).toBeInTheDocument();
 		expect(screen.getByText(/Tahap: Reviewer1/i)).toBeInTheDocument();
 		expect(
 			screen.getByRole("button", { name: /Setujui Langkah/i }),

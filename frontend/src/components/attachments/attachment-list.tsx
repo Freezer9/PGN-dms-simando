@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { $api } from "@/api/client";
 import type { AttachmentDetail, AttachmentKind } from "@/api/types";
 import { ATTACHMENT_KIND_LABELS } from "@/components/attachments/attachment-upload-dialog";
+import { IconButton } from "@/components/common";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -213,7 +214,7 @@ export function AttachmentList({
 								Waktu Unggah
 							</TableHead>
 							<TableHead className="text-right font-semibold text-xs py-3 pr-4">
-								Tindakan
+								Aksi
 							</TableHead>
 						</TableRow>
 					</TableHeader>
@@ -316,34 +317,32 @@ export function AttachmentList({
 									{/* Tindakan (Download & Delete) */}
 									<TableCell className="py-2.5 text-right pr-4">
 										<div className="flex items-center justify-end gap-1">
-											<Button
+											<IconButton
 												asChild
-												size="sm"
-												variant="ghost"
-												className="h-7 px-2 text-xs text-primary hover:text-primary hover:bg-primary/10"
-												title="Unduh Berkas"
+												tooltip="Unduh Berkas"
+												className="size-7"
+												aria-label="Unduh Berkas"
 											>
 												<a
 													href={`/api/attachments/${item.id}/download`}
 													download={item.filename}
 												>
-													<Download className="h-3.5 w-3.5 mr-1" />
-													Unduh
+													<Download className="size-3.5" />
 												</a>
-											</Button>
+											</IconButton>
 											{canDelete && (
-												<Button
-													size="sm"
-													variant="ghost"
-													className="h-7 px-2 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+												<IconButton
+													tooltip="Hapus Berkas"
+													danger
+													className="size-7"
 													onClick={() => {
 														setDeletingId(item.id);
 														setIsConfirmOpen(true);
 													}}
-													title="Hapus Berkas"
+													aria-label="Hapus Berkas"
 												>
-													<Trash2 className="h-3.5 w-3.5" />
-												</Button>
+													<Trash2 className="size-3.5" />
+												</IconButton>
 											)}
 										</div>
 									</TableCell>

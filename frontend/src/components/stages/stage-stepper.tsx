@@ -83,9 +83,7 @@ export function StageStepper({
 												"bg-primary text-primary-foreground ring-4 ring-primary/25 font-bold scale-105",
 											isUpcoming &&
 												"bg-background text-muted-foreground border-2 border-border/90 hover:border-primary/50 hover:text-foreground",
-											isTabActive &&
-												!isCurrent &&
-												"ring-2 ring-primary/60",
+											isTabActive && !isCurrent && "ring-2 ring-primary/60",
 										)}
 									>
 										{isCompleted ? (

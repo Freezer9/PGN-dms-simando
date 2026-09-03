@@ -22,7 +22,7 @@ import type {
 	UpdateAreaRequest,
 	UpdateRegionRequest,
 } from "@/api/types";
-import { PageHeader, StatCard } from "@/components/common";
+import { IconButton, PageHeader, StatCard } from "@/components/common";
 import { FormField } from "@/components/form/form-field";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -238,7 +238,8 @@ export function OrganisationView() {
 					r.name.toLowerCase().includes(q) || r.code.toLowerCase().includes(q);
 				const matchingAreas = (r.areas || []).filter(
 					(a) =>
-						a.name.toLowerCase().includes(q) || a.code.toLowerCase().includes(q),
+						a.name.toLowerCase().includes(q) ||
+						a.code.toLowerCase().includes(q),
 				);
 				if (matchesRegion) return r;
 				if (matchingAreas.length > 0) {
@@ -480,7 +481,8 @@ export function OrganisationView() {
 						Data Tidak Ditemukan
 					</h3>
 					<p className="text-xs max-w-sm">
-						Tidak ada wilayah atau sales area yang cocok dengan kata kunci "{searchTerm}".
+						Tidak ada wilayah atau sales area yang cocok dengan kata kunci "
+						{searchTerm}".
 					</p>
 					<Button
 						variant="outline"
@@ -494,7 +496,10 @@ export function OrganisationView() {
 			) : (
 				<div className="space-y-4">
 					{filteredRegions.map((region) => (
-						<Card key={region.id} className="overflow-hidden shadow-xs border-border/70">
+						<Card
+							key={region.id}
+							className="overflow-hidden shadow-xs border-border/70"
+						>
 							<CardHeader className="bg-muted/30 p-4 border-b flex flex-row items-center justify-between space-y-0">
 								<div className="flex items-center gap-3 min-w-0">
 									<div className="size-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
@@ -505,7 +510,10 @@ export function OrganisationView() {
 											<CardTitle className="text-sm sm:text-base font-bold truncate">
 												{region.name}
 											</CardTitle>
-											<Badge variant="outline" className="font-mono text-[10px] bg-background">
+											<Badge
+												variant="outline"
+												className="font-mono text-[10px] bg-background"
+											>
 												{region.code}
 											</Badge>
 											<Badge variant="secondary" className="text-[10px]">
@@ -528,18 +536,17 @@ export function OrganisationView() {
 										<Plus className="size-3.5" />
 										<span className="hidden sm:inline">Tambah Sales Area</span>
 									</Button>
-									<Button
-										variant="ghost"
-										size="icon"
+									<IconButton
+										tooltip="Ubah Wilayah"
 										onClick={() => handleOpenEditRegion(region)}
-										className="h-8 w-8 text-muted-foreground hover:text-foreground"
-										title="Ubah Wilayah"
+										className="size-8"
+										aria-label="Ubah Wilayah"
 									>
 										<Edit2 className="size-3.5" />
-									</Button>
-									<Button
-										variant="ghost"
-										size="icon"
+									</IconButton>
+									<IconButton
+										tooltip="Hapus Wilayah"
+										danger
 										onClick={() =>
 											setDeleteConfirm({
 												type: "region",
@@ -547,18 +554,21 @@ export function OrganisationView() {
 												name: region.name,
 											})
 										}
-										className="h-8 w-8 text-muted-foreground hover:text-destructive"
-										title="Hapus Wilayah"
+										className="size-8"
+										aria-label="Hapus Wilayah"
 									>
 										<Trash2 className="size-3.5" />
-									</Button>
+									</IconButton>
 								</div>
 							</CardHeader>
 
 							<CardContent className="p-0">
 								{region.areas.length === 0 ? (
 									<div className="text-center py-8 px-4 text-xs text-muted-foreground">
-										<p>Belum ada Sales Area yang terdaftar pada wilayah {region.name}.</p>
+										<p>
+											Belum ada Sales Area yang terdaftar pada wilayah{" "}
+											{region.name}.
+										</p>
 										<Button
 											variant="link"
 											size="sm"
@@ -582,7 +592,7 @@ export function OrganisationView() {
 													Status
 												</TableHead>
 												<TableHead className="w-28 text-right font-semibold text-xs py-2.5 pr-4">
-													Tindakan
+													Aksi
 												</TableHead>
 											</TableRow>
 										</TableHeader>
@@ -615,20 +625,19 @@ export function OrganisationView() {
 													</TableCell>
 													<TableCell className="text-right pr-4 py-2">
 														<div className="flex items-center justify-end gap-1">
-															<Button
-																variant="ghost"
-																size="icon"
+															<IconButton
+																tooltip="Ubah Sales Area"
 																onClick={() =>
 																	handleOpenEditArea(area, region.id)
 																}
-																className="h-7 w-7 text-muted-foreground hover:text-foreground"
-																title="Ubah Sales Area"
+																className="size-7"
+																aria-label="Ubah Sales Area"
 															>
 																<Edit2 className="size-3.5" />
-															</Button>
-															<Button
-																variant="ghost"
-																size="icon"
+															</IconButton>
+															<IconButton
+																tooltip="Hapus Sales Area"
+																danger
 																onClick={() =>
 																	setDeleteConfirm({
 																		type: "area",
@@ -636,11 +645,11 @@ export function OrganisationView() {
 																		name: area.name,
 																	})
 																}
-																className="h-7 w-7 text-muted-foreground hover:text-destructive"
-																title="Hapus Sales Area"
+																className="size-7"
+																aria-label="Hapus Sales Area"
 															>
 																<Trash2 className="size-3.5" />
-															</Button>
+															</IconButton>
 														</div>
 													</TableCell>
 												</TableRow>
