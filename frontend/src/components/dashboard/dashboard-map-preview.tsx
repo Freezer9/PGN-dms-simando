@@ -90,7 +90,7 @@ export function DashboardMapPreview() {
 										/>
 									</MarkerContent>
 									<MarkerPopup>
-										<div className="p-1.5 text-xs space-y-0.5">
+										<div className="text-xs space-y-0.5">
 											<div className="font-semibold">{p.namaPerusahaan}</div>
 											<div className="text-[11px] text-muted-foreground">
 												Tahap {p.currentStage}: {p.locationLabel || "Area"}

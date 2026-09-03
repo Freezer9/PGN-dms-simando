@@ -225,7 +225,7 @@ function GeospatialMapPage() {
 									</div>
 								</MarkerContent>
 								<MarkerPopup>
-									<div className="p-2 space-y-1.5 text-xs min-w-[200px]">
+									<div className="space-y-1.5 text-xs min-w-[200px]">
 										<div className="font-semibold text-foreground">
 											{item.namaPerusahaan}
 										</div>
@@ -331,7 +331,7 @@ function GeospatialMapPage() {
 							</div>
 
 							{/* Stage Checkboxes with Legend Colors */}
-							<div className="space-y-1.5 pt-1 border-t">
+							<div className="space-y-1.5 pt-2.5 border-t">
 								<Label className="text-[11px] font-semibold text-muted-foreground block">
 									Filter Berdasarkan Tahapan
 								</Label>
@@ -365,7 +365,7 @@ function GeospatialMapPage() {
 							</div>
 
 							{/* Posisi Kawasan */}
-							<div className="space-y-1 pt-1 border-t">
+							<div className="space-y-1 pt-2.5 border-t">
 								<Label className="text-[11px] font-medium text-muted-foreground">
 									Kawasan
 								</Label>
@@ -393,7 +393,7 @@ function GeospatialMapPage() {
 								variant="outline"
 								size="sm"
 								onClick={resetFilters}
-								className="w-full h-7 text-xs flex items-center justify-center gap-1 mt-2 text-muted-foreground hover:text-foreground"
+								className="w-full h-8 text-xs flex items-center justify-center gap-1.5 text-muted-foreground hover:text-foreground"
 							>
 								<RotateCcw className="size-3" />
 								<span>Reset Filter</span>

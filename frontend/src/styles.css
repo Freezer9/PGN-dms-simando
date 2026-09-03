@@ -113,6 +113,38 @@
 	body {
 		@apply bg-background text-foreground;
 	}
+
+	/* MapLibre GL popup & control resets for mapcn */
+	.maplibregl-popup-content {
+		background: transparent !important;
+		border-radius: 0 !important;
+		padding: 0 !important;
+		box-shadow: none !important;
+	}
+
+	.maplibregl-popup-tip {
+		display: none !important;
+	}
+
+	.maplibregl-ctrl-attrib {
+		background: var(--background) !important;
+		color: var(--muted-foreground) !important;
+		border: 1px solid var(--border) !important;
+		border-radius: var(--radius-md) !important;
+		box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05) !important;
+	}
+
+	.maplibregl-ctrl-attrib a {
+		color: var(--muted-foreground) !important;
+	}
+
+	.maplibregl-ctrl-attrib a:hover {
+		color: var(--foreground) !important;
+	}
+
+	.maplibregl-ctrl-attrib-button {
+		background-color: transparent !important;
+	}
 }
 
 * {
