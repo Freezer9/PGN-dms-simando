@@ -57,8 +57,8 @@ export function Breadcrumbs({ className }: { className?: string }) {
 			<Breadcrumb className={className}>
 				<BreadcrumbList className="text-xs flex-nowrap whitespace-nowrap">
 					<BreadcrumbItem>
-						<BreadcrumbPage className="font-medium text-foreground flex items-center gap-1.5">
-							<Home className="size-3.5 text-muted-foreground" />
+						<BreadcrumbPage className="font-medium text-foreground inline-flex items-center gap-1.5">
+							<Home className="size-3.5 -translate-y-0.5 text-muted-foreground shrink-0" />
 							<span>Beranda</span>
 						</BreadcrumbPage>
 					</BreadcrumbItem>
@@ -76,9 +76,9 @@ export function Breadcrumbs({ className }: { className?: string }) {
 					<BreadcrumbLink asChild>
 						<Link
 							to="/"
-							className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
+							className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors"
 						>
-							<Home className="size-3.5" />
+							<Home className="size-3.5 -translate-y-0.5 shrink-0" />
 							<span className="hidden sm:inline">Beranda</span>
 						</Link>
 					</BreadcrumbLink>

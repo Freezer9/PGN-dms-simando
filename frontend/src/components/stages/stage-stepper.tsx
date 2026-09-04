@@ -40,9 +40,11 @@ export function StageStepper({
 						const isUnlocked = gate
 							? gate.isUnlocked
 							: currentStage >= st.stage;
-						const isCompleted = currentStage > st.stage;
-						const isCurrent = currentStage === st.stage;
-						const isUpcoming = currentStage < st.stage;
+						const isCompleted = gate
+							? gate.isCompleted
+							: currentStage > st.stage;
+						const isCurrent = gate ? gate.isCurrent : currentStage === st.stage;
+						const isUpcoming = !isCompleted && !isCurrent;
 						const isTabActive = activeTab === STAGE_TAB_MAP[st.stage];
 						const isLast = index === stages.length - 1;
 
@@ -66,9 +68,7 @@ export function StageStepper({
 												"h-full w-full",
 												isCompleted
 													? "bg-emerald-600 dark:bg-emerald-500"
-													: isCurrent
-														? "bg-gradient-to-r from-primary to-border"
-														: "bg-border",
+													: "bg-border",
 											)}
 										/>
 									</div>
@@ -98,14 +98,14 @@ export function StageStepper({
 												"bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer",
 											isUnlocked &&
 												isCurrent &&
-												"bg-primary text-primary-foreground ring-4 ring-primary/25 font-bold scale-105 cursor-pointer",
+												"bg-background text-primary border-2 border-primary ring-4 ring-primary/15 font-bold cursor-pointer",
 											isUnlocked &&
 												isUpcoming &&
 												"bg-background text-muted-foreground border-2 border-border/90 hover:border-primary/50 hover:text-foreground cursor-pointer",
 											isUnlocked &&
 												isTabActive &&
 												!isCurrent &&
-												"ring-2 ring-primary/60",
+												"ring-2 ring-primary/60 ring-offset-2 ring-offset-background",
 										)}
 									>
 										{isCompleted ? (
@@ -118,10 +118,10 @@ export function StageStepper({
 									</div>
 
 									{/* Label Under Node */}
-									<div className="mt-2 text-center w-full max-w-[100px] leading-tight">
+									<div className="mt-2 text-center w-full min-w-0 px-0.5">
 										<p
 											className={cn(
-												"text-[11px] font-medium truncate transition-colors",
+												"text-[11px] font-medium leading-normal transition-colors break-words line-clamp-2 min-h-[2.5rem] flex items-center justify-center text-center",
 												!isUnlocked
 													? "text-muted-foreground/50"
 													: isCurrent

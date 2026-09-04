@@ -25,13 +25,9 @@ import { StatTile } from "./stat-tile";
 
 interface ApproverDashboardProps {
 	data: ApproverDashboardDto;
-	roleTitle?: string;
 }
 
-export function ApproverDashboard({
-	data,
-	roleTitle = "Approver & Reviewer",
-}: ApproverDashboardProps) {
+export function ApproverDashboard({ data }: ApproverDashboardProps) {
 	const pendingCount = data.pendingApprovals?.length || 0;
 	const totalPending = Number(data.totalPendingApprovals);
 
@@ -41,11 +37,6 @@ export function ApproverDashboard({
 			<PageHeader
 				title="Beranda Persetujuan"
 				description="Daftar tugas verifikasi berkas, persetujuan syarat teknis/komersial, dan metrik waktu tinjau."
-				badge={
-					<Badge variant="secondary" className="font-semibold">
-						{roleTitle}
-					</Badge>
-				}
 				actions={
 					<>
 						<Button asChild size="sm" className="gap-1.5 shadow-xs">

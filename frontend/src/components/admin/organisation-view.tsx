@@ -364,11 +364,6 @@ export function OrganisationView() {
 			<PageHeader
 				title="Struktur Wilayah & Sales Area"
 				description="Definisi batas lingkup teritorial (SOR & Sales Area) untuk perizinan dan jalur persetujuan berkas."
-				badge={
-					<span className="p-1 rounded-md bg-primary/10 text-primary">
-						<Network className="h-4 w-4" />
-					</span>
-				}
 				actions={
 					<div className="flex items-center gap-2">
 						<Button

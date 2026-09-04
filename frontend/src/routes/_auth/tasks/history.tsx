@@ -9,7 +9,6 @@ import {
 	Building2,
 	CheckCircle2,
 	ExternalLink,
-	History,
 	MessageSquare,
 	RotateCcw,
 	Send,
@@ -195,11 +194,6 @@ function TaskHistoryPage() {
 			<PageHeader
 				title="Log Riwayat Keputusan Workflow"
 				description="Daftar seluruh tindakan verifikasi dan keputusan yang telah Anda proses pada sistem."
-				badge={
-					<span className="p-1 rounded-md bg-primary/10 text-primary">
-						<History className="h-4 w-4" />
-					</span>
-				}
 				actions={
 					<div className="text-xs text-muted-foreground">
 						Total: <strong className="text-foreground">{totalCount}</strong>{" "}

@@ -37,9 +37,16 @@ export function evaluateStageGates(
 	const attachments = ctx.attachments || [];
 	const attachmentKinds = new Set(attachments.map((a) => a.kind));
 
-	// Stage 1: Calon Pelanggan (Directory)
-	const s1Completed = currentStage > 1;
-	const s1Current = currentStage === 1;
+	// Stage 2 & 3 prerequisite checks
+	const isPlottingFilled =
+		Boolean(ctx.plotting?.salesUserId) &&
+		Boolean(ctx.plotting?.posisiPelanggan) &&
+		Boolean(ctx.plotting?.kawasan);
+	const hasContacts = (ctx.contactsCount ?? 0) > 0;
+
+	// Stage 1: Calon Pelanggan (Directory) - directory entry is complete for any record in the hub
+	const s1Completed = true;
+	const s1Current = false;
 	const s1: StageGateResult = {
 		stage: 1,
 		isUnlocked: true,
@@ -48,9 +55,9 @@ export function evaluateStageGates(
 		missingRequirements: [],
 	};
 
-	// Stage 2: Plotting
-	const s2Completed = currentStage > 2;
-	const s2Current = currentStage === 2;
+	// Stage 2: Plotting - completed if advanced beyond Stage 2 OR plotting configuration is fully filled
+	const s2Completed = currentStage > 2 || isPlottingFilled;
+	const s2Current = !s2Completed && currentStage <= 2;
 	const s2: StageGateResult = {
 		stage: 2,
 		isUnlocked: true,
@@ -60,12 +67,8 @@ export function evaluateStageGates(
 	};
 
 	// Stage 3: Prospek
-	const isPlottingFilled =
-		Boolean(ctx.plotting?.salesUserId) &&
-		Boolean(ctx.plotting?.posisiPelanggan) &&
-		Boolean(ctx.plotting?.kawasan);
-	const s3Completed = currentStage > 3;
-	const s3Current = currentStage === 3;
+	const s3Completed = currentStage > 3 || (s2Completed && hasContacts);
+	const s3Current = !s3Completed && s2Completed;
 	const s3Unlocked = currentStage >= 3 || isPlottingFilled;
 	const s3Missing: string[] = [];
 	if (!s3Unlocked) {
@@ -88,9 +91,9 @@ export function evaluateStageGates(
 	};
 
 	// Stage 4: Survei KK0
-	const hasContacts = (ctx.contactsCount ?? 0) > 0;
-	const s4Completed = currentStage > 4;
-	const s4Current = currentStage === 4;
+	const hasKk0Attachment = attachmentKinds.has("Kk0");
+	const s4Completed = currentStage > 4 || (s3Completed && hasKk0Attachment);
+	const s4Current = !s4Completed && s3Completed;
 	const s4Unlocked =
 		currentStage >= 4 ||
 		((currentStage >= 3 || isPlottingFilled) && hasContacts);
@@ -117,9 +120,14 @@ export function evaluateStageGates(
 	};
 
 	// Stage 5: Registrasi A1
-	const hasKk0Attachment = attachmentKinds.has("Kk0");
-	const s5Completed = currentStage > 5;
-	const s5Current = currentStage === 5;
+	const hasA1Attachment = attachmentKinds.has("A1");
+	const hasBuktiKelayakan = attachmentKinds.has("BuktiKelayakan");
+	const isSigas = ctx.skemaHarga === "Sigas";
+	const hasMomSigas = !isSigas || attachmentKinds.has("MomSigas");
+	const s6GatePassed = hasA1Attachment && hasBuktiKelayakan && hasMomSigas;
+
+	const s5Completed = currentStage > 5 || (s4Completed && s6GatePassed);
+	const s5Current = !s5Completed && s4Completed;
 	const s5Unlocked =
 		currentStage >= 5 || (currentStage >= 4 && hasKk0Attachment);
 	const s5Missing: string[] = [];
@@ -147,13 +155,9 @@ export function evaluateStageGates(
 	};
 
 	// Stage 6: Permohonan NOL
-	const hasA1Attachment = attachmentKinds.has("A1");
-	const hasBuktiKelayakan = attachmentKinds.has("BuktiKelayakan");
-	const isSigas = ctx.skemaHarga === "Sigas";
-	const hasMomSigas = !isSigas || attachmentKinds.has("MomSigas");
-	const s6GatePassed = hasA1Attachment && hasBuktiKelayakan && hasMomSigas;
-	const s6Completed = currentStage > 6;
-	const s6Current = currentStage === 6;
+	const s6Completed =
+		currentStage > 6 || (status !== "Draft" && status !== "Discontinued");
+	const s6Current = !s6Completed && s5Completed;
 	const s6Unlocked = currentStage >= 6 || (currentStage >= 5 && s6GatePassed);
 	const s6Missing: string[] = [];
 	if (!s6Unlocked) {
@@ -191,12 +195,7 @@ export function evaluateStageGates(
 		status === "Approval" ||
 		status === "IssuedNol" ||
 		status === "IssuedRl";
-	const s7Current =
-		currentStage === 7 ||
-		status === "RegionalAdmin" ||
-		status === "Reviewer1" ||
-		status === "Reviewer2" ||
-		status === "Reviewer3";
+	const s7Current = !s7Completed && s6Completed;
 	const s7Unlocked = currentStage >= 7 || isPastAreaHead;
 	const s7Missing: string[] = [];
 	if (!s7Unlocked) {
@@ -225,7 +224,8 @@ export function evaluateStageGates(
 	const isAtOrPastApproval =
 		status === "Approval" || status === "IssuedNol" || status === "IssuedRl";
 	const s8Completed = status === "IssuedNol" || status === "IssuedRl";
-	const s8Current = currentStage === 8 || status === "Approval";
+	const s8Current =
+		!s8Completed && (currentStage === 8 || status === "Approval");
 	const s8Unlocked = currentStage >= 8 || isAtOrPastApproval;
 	const s8Missing: string[] = [];
 	if (!s8Unlocked) {

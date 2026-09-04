@@ -250,11 +250,6 @@ export function MasterDataTable<
 			<PageHeader
 				title={title}
 				description={description}
-				badge={
-					<span className="p-1 rounded-md bg-primary/10 text-primary">
-						<Icon className="h-4 w-4" />
-					</span>
-				}
 				actions={
 					<div className="flex items-center gap-2">
 						<div className="relative w-64">

@@ -16,7 +16,6 @@ import {
 	Shield,
 	UserCheck,
 	UserCog,
-	Users,
 	UserX,
 	XCircle,
 } from "lucide-react";
@@ -368,11 +367,6 @@ export function UsersView() {
 			<PageHeader
 				title="Manajemen Pengguna & Hak Akses"
 				description="Daftar pengguna dan penugasan peran dalam lingkup administrasi Anda."
-				badge={
-					<span className="p-1 rounded-md bg-primary/10 text-primary">
-						<Users className="h-4 w-4" />
-					</span>
-				}
 				actions={
 					<div className="flex items-center gap-2">
 						<div className="relative w-64">

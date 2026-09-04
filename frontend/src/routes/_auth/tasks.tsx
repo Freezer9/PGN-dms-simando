@@ -56,9 +56,8 @@ function TasksLayout() {
 		<div className="space-y-6">
 			{/* Page Header */}
 			<div className="flex flex-col gap-1">
-				<h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl flex items-center gap-2.5">
-					<Inbox className="h-7 w-7 text-primary" />
-					<span>Tugas & Persetujuan</span>
+				<h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+					Tugas & Persetujuan
 				</h1>
 				<p className="text-sm text-muted-foreground">
 					Kelola antrean verifikasi, tindak lanjut persetujuan berjenjang, dan

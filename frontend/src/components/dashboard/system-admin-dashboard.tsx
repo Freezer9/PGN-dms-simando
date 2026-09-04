@@ -39,11 +39,6 @@ export function SystemAdminDashboard({ data }: SystemAdminDashboardProps) {
 			<PageHeader
 				title="Beranda Administrator Sistem"
 				description="Pengelolaan integritas master data, pemeliharaan katalog sistem, pengguna, dan audit keamanan."
-				badge={
-					<Badge variant="outline" className="font-semibold">
-						Administrator Sistem
-					</Badge>
-				}
 				actions={
 					<>
 						<Button asChild size="sm" variant="outline" className="gap-1.5">

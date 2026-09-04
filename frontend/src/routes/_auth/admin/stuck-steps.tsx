@@ -6,7 +6,6 @@ import {
 	Clock,
 	Loader2,
 	MapPin,
-	OctagonAlert,
 	Search,
 	ShieldAlert,
 	UserCheck,
@@ -126,11 +125,6 @@ function StuckStepsPage() {
 			<PageHeader
 				title="Langkah Tertahan: Lintas Wilayah (System Admin)"
 				description="Pusat pengawasan dan pemulihan langkah workflow yang terhenti akibat petugas nonaktif atau kendala wilayah."
-				badge={
-					<span className="p-1 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400">
-						<OctagonAlert className="h-4 w-4" />
-					</span>
-				}
 				actions={
 					<div className="relative w-64">
 						<Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />

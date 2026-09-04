@@ -5,7 +5,6 @@ import {
 	Activity,
 	AlertCircle,
 	ArrowLeft,
-	Building2,
 	DollarSign,
 	Edit2,
 	Flame,
@@ -614,9 +613,8 @@ function CompanyRecordHubPage() {
 									</Badge>
 								)}
 							</div>
-							<h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-								<Building2 className="size-6 text-primary shrink-0" />
-								<span>{company.namaPerusahaan}</span>
+							<h1 className="text-2xl font-bold tracking-tight text-foreground">
+								{company.namaPerusahaan}
 							</h1>
 							<p className="text-xs text-muted-foreground flex items-center gap-1.5">
 								<MapPin className="size-3.5 shrink-0 text-muted-foreground" />

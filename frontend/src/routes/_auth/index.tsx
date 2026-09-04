@@ -6,15 +6,12 @@ import { RegionalAdminDashboard } from "@/components/dashboard/regional-admin-da
 import { SalesAreaDashboard } from "@/components/dashboard/sales-area-dashboard";
 import { SystemAdminDashboard } from "@/components/dashboard/system-admin-dashboard";
 import { Card, CardContent } from "@/components/ui/card";
-import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/_auth/")({
 	component: DashboardHome,
 });
 
 function DashboardHome() {
-	const { user } = useAuth();
-
 	const {
 		data: statsData,
 		isLoading,
@@ -57,36 +54,17 @@ function DashboardHome() {
 
 	// 2. Regional Admin
 	if (statsData.role === "RegionalAdmin" && statsData.regionalAdmin) {
-		return (
-			<RegionalAdminDashboard
-				data={statsData.regionalAdmin}
-				regionName={user?.scope === "Region" ? "Wilayah Regional" : "Regional"}
-			/>
-		);
+		return <RegionalAdminDashboard data={statsData.regionalAdmin} />;
 	}
 
 	// 3. Sales Area
 	if (statsData.role === "SalesArea" && statsData.salesArea) {
-		return (
-			<SalesAreaDashboard
-				data={statsData.salesArea}
-				areaName={user?.scope === "Area" ? "Sales Area" : "Area"}
-			/>
-		);
+		return <SalesAreaDashboard data={statsData.salesArea} />;
 	}
 
 	// 4. Approver / Reviewer / Area Head / Division Head
 	if (statsData.approver) {
-		const roleTitleMap: Record<string, string> = {
-			AreaHead: "Area Head",
-			Reviewer: "Reviewer Teknis & Komersial",
-			DivisionHead: "Division Head",
-		};
-		const roleTitle = roleTitleMap[statsData.role] || "Verifikasi & Reviewer";
-
-		return (
-			<ApproverDashboard data={statsData.approver} roleTitle={roleTitle} />
-		);
+		return <ApproverDashboard data={statsData.approver} />;
 	}
 
 	// Fallback if specific payload not attached but salesArea exists

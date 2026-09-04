@@ -25,13 +25,9 @@ import { StatTile } from "./stat-tile";
 
 interface SalesAreaDashboardProps {
 	data: SalesAreaDashboardDto;
-	areaName?: string;
 }
 
-export function SalesAreaDashboard({
-	data,
-	areaName = "Sales Area",
-}: SalesAreaDashboardProps) {
+export function SalesAreaDashboard({ data }: SalesAreaDashboardProps) {
 	const returnedCount = data.returnedWorkItems?.length || 0;
 	const activeApprovalCount = data.activeApprovalItems?.length || 0;
 	const totalPipeline = Object.values(data.stageCounts || {}).reduce(
@@ -46,11 +42,6 @@ export function SalesAreaDashboard({
 			<PageHeader
 				title="Beranda Sales Area"
 				description="Ringkasan tugas lapangan, progres verifikasi berkas, dan tahapan calon pelanggan gas."
-				badge={
-					<Badge variant="secondary" className="font-semibold">
-						{areaName}
-					</Badge>
-				}
 				actions={
 					<>
 						<Button asChild size="sm" className="gap-1.5 shadow-xs">

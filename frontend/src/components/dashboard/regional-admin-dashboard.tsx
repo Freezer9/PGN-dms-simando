@@ -24,13 +24,9 @@ import { StatTile } from "./stat-tile";
 
 interface RegionalAdminDashboardProps {
 	data: RegionalAdminDashboardDto;
-	regionName?: string;
 }
 
-export function RegionalAdminDashboard({
-	data,
-	regionName = "Regional",
-}: RegionalAdminDashboardProps) {
+export function RegionalAdminDashboard({ data }: RegionalAdminDashboardProps) {
 	const stuckCount = data.stuckTasks?.length || 0;
 	const totalPipeline: number = Object.values(
 		data.regionFunnelCounts || {},
@@ -43,11 +39,6 @@ export function RegionalAdminDashboard({
 			<PageHeader
 				title="Beranda Admin Regional"
 				description="Pengawasan seluruh Sales Area di wilayah, penanganan tugas tertahan, dan kelancaran SLA persetujuan."
-				badge={
-					<Badge variant="secondary" className="font-semibold">
-						{regionName}
-					</Badge>
-				}
 				actions={
 					<>
 						<Button asChild size="sm" className="gap-1.5 shadow-xs">

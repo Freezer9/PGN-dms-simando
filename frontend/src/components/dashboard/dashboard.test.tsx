@@ -125,9 +125,7 @@ describe("Dashboard Components", () => {
 		};
 
 		it("renders action callout for returned items with reviewer comments", () => {
-			renderWithClient(
-				<SalesAreaDashboard data={mockSalesData} areaName="Surabaya" />,
-			);
+			renderWithClient(<SalesAreaDashboard data={mockSalesData} />);
 
 			expect(screen.getAllByText(/Perlu Tindakan Anda/).length).toBeGreaterThan(
 				0,
@@ -186,9 +184,7 @@ describe("Dashboard Components", () => {
 		};
 
 		it("renders pending approval queue and performance metrics", () => {
-			renderWithClient(
-				<ApproverDashboard data={mockApproverData} roleTitle="Area Head" />,
-			);
+			renderWithClient(<ApproverDashboard data={mockApproverData} />);
 
 			expect(screen.getByText("PT Industri Makmur")).toBeDefined();
 			expect(
@@ -231,12 +227,7 @@ describe("Dashboard Components", () => {
 		};
 
 		it("renders stuck tasks alert and oldest waiting record banner", () => {
-			renderWithClient(
-				<RegionalAdminDashboard
-					data={mockRegionalData}
-					regionName="Region 3"
-				/>,
-			);
+			renderWithClient(<RegionalAdminDashboard data={mockRegionalData} />);
 
 			expect(screen.getByText(/Berkas Tertahan Terlama/)).toBeDefined();
 			expect(screen.getAllByText(/PT Terhenti Lama/).length).toBeGreaterThan(0);

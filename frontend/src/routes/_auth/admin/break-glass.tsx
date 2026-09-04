@@ -142,11 +142,6 @@ function BreakGlassPage() {
 			<PageHeader
 				title="Akses Darurat (Break-Glass Protocol)"
 				description="Audit log dan permohonan akses darurat bypass wewenang berkas untuk kondisi luar biasa. Seluruh aktivitas tercatat dan diaudit secara ketat."
-				badge={
-					<span className="p-1 rounded-md bg-destructive/10 text-destructive">
-						<ShieldAlert className="h-4 w-4" />
-					</span>
-				}
 				actions={
 					<Button
 						onClick={handleOpenRequest}
