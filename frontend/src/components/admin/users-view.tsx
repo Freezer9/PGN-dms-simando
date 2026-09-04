@@ -42,6 +42,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { formatRole } from "@/lib/roles";
 
 export function UsersView() {
 	const [searchTerm, setSearchTerm] = React.useState("");
@@ -79,6 +80,7 @@ export function UsersView() {
 			const emailMatch = (u.email || "").toLowerCase().includes(q);
 			const roleMatch = u.roles.some(
 				(r) =>
+					formatRole(r.role).toLowerCase().includes(q) ||
 					r.role.toLowerCase().includes(q) ||
 					(r.scopeLabel || "").toLowerCase().includes(q),
 			);
@@ -193,7 +195,9 @@ export function UsersView() {
 										className="text-[11px] bg-background/80 py-0.5"
 									>
 										<Shield className="size-3 mr-1 text-primary shrink-0" />
-										<strong className="text-foreground">{r.role}</strong>
+										<strong className="text-foreground">
+											{formatRole(r.role)}
+										</strong>
 										<span className="text-muted-foreground ml-1">
 											({r.scopeLabel || "Nasional"})
 										</span>

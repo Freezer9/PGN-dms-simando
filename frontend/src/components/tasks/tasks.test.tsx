@@ -131,9 +131,7 @@ describe("Tasks UI Components", () => {
 			);
 
 			expect(screen.getByText("Permintaan Revisi Berkas")).toBeInTheDocument();
-			expect(
-				screen.getByText(/Catatan Revisi \/ Poin Perbaikan/i),
-			).toBeInTheDocument();
+			expect(screen.getByText(/Catatan Revisi/i)).toBeInTheDocument();
 			expect(
 				screen.getByRole("button", { name: "Minta Revisi" }),
 			).toBeInTheDocument();

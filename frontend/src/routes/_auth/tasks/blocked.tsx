@@ -33,6 +33,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { formatRole } from "@/lib/roles";
 
 export const Route = createFileRoute("/_auth/tasks/blocked")({
 	component: BlockedTasksPage,
@@ -150,7 +151,7 @@ function BlockedTasksPage() {
 						variant="secondary"
 						className="text-xs font-medium bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300"
 					>
-						{row.original.stepKind ?? "Persetujuan"}
+						{formatRole(row.original.stepKind) || "Persetujuan"}
 					</Badge>
 				),
 			},
@@ -264,7 +265,7 @@ function BlockedTasksPage() {
 				</div>
 				<div className="space-y-1 text-xs">
 					<h3 className="font-semibold text-rose-900 dark:text-rose-200 text-sm">
-						Pemantauan Berkas Tertahan & Hambatan Proses (Bottleneck SLA)
+						Pemantauan Berkas Tertahan (Bottleneck SLA)
 					</h3>
 					<p className="text-rose-700 dark:text-rose-300/90 leading-relaxed">
 						Halaman ini menampilkan seluruh berkas pengajuan pelanggan yang

@@ -1,4 +1,5 @@
 import type { Kawasan, PosisiPelanggan, RecordStatus } from "@/api/types";
+import { formatRole } from "./roles";
 
 export interface StageInfo {
 	stage: number;
@@ -140,7 +141,7 @@ export function getStatusLabel(status: RecordStatus): {
 			};
 		default:
 			return {
-				label: status,
+				label: formatRole(status) || status,
 				badgeClass: "bg-muted text-muted-foreground border-border",
 			};
 	}

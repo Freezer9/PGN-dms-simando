@@ -126,7 +126,7 @@ function UnitsPage() {
 
 	return (
 		<MasterDataTable<UnitOfMeasureDto, UnitOfMeasureFormData>
-			title="Satuan Pengukuran (Units)"
+			title="Satuan Pengukuran"
 			description="Daftar satuan ukuran untuk energi, volume, tekanan, massa, dan laju alir gas."
 			icon={Ruler}
 			data={data || []}

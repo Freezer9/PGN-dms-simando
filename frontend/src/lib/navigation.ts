@@ -296,7 +296,7 @@ export function buildNavigationMenu(
 					},
 					{
 						type: "item",
-						title: "Akses Darurat (break-glass)",
+						title: "Akses Darurat",
 						href: "/admin/break-glass",
 						icon: "shield-alert",
 					},

@@ -145,7 +145,7 @@ export function RegionalAdminDashboard({ data }: RegionalAdminDashboardProps) {
 								</Link>
 							</Button>
 							<Button asChild size="sm" variant="outline">
-								<Link to="/reports/ageing">Buka Semua Penuaan</Link>
+								<Link to="/reports/ageing">Buka Laporan Ageing</Link>
 							</Button>
 						</div>
 					</CardContent>
@@ -223,7 +223,7 @@ export function RegionalAdminDashboard({ data }: RegionalAdminDashboardProps) {
 					<CardHeader className="pb-3">
 						<div className="flex items-center justify-between">
 							<CardTitle className="text-base font-semibold">
-								Corong Penjualan Wilayah
+								Pipeline Penjualan Wilayah
 							</CardTitle>
 							<Button variant="ghost" size="sm" asChild className="text-xs">
 								<Link to="/reports/funnel">Laporan Lengkap →</Link>

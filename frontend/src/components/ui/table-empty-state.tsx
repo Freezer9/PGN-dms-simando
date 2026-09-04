@@ -19,7 +19,7 @@ export function TableEmptyState({
 	colSpan,
 	icon = "search",
 	title = "Tidak Ada Data Ditemukan",
-	description = "Tidak ada rekaman yang sesuai dengan filter atau kriteria pencarian Anda.",
+	description = "Tidak ada data yang sesuai dengan filter atau kriteria pencarian Anda.",
 	onReset,
 	resetLabel = "Reset Filter",
 	action,

@@ -61,7 +61,7 @@ const regionSchema = z.object({
 });
 
 const areaSchema = z.object({
-	regionId: z.string().min(1, "Wilayah (Region) wajib dipilih"),
+	regionId: z.string().min(1, "Wilayah (SOR) wajib dipilih"),
 	code: z
 		.string()
 		.trim()
@@ -659,9 +659,7 @@ export function OrganisationView() {
 						<DialogTitle className="flex items-center gap-2 text-sm font-semibold">
 							<Building2 className="h-4 w-4 text-primary" />
 							<span>
-								{editingRegion
-									? "Ubah Wilayah (Region)"
-									: "Tambah Wilayah (Region)"}
+								{editingRegion ? "Ubah Wilayah (SOR)" : "Tambah Wilayah (SOR)"}
 							</span>
 						</DialogTitle>
 						<DialogDescription className="text-xs">
@@ -796,7 +794,7 @@ export function OrganisationView() {
 									: undefined;
 								return (
 									<FormField
-										label="Pilih Wilayah (Region)"
+										label="Pilih Wilayah (SOR)"
 										htmlFor="area-reg"
 										required
 										error={fieldError}

@@ -150,7 +150,7 @@ function NolOutcomesReportPage() {
 					<Card className="shadow-xs">
 						<CardHeader className="pb-3">
 							<CardTitle className="text-base font-semibold">
-								Kategori Alasan Penolakan (Surat RL)
+								Kategori Alasan Penolakan (RL)
 							</CardTitle>
 							<CardDescription className="text-xs">
 								Frekuensi alasan teknis maupun komersial yang mendasari

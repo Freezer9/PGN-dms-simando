@@ -201,7 +201,7 @@ export function evaluateStageGates(
 	if (!s7Unlocked) {
 		if (status === "Draft") {
 			s7Missing.push(
-				"Permohonan NOL harus diajukan untuk persetujuan (Submit) terlebih dahulu",
+				"Permohonan NOL harus diajukan untuk persetujuan terlebih dahulu",
 			);
 		} else if (status === "AreaHead") {
 			s7Missing.push("Menunggu persetujuan evaluasi dari Head of Area");

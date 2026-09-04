@@ -538,7 +538,7 @@ internal sealed class WorkflowService(
 
             var assignedName = step.AssignedUserId.HasValue
                 ? users.GetValueOrDefault(step.AssignedUserId.Value, "Ditugaskan")
-                : $"Peran: {step.Kind}";
+                : $"Peran: {WorkflowLabels.StepKindLabel(step.Kind)}";
 
             result.Add(new StuckStepItemDto(
                 step.Id,

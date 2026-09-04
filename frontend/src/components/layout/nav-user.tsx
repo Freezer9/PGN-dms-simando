@@ -19,6 +19,7 @@ import {
 	useSidebar,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/lib/auth";
+import { formatRole } from "@/lib/roles";
 
 export function NavUser({ user }: { user: CurrentUserDto | null }) {
 	const { isMobile } = useSidebar();
@@ -72,7 +73,7 @@ export function NavUser({ user }: { user: CurrentUserDto | null }) {
 									{user.fullName || user.username}
 								</span>
 								<span className="truncate text-[11px] text-muted-foreground">
-									{user.email || user.roles?.[0] || "Pengguna"}
+									{user.email || formatRole(user.roles?.[0]) || "Pengguna"}
 								</span>
 							</div>
 							<ChevronsUpDown className="ml-auto size-4 group-data-[collapsible=icon]:hidden opacity-60" />
@@ -103,7 +104,7 @@ export function NavUser({ user }: { user: CurrentUserDto | null }) {
 											variant="secondary"
 											className="text-[9px] px-1.5 py-0 h-4 font-normal"
 										>
-											{user.roles?.[0] || "User"}
+											{formatRole(user.roles?.[0]) || "Pengguna"}
 										</Badge>
 										<span className="text-[10px] text-muted-foreground">
 											• {scopeLabel}
@@ -130,7 +131,7 @@ export function NavUser({ user }: { user: CurrentUserDto | null }) {
 							className="flex items-center gap-2 px-2 py-1.5 text-xs cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10 rounded-sm"
 						>
 							<LogOut className="size-3.5" />
-							<span>Keluar (Sign Out)</span>
+							<span>Keluar</span>
 						</DropdownMenuItem>
 					</DropdownMenuContent>
 				</DropdownMenu>

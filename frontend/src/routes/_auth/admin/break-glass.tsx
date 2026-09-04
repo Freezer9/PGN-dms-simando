@@ -140,7 +140,7 @@ function BreakGlassPage() {
 		<div className="space-y-6">
 			{/* Page Header */}
 			<PageHeader
-				title="Akses Darurat (Break-Glass Protocol)"
+				title="Akses Darurat"
 				description="Audit log dan permohonan akses darurat bypass wewenang berkas untuk kondisi luar biasa. Seluruh aktivitas tercatat dan diaudit secara ketat."
 				actions={
 					<Button
@@ -186,7 +186,7 @@ function BreakGlassPage() {
 						<TableHeader className="bg-muted/40">
 							<TableRow>
 								<TableHead className="font-semibold text-xs pl-4">
-									Pengguna (Auditor)
+									Pemohon Akses
 								</TableHead>
 								<TableHead className="font-semibold text-xs">
 									Target Berkas

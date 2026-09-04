@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useAuth } from "@/lib/auth";
+import { formatRole } from "@/lib/roles";
 
 export function Header() {
 	const { user, logout } = useAuth();
@@ -144,11 +145,11 @@ export function Header() {
 									<div className="flex flex-wrap gap-1 mt-1.5">
 										{user.roles.map((role) => (
 											<Badge
-												key={role}
+												key={formatRole(role)}
 												variant="secondary"
 												className="text-[9px] py-0 px-1.5 font-normal h-4"
 											>
-												{role}
+												{formatRole(role)}
 											</Badge>
 										))}
 									</div>
@@ -173,7 +174,7 @@ export function Header() {
 							className="flex items-center gap-2 px-2 py-1.5 text-xs cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10 rounded-sm"
 						>
 							<LogOut className="size-3.5" />
-							<span>Keluar (Sign Out)</span>
+							<span>Keluar</span>
 						</DropdownMenuItem>
 					</DropdownMenuContent>
 				</DropdownMenu>

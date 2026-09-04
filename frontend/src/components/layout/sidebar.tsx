@@ -72,7 +72,7 @@ export function AppSidebar({ className }: { className?: string }) {
 							DMS Simando
 						</span>
 						<span className="text-[10px] text-muted-foreground font-medium truncate">
-							Enterprise Delivery System
+							Sistem Manajemen Dokumen
 						</span>
 					</div>
 				</Link>

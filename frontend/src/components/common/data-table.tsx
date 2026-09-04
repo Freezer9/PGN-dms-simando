@@ -91,7 +91,7 @@ export function DataTable<TData>({
 	isLoading = false,
 	skeletonRows = 5,
 	emptyTitle = "Tidak Ada Data",
-	emptyDescription = "Tidak ada rekaman data yang sesuai dengan kriteria yang dipilih.",
+	emptyDescription = "Tidak ada data yang sesuai dengan kriteria yang dipilih.",
 	emptyIcon = "search",
 	onResetFilters,
 	resetLabel = "Reset Filter",

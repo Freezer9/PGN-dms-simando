@@ -59,6 +59,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { formatRole } from "@/lib/roles";
 import {
 	type NolEvaluationFormValues,
 	nolEvaluationSchema,
@@ -143,7 +144,7 @@ function getDefaultValues(
 				irrPct: 18.5,
 				npv: 120000,
 				paybackYears: 3.2,
-				hasilAnalisis: "Layak (Feasible)",
+				hasilAnalisis: "Layak",
 			},
 		],
 	};
@@ -426,7 +427,7 @@ export function NolEvaluationForm({
 										<SelectContent>
 											<SelectItem value="Belum">Belum Dimulai</SelectItem>
 											<SelectItem value="DalamProses">Dalam Proses</SelectItem>
-											<SelectItem value="Selesai">Selesai (Done)</SelectItem>
+											<SelectItem value="Selesai">Selesai</SelectItem>
 										</SelectContent>
 									</Select>
 								</FormField>
@@ -626,7 +627,7 @@ export function NolEvaluationForm({
 							</span>
 							<form.Field name="spesifikasiMrs">
 								{(field) => (
-									<FormField label="Tipe / Spesifikasi MRS">
+									<FormField label="Spesifikasi MRS">
 										<Select
 											value={field.state.value || "NONE"}
 											onValueChange={(val) =>
@@ -961,10 +962,10 @@ export function NolEvaluationForm({
 										<SelectContent>
 											<SelectItem value="NONE">Belum Dipilih</SelectItem>
 											<SelectItem value="JaminanPembayaran">
-												Jaminan Pembayaran (Bank Garansi)
+												Bank Garansi (BG)
 											</SelectItem>
 											<SelectItem value="PembayaranDimuka">
-												Pembayaran Dimuka (Advance Payment)
+												Pembayaran di Muka (Advance Payment)
 											</SelectItem>
 										</SelectContent>
 									</Select>
@@ -1052,7 +1053,7 @@ export function NolEvaluationForm({
 
 						<form.Field name="jaminanPenerbit">
 							{(field) => (
-								<FormField label="Bank / Penerbit Jaminan">
+								<FormField label="Bank Penerbit Jaminan">
 									<Input
 										value={field.state.value}
 										onChange={(e) => field.handleChange(e.target.value)}
@@ -1158,7 +1159,7 @@ export function NolEvaluationForm({
 										{r.fullName}
 									</Label>
 									<p className="text-[11px] text-muted-foreground font-mono">
-										{r.email} ({r.role})
+										{r.email} ({formatRole(r.role)})
 									</p>
 								</div>
 							</div>

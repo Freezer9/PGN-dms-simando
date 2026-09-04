@@ -305,10 +305,10 @@ export function AttachmentUploadDialog({
 										</SelectTrigger>
 										<SelectContent>
 											<SelectItem value="Digital" className="text-xs">
-												Digital Certificate / TTE Elektronik
+												Tanda Tangan Elektronik (TTE)
 											</SelectItem>
 											<SelectItem value="Wet" className="text-xs">
-												Tanda Tangan Basah / Manual Stamp
+												Tanda Tangan Basah
 											</SelectItem>
 										</SelectContent>
 									</Select>

@@ -20,6 +20,7 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { STAGE_CONFIG } from "@/lib/directory-utils";
+import { formatRole } from "@/lib/roles";
 import { DashboardMapPreview } from "./dashboard-map-preview";
 import { StatTile } from "./stat-tile";
 
@@ -89,7 +90,7 @@ export function SalesAreaDashboard({ data }: SalesAreaDashboardProps) {
 					variant={activeApprovalCount > 0 ? "amber" : "default"}
 				/>
 				<StatTile
-					title="Terbit NOL (RL)"
+					title="Terbit NOL / RL"
 					value={nolIssuedCount}
 					description="Pelanggan siap berlangganan gas"
 					icon={CheckCircle2}
@@ -135,7 +136,7 @@ export function SalesAreaDashboard({ data }: SalesAreaDashboardProps) {
 											className="text-[11px]"
 										>
 											{item.action === "Tolak" ? "Ditolak" : "Revisi"} oleh{" "}
-											{item.actorRoleLabel}
+											{formatRole(item.actorRoleLabel)}
 										</Badge>
 									</div>
 									<p className="text-xs text-muted-foreground bg-muted/60 p-2 rounded-md font-mono line-clamp-2">
@@ -250,7 +251,7 @@ export function SalesAreaDashboard({ data }: SalesAreaDashboardProps) {
 										</div>
 										<div className="text-right shrink-0">
 											<Badge variant="secondary" className="text-[11px]">
-												{item.holderLabel}
+												{formatRole(item.holderLabel)}
 											</Badge>
 											<p className="text-[10px] text-muted-foreground mt-0.5">
 												Diajukan{" "}

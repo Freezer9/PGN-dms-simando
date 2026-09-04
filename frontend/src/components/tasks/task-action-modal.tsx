@@ -24,6 +24,7 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { formatRole } from "@/lib/roles";
 import {
 	type TaskActionModalFormValues,
 	taskActionModalSchema,
@@ -135,7 +136,7 @@ export function TaskActionModal({
 
 			if (actionType === "Reassign") {
 				if (!value.newUserId) {
-					toast.error("Wajib memilih reviewer baru!");
+					toast.error("Reviewer baru wajib dipilih!");
 					return;
 				}
 				await reassignMutation.mutateAsync({
@@ -150,7 +151,7 @@ export function TaskActionModal({
 
 			if (actionType === "Revisi") {
 				if (!value.comment?.trim()) {
-					toast.error("Wajib mengisi catatan/alasan revisi!");
+					toast.error("Catatan revisi wajib diisi!");
 					return;
 				}
 				await actOnStepMutation.mutateAsync({
@@ -165,7 +166,7 @@ export function TaskActionModal({
 
 			if (actionType === "Tolak") {
 				if (!value.comment?.trim()) {
-					toast.error("Wajib mengisi alasan penolakan!");
+					toast.error("Alasan penolakan wajib diisi!");
 					return;
 				}
 				await actOnStepMutation.mutateAsync({
@@ -304,7 +305,7 @@ export function TaskActionModal({
 											onValueChange={(val) => field.handleChange(val)}
 											options={reviewers.map((r) => ({
 												value: r.id,
-												label: `${r.fullName} (${r.role}) - ${r.email}`,
+												label: `${r.fullName} (${formatRole(r.role)}) - ${r.email}`,
 											}))}
 											placeholder="-- Pilih Reviewer --"
 											searchPlaceholder="Cari reviewer..."
@@ -324,12 +325,12 @@ export function TaskActionModal({
 								actionType === "Revisi" || actionType === "Tolak";
 							const labelText =
 								actionType === "Setuju"
-									? "Catatan Persetujuan (Opsional)"
+									? "Catatan Persetujuan"
 									: actionType === "Revisi"
-										? "Catatan Revisi / Poin Perbaikan"
+										? "Catatan Revisi"
 										: actionType === "Tolak"
 											? "Alasan Penolakan"
-											: "Alasan Penugasan Ulang (Opsional)";
+											: "Alasan Penugasan Ulang";
 
 							return (
 								<FormField

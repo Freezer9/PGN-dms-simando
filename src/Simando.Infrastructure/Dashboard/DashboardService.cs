@@ -53,7 +53,7 @@ internal sealed class DashboardService(IDbContextFactory<SimandoDbContext> dbCon
 
             if (company is not null)
             {
-                var actorRoleLabel = evt.FromStatus?.ToString() ?? "Reviewer";
+                var actorRoleLabel = FormatRecordStatusRole(evt.FromStatus);
                 returnedWorkItems.Add(new ReturnedWorkItem(
                     company.Id,
                     company.Nomor,
@@ -91,7 +91,7 @@ internal sealed class DashboardService(IDbContextFactory<SimandoDbContext> dbCon
             c.Nomor,
             c.NamaPerusahaan,
             c.CurrentStage,
-            c.Status.ToString(),
+            FormatRecordStatusRole(c.Status),
             c.UpdatedAt ?? c.CreatedAt
         )).ToList();
 
@@ -165,7 +165,7 @@ internal sealed class DashboardService(IDbContextFactory<SimandoDbContext> dbCon
                 userNames.GetValueOrDefault(e.ActorId, "User"),
                 e.Action,
                 comp?.NamaPerusahaan ?? "Perusahaan",
-                e.FromStatus?.ToString() ?? "Reviewer"
+                FormatRecordStatusRole(e.FromStatus)
             );
         }).ToList();
 
@@ -287,4 +287,15 @@ internal sealed class DashboardService(IDbContextFactory<SimandoDbContext> dbCon
             4 // KK0, A1, Permohonan NOL, Resume Evaluasi
         );
     }
+
+    private static string FormatRecordStatusRole(RecordStatus? status) => status switch
+    {
+        RecordStatus.AreaHead => "Area Head",
+        RecordStatus.RegionalAdmin => "Regional Admin",
+        RecordStatus.Reviewer1 => "Reviewer 1",
+        RecordStatus.Reviewer2 => "Reviewer 2",
+        RecordStatus.Reviewer3 => "Reviewer 3",
+        RecordStatus.Approval => "Division Head",
+        _ => status?.ToString() ?? "Reviewer"
+    };
 }

@@ -34,6 +34,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { formatRole } from "@/lib/roles";
 
 export const Route = createFileRoute("/_auth/tasks/")({
 	component: TasksInboxPage,
@@ -187,7 +188,7 @@ function TasksInboxPage() {
 				},
 				cell: ({ row }) => (
 					<Badge variant="secondary" className="text-xs font-medium">
-						{row.original.stepKind ?? "Persetujuan"}
+						{formatRole(row.original.stepKind) || "Persetujuan"}
 					</Badge>
 				),
 			},
@@ -225,7 +226,7 @@ function TasksInboxPage() {
 			},
 			{
 				accessorKey: "waitingSince",
-				header: "Menunggu Sejak (SLA)",
+				header: "Status SLA",
 				meta: {
 					headerClassName: "min-w-[170px]",
 					cellClassName: "min-w-[170px]",
@@ -365,7 +366,7 @@ function TasksInboxPage() {
 							<SelectItem value="all">Semua Tahap Verifikasi</SelectItem>
 							<SelectItem value="AreaHead">Area Head</SelectItem>
 							<SelectItem value="RegionalAdmin">Regional Admin</SelectItem>
-							<SelectItem value="Reviewer1">Reviewer 1 (Sales/Mkt)</SelectItem>
+							<SelectItem value="Reviewer1">Reviewer 1 (Sales)</SelectItem>
 							<SelectItem value="Reviewer2">Reviewer 2 (Teknik)</SelectItem>
 							<SelectItem value="Reviewer3">Reviewer 3 (Keuangan)</SelectItem>
 							<SelectItem value="DivisionHead">Division Head</SelectItem>
@@ -406,9 +407,7 @@ function TasksInboxPage() {
 							<SelectValue placeholder="Urutkan Berdasarkan" />
 						</SelectTrigger>
 						<SelectContent>
-							<SelectItem value="sla_desc">
-								Terlama Menunggu (Prioritas SLA)
-							</SelectItem>
+							<SelectItem value="sla_desc">Waktu Tunggu Terlama</SelectItem>
 							<SelectItem value="sla_asc">Terbaru Diajukan</SelectItem>
 							<SelectItem value="name_asc">Nama Perusahaan (A-Z)</SelectItem>
 						</SelectContent>

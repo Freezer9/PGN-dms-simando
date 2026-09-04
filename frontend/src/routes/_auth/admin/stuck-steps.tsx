@@ -36,6 +36,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { formatRole } from "@/lib/roles";
 import {
 	type ReassignStuckStepFormValues,
 	reassignStuckStepSchema,
@@ -123,7 +124,7 @@ function StuckStepsPage() {
 		<div className="space-y-4">
 			{/* Top Header */}
 			<PageHeader
-				title="Langkah Tertahan: Lintas Wilayah (System Admin)"
+				title="Langkah Tertahan Lintas Wilayah"
 				description="Pusat pengawasan dan pemulihan langkah workflow yang terhenti akibat petugas nonaktif atau kendala wilayah."
 				actions={
 					<div className="relative w-64">
@@ -235,14 +236,14 @@ function StuckStepsPage() {
 									{/* Step Kind */}
 									<TableCell className="py-3">
 										<Badge variant="outline" className="font-mono text-xs">
-											{step.stepKind}
+											{formatRole(step.stepKind)}
 										</Badge>
 									</TableCell>
 
 									{/* Current Assignee */}
 									<TableCell className="py-3 text-xs">
 										<span className="font-medium text-foreground">
-											{step.assignedUserName}
+											{formatRole(step.assignedUserName)}
 										</span>
 									</TableCell>
 
@@ -314,7 +315,7 @@ function StuckStepsPage() {
 							<div className="flex justify-between">
 								<span className="text-muted-foreground">Langkah Workflow:</span>
 								<strong className="font-mono text-foreground">
-									{selectedStep?.stepKind}
+									{formatRole(selectedStep?.stepKind)}
 								</strong>
 							</div>
 							<div className="flex justify-between">
@@ -326,7 +327,7 @@ function StuckStepsPage() {
 							<div className="flex justify-between">
 								<span className="text-muted-foreground">Petugas Saat Ini:</span>
 								<span className="text-foreground font-medium">
-									{selectedStep?.assignedUserName}
+									{formatRole(selectedStep?.assignedUserName)}
 								</span>
 							</div>
 						</div>
@@ -342,7 +343,7 @@ function StuckStepsPage() {
 										value: user.id,
 										label: `${user.fullName} (${
 											user.roles
-												.map((r) => `${r.role} - ${r.scopeLabel}`)
+												.map((r) => `${formatRole(r.role)} - ${r.scopeLabel}`)
 												.join(", ") || user.username
 										})`,
 									}));

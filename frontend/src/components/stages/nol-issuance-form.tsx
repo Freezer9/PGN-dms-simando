@@ -218,7 +218,7 @@ export function NolIssuanceForm({
 						1. Keputusan Akhir & Administrasi Surat Resmi
 					</CardTitle>
 					<CardDescription className="text-xs">
-						Status penerbitan surat NOL (Notice of Letter) / RL (Response
+						Status penerbitan surat NOL (No Objection Letter) / RL (Refusal
 						Letter) dan nota dinas divisi
 					</CardDescription>
 				</CardHeader>
@@ -227,7 +227,7 @@ export function NolIssuanceForm({
 						{/* Hasil / Outcome */}
 						<form.Field name="outcome">
 							{(field) => (
-								<FormField label="Keputusan Akhir (Outcome)">
+								<FormField label="Keputusan Akhir">
 									<Select
 										value={field.state.value || "Nol"}
 										onValueChange={(val) =>
@@ -241,14 +241,14 @@ export function NolIssuanceForm({
 										<SelectContent>
 											<SelectItem value="Nol">
 												<div className="flex items-center gap-2 text-emerald-600">
-													<CheckCircle className="size-3.5" /> Diterbitkan Surat
-													NOL (Approved)
+													<CheckCircle className="size-3.5" /> Surat NOL
+													(Disetujui)
 												</div>
 											</SelectItem>
 											<SelectItem value="Rl">
 												<div className="flex items-center gap-2 text-amber-600">
-													<AlertTriangle className="size-3.5" /> Diterbitkan
-													Surat RL (Response Letter)
+													<AlertTriangle className="size-3.5" /> Surat RL
+													(Ditolak)
 												</div>
 											</SelectItem>
 										</SelectContent>
@@ -276,7 +276,7 @@ export function NolIssuanceForm({
 					{/* Masa Berlaku Surat */}
 					<div className="pt-2 border-t">
 						<Label className="text-xs font-semibold mb-2 block text-muted-foreground">
-							Masa Berlaku Surat Kesiapan Gas (NOL Validity)
+							Masa Berlaku Surat NOL
 						</Label>
 						<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 							<form.Field name="berlakuSejak">
@@ -316,7 +316,7 @@ export function NolIssuanceForm({
 				<CardHeader className="pb-3 flex flex-row items-center justify-between">
 					<div>
 						<CardTitle className="text-sm font-semibold">
-							2. Ketentuan Volume Gas yang Disetujui (Approved Terms)
+							2. Ketentuan Volume Gas yang Disetujui
 						</CardTitle>
 						<CardDescription className="text-xs">
 							Volume pasokan terjamin per periode kontrak (MMBTUD)

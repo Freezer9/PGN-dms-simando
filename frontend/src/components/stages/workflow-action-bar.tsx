@@ -90,12 +90,14 @@ export function WorkflowActionBar({
 		"/api/companies/{id}/workflow/rework",
 		{
 			onSuccess: () => {
-				toast.success("Proses dikembalikan ke Rework!");
+				toast.success("Proses dikembalikan untuk perbaikan (rework)!");
 				setActiveModal(null);
 				invalidateCompany();
 			},
 			onError: (error) => {
-				toast.error(error.detail || error.title || "Gagal melakukan Rework");
+				toast.error(
+					error.detail || error.title || "Gagal mengembalikan berkas",
+				);
 			},
 		},
 	);
@@ -106,7 +108,7 @@ export function WorkflowActionBar({
 		"/api/companies/{id}/workflow/discontinue",
 		{
 			onSuccess: () => {
-				toast.warning("Proses resmi dihentikan (Discontinued)!");
+				toast.warning("Proses dihentikan!");
 				setActiveModal(null);
 				invalidateCompany();
 			},
@@ -159,7 +161,7 @@ export function WorkflowActionBar({
 
 			if (activeModal === "revise" && currentStepId) {
 				if (!commentTrimmed) {
-					toast.error("Wajib mengisi catatan/alasan revisi!");
+					toast.error("Catatan revisi wajib diisi!");
 					return;
 				}
 				await actOnStepMutation.mutateAsync({
@@ -171,7 +173,7 @@ export function WorkflowActionBar({
 
 			if (activeModal === "reject" && currentStepId) {
 				if (!commentTrimmed) {
-					toast.error("Wajib mengisi alasan penolakan!");
+					toast.error("Alasan penolakan wajib diisi!");
 					return;
 				}
 				await actOnStepMutation.mutateAsync({
@@ -191,7 +193,7 @@ export function WorkflowActionBar({
 
 			if (activeModal === "discontinue") {
 				if (!commentTrimmed) {
-					toast.error("Wajib memberikan alasan penghentian proses!");
+					toast.error("Alasan penghentian proses wajib diisi!");
 					return;
 				}
 				await discontinueMutation.mutateAsync({
@@ -240,7 +242,7 @@ export function WorkflowActionBar({
 					<div>
 						<div className="flex items-center gap-2">
 							<span className="text-xs font-bold text-amber-900 dark:text-amber-300">
-								Aksi Alur Kerja (Workflow Gate) - Tindakan Diperlukan
+								Alur Persetujuan: Tindakan Diperlukan
 							</span>
 							{company.currentStepKind && (
 								<Badge
@@ -371,19 +373,19 @@ export function WorkflowActionBar({
 							{activeModal === "rework" && (
 								<>
 									<Undo2 className="size-4 text-amber-600" />
-									Kembalikan ke Rework (Perbaikan Sales)
+									Kembalikan untuk Perbaikan (Rework)
 								</>
 							)}
 							{activeModal === "discontinue" && (
 								<>
 									<AlertOctagon className="size-4 text-destructive" />
-									Hentikan Proses Pelanggan (Discontinue)
+									Hentikan Proses (Discontinue)
 								</>
 							)}
 						</DialogTitle>
 						<DialogDescription className="text-xs">
 							{activeModal === "submit" &&
-								"Pengajuan ini akan mengunci berkas dari penyuntingan lebih lanjut dan memulai alur persetujuan ke Head of Area. Pastikan data teknis dan dokumen prasyarat telah valid."}
+								"Pengajuan ini akan mengunci berkas dari penyuntingan lebih lanjut dan memulai alur persetujuan ke Area Head. Pastikan data teknis dan dokumen prasyarat telah valid."}
 							{activeModal === "approve" &&
 								"Apakah Anda yakin ingin menyetujui langkah evaluasi ini dan melanjutkannya ke tahap berikutnya?"}
 							{activeModal === "revise" &&
@@ -411,8 +413,8 @@ export function WorkflowActionBar({
 									const error = field.state.meta.errors[0]?.message;
 									const labelText =
 										activeModal === "approve"
-											? "Catatan Tambahan (Opsional)"
-											: "Catatan / Alasan Keputusan";
+											? "Catatan Tambahan"
+											: "Alasan Keputusan";
 
 									return (
 										<FormField

@@ -10,6 +10,7 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { useAuth } from "@/lib/auth";
+import { formatRoles } from "@/lib/roles";
 
 export const Route = createFileRoute("/access-denied")({
 	component: AccessDeniedPage,
@@ -42,13 +43,13 @@ function AccessDeniedPage() {
 						</span>
 					</div>
 					<div className="flex justify-between">
-						<span className="text-muted-foreground">Peran (Role):</span>
+						<span className="text-muted-foreground">Peran:</span>
 						<span className="font-medium text-foreground">
-							{user?.roles?.join(", ") || "Tidak ada"}
+							{formatRoles(user?.roles) || "Tidak ada"}
 						</span>
 					</div>
 					<div className="flex justify-between">
-						<span className="text-muted-foreground">Scope Wilayah:</span>
+						<span className="text-muted-foreground">Cakupan Wilayah:</span>
 						<span className="font-medium text-foreground">
 							{user?.scope || "-"}
 						</span>

@@ -24,6 +24,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { useAuth } from "@/lib/auth";
+import { ALL_ROLES, formatRole } from "@/lib/roles";
 import { type AssignRoleFormValues, assignRoleSchema } from "@/lib/schemas";
 
 interface EditRolesDialogProps {
@@ -32,19 +33,6 @@ interface EditRolesDialogProps {
 	onOpenChange: (open: boolean) => void;
 	onSuccess: () => void;
 }
-
-const ALL_ROLES: {
-	value: AppRole;
-	label: string;
-	scopeType: "area" | "region" | "none";
-}[] = [
-	{ value: "SalesArea", label: "Sales Area", scopeType: "area" },
-	{ value: "AreaHead", label: "Area Head", scopeType: "area" },
-	{ value: "Reviewer", label: "Reviewer", scopeType: "region" },
-	{ value: "RegionalAdmin", label: "Regional Admin", scopeType: "region" },
-	{ value: "DivisionHead", label: "Division Head", scopeType: "region" },
-	{ value: "SystemAdmin", label: "System Admin", scopeType: "none" },
-];
 
 export function EditRolesDialog({
 	user,
@@ -227,7 +215,8 @@ export function EditRolesDialog({
 							) : (
 								user.roles.map((r, idx) => {
 									const assignmentId = user.assignmentIds?.[idx];
-									const roleKey = assignmentId || `${r.role}-${r.scopeLabel}`;
+									const roleKey =
+										assignmentId || `${formatRole(r.role)}-${r.scopeLabel}`;
 									return (
 										<div
 											key={roleKey}
@@ -237,7 +226,7 @@ export function EditRolesDialog({
 												<Shield className="h-3.5 w-3.5 text-primary shrink-0" />
 												<div>
 													<span className="font-semibold text-foreground">
-														{r.role}
+														{formatRole(r.role)}
 													</span>
 													<span className="text-muted-foreground mx-1.5">
 														·
@@ -319,7 +308,7 @@ export function EditRolesDialog({
 									{(field) => {
 										const fieldError = field.state.meta.errors[0]?.message;
 										return (
-											<FormField label="Wilayah (Region)" error={fieldError}>
+											<FormField label="Wilayah (SOR)" error={fieldError}>
 												<Combobox
 													id={field.name}
 													value={field.state.value || ""}

@@ -159,7 +159,7 @@ function MeterSizesPage() {
 
 	return (
 		<MasterDataTable<MeterSizeDto, MeterSizeFormData>
-			title="Ukuran Meter & Laju Alir (Meter Sizes)"
+			title="Ukuran Meter & Laju Alir"
 			description="Daftar kapasitas G-Size meter gas untuk penentuan batas laju alir (Qmax / Qnom) pada stasiun pengukur."
 			icon={Gauge}
 			data={data || []}

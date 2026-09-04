@@ -26,7 +26,7 @@ function CountriesPage() {
 	const columns: ColumnDef<CountryDto>[] = [
 		{
 			key: "isoCode",
-			header: "Kode Negara (ISO)",
+			header: "Kode ISO",
 			width: "w-52",
 			render: (row) => (
 				<span className="font-mono font-semibold text-foreground">
@@ -46,7 +46,7 @@ function CountriesPage() {
 	const fields: FieldDef<CountryFormData>[] = [
 		{
 			name: "isoCode",
-			label: "Kode Negara (2-3 Karakter)",
+			label: "Kode ISO Negara",
 			type: "text",
 			required: true,
 			placeholder: "contoh: ID",

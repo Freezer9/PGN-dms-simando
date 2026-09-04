@@ -87,6 +87,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getStageInfo, getStatusLabel } from "@/lib/directory-utils";
+import { formatRole } from "@/lib/roles";
 import {
 	type SaveContactFormValues,
 	type SavePlottingFormValues,
@@ -352,7 +353,7 @@ function CompanyRecordHubPage() {
 		"/api/companies/{id}/promote-to-prospek",
 		{
 			onSuccess: () => {
-				toast.success("Berhasil Dipromosikan ke Tahap 3 (Prospek)!");
+				toast.success("Berhasil dipromosikan ke Tahap 3 (Prospek)!");
 				queryClient.invalidateQueries({
 					queryKey: [
 						"get",
@@ -1070,10 +1071,10 @@ function CompanyRecordHubPage() {
 																				Belum Ditetapkan
 																			</SelectItem>
 																			<SelectItem value="JalurExisting">
-																				Jalur Existing (Dekat Pipa Eksisting)
+																				Jalur Existing
 																			</SelectItem>
 																			<SelectItem value="Pengembangan">
-																				Pengembangan (Perlu Jaringan Baru)
+																				Pengembangan Jaringan
 																			</SelectItem>
 																		</SelectContent>
 																	</Select>
@@ -1618,7 +1619,7 @@ function CompanyRecordHubPage() {
 													{entry.roleLabel && (
 														<span className="opacity-80">
 															{" "}
-															({entry.roleLabel})
+															({formatRole(entry.roleLabel)})
 														</span>
 													)}
 												</div>
@@ -1628,7 +1629,7 @@ function CompanyRecordHubPage() {
 														variant="outline"
 														className="text-[10px] py-0 h-4 px-1.5 font-mono bg-background"
 													>
-														{entry.toStatus}
+														{getStatusLabel(entry.toStatus).label}
 													</Badge>
 												</div>
 												{entry.comment && (
@@ -1697,7 +1698,7 @@ function CompanyRecordHubPage() {
 									{(field) => {
 										const error = field.state.meta.errors[0]?.message;
 										return (
-											<FormField label="Jabatan / Posisi" error={error}>
+											<FormField label="Jabatan" error={error}>
 												<Input
 													id={field.name}
 													name={field.name}
@@ -1740,7 +1741,7 @@ function CompanyRecordHubPage() {
 									{(field) => {
 										const error = field.state.meta.errors[0]?.message;
 										return (
-											<FormField label="Nomor Telepon / HP" error={error}>
+											<FormField label="Nomor Telepon" error={error}>
 												<Input
 													id={field.name}
 													name={field.name}
@@ -1772,7 +1773,7 @@ function CompanyRecordHubPage() {
 												htmlFor="isPrimary"
 												className="text-xs font-medium cursor-pointer"
 											>
-												Jadikan sebagai Kontak Utama (Primary Contact)
+												Jadikan sebagai Kontak Utama
 											</Label>
 										</div>
 									)}

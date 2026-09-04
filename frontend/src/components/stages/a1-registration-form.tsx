@@ -520,7 +520,7 @@ export function A1RegistrationForm({
 						{/* Capex Awal */}
 						<form.Field name="capexAwal">
 							{(field) => (
-								<FormField label="Capex Awal / Estimasi (USD)">
+								<FormField label="Estimasi Capex (USD)">
 									<Input
 										type="number"
 										step="0.01"
@@ -536,7 +536,7 @@ export function A1RegistrationForm({
 
 						{/* Harga Nilai & Currency & Unit */}
 						<FormField
-							label="Tarif / Harga Jual Gas"
+							label="Harga Jual Gas"
 							className="sm:col-span-2 md:col-span-2"
 						>
 							<div className="flex items-center gap-2">
@@ -654,7 +654,7 @@ export function A1RegistrationForm({
 						{/* Produksi Utama */}
 						<form.Field name="produksiUtama">
 							{(field) => (
-								<FormField label="Produksi / Hasil Utama">
+								<FormField label="Hasil Produksi Utama">
 									<Input
 										value={field.state.value}
 										onChange={(e) => field.handleChange(e.target.value)}

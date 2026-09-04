@@ -33,21 +33,21 @@ function FunnelReportPage() {
 
 	return (
 		<ReportLayout
-			title="Laporan Corong Penjualan (Sales Funnel)"
+			title="Laporan Sales Funnel"
 			description="Analisis konversi perpindahan antar tahapan dari Direktori hingga Terbit Surat NOL."
 			exportEndpoint="/api/reports/export/funnel"
-			exportFileName="Laporan_Corong_Penjualan.xlsx"
+			exportFileName="Laporan_Sales_Funnel.xlsx"
 		>
 			{isLoading ? (
 				<div className="flex flex-col items-center justify-center min-h-[300px] gap-2">
 					<Loader2 className="size-8 animate-spin text-primary" />
 					<p className="text-sm text-muted-foreground">
-						Memuat data corong penjualan...
+						Memuat data sales funnel...
 					</p>
 				</div>
 			) : error || !report ? (
 				<div className="text-center py-10 text-destructive text-sm">
-					Gagal memuat data laporan corong penjualan.
+					Gagal memuat data laporan sales funnel.
 				</div>
 			) : (
 				<div className="space-y-6">
@@ -154,7 +154,7 @@ function FunnelReportPage() {
 					<Card className="shadow-xs">
 						<CardHeader className="pb-3">
 							<CardTitle className="text-base font-semibold">
-								Rincian Konversi & Waktu Proses (Turnaround Time)
+								Rincian Konversi & Waktu Proses (TAT)
 							</CardTitle>
 						</CardHeader>
 						<CardContent className="p-0">

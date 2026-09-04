@@ -94,7 +94,7 @@ function SignInPage() {
 						DMS Simando
 					</h1>
 					<p className="text-xs text-muted-foreground">
-						PT Perusahaan Gas Negara Tbk • Single Sign-On Portal
+						PT Perusahaan Gas Negara Tbk • Sistem Manajemen Dokumen
 					</p>
 				</div>
 

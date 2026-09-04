@@ -24,6 +24,7 @@ import {
 	SheetTitle,
 } from "@/components/ui/sheet";
 import { getStageInfo } from "@/lib/directory-utils";
+import { formatRole } from "@/lib/roles";
 
 interface TaskQuickPreviewDrawerProps {
 	task: TaskListItem | null;
@@ -85,7 +86,7 @@ export function TaskQuickPreviewDrawer({
 								Tugas / Langkah:
 							</span>
 							<Badge variant="outline" className="font-semibold text-primary">
-								{task.stepKind || "Pemeriksaan Berkas"}
+								{formatRole(task.stepKind) || "Pemeriksaan Berkas"}
 							</Badge>
 						</div>
 						<div className="flex items-center justify-between text-xs">
@@ -179,7 +180,7 @@ export function TaskQuickPreviewDrawer({
 							{/* Stage & Progress Info */}
 							<div className="space-y-1.5">
 								<h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-									Informasi Tahapan (Stage Gate)
+									Informasi Tahapan Pipeline
 								</h4>
 								<div className="p-3 rounded-lg border bg-card/60 space-y-2 text-xs">
 									<div className="flex items-center justify-between">
@@ -191,9 +192,7 @@ export function TaskQuickPreviewDrawer({
 										</span>
 									</div>
 									<div className="flex items-center justify-between">
-										<span className="text-muted-foreground">
-											Status Rekaman
-										</span>
+										<span className="text-muted-foreground">Status Berkas</span>
 										<Badge variant="secondary">{company.status}</Badge>
 									</div>
 								</div>

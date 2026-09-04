@@ -105,7 +105,7 @@ function ReferenceDocumentsPage() {
 		},
 		{
 			name: "version",
-			label: "Versi (Angka)",
+			label: "Nomor Versi",
 			type: "number",
 			required: true,
 			placeholder: "1",

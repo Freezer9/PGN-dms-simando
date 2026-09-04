@@ -60,14 +60,14 @@ function ReportsHubPage() {
 	const reports = [
 		{
 			id: "funnel",
-			title: "Corong Penjualan (Funnel)",
+			title: "Sales Funnel",
 			description:
 				"Analisis tingkat konversi per tahapan (Stage 1 s.d. 8) dan identifikasi hambatan penurunan berkas calon pelanggan gas.",
 			href: "/reports/funnel",
 			icon: BarChart3,
 			badge: "Stage Conversion",
 			exportUrl: "/api/reports/export/funnel",
-			exportName: "Laporan_Corong_Penjualan.xlsx",
+			exportName: "Laporan_Sales_Funnel.xlsx",
 		},
 		{
 			id: "ageing",
@@ -78,7 +78,7 @@ function ReportsHubPage() {
 			icon: Clock,
 			badge: "SLA Tracker",
 			exportUrl: "/api/reports/export/ageing",
-			exportName: "Laporan_Penuaan_Workflow.xlsx",
+			exportName: "Laporan_Ageing_Workflow.xlsx",
 		},
 		{
 			id: "gas-demand",
@@ -200,7 +200,7 @@ function ReportsHubPage() {
 									checked={includePii}
 									onCheckedChange={(checked) => setIncludePii(Boolean(checked))}
 								/>
-								<span>Sertakan Data Kontak Lengkap (Akses PII Berwenang)</span>
+								<span>Sertakan Data Kontak (Akses PII)</span>
 							</label>
 						)}
 					</div>

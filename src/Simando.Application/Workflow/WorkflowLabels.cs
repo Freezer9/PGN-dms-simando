@@ -12,11 +12,11 @@ public static class WorkflowLabels
     public static string StepKindLabel(WorkflowStepKind kind) => kind switch
     {
         WorkflowStepKind.AreaHead => "Area Head",
-        WorkflowStepKind.RegionalAdmin => "Admin Regional",
+        WorkflowStepKind.RegionalAdmin => "Regional Admin",
         WorkflowStepKind.Reviewer1 => "Reviewer 1",
         WorkflowStepKind.Reviewer2 => "Reviewer 2",
         WorkflowStepKind.Reviewer3 => "Reviewer 3",
-        WorkflowStepKind.DivisionHead => "Div. Head",
+        WorkflowStepKind.DivisionHead => "Division Head",
         _ => kind.ToString(),
     };
 

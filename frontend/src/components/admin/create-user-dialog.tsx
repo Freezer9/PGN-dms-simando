@@ -32,6 +32,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { useAuth } from "@/lib/auth";
+import { ALL_ROLES } from "@/lib/roles";
 import { type CreateUserFormValues, createUserSchema } from "@/lib/schemas";
 
 interface CreateUserDialogProps {
@@ -39,19 +40,6 @@ interface CreateUserDialogProps {
 	onOpenChange: (open: boolean) => void;
 	onSuccess: () => void;
 }
-
-const ALL_ROLES: {
-	value: AppRole;
-	label: string;
-	scopeType: "area" | "region" | "none";
-}[] = [
-	{ value: "SalesArea", label: "Sales Area", scopeType: "area" },
-	{ value: "AreaHead", label: "Area Head", scopeType: "area" },
-	{ value: "Reviewer", label: "Reviewer", scopeType: "region" },
-	{ value: "RegionalAdmin", label: "Regional Admin", scopeType: "region" },
-	{ value: "DivisionHead", label: "Division Head", scopeType: "region" },
-	{ value: "SystemAdmin", label: "System Admin", scopeType: "none" },
-];
 
 export function CreateUserDialog({
 	open,

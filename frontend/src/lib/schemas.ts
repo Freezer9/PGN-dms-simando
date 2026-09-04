@@ -237,10 +237,7 @@ export const createCompanySchema = z.object({
 	districtId: z.string().min(1, "Kecamatan wajib dipilih"),
 	villageId: z
 		.string()
-		.min(
-			1,
-			"Hierarki Lokasi Administratif (Kelurahan/Desa) wajib dipilih lengkap",
-		),
+		.min(1, "Lokasi administratif (Kelurahan/Desa) wajib dipilih lengkap"),
 	alamat: z.string().min(1, "Alamat lengkap wajib diisi"),
 	kodePos: z.string().optional(),
 	npwp: z.string().optional(),
@@ -284,7 +281,7 @@ export type SavePlottingFormValues = z.infer<typeof savePlottingSchema>;
 // --- Admin: User Creation Schema ---
 export const createUserSchema = z.object({
 	fullName: z.string().min(1, "Nama lengkap wajib diisi"),
-	username: z.string().min(1, "Nama pengguna (username) wajib diisi"),
+	username: z.string().min(1, "Nama pengguna wajib diisi"),
 	email: z
 		.string()
 		.email("Format email tidak valid")

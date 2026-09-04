@@ -15,6 +15,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { formatRole } from "@/lib/roles";
 
 export const Route = createFileRoute("/_auth/reports/ageing")({
 	component: AgeingReportPage,
@@ -96,7 +97,7 @@ function AgeingReportPage() {
 										<TableHead>Sektor Industri</TableHead>
 										<TableHead>Tahap Berjalan</TableHead>
 										<TableHead>Area / Regional</TableHead>
-										<TableHead>Menunggu di (Actor)</TableHead>
+										<TableHead>Menunggu Tindakan</TableHead>
 										<TableHead className="text-right">Menunggu Sejak</TableHead>
 										<TableHead className="text-right">Durasi Tunggu</TableHead>
 										<TableHead className="text-right">Aksi</TableHead>
@@ -139,7 +140,7 @@ function AgeingReportPage() {
 												</TableCell>
 												<TableCell>
 													<Badge variant="secondary" className="text-xs">
-														{r.stepKind || "Approval"}
+														{formatRole(r.stepKind) || "Division Head"}
 													</Badge>
 												</TableCell>
 												<TableCell className="text-xs">
@@ -152,7 +153,7 @@ function AgeingReportPage() {
 												</TableCell>
 												<TableCell>
 													<div className="font-medium text-xs text-foreground">
-														{r.actorLabel}
+														{formatRole(r.actorLabel)}
 													</div>
 												</TableCell>
 												<TableCell className="text-right text-xs text-muted-foreground">

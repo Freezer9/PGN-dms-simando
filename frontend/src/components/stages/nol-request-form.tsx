@@ -249,7 +249,7 @@ export function NolRequestForm({
 					</div>
 					<div>
 						<h3 className="text-sm font-semibold">
-							Formulir Permohonan Surat NOL (Notice of Letter)
+							Formulir Permohonan Surat NOL (No Objection Letter)
 						</h3>
 						<p className="text-xs text-muted-foreground">
 							Nota dinas permohonan, verifikasi syarat komersial, dan komitmen
@@ -328,7 +328,7 @@ export function NolRequestForm({
 										</SelectTrigger>
 										<SelectContent>
 											<SelectItem value="RegistrasiBaru">
-												Pelanggan Baru (Registrasi Baru)
+												Registrasi Baru
 											</SelectItem>
 											<SelectItem value="Amendemen">
 												Amendemen Kontrak
@@ -442,7 +442,7 @@ export function NolRequestForm({
 
 						<form.Field name="hargaNilai">
 							{(field) => (
-								<FormField label="Tarif / Harga Gas (USD/MMBTU)">
+								<FormField label="Harga Gas (USD/MMBTU)">
 									<Input
 										type="number"
 										step="0.01"
@@ -463,7 +463,7 @@ export function NolRequestForm({
 								<form.Field name="alasanKontrakBersyarat">
 									{(field) => (
 										<FormField
-											label="Alasan / Justifikasi Skema Bersyarat"
+											label="Justifikasi Skema Bersyarat"
 											className="space-y-1.5"
 										>
 											<Textarea
@@ -513,7 +513,7 @@ export function NolRequestForm({
 						{/* Biaya Extra */}
 						<form.Field name="biayaPenyambunganExtra">
 							{(field) => (
-								<FormField label="Biaya Tambahan / Extra (IDR)">
+								<FormField label="Biaya Tambahan (IDR)">
 									<Input
 										type="number"
 										value={field.state.value}

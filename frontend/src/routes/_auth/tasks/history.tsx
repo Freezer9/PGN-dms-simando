@@ -21,6 +21,7 @@ import { $api } from "@/api/client";
 import type { StatusEventAction, TaskHistoryItem } from "@/api/types";
 import { DataTable, IconButton, PageHeader } from "@/components/common";
 import { Badge } from "@/components/ui/badge";
+import { getStatusLabel } from "@/lib/directory-utils";
 
 const historySearchSchema = z.object({
 	page: z.number().default(1).optional(),
@@ -115,13 +116,13 @@ function TaskHistoryPage() {
 				},
 				cell: ({ row }) => (
 					<Badge variant="outline" className="text-[11px]">
-						{row.original.toStatus}
+						{getStatusLabel(row.original.toStatus).label}
 					</Badge>
 				),
 			},
 			{
 				accessorKey: "comment",
-				header: "Catatan / Alasan",
+				header: "Catatan Keputusan",
 				meta: {
 					headerClassName: "min-w-[310px]",
 					cellClassName: "min-w-[310px]",
@@ -192,7 +193,7 @@ function TaskHistoryPage() {
 		<div className="space-y-4">
 			{/* Page Header */}
 			<PageHeader
-				title="Log Riwayat Keputusan Workflow"
+				title="Riwayat Keputusan Workflow"
 				description="Daftar seluruh tindakan verifikasi dan keputusan yang telah Anda proses pada sistem."
 				actions={
 					<div className="text-xs text-muted-foreground">

@@ -826,7 +826,7 @@ function GeospatialMapPage() {
 
 							<div className="space-y-1 border-t pt-2">
 								<div className="text-muted-foreground text-[11px]">
-									Lokasi Administratif (4 Tingkat)
+									Lokasi Administratif
 								</div>
 								<div className="font-medium text-foreground text-xs leading-relaxed">
 									{[
