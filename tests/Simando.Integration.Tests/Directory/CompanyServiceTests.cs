@@ -256,7 +256,7 @@ public class CompanyServiceTests : IAsyncLifetime
 
         await using var verify = NewContext();
         var company = await verify.Companies.SingleAsync(c => c.Id == created.CompanyId);
-        company.CurrentStage.ShouldBe((byte)2);
+        company.CurrentStage.ShouldBe((byte)3);
     }
 
     private static CreateCompanyRequest NewRequest(SeedData seed) => new(

@@ -492,7 +492,21 @@ internal sealed class CompanyService(IDbContextFactory<SimandoDbContext> dbConte
 
         if (company.CurrentStage < 2)
         {
+            var fromStage = company.CurrentStage;
             company.CurrentStage = 2;
+            db.StatusEvents.Add(new StatusEvent
+            {
+                Id = Guid.NewGuid(),
+                CompanyId = company.Id,
+                ActorId = actorUserId,
+                FromStage = fromStage,
+                ToStage = 2,
+                FromStatus = company.Status,
+                ToStatus = company.Status,
+                Action = StatusEventAction.Save,
+                Comment = "Melengkapi data plotting (Tahap 2: Plotting)",
+                OccurredAt = DateTimeOffset.UtcNow
+            });
         }
         company.UpdatedAt = DateTimeOffset.UtcNow;
 
@@ -528,9 +542,23 @@ internal sealed class CompanyService(IDbContextFactory<SimandoDbContext> dbConte
             return StageEditResult.Rejected("Lengkapi data plotting (Sales Representative, Posisi Pelanggan, dan Kawasan) terlebih dahulu.");
         }
 
-        if (company.CurrentStage < 2)
+        if (company.CurrentStage < 3)
         {
-            company.CurrentStage = 2;
+            var fromStage = company.CurrentStage;
+            company.CurrentStage = 3;
+            db.StatusEvents.Add(new StatusEvent
+            {
+                Id = Guid.NewGuid(),
+                CompanyId = company.Id,
+                ActorId = actorUserId,
+                FromStage = fromStage,
+                ToStage = 3,
+                FromStatus = company.Status,
+                ToStatus = company.Status,
+                Action = StatusEventAction.Save,
+                Comment = "Promosi calon pelanggan menjadi prospek aktif (Tahap 3: Prospek)",
+                OccurredAt = DateTimeOffset.UtcNow
+            });
         }
         company.UpdatedAt = DateTimeOffset.UtcNow;
         await db.SaveChangesAsync(ct);
@@ -599,9 +627,23 @@ internal sealed class CompanyService(IDbContextFactory<SimandoDbContext> dbConte
 
         if (company.CurrentStage < 3)
         {
+            var fromStage = company.CurrentStage;
             company.CurrentStage = 3;
-            company.UpdatedAt = DateTimeOffset.UtcNow;
+            db.StatusEvents.Add(new StatusEvent
+            {
+                Id = Guid.NewGuid(),
+                CompanyId = company.Id,
+                ActorId = actorUserId,
+                FromStage = fromStage,
+                ToStage = 3,
+                FromStatus = company.Status,
+                ToStatus = company.Status,
+                Action = StatusEventAction.Save,
+                Comment = "Penambahan kontak pelanggan (Tahap 3: Prospek)",
+                OccurredAt = DateTimeOffset.UtcNow
+            });
         }
+        company.UpdatedAt = DateTimeOffset.UtcNow;
 
         await db.SaveChangesAsync(ct);
         return StageEditResult.Success();
@@ -652,9 +694,23 @@ internal sealed class CompanyService(IDbContextFactory<SimandoDbContext> dbConte
 
         if (company.CurrentStage < 3)
         {
+            var fromStage = company.CurrentStage;
             company.CurrentStage = 3;
-            company.UpdatedAt = DateTimeOffset.UtcNow;
+            db.StatusEvents.Add(new StatusEvent
+            {
+                Id = Guid.NewGuid(),
+                CompanyId = company.Id,
+                ActorId = actorUserId,
+                FromStage = fromStage,
+                ToStage = 3,
+                FromStatus = company.Status,
+                ToStatus = company.Status,
+                Action = StatusEventAction.Save,
+                Comment = "Pembaruan kontak pelanggan (Tahap 3: Prospek)",
+                OccurredAt = DateTimeOffset.UtcNow
+            });
         }
+        company.UpdatedAt = DateTimeOffset.UtcNow;
 
         await db.SaveChangesAsync(ct);
         return StageEditResult.Success();
@@ -934,7 +990,21 @@ internal sealed class CompanyService(IDbContextFactory<SimandoDbContext> dbConte
 
         if (company.CurrentStage < 4)
         {
+            var fromStage = company.CurrentStage;
             company.CurrentStage = 4;
+            db.StatusEvents.Add(new StatusEvent
+            {
+                Id = Guid.NewGuid(),
+                CompanyId = company.Id,
+                ActorId = actorUserId,
+                FromStage = fromStage,
+                ToStage = 4,
+                FromStatus = company.Status,
+                ToStatus = company.Status,
+                Action = StatusEventAction.Save,
+                Comment = "Pengisian survei lapangan KK0 (Tahap 4: Survei KK0)",
+                OccurredAt = DateTimeOffset.UtcNow
+            });
         }
         company.UpdatedAt = DateTimeOffset.UtcNow;
 
@@ -1137,7 +1207,24 @@ internal sealed class CompanyService(IDbContextFactory<SimandoDbContext> dbConte
             });
         }
 
-        if (company.CurrentStage < 5) company.CurrentStage = 5;
+        if (company.CurrentStage < 5)
+        {
+            var fromStage = company.CurrentStage;
+            company.CurrentStage = 5;
+            db.StatusEvents.Add(new StatusEvent
+            {
+                Id = Guid.NewGuid(),
+                CompanyId = company.Id,
+                ActorId = actorUserId,
+                FromStage = fromStage,
+                ToStage = 5,
+                FromStatus = company.Status,
+                ToStatus = company.Status,
+                Action = StatusEventAction.Save,
+                Comment = "Pengisian data registrasi A1 (Tahap 5: Registrasi A1)",
+                OccurredAt = DateTimeOffset.UtcNow
+            });
+        }
         company.UpdatedAt = DateTimeOffset.UtcNow;
 
         await db.SaveChangesAsync(ct);
@@ -1270,7 +1357,24 @@ internal sealed class CompanyService(IDbContextFactory<SimandoDbContext> dbConte
             });
         }
 
-        if (company.CurrentStage < 6) company.CurrentStage = 6;
+        if (company.CurrentStage < 6)
+        {
+            var fromStage = company.CurrentStage;
+            company.CurrentStage = 6;
+            db.StatusEvents.Add(new StatusEvent
+            {
+                Id = Guid.NewGuid(),
+                CompanyId = company.Id,
+                ActorId = actorUserId,
+                FromStage = fromStage,
+                ToStage = 6,
+                FromStatus = company.Status,
+                ToStatus = company.Status,
+                Action = StatusEventAction.Save,
+                Comment = "Penyusunan berkas permohonan NOL (Tahap 6: Permohonan NOL)",
+                OccurredAt = DateTimeOffset.UtcNow
+            });
+        }
         company.UpdatedAt = DateTimeOffset.UtcNow;
 
         await db.SaveChangesAsync(ct);
@@ -1369,7 +1473,24 @@ internal sealed class CompanyService(IDbContextFactory<SimandoDbContext> dbConte
             });
         }
 
-        if (company.CurrentStage < 7) company.CurrentStage = 7;
+        if (company.CurrentStage < 7)
+        {
+            var fromStage = company.CurrentStage;
+            company.CurrentStage = 7;
+            db.StatusEvents.Add(new StatusEvent
+            {
+                Id = Guid.NewGuid(),
+                CompanyId = company.Id,
+                ActorId = actorUserId,
+                FromStage = fromStage,
+                ToStage = 7,
+                FromStatus = company.Status,
+                ToStatus = company.Status,
+                Action = StatusEventAction.Save,
+                Comment = "Penyusunan evaluasi teknis & kelayakan (Tahap 7: Evaluasi)",
+                OccurredAt = DateTimeOffset.UtcNow
+            });
+        }
         company.UpdatedAt = DateTimeOffset.UtcNow;
 
         await db.SaveChangesAsync(ct);
@@ -1443,7 +1564,24 @@ internal sealed class CompanyService(IDbContextFactory<SimandoDbContext> dbConte
             });
         }
 
-        if (company.CurrentStage < 8) company.CurrentStage = 8;
+        if (company.CurrentStage < 8)
+        {
+            var fromStage = company.CurrentStage;
+            company.CurrentStage = 8;
+            db.StatusEvents.Add(new StatusEvent
+            {
+                Id = Guid.NewGuid(),
+                CompanyId = company.Id,
+                ActorId = actorUserId,
+                FromStage = fromStage,
+                ToStage = 8,
+                FromStatus = company.Status,
+                ToStatus = company.Status,
+                Action = StatusEventAction.Save,
+                Comment = "Penyusunan berkas penerbitan NOL / RL (Tahap 8: Penerbitan)",
+                OccurredAt = DateTimeOffset.UtcNow
+            });
+        }
         company.UpdatedAt = DateTimeOffset.UtcNow;
 
         await db.SaveChangesAsync(ct);

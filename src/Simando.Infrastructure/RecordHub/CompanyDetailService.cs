@@ -345,6 +345,7 @@ internal sealed class CompanyDetailService(
                 var roleLabel = e.Action switch
                 {
                     StatusEventAction.Create => "Sales Area",
+                    StatusEventAction.Save => e.ToStage >= 8 ? "Division Head" : e.ToStage == 7 ? "Regional Admin" : "Sales Area",
                     StatusEventAction.Submit => "Sales Area",
                     StatusEventAction.Rework => "Regional Admin",
                     StatusEventAction.Discontinue => "Regional Admin",
@@ -356,7 +357,8 @@ internal sealed class CompanyDetailService(
                 };
                 return new TimelineEntry(
                     e.Id, e.Action, e.ToStatus, roleLabel,
-                    actorNames.GetValueOrDefault(e.ActorId, ""), e.Comment, e.OccurredAt);
+                    actorNames.GetValueOrDefault(e.ActorId, ""), e.Comment, e.OccurredAt,
+                    e.FromStage, e.ToStage);
             })
             .ToList();
     }

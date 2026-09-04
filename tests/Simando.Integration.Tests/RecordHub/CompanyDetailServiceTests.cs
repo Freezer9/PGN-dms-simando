@@ -114,11 +114,15 @@ public class CompanyDetailServiceTests : IAsyncLifetime
         await workflow.ActAsync(areaHeadStep.Id, WorkflowAction.Tolak, "tidak sesuai", seed.AreaHeadUserId, seed.AreaHeadPermissions, new HashSet<Role> { Role.AreaHead });
 
         var detail = await detailService.GetDetailAsync(
-            seed.Company.Id, seed.RegionalAdminUserId, seed.RegionalAdminPermissions, new HashSet<Role> { Role.RegionalAdmin });
+            seed.Company.Id, seed.CreatorId, seed.CreatorPermissions, new HashSet<Role> { Role.SalesArea });
 
         detail!.Status.ShouldBe(RecordStatus.Rejected);
         detail.HolderLabel.ShouldBeNull();
         detail.CanAct.ShouldBeFalse();
+
+        var adminDetail = await detailService.GetDetailAsync(
+            seed.Company.Id, seed.RegionalAdminUserId, seed.RegionalAdminPermissions, new HashSet<Role> { Role.RegionalAdmin });
+        adminDetail!.CanAct.ShouldBeTrue();
     }
 
     [Fact(DisplayName = "An actor scoped to a different Area can view the record but cannot act")]

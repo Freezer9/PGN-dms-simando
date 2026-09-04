@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Shouldly;
 using Simando.Application.Directory;
+using Simando.Domain.Audit;
 using Simando.Domain.Directory;
 using Simando.Domain.Geography;
 using Simando.Domain.MasterData;
@@ -98,7 +99,11 @@ public class CompanyPlottingContactTests : IAsyncLifetime
         promoted.Succeeded.ShouldBeTrue();
 
         await using var verify = NewContext();
-        (await verify.Companies.SingleAsync(c => c.Id == seed.CompanyId)).CurrentStage.ShouldBe((byte)2);
+        (await verify.Companies.SingleAsync(c => c.Id == seed.CompanyId)).CurrentStage.ShouldBe((byte)3);
+
+        var events = await verify.StatusEvents.Where(e => e.CompanyId == seed.CompanyId).ToListAsync();
+        events.Any(e => e.Action == StatusEventAction.Save && e.ToStage == 2).ShouldBeTrue();
+        events.Any(e => e.Action == StatusEventAction.Save && e.ToStage == 3).ShouldBeTrue();
 
         await service.AddContactAsync(
             seed.CompanyId, new SaveContactRequest("Budi", "Manager", null, null, null, null, null, true),

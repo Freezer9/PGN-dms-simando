@@ -7940,6 +7940,10 @@ export interface components {
             comment: null | string;
             /** Format: date-time */
             occurredAt: string;
+            /** Format: int32 */
+            fromStage?: number | null;
+            /** Format: int32 */
+            toStage?: number | null;
         };
         /** @enum {unknown} */
         UnitDimension: "Mass" | "Volume" | "Energy" | "Power" | "Length" | "Area" | "Pressure" | "Flow" | "Ratio";

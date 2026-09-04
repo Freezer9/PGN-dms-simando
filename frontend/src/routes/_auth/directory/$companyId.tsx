@@ -5,6 +5,10 @@ import {
 	Activity,
 	AlertCircle,
 	ArrowLeft,
+	ArrowRight,
+	Award,
+	Ban,
+	Check,
 	DollarSign,
 	Edit2,
 	Flame,
@@ -13,10 +17,15 @@ import {
 	MapPin,
 	Paperclip,
 	Plus,
+	RotateCcw,
 	Save,
+	Send,
+	ShieldAlert,
 	Star,
 	Trash2,
 	UserCheck,
+	Wrench,
+	X,
 } from "lucide-react";
 import * as React from "react";
 import { toast } from "sonner";
@@ -90,6 +99,7 @@ import {
 	getStageInfo,
 	getStatusLabel,
 	getTimelineActionInfo,
+	type TimelineActionInfo,
 } from "@/lib/directory-utils";
 import { formatRole } from "@/lib/roles";
 import {
@@ -99,6 +109,42 @@ import {
 	savePlottingSchema,
 } from "@/lib/schemas";
 import { evaluateStageGates } from "@/lib/stage-gates";
+import { cn } from "@/lib/utils";
+
+function TimelineNodeIcon({
+	name,
+	className,
+}: {
+	name: TimelineActionInfo["iconName"];
+	className?: string;
+}) {
+	switch (name) {
+		case "Plus":
+			return <Plus className={className} strokeWidth={2.2} />;
+		case "ArrowRight":
+			return <ArrowRight className={className} strokeWidth={2.2} />;
+		case "Send":
+			return <Send className={className} strokeWidth={2.2} />;
+		case "Check":
+			return <Check className={className} strokeWidth={2.5} />;
+		case "RotateCcw":
+			return <RotateCcw className={className} strokeWidth={2.2} />;
+		case "X":
+			return <X className={className} strokeWidth={2.5} />;
+		case "Wrench":
+			return <Wrench className={className} strokeWidth={2.2} />;
+		case "Ban":
+			return <Ban className={className} strokeWidth={2.2} />;
+		case "Award":
+			return <Award className={className} strokeWidth={2.2} />;
+		case "UserCheck":
+			return <UserCheck className={className} strokeWidth={2.2} />;
+		case "ShieldAlert":
+			return <ShieldAlert className={className} strokeWidth={2.2} />;
+		default:
+			return <Activity className={className} strokeWidth={2.2} />;
+	}
+}
 
 export const Route = createFileRoute("/_auth/directory/$companyId")({
 	component: CompanyRecordHubPage,
@@ -253,6 +299,20 @@ function CompanyRecordHubPage() {
 						{ params: { path: { id: companyId } } },
 					],
 				});
+				queryClient.invalidateQueries({
+					queryKey: [
+						"get",
+						"/api/companies/{id}",
+						{ params: { path: { id: companyId } } },
+					],
+				});
+				queryClient.invalidateQueries({
+					queryKey: [
+						"get",
+						"/api/companies/{id}/timeline",
+						{ params: { path: { id: companyId } } },
+					],
+				});
 			},
 			onError: (err) => {
 				toast.error("Gagal menambah kontak", { description: err.detail });
@@ -271,6 +331,20 @@ function CompanyRecordHubPage() {
 					queryKey: [
 						"get",
 						"/api/companies/{id}/contacts",
+						{ params: { path: { id: companyId } } },
+					],
+				});
+				queryClient.invalidateQueries({
+					queryKey: [
+						"get",
+						"/api/companies/{id}",
+						{ params: { path: { id: companyId } } },
+					],
+				});
+				queryClient.invalidateQueries({
+					queryKey: [
+						"get",
+						"/api/companies/{id}/timeline",
 						{ params: { path: { id: companyId } } },
 					],
 				});
@@ -319,6 +393,13 @@ function CompanyRecordHubPage() {
 					queryKey: [
 						"get",
 						"/api/companies/{id}/plotting",
+						{ params: { path: { id: companyId } } },
+					],
+				});
+				queryClient.invalidateQueries({
+					queryKey: [
+						"get",
+						"/api/companies/{id}/timeline",
 						{ params: { path: { id: companyId } } },
 					],
 				});
@@ -1404,6 +1485,13 @@ function CompanyRecordHubPage() {
 												{ params: { path: { id: company.id } } },
 											],
 										});
+										queryClient.invalidateQueries({
+											queryKey: [
+												"get",
+												"/api/companies/{id}/timeline",
+												{ params: { path: { id: company.id } } },
+											],
+										});
 									}}
 								/>
 							)}
@@ -1437,6 +1525,13 @@ function CompanyRecordHubPage() {
 											queryKey: [
 												"get",
 												"/api/companies/{id}",
+												{ params: { path: { id: company.id } } },
+											],
+										});
+										queryClient.invalidateQueries({
+											queryKey: [
+												"get",
+												"/api/companies/{id}/timeline",
 												{ params: { path: { id: company.id } } },
 											],
 										});
@@ -1476,6 +1571,13 @@ function CompanyRecordHubPage() {
 												{ params: { path: { id: company.id } } },
 											],
 										});
+										queryClient.invalidateQueries({
+											queryKey: [
+												"get",
+												"/api/companies/{id}/timeline",
+												{ params: { path: { id: company.id } } },
+											],
+										});
 									}}
 								/>
 							)}
@@ -1508,6 +1610,13 @@ function CompanyRecordHubPage() {
 												{ params: { path: { id: company.id } } },
 											],
 										});
+										queryClient.invalidateQueries({
+											queryKey: [
+												"get",
+												"/api/companies/{id}/timeline",
+												{ params: { path: { id: company.id } } },
+											],
+										});
 									}}
 								/>
 							)}
@@ -1537,6 +1646,13 @@ function CompanyRecordHubPage() {
 											queryKey: [
 												"get",
 												"/api/companies/{id}",
+												{ params: { path: { id: company.id } } },
+											],
+										});
+										queryClient.invalidateQueries({
+											queryKey: [
+												"get",
+												"/api/companies/{id}/timeline",
 												{ params: { path: { id: company.id } } },
 											],
 										});
@@ -1594,59 +1710,108 @@ function CompanyRecordHubPage() {
 						</CardHeader>
 						<CardContent className="p-4">
 							{timeline && timeline.length > 0 ? (
-								<div className="space-y-4 max-h-[calc(100vh-14rem)] overflow-y-auto pr-1 relative before:absolute before:inset-0 before:left-2 before:w-0.5 before:bg-border">
-									{timeline.map((entry) => (
-										<div
-											key={entry.id}
-											className="flex items-start gap-3 relative pl-6 text-xs"
-										>
-											<div className="absolute left-0.5 top-1.5 size-3 rounded-full bg-primary border-2 border-background" />
-											<div className="space-y-1 bg-muted/30 hover:bg-muted/50 transition-colors p-2.5 rounded-lg border border-border/60 flex-1">
-												<div className="flex items-start justify-between gap-1">
-													<span
-														className={`px-1.5 py-0.5 rounded text-[10px] font-medium border ${getTimelineActionInfo(entry.action).badgeClass}`}
-													>
-														{getTimelineActionInfo(entry.action).label}
-													</span>
-													<span className="text-[10px] text-muted-foreground font-mono shrink-0 whitespace-nowrap">
-														{new Date(entry.occurredAt).toLocaleDateString(
-															"id-ID",
-															{
-																day: "numeric",
-																month: "short",
-																hour: "2-digit",
-																minute: "2-digit",
-															},
-														)}
-													</span>
+								<ol className="relative space-y-3 max-h-[calc(100vh-14rem)] overflow-y-auto px-2 py-1">
+									{timeline.map((entry, index) => {
+										const actionInfo = getTimelineActionInfo(entry.action);
+										const isLast = index === timeline.length - 1;
+
+										return (
+											<li
+												key={entry.id}
+												className="relative flex items-start gap-x-3 text-xs"
+											>
+												{/* Continuous vertical connector line */}
+												<div
+													aria-hidden="true"
+													className={cn(
+														"absolute top-0 left-0 flex w-6 justify-center",
+														isLast ? "h-6" : "-bottom-3",
+													)}
+												>
+													<div className="w-0.5 bg-border/80" />
 												</div>
-												<div className="text-[11px] text-muted-foreground">
-													<span>{entry.actorName}</span>
-													{entry.roleLabel && (
-														<span className="opacity-80">
-															{" "}
-															({formatRole(entry.roleLabel)})
+
+												{/* Action Icon Badge Node */}
+												<div
+													className={cn(
+														"relative flex size-6 shrink-0 items-center justify-center rounded-full border shadow-2xs z-10 bg-background",
+														actionInfo.nodeClass,
+													)}
+													aria-hidden="true"
+												>
+													<TimelineNodeIcon
+														name={actionInfo.iconName}
+														className="size-3"
+													/>
+												</div>
+
+												{/* Activity Entry Card */}
+												<div className="min-w-0 flex-1 space-y-1.5 bg-muted/30 hover:bg-muted/50 transition-colors p-2.5 rounded-lg border border-border/60 shadow-2xs">
+													<div className="flex items-center justify-between gap-1.5">
+														<span
+															className={`px-1.5 py-0.5 rounded text-[10px] font-medium border leading-tight ${actionInfo.badgeClass}`}
+														>
+															{actionInfo.label}
 														</span>
+														<span className="text-[10px] text-muted-foreground font-mono shrink-0 whitespace-nowrap">
+															{new Date(entry.occurredAt).toLocaleDateString(
+																"id-ID",
+																{
+																	day: "numeric",
+																	month: "short",
+																	hour: "2-digit",
+																	minute: "2-digit",
+																},
+															)}
+														</span>
+													</div>
+													<div className="text-[11px] text-muted-foreground">
+														<span className="font-medium text-foreground">
+															{entry.actorName}
+														</span>
+														{entry.roleLabel && (
+															<span className="opacity-80">
+																{" "}
+																({formatRole(entry.roleLabel)})
+															</span>
+														)}
+													</div>
+													<div className="text-[11px] text-muted-foreground pt-0.5 flex items-center gap-1.5 flex-wrap">
+														<span>Status:</span>
+														<Badge
+															variant="outline"
+															className="text-[10px] py-0 h-4 px-1.5 font-mono bg-background"
+														>
+															{getStatusLabel(entry.toStatus).label}
+														</Badge>
+														{entry.fromStage != null &&
+														entry.toStage != null &&
+														entry.fromStage !== entry.toStage ? (
+															<Badge
+																variant="secondary"
+																className="text-[10px] py-0 h-4 px-1.5 font-mono"
+															>
+																Tahap {entry.fromStage} → {entry.toStage}
+															</Badge>
+														) : entry.toStage != null ? (
+															<Badge
+																variant="secondary"
+																className="text-[10px] py-0 h-4 px-1.5 font-mono"
+															>
+																Tahap {entry.toStage}
+															</Badge>
+														) : null}
+													</div>
+													{entry.comment && (
+														<div className="text-[11px] text-muted-foreground/90 mt-1.5 p-1.5 rounded bg-muted/40 border-l-2 border-primary/40 italic">
+															"{entry.comment}"
+														</div>
 													)}
 												</div>
-												<div className="text-[11px] text-muted-foreground pt-0.5 flex items-center gap-1.5">
-													<span>Status:</span>
-													<Badge
-														variant="outline"
-														className="text-[10px] py-0 h-4 px-1.5 font-mono bg-background"
-													>
-														{getStatusLabel(entry.toStatus).label}
-													</Badge>
-												</div>
-												{entry.comment && (
-													<p className="text-[11px] text-muted-foreground/90 pt-1 italic border-t border-border/50 mt-1">
-														"{entry.comment}"
-													</p>
-												)}
-											</div>
-										</div>
-									))}
-								</div>
+											</li>
+										);
+									})}
+								</ol>
 							) : (
 								<div className="text-center py-8 text-xs text-muted-foreground">
 									Belum ada riwayat aktivitas pada berkas ini.
