@@ -28,22 +28,22 @@ export function DashboardMapPreview() {
 
 	const validPins = React.useMemo(() => {
 		if (!pinsData) return [];
-		return pinsData
-			.filter(
-				(p) =>
-					typeof p.latitude === "number" && typeof p.longitude === "number",
-			)
-			.slice(0, 50);
+		return pinsData.filter(
+			(p) => typeof p.latitude === "number" && typeof p.longitude === "number",
+		);
 	}, [pinsData]);
 
 	const defaultCenter: [number, number] = React.useMemo(() => {
 		if (validPins.length > 0) {
-			return [
-				validPins[0].longitude as number,
-				validPins[0].latitude as number,
-			];
+			const avgLng =
+				validPins.reduce((sum, p) => sum + (p.longitude as number), 0) /
+				validPins.length;
+			const avgLat =
+				validPins.reduce((sum, p) => sum + (p.latitude as number), 0) /
+				validPins.length;
+			return [avgLng, avgLat];
 		}
-		return [106.8456, -6.2088]; // Jakarta center default
+		return [108.5, -6.8];
 	}, [validPins]);
 
 	return (
@@ -68,7 +68,7 @@ export function DashboardMapPreview() {
 				<div className="relative">
 					<Map
 						center={defaultCenter}
-						zoom={10}
+						zoom={6}
 						className="h-[260px] w-full rounded-none border-t border-b-0"
 					>
 						<MapControls />
@@ -102,17 +102,32 @@ export function DashboardMapPreview() {
 					</Map>
 					<div className="absolute bottom-2 left-2 z-10 flex flex-wrap items-center gap-2 bg-background/90 backdrop-blur-xs px-2.5 py-1 rounded-md border text-[11px] font-medium shadow-xs">
 						<span className="flex items-center gap-1">
-							<span className="size-2 rounded-full bg-[#64748b]" /> Direktori
+							<span className="size-2 rounded-full bg-[#64748b]" /> T1:
+							Direktori
 						</span>
 						<span className="flex items-center gap-1">
-							<span className="size-2 rounded-full bg-[#10b981]" /> Survei (KK0)
+							<span className="size-2 rounded-full bg-[#3b82f6]" /> T2: Plotting
 						</span>
 						<span className="flex items-center gap-1">
-							<span className="size-2 rounded-full bg-[#f59e0b]" /> Registrasi
-							A1
+							<span className="size-2 rounded-full bg-[#0284c7]" /> T3: Prospek
 						</span>
 						<span className="flex items-center gap-1">
-							<span className="size-2 rounded-full bg-[#22c55e]" /> Terbit NOL
+							<span className="size-2 rounded-full bg-[#10b981]" /> T4: Survei
+						</span>
+						<span className="flex items-center gap-1">
+							<span className="size-2 rounded-full bg-[#f59e0b]" /> T5:
+							Registrasi
+						</span>
+						<span className="flex items-center gap-1">
+							<span className="size-2 rounded-full bg-[#f97316]" /> T6:
+							Permohonan
+						</span>
+						<span className="flex items-center gap-1">
+							<span className="size-2 rounded-full bg-[#a855f7]" /> T7: Evaluasi
+						</span>
+						<span className="flex items-center gap-1">
+							<span className="size-2 rounded-full bg-[#22c55e]" /> T8: Terbit
+							NOL
 						</span>
 					</div>
 				</div>

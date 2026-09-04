@@ -58,22 +58,81 @@ const STAGE_PIN_COLORS: Record<number, string> = {
 	8: "#22c55e", // Green
 };
 
+const INDONESIA_CENTER: [number, number] = [118.0149, -2.5489];
+const INDONESIA_ZOOM = 5;
+
 function MapViewController({
-	center,
-	zoom,
+	pins,
+	selectedProvince,
+	selectedRegency,
+	selectedDistrict,
+	selectedVillage,
 }: {
-	center: [number, number];
-	zoom: number;
+	pins: CompanyMapPinDto[];
+	selectedProvince: string;
+	selectedRegency: string;
+	selectedDistrict: string;
+	selectedVillage: string;
 }) {
 	const { map } = useMap();
+	const hasFilter =
+		selectedProvince !== "ALL" ||
+		selectedRegency !== "ALL" ||
+		selectedDistrict !== "ALL" ||
+		selectedVillage !== "ALL";
+
 	React.useEffect(() => {
 		if (!map) return;
+
+		// When no pins match the selected filter, zoom out to Indonesia overview
+		// instead of erroneously zooming into Jakarta
+		if (pins.length === 0) {
+			map.flyTo({
+				center: INDONESIA_CENTER,
+				zoom: INDONESIA_ZOOM,
+				duration: 800,
+			});
+			return;
+		}
+
+		// When all filters are reset, show national hub overview
+		if (!hasFilter) {
+			map.flyTo({
+				center: [110.0, -5.5],
+				zoom: 5.5,
+				duration: 800,
+			});
+			return;
+		}
+
+		// Calculate centroid coordinates of matching pins
+		const avgLng =
+			pins.reduce((sum, p) => sum + Number(p.longitude), 0) / pins.length;
+		const avgLat =
+			pins.reduce((sum, p) => sum + Number(p.latitude), 0) / pins.length;
+
+		let zoom = 7;
+		if (selectedVillage !== "ALL") zoom = 15;
+		else if (selectedDistrict !== "ALL") zoom = 13;
+		else if (selectedRegency !== "ALL") zoom = 11;
+		else if (selectedProvince !== "ALL") zoom = 8;
+		else if (pins.length === 1) zoom = 14;
+
 		map.flyTo({
-			center,
+			center: [avgLng, avgLat],
 			zoom,
 			duration: 800,
 		});
-	}, [map, center, zoom]);
+	}, [
+		map,
+		pins,
+		hasFilter,
+		selectedProvince,
+		selectedRegency,
+		selectedDistrict,
+		selectedVillage,
+	]);
+
 	return null;
 }
 
@@ -271,27 +330,6 @@ function GeospatialMapPage() {
 		Boolean(searchTerm),
 	].filter(Boolean).length;
 
-	const mapCenter: [number, number] = React.useMemo(() => {
-		if (filteredPins.length > 0) {
-			const first = filteredPins[0];
-			if (
-				typeof first.longitude === "number" &&
-				typeof first.latitude === "number"
-			) {
-				return [first.longitude, first.latitude];
-			}
-		}
-		return [106.8456, -6.2088]; // Jakarta center default
-	}, [filteredPins]);
-
-	const mapZoom = React.useMemo(() => {
-		if (selectedVillage !== "ALL") return 15;
-		if (selectedDistrict !== "ALL") return 13;
-		if (selectedRegency !== "ALL") return 11;
-		if (selectedProvince !== "ALL") return 8;
-		return 10;
-	}, [selectedProvince, selectedRegency, selectedDistrict, selectedVillage]);
-
 	return (
 		<div className="relative h-[calc(100vh-8rem)] w-full flex flex-col overflow-hidden rounded-lg border shadow-xs">
 			{/* Top Header Bar */}
@@ -357,12 +395,18 @@ function GeospatialMapPage() {
 				) : null}
 
 				<Map
-					center={mapCenter}
-					zoom={10}
+					center={INDONESIA_CENTER}
+					zoom={INDONESIA_ZOOM}
 					className="h-full w-full rounded-none border-0"
 				>
 					<MapControls />
-					<MapViewController center={mapCenter} zoom={mapZoom} />
+					<MapViewController
+						pins={filteredPins}
+						selectedProvince={selectedProvince}
+						selectedRegency={selectedRegency}
+						selectedDistrict={selectedDistrict}
+						selectedVillage={selectedVillage}
+					/>
 					{filteredPins.map((item) => {
 						const stageNum = Number(item.currentStage);
 						const stageColor = STAGE_PIN_COLORS[stageNum] || "#3b82f6";
@@ -389,12 +433,10 @@ function GeospatialMapPage() {
 							>
 								<MarkerContent>
 									<div
-										className="size-5 rounded-full border-2 border-white shadow-md flex items-center justify-center cursor-pointer transition-transform hover:scale-125"
+										className="size-4 rounded-full border-2 border-white shadow-xs cursor-pointer transition-transform hover:scale-125"
 										style={{ backgroundColor: stageColor }}
 										title={`${item.namaPerusahaan} (${stage.shortName})`}
-									>
-										<div className="size-1.5 rounded-full bg-white" />
-									</div>
+									/>
 								</MarkerContent>
 								<MarkerPopup>
 									<div className="space-y-1.5 text-xs min-w-[220px]">
