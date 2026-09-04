@@ -26,6 +26,8 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { useOptionalAuth } from "@/lib/auth";
+import { formatRole } from "@/lib/roles";
 import {
 	type WorkflowActionBarFormValues,
 	workflowActionBarSchema,
@@ -214,13 +216,24 @@ export function WorkflowActionBar({
 	}, [activeModal, form]);
 
 	// Determine available actions
+	const auth = useOptionalAuth();
+	const user = auth?.user;
+
 	const canSubmitWorkflow = company.canSubmit;
 	const canAct = company.canAct && !!currentStepId;
-	const canRework =
-		company.status !== "Draft" &&
-		company.status !== "Discontinued" &&
-		company.canAct;
-	const canDiscontinue = company.status !== "Discontinued";
+	const canRework = company.status === "Rejected" && company.canAct;
+	const canDiscontinue =
+		(company.status === "Draft" &&
+			(company.canSubmit ||
+				(user
+					? user.id === company.createdBy ||
+						auth?.hasCapability("EditStages1To3") ||
+						auth?.hasCapability("SoftDeleteCompany") ||
+						auth?.hasCapability("ReassignWorkflowStep")
+					: true))) ||
+		(company.status === "Rejected" &&
+			(company.canAct ||
+				(auth ? auth.hasCapability("ReassignWorkflowStep") : false)));
 
 	// Only show action banner when there are actions available
 	if (!canSubmitWorkflow && !canAct && !canRework && !canDiscontinue) {
@@ -249,7 +262,7 @@ export function WorkflowActionBar({
 									variant="outline"
 									className="text-[10px] bg-background text-amber-800 dark:text-amber-300 border-amber-400 font-mono"
 								>
-									Tahap: {company.currentStepKind}
+									Tahap: {formatRole(company.currentStepKind)}
 								</Badge>
 							)}
 						</div>
@@ -258,7 +271,9 @@ export function WorkflowActionBar({
 								? "Seluruh prasyarat Tahap 6 telah terpenuhi. Anda dapat mengajukan berkas ini ke alur persetujuan."
 								: canAct
 									? "Berkas ini memerlukan tindakan evaluasi atau persetujuan Anda untuk melanjutkan ke proses berikutnya."
-									: "Menu tindakan alur kerja untuk pengelolaan berkas."}
+									: company.status === "Draft"
+										? "Berkas prospek ini berada dalam status draf dan dapat dihentikan jika tidak dilanjutkan."
+										: "Menu tindakan alur kerja untuk pengelolaan berkas ditolak."}
 						</p>
 					</div>
 				</div>
@@ -284,7 +299,7 @@ export function WorkflowActionBar({
 								size="sm"
 								variant="outline"
 								onClick={() => setActiveModal("reject")}
-								className="h-8 text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
+								className="h-8 text-xs font-medium text-destructive border-destructive/30 bg-background hover:bg-destructive/10 shadow-2xs flex items-center gap-1.5 transition-colors"
 							>
 								<XCircle className="size-3.5" /> Tolak
 							</Button>
@@ -294,7 +309,7 @@ export function WorkflowActionBar({
 								size="sm"
 								variant="outline"
 								onClick={() => setActiveModal("revise")}
-								className="h-8 text-xs text-amber-700 border-amber-300 dark:text-amber-400 dark:border-amber-700 hover:bg-amber-100 dark:hover:bg-amber-950/40"
+								className="h-8 text-xs font-medium text-amber-700 border-amber-300 dark:text-amber-400 dark:border-amber-700 bg-background hover:bg-amber-50 dark:hover:bg-amber-950/40 shadow-2xs flex items-center gap-1.5 transition-colors"
 							>
 								<RotateCcw className="size-3.5" /> Minta Revisi
 							</Button>
@@ -303,7 +318,7 @@ export function WorkflowActionBar({
 								type="button"
 								size="sm"
 								onClick={() => setActiveModal("approve")}
-								className="h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
+								className="h-8 text-xs font-medium bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs flex items-center gap-1.5 transition-colors"
 							>
 								<CheckCircle2 className="size-3.5" /> Setujui Langkah
 							</Button>
@@ -311,13 +326,13 @@ export function WorkflowActionBar({
 					)}
 
 					{/* Rework Button */}
-					{canRework && !canAct && (
+					{canRework && (
 						<Button
 							type="button"
 							size="sm"
 							variant="outline"
 							onClick={() => setActiveModal("rework")}
-							className="h-8 text-xs text-amber-700 border-amber-300 hover:bg-amber-50"
+							className="h-8 text-xs font-medium text-amber-700 border-amber-300 bg-background hover:bg-amber-50 shadow-2xs flex items-center gap-1.5 transition-colors"
 						>
 							<Undo2 className="size-3.5" /> Rework
 						</Button>
@@ -328,11 +343,12 @@ export function WorkflowActionBar({
 						<Button
 							type="button"
 							size="sm"
-							variant="ghost"
+							variant="outline"
 							onClick={() => setActiveModal("discontinue")}
-							className="h-8 text-xs text-muted-foreground hover:text-destructive"
+							className="h-8 text-xs font-medium text-rose-700 dark:text-rose-400 border-rose-300 dark:border-rose-800 bg-background/90 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:border-rose-400 shadow-2xs flex items-center gap-1.5 transition-colors"
 						>
-							<AlertOctagon className="size-3.5 mr-1" /> Hentikan Proses
+							<AlertOctagon className="size-3.5" />
+							<span>Hentikan Proses</span>
 						</Button>
 					)}
 				</div>

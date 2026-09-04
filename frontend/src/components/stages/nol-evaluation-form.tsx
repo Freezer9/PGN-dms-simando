@@ -1123,6 +1123,30 @@ export function NolEvaluationForm({
 				</CardContent>
 			</Card>
 
+			{/* Bottom Save Bar */}
+			{canEdit && (
+				<div className="flex items-center justify-end gap-3 pt-4 border-t border-border/60">
+					<form.Subscribe
+						selector={(state) => [state.canSubmit, state.isSubmitting]}
+					>
+						{([canSubmit, isSubmitting]) => (
+							<Button
+								type="submit"
+								disabled={!canSubmit || isSubmitting}
+								className="h-9 text-xs flex items-center gap-1.5 bg-purple-600 hover:bg-purple-700 text-white shadow-xs"
+							>
+								{isSubmitting ? (
+									<Loader2 className="size-3.5 animate-spin" />
+								) : (
+									<Save className="size-3.5" />
+								)}
+								Simpan Resume Evaluasi
+							</Button>
+						)}
+					</form.Subscribe>
+				</div>
+			)}
+
 			{/* Reviewer Choice Modal Dialog */}
 			<Dialog
 				open={isReviewerDialogOpen}

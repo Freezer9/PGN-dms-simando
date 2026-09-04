@@ -233,9 +233,9 @@ export function TaskQuickPreviewDrawer({
 
 					<Button
 						asChild
-						variant="ghost"
+						variant="outline"
 						size="sm"
-						className="w-full text-xs text-muted-foreground hover:text-foreground"
+						className="w-full text-xs font-medium border-border/80 bg-background hover:bg-muted text-foreground flex items-center justify-center gap-1.5 shadow-2xs"
 					>
 						<Link
 							to="/directory/$companyId"

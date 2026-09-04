@@ -1862,6 +1862,105 @@
         "tags": [
           "Companies"
         ],
+        "parameters": [
+          {
+            "name": "ProvinceId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "RegencyId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "DistrictId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "VillageId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "IndustryTypeId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Stage",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "uint8"
+            }
+          },
+          {
+            "name": "PosisiPelanggan",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/PosisiPelanggan"
+            }
+          },
+          {
+            "name": "Kawasan",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/Kawasan"
+            }
+          },
+          {
+            "name": "SearchTerm",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Page",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          {
+            "name": "PageSize",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -10786,6 +10885,58 @@
             ]
           },
           "salesUserName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "provinceId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "provinceName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "regencyId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "regencyName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "districtId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "districtName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "villageId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "villageName": {
             "type": [
               "null",
               "string"

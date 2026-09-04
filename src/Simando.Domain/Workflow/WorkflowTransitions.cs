@@ -50,6 +50,8 @@ public static class WorkflowTransitions
     // "Hentikan — tandai tidak dilanjutkan" — see the sourcing note on
     // RecordStatus.Discontinued. Terminal, same as IssuedNol/IssuedRl: no
     // switch case in Apply() below means every further action is rejected.
+    // Valid from DRAFT (sales rep drops/cancels a lead before submission)
+    // or REJECTED (Regional Admin kills the case outright).
     public static WorkflowTransitionResult Discontinue(RecordStatus current, string? reason)
     {
         if (string.IsNullOrWhiteSpace(reason))
@@ -57,9 +59,9 @@ public static class WorkflowTransitions
             return WorkflowTransitionResult.Fail("Discontinue requires a reason.");
         }
 
-        return current == RecordStatus.Rejected
+        return current is RecordStatus.Draft or RecordStatus.Rejected
             ? WorkflowTransitionResult.Ok(RecordStatus.Discontinued)
-            : WorkflowTransitionResult.Fail($"Only a {RecordStatus.Rejected} record can be discontinued.");
+            : WorkflowTransitionResult.Fail($"Only a {RecordStatus.Draft} or {RecordStatus.Rejected} record can be discontinued.");
     }
 
     public static WorkflowTransitionResult Apply(

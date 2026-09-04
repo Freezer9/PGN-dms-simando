@@ -427,14 +427,32 @@ internal sealed class WorkflowService(
         if (company is null)
             return WorkflowActResult.Rejected("Berkas perusahaan tidak ditemukan.");
 
-        if (!PermissionEvaluator.CanAct(actor, Capability.ReassignWorkflowStep, isUsersTurn: true))
-        {
-            return WorkflowActResult.Rejected("Anda tidak memiliki hak akses untuk menghentikan berkas ditolak.");
-        }
-
         if (!await IsScopedToCompanyAsync(db, actor, company.AreaId, ct))
         {
             return WorkflowActResult.Rejected("Berkas ini berada di luar wilayah Anda.");
+        }
+
+        if (company.Status == RecordStatus.Rejected)
+        {
+            if (!PermissionEvaluator.CanAct(actor, Capability.ReassignWorkflowStep, isUsersTurn: true))
+            {
+                return WorkflowActResult.Rejected("Anda tidak memiliki hak akses untuk menghentikan berkas ditolak.");
+            }
+        }
+        else if (company.Status == RecordStatus.Draft)
+        {
+            var canDiscontinueDraft = PermissionEvaluator.CanAct(actor, Capability.EditStages1To3, isUsersTurn: true)
+                || PermissionEvaluator.CanAct(actor, Capability.SoftDeleteCompany, isUsersTurn: true)
+                || PermissionEvaluator.CanAct(actor, Capability.ReassignWorkflowStep, isUsersTurn: true);
+
+            if (!canDiscontinueDraft)
+            {
+                return WorkflowActResult.Rejected("Anda tidak memiliki hak akses untuk menghentikan berkas draf ini.");
+            }
+        }
+        else
+        {
+            return WorkflowActResult.Rejected($"Berkas dengan status {company.Status} tidak dapat dihentikan secara langsung.");
         }
 
         var transition = WorkflowTransitions.Discontinue(company.Status, comment);

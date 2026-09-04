@@ -854,6 +854,30 @@ export function NolRequestForm({
 					</form.Field>
 				</CardContent>
 			</Card>
+
+			{/* Bottom Save Bar */}
+			{canEdit && (
+				<div className="flex items-center justify-end gap-3 pt-4 border-t border-border/60">
+					<form.Subscribe
+						selector={(state) => [state.canSubmit, state.isSubmitting]}
+					>
+						{([canSubmit, isSubmitting]) => (
+							<Button
+								type="submit"
+								disabled={!canSubmit || isSubmitting}
+								className="h-9 text-xs flex items-center gap-1.5 bg-amber-600 hover:bg-amber-700 text-white shadow-xs"
+							>
+								{isSubmitting ? (
+									<Loader2 className="size-3.5 animate-spin" />
+								) : (
+									<Save className="size-3.5" />
+								)}
+								Simpan Permohonan NOL
+							</Button>
+						)}
+					</form.Subscribe>
+				</div>
+			)}
 		</form>
 	);
 }

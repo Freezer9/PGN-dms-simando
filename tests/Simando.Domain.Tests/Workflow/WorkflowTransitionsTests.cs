@@ -260,11 +260,21 @@ public class WorkflowTransitionsTests
         result.NewStatus.ShouldBe(RecordStatus.Discontinued);
     }
 
-    [Fact(DisplayName = "Discontinue: only valid from REJECTED")]
-    public void Discontinue_OnlyValidFromRejected()
+    [Fact(DisplayName = "Discontinue: DRAFT -> DISCONTINUED (\"Hentikan Prospek\")")]
+    public void Discontinue_DraftToDiscontinued()
     {
-        WorkflowTransitions.Discontinue(RecordStatus.Draft, Comment).Success.ShouldBeFalse();
+        var result = WorkflowTransitions.Discontinue(RecordStatus.Draft, Comment);
+
+        result.Success.ShouldBeTrue();
+        result.NewStatus.ShouldBe(RecordStatus.Discontinued);
+    }
+
+    [Fact(DisplayName = "Discontinue: invalid from active review steps and terminal statuses")]
+    public void Discontinue_InvalidFromActiveSteps()
+    {
         WorkflowTransitions.Discontinue(RecordStatus.AreaHead, Comment).Success.ShouldBeFalse();
+        WorkflowTransitions.Discontinue(RecordStatus.RegionalAdmin, Comment).Success.ShouldBeFalse();
+        WorkflowTransitions.Discontinue(RecordStatus.Reviewer1, Comment).Success.ShouldBeFalse();
         WorkflowTransitions.Discontinue(RecordStatus.IssuedNol, Comment).Success.ShouldBeFalse();
     }
 

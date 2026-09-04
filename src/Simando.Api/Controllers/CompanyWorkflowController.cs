@@ -70,7 +70,7 @@ public sealed class CompanyWorkflowController(
     }
 
     [HttpPost("{id:guid}/workflow/rework")]
-    [RequireCapability(Capability.ActOnApprovalStep)]
+    [RequireCapability(Capability.ActOnApprovalStep, Capability.ReassignWorkflowStep)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -97,7 +97,7 @@ public sealed class CompanyWorkflowController(
     }
 
     [HttpPost("{id:guid}/workflow/discontinue")]
-    [RequireCapability(Capability.ActOnApprovalStep)]
+    [RequireCapability(Capability.EditStages1To3, Capability.ReassignWorkflowStep, Capability.SoftDeleteCompany)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

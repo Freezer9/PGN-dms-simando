@@ -197,7 +197,7 @@ describe("Stage Form Components", () => {
 		renderWithClient(<WorkflowActionBar company={mockCompany} />);
 
 		expect(screen.getByText(/TINDAKAN DIPERLUKAN/i)).toBeInTheDocument();
-		expect(screen.getByText(/Tahap: Reviewer1/i)).toBeInTheDocument();
+		expect(screen.getByText(/Reviewer 1/i)).toBeInTheDocument();
 		expect(
 			screen.getByRole("button", { name: /Setujui Langkah/i }),
 		).toBeInTheDocument();
@@ -205,5 +205,117 @@ describe("Stage Form Components", () => {
 			screen.getByRole("button", { name: /Minta Revisi/i }),
 		).toBeInTheDocument();
 		expect(screen.getByRole("button", { name: /Tolak/i })).toBeInTheDocument();
+	});
+
+	it("renders WorkflowActionBar with Hentikan Proses button for Draft record", () => {
+		const mockDraftCompany: CompanyRecordDto = {
+			id: "00000000-0000-0000-0000-000000000001",
+			nomor: "REG-2026-001",
+			namaPerusahaan: "PT Calon Pelanggan Baru",
+			website: null,
+			alamat: "Jl. Industri No. 12",
+			villageId: "00000000-0000-0000-0000-000000000002",
+			villageName: "Cilincing",
+			districtId: "00000000-0000-0000-0000-000000000003",
+			districtName: "Cilincing",
+			regencyId: "00000000-0000-0000-0000-000000000004",
+			regencyName: "Jakarta Utara",
+			provinceId: "00000000-0000-0000-0000-000000000005",
+			provinceName: "DKI Jakarta",
+			locationLabel: "Jakarta Utara, DKI Jakarta",
+			industryTypeId: "00000000-0000-0000-0000-000000000006",
+			industryTypeName: "Manufacturing",
+			npwp: null,
+			email: null,
+			kodePos: null,
+			telp: null,
+			areaId: "00000000-0000-0000-0000-000000000007",
+			areaName: "Area Jakarta",
+			regionId: "00000000-0000-0000-0000-000000000008",
+			regionName: "Region Barat",
+			currentStage: 6,
+			status: "Draft",
+			createdBy: "00000000-0000-0000-0000-000000000009",
+			salesRepName: "Sales User",
+			createdAt: "2026-08-28T00:00:00Z",
+			updatedAt: null,
+			latitude: -6.2,
+			longitude: 106.8,
+			holderLabel: "Sales Area",
+			holderName: "Sales User",
+			statusSince: "2026-08-28T00:00:00Z",
+			currentStepId: null,
+			currentStepKind: null,
+			workflowInstanceId: null,
+			canSubmit: true,
+			canAct: false,
+			canChooseReviewers: false,
+			contacts: [],
+		};
+
+		renderWithClient(<WorkflowActionBar company={mockDraftCompany} />);
+
+		expect(screen.getByText(/TINDAKAN DIPERLUKAN/i)).toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: /Ajukan untuk Persetujuan/i }),
+		).toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: /Hentikan Proses/i }),
+		).toBeInTheDocument();
+	});
+
+	it("renders WorkflowActionBar with Rework and Hentikan Proses buttons for Rejected record", () => {
+		const mockRejectedCompany: CompanyRecordDto = {
+			id: "00000000-0000-0000-0000-000000000001",
+			nomor: "REG-2026-001",
+			namaPerusahaan: "PT Ditolak Reviewer",
+			website: null,
+			alamat: "Jl. Industri No. 12",
+			villageId: "00000000-0000-0000-0000-000000000002",
+			villageName: "Cilincing",
+			districtId: "00000000-0000-0000-0000-000000000003",
+			districtName: "Cilincing",
+			regencyId: "00000000-0000-0000-0000-000000000004",
+			regencyName: "Jakarta Utara",
+			provinceId: "00000000-0000-0000-0000-000000000005",
+			provinceName: "DKI Jakarta",
+			locationLabel: "Jakarta Utara, DKI Jakarta",
+			industryTypeId: "00000000-0000-0000-0000-000000000006",
+			industryTypeName: "Manufacturing",
+			npwp: null,
+			email: null,
+			kodePos: null,
+			telp: null,
+			areaId: "00000000-0000-0000-0000-000000000007",
+			areaName: "Area Jakarta",
+			regionId: "00000000-0000-0000-0000-000000000008",
+			regionName: "Region Barat",
+			currentStage: 6,
+			status: "Rejected",
+			createdBy: "00000000-0000-0000-0000-000000000009",
+			salesRepName: "Sales User",
+			createdAt: "2026-08-28T00:00:00Z",
+			updatedAt: null,
+			latitude: -6.2,
+			longitude: 106.8,
+			holderLabel: "Regional Admin",
+			holderName: "Admin Regional",
+			statusSince: "2026-08-28T00:00:00Z",
+			currentStepId: null,
+			currentStepKind: null,
+			workflowInstanceId: null,
+			canSubmit: false,
+			canAct: true,
+			canChooseReviewers: false,
+			contacts: [],
+		};
+
+		renderWithClient(<WorkflowActionBar company={mockRejectedCompany} />);
+
+		expect(screen.getByText(/TINDAKAN DIPERLUKAN/i)).toBeInTheDocument();
+		expect(screen.getByRole("button", { name: /Rework/i })).toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: /Hentikan Proses/i }),
+		).toBeInTheDocument();
 	});
 });

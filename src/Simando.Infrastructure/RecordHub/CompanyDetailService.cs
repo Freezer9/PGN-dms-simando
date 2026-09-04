@@ -160,11 +160,15 @@ internal sealed class CompanyDetailService(
             && company.CurrentStage >= 6
             && PermissionEvaluator.CanAct(actor, Capability.SubmitForApproval, isUsersTurn: true);
 
-        var canAct = inScope
-            && currentStep is not null
-            && WorkflowStepAssignment.IsAssignedToStep(currentStep, actorUserId, actorRoles)
-            && PermissionEvaluator.CanAct(actor, Capability.ActOnApprovalStep, isUsersTurn: true)
-            && !PermissionEvaluator.IsSelfApproval(actorUserId, company.CreatedBy, []);
+        var canAct = inScope && (
+            (currentStep is not null
+                && WorkflowStepAssignment.IsAssignedToStep(currentStep, actorUserId, actorRoles)
+                && PermissionEvaluator.CanAct(actor, Capability.ActOnApprovalStep, isUsersTurn: true)
+                && !PermissionEvaluator.IsSelfApproval(actorUserId, company.CreatedBy, []))
+            ||
+            (company.Status == RecordStatus.Rejected
+                && PermissionEvaluator.CanAct(actor, Capability.ReassignWorkflowStep, isUsersTurn: true))
+        );
 
         var canChooseReviewers = canAct
             && company.Status == RecordStatus.RegionalAdmin
