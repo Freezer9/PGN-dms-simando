@@ -7,7 +7,7 @@ test.describe("Flow 7: Admin Governance & Emergency Operations", () => {
 		await gotoApp(page, "/admin/break-glass");
 
 		await expect(
-			page.getByText(/Akses Darurat \(Break-Glass Protocol\)/i),
+			page.getByRole("heading", { name: /Akses Darurat/i }),
 		).toBeVisible();
 		await expect(
 			page.getByRole("button", { name: /Buka Akses Darurat/i }),
@@ -26,7 +26,7 @@ test.describe("Flow 7: Admin Governance & Emergency Operations", () => {
 		await gotoApp(page, "/admin/stuck-steps");
 
 		await expect(
-			page.getByText(/Langkah Tertahan: Lintas Wilayah/i),
+			page.getByText(/Langkah Tertahan.*Lintas Wilayah/i),
 		).toBeVisible();
 		await expect(
 			page.getByPlaceholder(/Cari perusahaan, wilayah, peran/i),

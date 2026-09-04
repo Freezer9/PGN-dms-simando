@@ -68,6 +68,13 @@ export function TaskActionModal({
 					{ params: { path: { id: task.companyId } } },
 				],
 			});
+			queryClient.invalidateQueries({
+				queryKey: [
+					"get",
+					"/api/companies/{id}/timeline",
+					{ params: { path: { id: task.companyId } } },
+				],
+			});
 		}
 	}, [queryClient, task?.companyId]);
 

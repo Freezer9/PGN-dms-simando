@@ -147,6 +147,79 @@ export function getStatusLabel(status: RecordStatus): {
 	}
 }
 
+export function getTimelineActionInfo(action: string): {
+	label: string;
+	badgeClass: string;
+} {
+	switch (action) {
+		case "Create":
+			return {
+				label: "Pendaftaran Berkas",
+				badgeClass:
+					"bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800",
+			};
+		case "Submit":
+			return {
+				label: "Pengajuan Persetujuan",
+				badgeClass:
+					"bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800",
+			};
+		case "Setuju":
+			return {
+				label: "Disetujui",
+				badgeClass:
+					"bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800",
+			};
+		case "Revisi":
+			return {
+				label: "Diminta Revisi",
+				badgeClass:
+					"bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/40 dark:text-orange-300 dark:border-orange-800",
+			};
+		case "Tolak":
+			return {
+				label: "Ditolak",
+				badgeClass:
+					"bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800",
+			};
+		case "Rework":
+			return {
+				label: "Rework (Perbaikan)",
+				badgeClass:
+					"bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800",
+			};
+		case "Discontinue":
+			return {
+				label: "Berkas Dihentikan",
+				badgeClass:
+					"bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
+			};
+		case "Issue":
+			return {
+				label: "Surat Diterbitkan",
+				badgeClass:
+					"bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800",
+			};
+		case "Reassign":
+			return {
+				label: "Pengalihan PIC",
+				badgeClass:
+					"bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800",
+			};
+		case "BreakGlass":
+			return {
+				label: "Akses Darurat",
+				badgeClass:
+					"bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800",
+			};
+		default:
+			return {
+				label: action,
+				badgeClass: "bg-muted text-muted-foreground border-border",
+			};
+	}
+}
+
 export function getPosisiPelangganLabel(
 	posisi?: PosisiPelanggan | null,
 ): string {

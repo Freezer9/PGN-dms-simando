@@ -342,11 +342,18 @@ internal sealed class CompanyDetailService(
         return events
             .Select(e =>
             {
-                var roleLabel = e.Action == StatusEventAction.Submit
-                    ? "Sales Area"
-                    : e.WorkflowStepId is { } stepId && stepKinds.TryGetValue(stepId, out var kind)
+                var roleLabel = e.Action switch
+                {
+                    StatusEventAction.Create => "Sales Area",
+                    StatusEventAction.Submit => "Sales Area",
+                    StatusEventAction.Rework => "Regional Admin",
+                    StatusEventAction.Discontinue => "Regional Admin",
+                    StatusEventAction.Reassign => "Regional Admin",
+                    StatusEventAction.BreakGlass => "System Admin",
+                    _ => e.WorkflowStepId is { } stepId && stepKinds.TryGetValue(stepId, out var kind)
                         ? WorkflowLabels.StepKindLabel(kind)
-                        : "";
+                        : ""
+                };
                 return new TimelineEntry(
                     e.Id, e.Action, e.ToStatus, roleLabel,
                     actorNames.GetValueOrDefault(e.ActorId, ""), e.Comment, e.OccurredAt);

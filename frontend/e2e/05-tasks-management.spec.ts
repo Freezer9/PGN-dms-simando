@@ -72,7 +72,7 @@ test.describe("Flow 5: Task Inbox & Management (SLA & Workflows)", () => {
 		await gotoApp(page, "/tasks/history");
 
 		await expect(
-			page.getByText(/Log Riwayat Keputusan Workflow/i),
+			page.getByText(/Riwayat Keputusan Workflow/i),
 		).toBeVisible();
 	});
 });

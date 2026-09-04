@@ -86,7 +86,11 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getStageInfo, getStatusLabel } from "@/lib/directory-utils";
+import {
+	getStageInfo,
+	getStatusLabel,
+	getTimelineActionInfo,
+} from "@/lib/directory-utils";
 import { formatRole } from "@/lib/roles";
 import {
 	type SaveContactFormValues,
@@ -1599,8 +1603,10 @@ function CompanyRecordHubPage() {
 											<div className="absolute left-0.5 top-1.5 size-3 rounded-full bg-primary border-2 border-background" />
 											<div className="space-y-1 bg-muted/30 hover:bg-muted/50 transition-colors p-2.5 rounded-lg border border-border/60 flex-1">
 												<div className="flex items-start justify-between gap-1">
-													<span className="font-semibold text-foreground leading-tight">
-														{entry.action}
+													<span
+														className={`px-1.5 py-0.5 rounded text-[10px] font-medium border ${getTimelineActionInfo(entry.action).badgeClass}`}
+													>
+														{getTimelineActionInfo(entry.action).label}
 													</span>
 													<span className="text-[10px] text-muted-foreground font-mono shrink-0 whitespace-nowrap">
 														{new Date(entry.occurredAt).toLocaleDateString(

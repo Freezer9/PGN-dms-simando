@@ -156,30 +156,27 @@ export async function clickTab(page: Page, tabName: string) {
 		if (!target) throw new Error(`Tab matching "${name}" not found`);
 		target.focus();
 		target.dispatchEvent(
-			new PointerEvent("pointerdown", {
+			new MouseEvent("mousedown", {
 				bubbles: true,
 				cancelable: true,
 				button: 0,
-				pointerId: 1,
+				view: window,
 			}),
 		);
 		target.dispatchEvent(
-			new MouseEvent("mousedown", { bubbles: true, cancelable: true, button: 0 }),
-		);
-		target.dispatchEvent(
-			new MouseEvent("mouseup", { bubbles: true, cancelable: true, button: 0 }),
-		);
-		target.dispatchEvent(
-			new MouseEvent("click", { bubbles: true, cancelable: true, button: 0 }),
-		);
-		if (typeof target.click === "function") {
-			target.click();
-		}
-		target.dispatchEvent(
-			new KeyboardEvent("keydown", {
+			new MouseEvent("mouseup", {
 				bubbles: true,
 				cancelable: true,
-				key: "Enter",
+				button: 0,
+				view: window,
+			}),
+		);
+		target.dispatchEvent(
+			new MouseEvent("click", {
+				bubbles: true,
+				cancelable: true,
+				button: 0,
+				view: window,
 			}),
 		);
 	}, tabName);
@@ -435,6 +432,58 @@ export async function uploadCompanyAttachment(
 			`Upload failed for ${kind}: ${res.status()} ${await res.text()}`,
 		);
 	}
+}
+
+/**
+ * Save dummy NOL request for company to advance to Stage 6 (NOL Request completed)
+ */
+export async function completeNolRequestForCompany(
+	page: Page,
+	companyId: string,
+) {
+	const res = await page.request.put(`/api/companies/${companyId}/nol-request`, {
+		data: {
+			nomorNotaDinas: "ND-001/TEST/2026",
+			registrationType: "RegistrasiBaru",
+			samaDenganA1: true,
+			periods: [],
+			dailyBasisRows: [],
+			referenceDocumentIds: [],
+		},
+	});
+	if (!res.ok()) {
+		throw new Error(
+			`Save NOL request failed: ${res.status()} ${await res.text()}`,
+		);
+	}
+}
+
+/**
+ * Advance company through stages 1-6 and submit to workflow (Area Head step)
+ */
+export async function advanceCompanyToAreaHead(page: Page) {
+	const company = await createTestCompany(page);
+	await setupPlottingForCompany(page, company.companyId);
+	await addContactForCompany(page, company.companyId);
+	await completeSurveyForCompany(page, company.companyId);
+	await uploadCompanyAttachment(page, company.companyId, "Kk0");
+	await completeRegistrationForCompany(page, company.companyId);
+	await uploadCompanyAttachment(page, company.companyId, "A1");
+	await uploadCompanyAttachment(page, company.companyId, "BuktiKelayakan");
+	await uploadCompanyAttachment(page, company.companyId, "CapexPreGr3");
+	await completeNolRequestForCompany(page, company.companyId);
+
+	const submitRes = await page.request.post(
+		`/api/companies/${company.companyId}/workflow/start`,
+	);
+	if (!submitRes.ok()) {
+		throw new Error(
+			`Failed to start workflow: ${submitRes.status()} ${await submitRes.text()}`,
+		);
+	}
+
+	await authenticateSession(page, "AreaHead");
+	return company;
 }
 
 type Fixtures = {

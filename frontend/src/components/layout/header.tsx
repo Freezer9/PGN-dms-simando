@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Bell, KeyRound, LogOut, Search } from "lucide-react";
-import { $api } from "@/api/client";
+import { KeyRound, LogOut, Search } from "lucide-react";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
+import { NotificationDropdown } from "@/components/notifications/notification-dropdown";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,19 +23,6 @@ import { formatRole } from "@/lib/roles";
 export function Header() {
 	const { user, logout } = useAuth();
 	const navigate = useNavigate();
-
-	// Live task summary query for header notifications
-	const { data: taskSummary } = $api.useQuery(
-		"get",
-		"/api/tasks/summary",
-		undefined,
-		{
-			enabled: !!user,
-			refetchInterval: 30000,
-		},
-	);
-
-	const pendingCount = Number(taskSummary?.myTasksCount ?? 0);
 
 	const handleLogout = async () => {
 		try {
@@ -85,27 +72,8 @@ export function Header() {
 					/>
 				</div>
 
-				{/* Notification Bell with Pending Count */}
-				<Button
-					asChild
-					variant="ghost"
-					size="icon"
-					className="relative size-8 text-muted-foreground hover:text-foreground"
-					title={
-						pendingCount > 0
-							? `${pendingCount} tugas menunggu tindakan Anda`
-							: "Tugas & Notifikasi"
-					}
-				>
-					<Link to="/tasks">
-						<Bell className="size-4" />
-						{pendingCount > 0 ? (
-							<span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[9px] font-bold text-white shadow-xs">
-								{pendingCount > 99 ? "99+" : pendingCount}
-							</span>
-						) : null}
-					</Link>
-				</Button>
+				{/* Notification Dropdown */}
+				<NotificationDropdown />
 
 				<Separator orientation="vertical" className="h-4 hidden sm:block" />
 

@@ -4,6 +4,7 @@ using Simando.Application.Common;
 using Simando.Application.Directory;
 using Simando.Application.Nol;
 using Simando.Application.Registration;
+using Simando.Domain.Audit;
 using Simando.Domain.Directory;
 using Simando.Domain.Geography;
 using Simando.Domain.Nol;
@@ -177,6 +178,21 @@ internal sealed class CompanyService(IDbContextFactory<SimandoDbContext> dbConte
         // NomorSeq is only known after the insert (DB-generated via
         // nextval()) — render and persist Nomor in a second save.
         company.Nomor = $"{company.NomorSeq:0000000}-{province.BpsCode}-{regency.BpsCode}";
+
+        db.StatusEvents.Add(new StatusEvent
+        {
+            Id = Guid.NewGuid(),
+            CompanyId = company.Id,
+            ActorId = actorUserId,
+            FromStage = null,
+            ToStage = 1,
+            FromStatus = null,
+            ToStatus = RecordStatus.Draft,
+            Action = StatusEventAction.Create,
+            Comment = "Pendaftaran berkas calon pelanggan",
+            OccurredAt = company.CreatedAt
+        });
+
         await db.SaveChangesAsync(ct);
 
         return new CreateCompanyResult(company.Id, company.Nomor);

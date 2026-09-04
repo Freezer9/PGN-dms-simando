@@ -1,4 +1,5 @@
 import {
+	advanceCompanyToAreaHead,
 	clickElement,
 	clickTab,
 	createTestCompany,
@@ -11,12 +12,12 @@ test.describe("Flow 4: Multi-Actor Approval Workflow (Stages 6-8)", () => {
 	test("4.1 Area Head: should access tasks and view workflow action bar on company hub", async ({
 		areaHeadPage: page,
 	}) => {
-		const company = await createTestCompany(page, undefined, "AreaHead");
+		const company = await advanceCompanyToAreaHead(page);
 		await gotoApp(page, `/directory/${company.companyId}`);
 
 		await expect(page.getByText(company.namaPerusahaan)).toBeVisible();
 		await expect(
-			page.getByText(/Aksi Alur Kerja|Workflow Gate/i),
+			page.getByText(/Alur Persetujuan|Aksi Alur Kerja|Workflow Gate/i),
 		).toBeVisible();
 	});
 

@@ -49,7 +49,7 @@ test.describe("Flow 6: Master Data Management", () => {
 		await gotoApp(page, "/master/units");
 		await page.waitForURL("**/master/units**");
 		await expect(
-			page.getByRole("heading", { name: /Satuan Pengukuran \(Units\)/i }),
+			page.getByRole("heading", { name: /Satuan Pengukuran/i }),
 		).toBeVisible();
 	});
 

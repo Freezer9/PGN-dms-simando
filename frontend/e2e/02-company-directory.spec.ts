@@ -56,7 +56,7 @@ test.describe("Flow 2: Company Directory & Registration (Stage 1)", () => {
 		await expect(page.getByText(company.namaPerusahaan)).toBeVisible();
 		await expect(page.getByText(company.nomor)).toBeVisible();
 		await expect(
-			page.getByText(/Aksi Alur Kerja|Menu tindakan/i),
+			page.getByText(/Alur Persetujuan|Aksi Alur Kerja|Menu tindakan/i),
 		).toBeVisible();
 	});
 });

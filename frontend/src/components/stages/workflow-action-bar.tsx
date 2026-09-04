@@ -56,12 +56,19 @@ export function WorkflowActionBar({
 
 	const [activeModal, setActiveModal] = React.useState<ActionModalType>(null);
 
-	// Invalidate company query helper
+	// Invalidate company and timeline query helper
 	const invalidateCompany = React.useCallback(() => {
 		queryClient.invalidateQueries({
 			queryKey: [
 				"get",
 				"/api/companies/{id}",
+				{ params: { path: { id: company.id } } },
+			],
+		});
+		queryClient.invalidateQueries({
+			queryKey: [
+				"get",
+				"/api/companies/{id}/timeline",
 				{ params: { path: { id: company.id } } },
 			],
 		});

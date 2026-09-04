@@ -247,6 +247,11 @@ export type BreakGlassAccessDto = components["schemas"]["BreakGlassAccessDto"];
 export type PagedResultOfBreakGlassAccessDto =
 	components["schemas"]["PagedResultOfBreakGlassAccessDto"];
 export type BreakGlassRequest = components["schemas"]["BreakGlassRequest"];
+
+// Notifications
+export type NotificationListItem =
+	components["schemas"]["NotificationListItem"];
+export type UnreadCountDto = components["schemas"]["UnreadCountDto"];
 export type StuckStepItemDto = components["schemas"]["StuckStepItemDto"];
 export type AdminReassignStepRequest =
 	components["schemas"]["AdminReassignStepRequest"];

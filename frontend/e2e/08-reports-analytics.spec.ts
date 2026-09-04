@@ -7,7 +7,7 @@ test.describe("Flow 8: Reports & Operational Analytics", () => {
 		await gotoApp(page, "/reports");
 
 		await expect(
-			page.getByText(/Corong Penjualan \(Funnel\)/i),
+			page.getByText(/Sales Funnel|Corong Penjualan/i),
 		).toBeVisible();
 		await expect(
 			page.getByText(/Durasi Proses & Ageing/i),

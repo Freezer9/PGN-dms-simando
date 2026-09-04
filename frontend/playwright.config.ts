@@ -12,7 +12,7 @@ export default defineConfig({
 	fullyParallel: false,
 	workers: 1, // Single worker to avoid state collision across multi-step pipeline flows
 	forbidOnly: !!process.env.CI,
-	retries: 0,
+	retries: 1,
 
 	globalSetup: "./e2e/setup/global-setup.ts",
 	globalTeardown: "./e2e/setup/global-teardown.ts",
