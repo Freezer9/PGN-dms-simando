@@ -84,7 +84,7 @@ public sealed record GetCompanyAttachmentsResult(
 public interface IAttachmentService
 {
     Task<GetCompanyAttachmentsResult> GetCompanyAttachmentsAsync(
-        Guid companyId, EffectivePermissions permissions, CancellationToken ct = default);
+        Guid companyId, EffectivePermissions permissions, bool isBreakGlass = false, CancellationToken ct = default);
 
     Task<UploadAttachmentResult> UploadAttachmentAsync(
         Guid companyId, UploadAttachmentRequest request, Guid actorUserId, EffectivePermissions permissions, CancellationToken ct = default);

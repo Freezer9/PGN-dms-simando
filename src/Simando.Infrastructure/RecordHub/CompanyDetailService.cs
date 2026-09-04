@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Simando.Application.Directory;
 using Simando.Application.RecordHub;
+using Simando.Application.Security;
 using Simando.Application.Workflow;
 using Simando.Domain.Audit;
 using Simando.Domain.Geography;
@@ -14,7 +15,9 @@ namespace Simando.Infrastructure.RecordHub;
 // record's worth of joins, so plain sequential queries rather than
 // TasksService's flat-list-plus-dictionary style (that style pays off across
 // many rows; here it would just be dictionaries of size one).
-internal sealed class CompanyDetailService(IDbContextFactory<SimandoDbContext> dbContextFactory) : ICompanyDetailService
+internal sealed class CompanyDetailService(
+    IDbContextFactory<SimandoDbContext> dbContextFactory,
+    IBreakGlassService breakGlassService) : ICompanyDetailService
 {
     public async Task<CompanyDetail?> GetDetailAsync(
         Guid companyId,
@@ -25,37 +28,79 @@ internal sealed class CompanyDetailService(IDbContextFactory<SimandoDbContext> d
     {
         await using var db = await dbContextFactory.CreateDbContextAsync(ct);
 
-        var company = await db.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.Id == companyId, ct);
+        var hasViewCapability = actor.HasCapability(Capability.ViewCompanyRecords);
+        var hasActiveBreakGlass = false;
+        if (!hasViewCapability)
+        {
+            hasActiveBreakGlass = await breakGlassService.HasActiveAccessAsync(actorUserId, companyId, ct);
+            if (!hasActiveBreakGlass)
+            {
+                return null;
+            }
+        }
+
+        var companyQuery = db.Companies.AsNoTracking();
+        if (hasActiveBreakGlass)
+        {
+            companyQuery = companyQuery.IgnoreQueryFilters().Where(c => c.DeletedAt == null);
+        }
+
+        var company = await companyQuery.FirstOrDefaultAsync(c => c.Id == companyId, ct);
         if (company is null)
         {
             return null;
         }
 
-        var area = await db.Areas.AsNoTracking().FirstOrDefaultAsync(a => a.Id == company.AreaId, ct);
+        var areaQuery = db.Areas.AsNoTracking();
+        if (hasActiveBreakGlass) areaQuery = areaQuery.IgnoreQueryFilters();
+        var area = await areaQuery.FirstOrDefaultAsync(a => a.Id == company.AreaId, ct);
         var areaId = area?.Id ?? company.AreaId;
         var areaName = area?.Name ?? "Area";
 
-        var region = area is not null ? await db.Regions.AsNoTracking().FirstOrDefaultAsync(r => r.Id == area.RegionId, ct) : null;
+        var regionQuery = db.Regions.AsNoTracking();
+        if (hasActiveBreakGlass) regionQuery = regionQuery.IgnoreQueryFilters();
+        var region = area is not null ? await regionQuery.FirstOrDefaultAsync(r => r.Id == area.RegionId, ct) : null;
         var regionId = region?.Id ?? Guid.Empty;
         var regionName = region?.Name ?? "Region";
 
-        var industryTypeName = await db.IndustryTypes.AsNoTracking()
+        var industryTypesQuery = db.IndustryTypes.AsNoTracking();
+        var usersQuery = db.Users.AsNoTracking();
+        var villagesQuery = db.Villages.AsNoTracking();
+        var districtsQuery = db.Districts.AsNoTracking();
+        var regenciesQuery = db.Regencies.AsNoTracking();
+
+        if (hasActiveBreakGlass)
+        {
+            industryTypesQuery = industryTypesQuery.IgnoreQueryFilters();
+            usersQuery = usersQuery.IgnoreQueryFilters();
+            villagesQuery = villagesQuery.IgnoreQueryFilters();
+            districtsQuery = districtsQuery.IgnoreQueryFilters();
+            regenciesQuery = regenciesQuery.IgnoreQueryFilters();
+        }
+
+        var industryTypeName = await industryTypesQuery
             .Where(t => t.Id == company.IndustryTypeId).Select(t => t.Name).FirstOrDefaultAsync(ct) ?? "Industri";
-        var salesRepName = await db.Users.AsNoTracking()
+        var salesRepName = await usersQuery
             .Where(u => u.Id == company.CreatedBy).Select(u => u.FullName).FirstOrDefaultAsync(ct) ?? "Sales Representative";
 
-        var village = await db.Villages.AsNoTracking().FirstOrDefaultAsync(v => v.Id == company.VillageId, ct);
-        var district = village is not null ? await db.Districts.AsNoTracking().FirstOrDefaultAsync(d => d.Id == village.DistrictId, ct) : null;
-        var regency = district is not null ? await db.Regencies.AsNoTracking().FirstOrDefaultAsync(r => r.Id == district.RegencyId, ct) : null;
+        var village = await villagesQuery.FirstOrDefaultAsync(v => v.Id == company.VillageId, ct);
+        var district = village is not null ? await districtsQuery.FirstOrDefaultAsync(d => d.Id == village.DistrictId, ct) : null;
+        var regency = district is not null ? await regenciesQuery.FirstOrDefaultAsync(r => r.Id == district.RegencyId, ct) : null;
         var locationLabel = regency is not null ? $"{(regency.Type == RegencyType.Kota ? "Kota" : "Kabupaten")} {regency.Name}" : "Lokasi";
 
-        var contacts = await db.CompanyContacts.AsNoTracking()
+        var contactsQuery = db.CompanyContacts.AsNoTracking();
+        if (hasActiveBreakGlass) contactsQuery = contactsQuery.IgnoreQueryFilters();
+
+        var contacts = await contactsQuery
             .Where(c => c.CompanyId == companyId)
             .OrderByDescending(c => c.IsPrimary).ThenBy(c => c.SortOrder)
             .Select(c => new ContactSummary(c.Id, c.Nama, c.Jabatan, c.IsPrimary, c.Email, c.NoHp))
             .ToListAsync(ct);
 
-        var latestInstance = await db.WorkflowInstances.AsNoTracking()
+        var instancesQuery = db.WorkflowInstances.AsNoTracking();
+        if (hasActiveBreakGlass) instancesQuery = instancesQuery.IgnoreQueryFilters();
+
+        var latestInstance = await instancesQuery
             .Where(i => i.CompanyId == companyId)
             .OrderByDescending(i => i.StartedAt)
             .FirstOrDefaultAsync(ct);
@@ -64,7 +109,10 @@ internal sealed class CompanyDetailService(IDbContextFactory<SimandoDbContext> d
         var currentKind = WorkflowStepAssignment.CurrentStepKind(company.Status);
         if (currentKind is not null && latestInstance is not null)
         {
-            currentStep = await db.WorkflowSteps.AsNoTracking()
+            var stepsQuery = db.WorkflowSteps.AsNoTracking();
+            if (hasActiveBreakGlass) stepsQuery = stepsQuery.IgnoreQueryFilters();
+
+            currentStep = await stepsQuery
                 .FirstOrDefaultAsync(s => s.WorkflowInstanceId == latestInstance.Id && s.Kind == currentKind && s.ActedAt == null, ct);
         }
 
@@ -77,11 +125,14 @@ internal sealed class CompanyDetailService(IDbContextFactory<SimandoDbContext> d
             holderLabel = WorkflowLabels.StepKindLabel(currentStep.Kind);
             if (currentStep.AssignedUserId is { } assignedUserId)
             {
-                holderName = await db.Users.AsNoTracking()
+                holderName = await usersQuery
                     .Where(u => u.Id == assignedUserId).Select(u => u.FullName).FirstOrDefaultAsync(ct) ?? "Pengguna";
             }
 
-            var predecessor = await db.WorkflowSteps.AsNoTracking()
+            var predQuery = db.WorkflowSteps.AsNoTracking();
+            if (hasActiveBreakGlass) predQuery = predQuery.IgnoreQueryFilters();
+
+            var predecessor = await predQuery
                 .Where(s => s.WorkflowInstanceId == latestInstance!.Id && s.StepOrder < currentStep.StepOrder)
                 .OrderByDescending(s => s.StepOrder)
                 .FirstOrDefaultAsync(ct);
@@ -89,7 +140,10 @@ internal sealed class CompanyDetailService(IDbContextFactory<SimandoDbContext> d
         }
         else
         {
-            var lastEventAt = await db.StatusEvents.AsNoTracking()
+            var statusEventsQuery = db.StatusEvents.AsNoTracking();
+            if (hasActiveBreakGlass) statusEventsQuery = statusEventsQuery.IgnoreQueryFilters();
+
+            var lastEventAt = await statusEventsQuery
                 .Where(e => e.CompanyId == companyId)
                 .OrderByDescending(e => e.OccurredAt)
                 .Select(e => (DateTimeOffset?)e.OccurredAt)
@@ -97,7 +151,8 @@ internal sealed class CompanyDetailService(IDbContextFactory<SimandoDbContext> d
             statusSince = lastEventAt ?? company.CreatedAt;
         }
 
-        var inScope = PermissionEvaluator.CanView(actor.Scope, actor.AreaId, actor.RegionId, company.AreaId, regionId);
+        // Under break-glass, System Admin has read-only access: inScope is false, no actions allowed
+        var inScope = !hasActiveBreakGlass && PermissionEvaluator.CanViewRecord(actor, company.AreaId, regionId);
 
         var canSubmit = inScope
             && company.CreatedBy == actorUserId
@@ -150,7 +205,24 @@ internal sealed class CompanyDetailService(IDbContextFactory<SimandoDbContext> d
     {
         await using var db = await dbContextFactory.CreateDbContextAsync(ct);
 
-        var company = await db.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.Id == companyId, ct);
+        var hasViewCapability = actor.HasCapability(Capability.ViewCompanyRecords);
+        var hasActiveBreakGlass = false;
+        if (!hasViewCapability)
+        {
+            hasActiveBreakGlass = await breakGlassService.HasActiveAccessAsync(actorUserId, companyId, ct);
+            if (!hasActiveBreakGlass)
+            {
+                return null;
+            }
+        }
+
+        var companyQuery = db.Companies.AsNoTracking();
+        if (hasActiveBreakGlass)
+        {
+            companyQuery = companyQuery.IgnoreQueryFilters().Where(c => c.DeletedAt == null);
+        }
+
+        var company = await companyQuery.FirstOrDefaultAsync(c => c.Id == companyId, ct);
         if (company is null)
         {
             return null;
@@ -162,12 +234,27 @@ internal sealed class CompanyDetailService(IDbContextFactory<SimandoDbContext> d
             return null;
         }
 
-        var village = await db.Villages.AsNoTracking().FirstOrDefaultAsync(v => v.Id == company.VillageId, ct);
-        var district = village is not null ? await db.Districts.AsNoTracking().FirstOrDefaultAsync(d => d.Id == village.DistrictId, ct) : null;
-        var regency = district is not null ? await db.Regencies.AsNoTracking().FirstOrDefaultAsync(r => r.Id == district.RegencyId, ct) : null;
-        var province = regency is not null ? await db.Provinces.AsNoTracking().FirstOrDefaultAsync(p => p.Id == regency.ProvinceId, ct) : null;
+        var villagesQuery = db.Villages.AsNoTracking();
+        var districtsQuery = db.Districts.AsNoTracking();
+        var regenciesQuery = db.Regencies.AsNoTracking();
+        var provincesQuery = db.Provinces.AsNoTracking();
+        var contactsQuery = db.CompanyContacts.AsNoTracking();
 
-        var contacts = await db.CompanyContacts.AsNoTracking()
+        if (hasActiveBreakGlass)
+        {
+            villagesQuery = villagesQuery.IgnoreQueryFilters();
+            districtsQuery = districtsQuery.IgnoreQueryFilters();
+            regenciesQuery = regenciesQuery.IgnoreQueryFilters();
+            provincesQuery = provincesQuery.IgnoreQueryFilters();
+            contactsQuery = contactsQuery.IgnoreQueryFilters();
+        }
+
+        var village = await villagesQuery.FirstOrDefaultAsync(v => v.Id == company.VillageId, ct);
+        var district = village is not null ? await districtsQuery.FirstOrDefaultAsync(d => d.Id == village.DistrictId, ct) : null;
+        var regency = district is not null ? await regenciesQuery.FirstOrDefaultAsync(r => r.Id == district.RegencyId, ct) : null;
+        var province = regency is not null ? await provincesQuery.FirstOrDefaultAsync(p => p.Id == regency.ProvinceId, ct) : null;
+
+        var contacts = await contactsQuery
             .Where(c => c.CompanyId == companyId)
             .OrderByDescending(c => c.IsPrimary).ThenBy(c => c.SortOrder)
             .Select(c => new ContactDetail(c.Id, c.Nama, c.Jabatan, c.Email, c.NoHp, c.LinkedIn, c.Instagram, c.Facebook, c.IsPrimary, c.SortOrder))
@@ -218,22 +305,33 @@ internal sealed class CompanyDetailService(IDbContextFactory<SimandoDbContext> d
             contacts);
     }
 
-    public async Task<IReadOnlyList<TimelineEntry>> GetTimelineAsync(Guid companyId, CancellationToken ct = default)
+    public async Task<IReadOnlyList<TimelineEntry>> GetTimelineAsync(Guid companyId, bool isBreakGlass = false, CancellationToken ct = default)
     {
         await using var db = await dbContextFactory.CreateDbContextAsync(ct);
 
-        var events = await db.StatusEvents.AsNoTracking()
+        var eventsQuery = db.StatusEvents.AsNoTracking();
+        var stepsQuery = db.WorkflowSteps.AsNoTracking();
+        var usersQuery = db.Users.AsNoTracking();
+
+        if (isBreakGlass)
+        {
+            eventsQuery = eventsQuery.IgnoreQueryFilters();
+            stepsQuery = stepsQuery.IgnoreQueryFilters();
+            usersQuery = usersQuery.IgnoreQueryFilters();
+        }
+
+        var events = await eventsQuery
             .Where(e => e.CompanyId == companyId)
             .OrderByDescending(e => e.OccurredAt)
             .ToListAsync(ct);
 
         var stepIds = events.Where(e => e.WorkflowStepId is not null).Select(e => e.WorkflowStepId!.Value).ToHashSet();
-        var stepKinds = await db.WorkflowSteps.AsNoTracking()
+        var stepKinds = await stepsQuery
             .Where(s => stepIds.Contains(s.Id))
             .ToDictionaryAsync(s => s.Id, s => s.Kind, ct);
 
         var actorIds = events.Select(e => e.ActorId).ToHashSet();
-        var actorNames = await db.Users.AsNoTracking()
+        var actorNames = await usersQuery
             .Where(u => actorIds.Contains(u.Id))
             .ToDictionaryAsync(u => u.Id, u => u.FullName, ct);
 

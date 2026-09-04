@@ -38,7 +38,7 @@ public class AttachmentDownloadTests : IAsyncLifetime
     private const string Bucket = "simando-attachment-test";
     private const string Password = "Correct-Horse-Battery-Staple-1";
 
-    private readonly PostgreSqlContainer _dbContainer = new PostgreSqlBuilder("postgis/postgis:18-3.6-alpine")
+    private readonly PostgreSqlContainer _dbContainer = new PostgreSqlBuilder("imresamu/postgis:18-3.6-alpine")
         .WithDatabase("simando")
         .WithUsername("simando")
         .WithPassword("simando")

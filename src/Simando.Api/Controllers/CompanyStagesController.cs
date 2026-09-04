@@ -4,6 +4,7 @@ using Simando.Api.Security;
 using Simando.Application.Directory;
 using Simando.Application.Nol;
 using Simando.Application.Registration;
+using Simando.Application.Security;
 using Simando.Domain.Security;
 
 namespace Simando.Api.Controllers;
@@ -20,16 +21,37 @@ public sealed record SaveSurveyFullPayload(
 [Authorize]
 public sealed class CompanyStagesController(
     ICompanyService companyService,
+    IBreakGlassService breakGlassService,
     ICurrentUser currentUser) : ControllerBase
 {
+    private async Task<(bool Allowed, bool IsBreakGlass)> CheckReadAccessAsync(Guid companyId, CancellationToken ct)
+    {
+        var hasViewCapability = currentUser.HasCapability(Capability.ViewCompanyRecords);
+        if (hasViewCapability)
+        {
+            return (true, false);
+        }
+
+        var hasBreakGlass = await breakGlassService.HasActiveAccessAsync(currentUser.UserId, companyId, ct);
+        return (hasBreakGlass, hasBreakGlass);
+    }
+
     // ==========================================
     // Stage 1: Survey
     // ==========================================
     [HttpGet("{id:guid}/survey")]
     [ProducesResponseType<SurveyDetail>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> GetSurvey(Guid id, CancellationToken ct)
     {
-        var result = await companyService.GetSurveyAsync(id, ct);
+        var (allowed, isBreakGlass) = await CheckReadAccessAsync(id, ct);
+        if (!allowed)
+        {
+            return Forbid();
+        }
+
+        var result = await companyService.GetSurveyAsync(id, isBreakGlass, ct);
         return Ok(result);
     }
 
@@ -65,9 +87,17 @@ public sealed class CompanyStagesController(
     // ==========================================
     [HttpGet("{id:guid}/plotting")]
     [ProducesResponseType<PlottingDetail>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> GetPlotting(Guid id, CancellationToken ct)
     {
-        var result = await companyService.GetPlottingAsync(id, ct);
+        var (allowed, isBreakGlass) = await CheckReadAccessAsync(id, ct);
+        if (!allowed)
+        {
+            return Forbid();
+        }
+
+        var result = await companyService.GetPlottingAsync(id, isBreakGlass, ct);
         return Ok(result);
     }
 
@@ -121,10 +151,18 @@ public sealed class CompanyStagesController(
     // ==========================================
     [HttpGet("{id:guid}/registration")]
     [ProducesResponseType<A1RegistrationDetail>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetRegistration(Guid id, CancellationToken ct)
     {
-        var result = await companyService.GetA1RegistrationAsync(id, ct);
+        var (allowed, isBreakGlass) = await CheckReadAccessAsync(id, ct);
+        if (!allowed)
+        {
+            return Forbid();
+        }
+
+        var result = await companyService.GetA1RegistrationAsync(id, isBreakGlass, ct);
         if (result is null)
         {
             return NotFound();
@@ -160,10 +198,18 @@ public sealed class CompanyStagesController(
     // ==========================================
     [HttpGet("{id:guid}/nol-request")]
     [ProducesResponseType<NolRequestDetail>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetNolRequest(Guid id, CancellationToken ct)
     {
-        var result = await companyService.GetNolRequestAsync(id, ct);
+        var (allowed, isBreakGlass) = await CheckReadAccessAsync(id, ct);
+        if (!allowed)
+        {
+            return Forbid();
+        }
+
+        var result = await companyService.GetNolRequestAsync(id, isBreakGlass, ct);
         if (result is null)
         {
             return NotFound();
@@ -196,10 +242,18 @@ public sealed class CompanyStagesController(
 
     [HttpGet("{id:guid}/nol-evaluation")]
     [ProducesResponseType<NolEvaluationDetail>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetNolEvaluation(Guid id, CancellationToken ct)
     {
-        var result = await companyService.GetNolEvaluationAsync(id, ct);
+        var (allowed, isBreakGlass) = await CheckReadAccessAsync(id, ct);
+        if (!allowed)
+        {
+            return Forbid();
+        }
+
+        var result = await companyService.GetNolEvaluationAsync(id, isBreakGlass, ct);
         if (result is null)
         {
             return NotFound();
@@ -232,10 +286,18 @@ public sealed class CompanyStagesController(
 
     [HttpGet("{id:guid}/nol-issuance")]
     [ProducesResponseType<NolIssuanceDetail>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetNolIssuance(Guid id, CancellationToken ct)
     {
-        var result = await companyService.GetNolIssuanceAsync(id, ct);
+        var (allowed, isBreakGlass) = await CheckReadAccessAsync(id, ct);
+        if (!allowed)
+        {
+            return Forbid();
+        }
+
+        var result = await companyService.GetNolIssuanceAsync(id, isBreakGlass, ct);
         if (result is null)
         {
             return NotFound();

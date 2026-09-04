@@ -23,5 +23,5 @@ public interface ICompanyDetailService
         IReadOnlySet<Role> actorRoles,
         CancellationToken ct = default);
 
-    Task<IReadOnlyList<TimelineEntry>> GetTimelineAsync(Guid companyId, CancellationToken ct = default);
+    Task<IReadOnlyList<TimelineEntry>> GetTimelineAsync(Guid companyId, bool isBreakGlass = false, CancellationToken ct = default);
 }

@@ -188,7 +188,11 @@ internal sealed class CompanyService(IDbContextFactory<SimandoDbContext> dbConte
         var company = await db.Companies.FirstOrDefaultAsync(c => c.Id == companyId, ct);
         if (company is null)
         {
-            return SoftDeleteResult.Rejected("Berkas tidak ditemukan.");
+            company = await db.Companies.IgnoreQueryFilters().FirstOrDefaultAsync(c => c.Id == companyId && c.DeletedAt == null, ct);
+            if (company is null)
+            {
+                return SoftDeleteResult.Rejected("Berkas tidak ditemukan.");
+            }
         }
 
         if (company.Status != RecordStatus.Draft)
@@ -323,17 +327,23 @@ internal sealed class CompanyService(IDbContextFactory<SimandoDbContext> dbConte
         return pins;
     }
 
-    public async Task<PlottingDetail?> GetPlottingAsync(Guid companyId, CancellationToken ct = default)
+    public async Task<PlottingDetail?> GetPlottingAsync(Guid companyId, bool isBreakGlass = false, CancellationToken ct = default)
     {
         await using var db = await dbContextFactory.CreateDbContextAsync(ct);
 
-        var plotting = await db.Plottings.AsNoTracking().FirstOrDefaultAsync(p => p.CompanyId == companyId, ct);
+        var query = db.Plottings.AsNoTracking();
+        if (isBreakGlass) query = query.IgnoreQueryFilters();
+
+        var plotting = await query.FirstOrDefaultAsync(p => p.CompanyId == companyId, ct);
         if (plotting is null)
         {
             return new PlottingDetail(companyId, null, null, null, null);
         }
 
-        var salesUserName = await db.Users.AsNoTracking()
+        var usersQuery = db.Users.AsNoTracking();
+        if (isBreakGlass) usersQuery = usersQuery.IgnoreQueryFilters();
+
+        var salesUserName = await usersQuery
             .Where(u => u.Id == plotting.SalesUserId).Select(u => u.FullName).FirstOrDefaultAsync(ct) ?? "Sales Representative";
 
         return new PlottingDetail(companyId, plotting.SalesUserId, salesUserName, plotting.PosisiPelanggan, plotting.Kawasan);
@@ -423,11 +433,14 @@ internal sealed class CompanyService(IDbContextFactory<SimandoDbContext> dbConte
         return StageEditResult.Success();
     }
 
-    public async Task<IReadOnlyList<ContactDetail>> GetContactsAsync(Guid companyId, CancellationToken ct = default)
+    public async Task<IReadOnlyList<ContactDetail>> GetContactsAsync(Guid companyId, bool isBreakGlass = false, CancellationToken ct = default)
     {
         await using var db = await dbContextFactory.CreateDbContextAsync(ct);
 
-        return await db.CompanyContacts.AsNoTracking()
+        var query = db.CompanyContacts.AsNoTracking();
+        if (isBreakGlass) query = query.IgnoreQueryFilters();
+
+        return await query
             .Where(c => c.CompanyId == companyId)
             .OrderByDescending(c => c.IsPrimary).ThenBy(c => c.SortOrder)
             .Select(c => new ContactDetail(
@@ -610,38 +623,55 @@ internal sealed class CompanyService(IDbContextFactory<SimandoDbContext> dbConte
         return StageEditResult.Success();
     }
 
-    public async Task<SurveyDetail> GetSurveyAsync(Guid companyId, CancellationToken ct = default)
+    public async Task<SurveyDetail> GetSurveyAsync(Guid companyId, bool isBreakGlass = false, CancellationToken ct = default)
     {
         await using var db = await dbContextFactory.CreateDbContextAsync(ct);
 
-        var survey = await db.Surveys.AsNoTracking().FirstOrDefaultAsync(s => s.CompanyId == companyId, ct);
+        var surveyQuery = db.Surveys.AsNoTracking();
+        var productsQuery = db.SurveyProducts.AsNoTracking();
+        var rawMaterialsQuery = db.SurveyRawMaterials.AsNoTracking();
+        var marketsQuery = db.SurveyMarkets.AsNoTracking();
+        var equipmentQuery = db.SurveyEquipment.AsNoTracking();
+        var usersQuery = db.Users.AsNoTracking();
+
+        if (isBreakGlass)
+        {
+            surveyQuery = surveyQuery.IgnoreQueryFilters();
+            productsQuery = productsQuery.IgnoreQueryFilters();
+            rawMaterialsQuery = rawMaterialsQuery.IgnoreQueryFilters();
+            marketsQuery = marketsQuery.IgnoreQueryFilters();
+            equipmentQuery = equipmentQuery.IgnoreQueryFilters();
+            usersQuery = usersQuery.IgnoreQueryFilters();
+        }
+
+        var survey = await surveyQuery.FirstOrDefaultAsync(s => s.CompanyId == companyId, ct);
 
         string? surveyorUserName = null;
         if (survey?.SurveyorUserId is { } surveyorUserId)
         {
-            surveyorUserName = await db.Users.AsNoTracking()
+            surveyorUserName = await usersQuery
                 .Where(u => u.Id == surveyorUserId).Select(u => u.FullName).FirstOrDefaultAsync(ct);
         }
 
-        var products = await db.SurveyProducts.AsNoTracking()
+        var products = await productsQuery
             .Where(p => p.CompanyId == companyId)
             .OrderBy(p => p.SortOrder)
             .Select(p => new SurveyProductDetail(p.Id, p.Produk, p.Kapasitas, p.HargaProduk, p.Catatan, p.SortOrder))
             .ToListAsync(ct);
 
-        var rawMaterials = await db.SurveyRawMaterials.AsNoTracking()
+        var rawMaterials = await rawMaterialsQuery
             .Where(m => m.CompanyId == companyId)
             .OrderBy(m => m.SortOrder)
             .Select(m => new SurveyRawMaterialDetail(m.Id, m.Bahan, m.Asal, m.CountryId, m.Volume, m.SatuanUnitId, m.SortOrder))
             .ToListAsync(ct);
 
-        var markets = await db.SurveyMarkets.AsNoTracking()
+        var markets = await marketsQuery
             .Where(m => m.CompanyId == companyId)
             .OrderBy(m => m.SortOrder)
             .Select(m => new SurveyMarketDetail(m.Id, m.Bahan, m.Asal, m.CountryId, m.Volume, m.SatuanUnitId, m.SortOrder))
             .ToListAsync(ct);
 
-        var equipment = await db.SurveyEquipment.AsNoTracking()
+        var equipment = await equipmentQuery
             .Where(e => e.CompanyId == companyId)
             .OrderBy(e => e.SortOrder)
             .Select(e => new SurveyEquipmentDetail(
@@ -906,11 +936,20 @@ internal sealed class CompanyService(IDbContextFactory<SimandoDbContext> dbConte
         return null;
     }
 
-    public async Task<A1RegistrationDetail?> GetA1RegistrationAsync(Guid companyId, CancellationToken ct = default)
+    public async Task<A1RegistrationDetail?> GetA1RegistrationAsync(Guid companyId, bool isBreakGlass = false, CancellationToken ct = default)
     {
         await using var db = await dbContextFactory.CreateDbContextAsync(ct);
 
-        var a1 = await db.A1Registrations.AsNoTracking()
+        var regQuery = db.A1Registrations.AsNoTracking();
+        var usageQuery = db.A1UsagePeriods.AsNoTracking();
+
+        if (isBreakGlass)
+        {
+            regQuery = regQuery.IgnoreQueryFilters();
+            usageQuery = usageQuery.IgnoreQueryFilters();
+        }
+
+        var a1 = await regQuery
             .Include(a => a.UsagePeriods)
             .FirstOrDefaultAsync(a => a.CompanyId == companyId, ct);
 
@@ -1000,11 +1039,14 @@ internal sealed class CompanyService(IDbContextFactory<SimandoDbContext> dbConte
         return StageEditResult.Success();
     }
 
-    public async Task<NolRequestDetail?> GetNolRequestAsync(Guid companyId, CancellationToken ct = default)
+    public async Task<NolRequestDetail?> GetNolRequestAsync(Guid companyId, bool isBreakGlass = false, CancellationToken ct = default)
     {
         await using var db = await dbContextFactory.CreateDbContextAsync(ct);
 
-        var nol = await db.NolRequests.AsNoTracking()
+        var query = db.NolRequests.AsNoTracking();
+        if (isBreakGlass) query = query.IgnoreQueryFilters();
+
+        var nol = await query
             .Include(n => n.Periods)
             .Include(n => n.DailyBasisRows)
             .Include(n => n.References)
@@ -1130,11 +1172,14 @@ internal sealed class CompanyService(IDbContextFactory<SimandoDbContext> dbConte
         return StageEditResult.Success();
     }
 
-    public async Task<NolEvaluationDetail?> GetNolEvaluationAsync(Guid companyId, CancellationToken ct = default)
+    public async Task<NolEvaluationDetail?> GetNolEvaluationAsync(Guid companyId, bool isBreakGlass = false, CancellationToken ct = default)
     {
         await using var db = await dbContextFactory.CreateDbContextAsync(ct);
 
-        var eval = await db.NolEvaluations.AsNoTracking()
+        var query = db.NolEvaluations.AsNoTracking();
+        if (isBreakGlass) query = query.IgnoreQueryFilters();
+
+        var eval = await query
             .Include(e => e.Scenarios)
             .FirstOrDefaultAsync(e => e.NolRequestId == companyId, ct);
 
@@ -1226,11 +1271,14 @@ internal sealed class CompanyService(IDbContextFactory<SimandoDbContext> dbConte
         return StageEditResult.Success();
     }
 
-    public async Task<NolIssuanceDetail?> GetNolIssuanceAsync(Guid companyId, CancellationToken ct = default)
+    public async Task<NolIssuanceDetail?> GetNolIssuanceAsync(Guid companyId, bool isBreakGlass = false, CancellationToken ct = default)
     {
         await using var db = await dbContextFactory.CreateDbContextAsync(ct);
 
-        var issuance = await db.NolIssuances.AsNoTracking()
+        var query = db.NolIssuances.AsNoTracking();
+        if (isBreakGlass) query = query.IgnoreQueryFilters();
+
+        var issuance = await query
             .Include(i => i.ApprovedTerms)
             .FirstOrDefaultAsync(i => i.NolRequestId == companyId, ct);
 

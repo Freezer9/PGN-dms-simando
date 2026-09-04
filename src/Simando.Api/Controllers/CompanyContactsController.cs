@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Simando.Api.Security;
 using Simando.Application.Directory;
+using Simando.Application.Security;
 using Simando.Domain.Security;
 
 namespace Simando.Api.Controllers;
@@ -11,13 +12,24 @@ namespace Simando.Api.Controllers;
 [Authorize]
 public sealed class CompanyContactsController(
     ICompanyService companyService,
+    IBreakGlassService breakGlassService,
     ICurrentUser currentUser) : ControllerBase
 {
     [HttpGet("{id:guid}/contacts")]
     [ProducesResponseType<IReadOnlyList<ContactDetail>>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> GetContacts(Guid id, CancellationToken ct)
     {
-        var contacts = await companyService.GetContactsAsync(id, ct);
+        var hasViewCapability = currentUser.HasCapability(Capability.ViewCompanyRecords);
+        var hasActiveBreakGlass = !hasViewCapability && await breakGlassService.HasActiveAccessAsync(currentUser.UserId, id, ct);
+
+        if (!hasViewCapability && !hasActiveBreakGlass)
+        {
+            return Forbid();
+        }
+
+        var contacts = await companyService.GetContactsAsync(id, hasActiveBreakGlass, ct);
         return Ok(contacts);
     }
 

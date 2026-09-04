@@ -13,6 +13,7 @@ using Simando.Application.Reports;
 using Simando.Domain.Geography;
 using Simando.Domain.MasterData;
 using Simando.Domain.Organisation;
+using Simando.Domain.Security;
 using Simando.Infrastructure.Identity;
 using Simando.Infrastructure.Persistence;
 using Testcontainers.PostgreSql;
@@ -30,7 +31,7 @@ public class ReportsControllerTests : IAsyncLifetime
         Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
     };
 
-    private readonly PostgreSqlContainer _container = new PostgreSqlBuilder("postgis/postgis:18-3.6-alpine")
+    private readonly PostgreSqlContainer _container = new PostgreSqlBuilder("imresamu/postgis:18-3.6-alpine")
         .WithDatabase("simando")
         .WithUsername("simando")
         .WithPassword("simando")
@@ -69,6 +70,18 @@ public class ReportsControllerTests : IAsyncLifetime
             var areaId = Guid.NewGuid();
             db.Regions.Add(new Region { Id = regionId, Code = "SOR3", Name = "Region 3 - Jatim Bali Nusa", Active = true });
             db.Areas.Add(new Area { Id = areaId, RegionId = regionId, Code = "SBY", Name = "Area Surabaya", Active = true });
+
+            var adminUser = await db.Users.FirstAsync(u => u.Email == AdminEmail);
+            db.RoleAssignments.Add(new RoleAssignment
+            {
+                Id = Guid.NewGuid(),
+                UserId = adminUser.Id,
+                Role = Role.RegionalAdmin,
+                RegionId = regionId,
+                Active = true,
+                AssignedAt = DateTimeOffset.UtcNow,
+                AssignedBy = adminUser.Id
+            });
 
             await db.SaveChangesAsync();
         }

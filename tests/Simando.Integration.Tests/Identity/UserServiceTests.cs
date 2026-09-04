@@ -19,7 +19,7 @@ public class UserServiceTests : IAsyncLifetime
     private static readonly EffectivePermissions SystemAdmin =
         new(AccessScope.All, null, null, new HashSet<Capability> { Capability.AssignRoles });
 
-    private readonly PostgreSqlContainer _container = new PostgreSqlBuilder("postgis/postgis:18-3.6-alpine")
+    private readonly PostgreSqlContainer _container = new PostgreSqlBuilder("imresamu/postgis:18-3.6-alpine")
         .WithDatabase("simando")
         .WithUsername("simando")
         .WithPassword("simando")

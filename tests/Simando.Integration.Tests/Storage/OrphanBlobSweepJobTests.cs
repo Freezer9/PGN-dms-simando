@@ -24,7 +24,7 @@ public class OrphanBlobSweepJobTests : IAsyncLifetime
 {
     private const string Bucket = "simando-sweep-test";
 
-    private readonly PostgreSqlContainer _dbContainer = new PostgreSqlBuilder("postgis/postgis:18-3.6-alpine")
+    private readonly PostgreSqlContainer _dbContainer = new PostgreSqlBuilder("imresamu/postgis:18-3.6-alpine")
         .WithDatabase("simando_sweep_test")
         .WithUsername("simando")
         .WithPassword("simando_pass")

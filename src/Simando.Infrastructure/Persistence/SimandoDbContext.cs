@@ -104,7 +104,7 @@ public sealed class SimandoDbContext(DbContextOptions<SimandoDbContext> options,
         // — so "Company.Area.RegionId" is a Set<Area>() subquery instead.)
         modelBuilder.Entity<Company>().HasQueryFilter(c =>
             c.DeletedAt == null &&
-            (currentUser.Scope == AccessScope.All ||
+            ((currentUser.Scope == AccessScope.All && currentUser.HasCapability(Capability.ViewCompanyRecords)) ||
              (currentUser.Scope == AccessScope.Region &&
                 Set<Area>().Any(a => a.Id == c.AreaId && a.RegionId == currentUser.RegionId)) ||
              (currentUser.Scope == AccessScope.Area && c.AreaId == currentUser.AreaId)));

@@ -23,7 +23,7 @@ public class GeographyControllerTests : IAsyncLifetime
     private const string AdminInitialPassword = "Correct-Horse-Battery-Staple-1";
     private const string AdminPassword = "New-Correct-Horse-Password-1";
 
-    private readonly PostgreSqlContainer _container = new PostgreSqlBuilder("postgis/postgis:18-3.6-alpine")
+    private readonly PostgreSqlContainer _container = new PostgreSqlBuilder("imresamu/postgis:18-3.6-alpine")
         .WithDatabase("simando")
         .WithUsername("simando")
         .WithPassword("simando")

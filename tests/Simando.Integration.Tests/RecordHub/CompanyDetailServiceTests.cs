@@ -12,6 +12,7 @@ using Simando.Infrastructure.Identity;
 using Simando.Infrastructure.Notifications;
 using Simando.Infrastructure.Persistence;
 using Simando.Infrastructure.RecordHub;
+using Simando.Infrastructure.Security;
 using Simando.Infrastructure.Workflow;
 using Simando.Integration.Tests;
 using Testcontainers.PostgreSql;
@@ -25,7 +26,7 @@ namespace Simando.Integration.Tests.RecordHub;
 // covered there, not re-tested here.
 public class CompanyDetailServiceTests : IAsyncLifetime
 {
-    private readonly PostgreSqlContainer _container = new PostgreSqlBuilder("postgis/postgis:18-3.6-alpine")
+    private readonly PostgreSqlContainer _container = new PostgreSqlBuilder("imresamu/postgis:18-3.6-alpine")
         .WithDatabase("simando")
         .WithUsername("simando")
         .WithPassword("simando")
@@ -192,7 +193,13 @@ public class CompanyDetailServiceTests : IAsyncLifetime
         new SingleContextFactory(_container.GetConnectionString()),
         new InAppNotificationChannel(new SingleContextFactory(_container.GetConnectionString())));
 
-    private CompanyDetailService NewDetailService() => new(new SingleContextFactory(_container.GetConnectionString()));
+    private BreakGlassService NewBreakGlassService() => new(
+        new SingleContextFactory(_container.GetConnectionString()),
+        new InAppNotificationChannel(new SingleContextFactory(_container.GetConnectionString())));
+
+    private CompanyDetailService NewDetailService() => new(
+        new SingleContextFactory(_container.GetConnectionString()),
+        NewBreakGlassService());
 
     private sealed record SeedData(
         Company Company,

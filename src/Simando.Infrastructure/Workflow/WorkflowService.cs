@@ -480,14 +480,14 @@ internal sealed class WorkflowService(
     {
         await using var db = await dbContextFactory.CreateDbContextAsync(ct);
 
-        var instances = await db.WorkflowInstances.AsNoTracking()
+        var instances = await db.WorkflowInstances.IgnoreQueryFilters().AsNoTracking()
             .Where(i => i.CompletedAt == null)
             .ToListAsync(ct);
 
         var instanceIds = instances.Select(i => i.Id).ToHashSet();
         var companyIds = instances.Select(i => i.CompanyId).ToHashSet();
 
-        var steps = await db.WorkflowSteps.AsNoTracking()
+        var steps = await db.WorkflowSteps.IgnoreQueryFilters().AsNoTracking()
             .Where(s => instanceIds.Contains(s.WorkflowInstanceId) && s.ActedAt == null)
             .ToListAsync(ct);
 
@@ -496,12 +496,12 @@ internal sealed class WorkflowService(
             .ToDictionaryAsync(c => c.Id, ct);
 
         var areaIds = companies.Values.Select(c => c.AreaId).ToHashSet();
-        var areas = await db.Areas.AsNoTracking()
+        var areas = await db.Areas.IgnoreQueryFilters().AsNoTracking()
             .Where(a => areaIds.Contains(a.Id))
             .ToDictionaryAsync(a => a.Id, ct);
 
         var regionIds = areas.Values.Select(a => a.RegionId).ToHashSet();
-        var regions = await db.Regions.AsNoTracking()
+        var regions = await db.Regions.IgnoreQueryFilters().AsNoTracking()
             .Where(r => regionIds.Contains(r.Id))
             .ToDictionaryAsync(r => r.Id, r => r.Name, ct);
 
@@ -523,6 +523,15 @@ internal sealed class WorkflowService(
             var regionName = area is not null ? regions.GetValueOrDefault(area.RegionId, "-") : "-";
             var areaName = area?.Name ?? "-";
             var regionId = area?.RegionId ?? Guid.Empty;
+
+            if (actor.Scope == AccessScope.Region && actor.RegionId.HasValue && regionId != actor.RegionId.Value)
+            {
+                continue;
+            }
+            if (actor.Scope == AccessScope.Area && actor.AreaId.HasValue && comp.AreaId != actor.AreaId.Value)
+            {
+                continue;
+            }
 
             var startedAt = inst.StartedAt;
             var elapsedDays = Math.Max(0, (int)(now - startedAt).TotalDays);

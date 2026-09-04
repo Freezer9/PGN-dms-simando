@@ -10,7 +10,7 @@ namespace Simando.Integration.Tests.Persistence;
 // PostGIS 18 integration tests with container-per-test isolation.
 public class RegionAreaPersistenceTests : IAsyncLifetime
 {
-    private readonly PostgreSqlContainer _container = new PostgreSqlBuilder("postgis/postgis:18-3.6-alpine")
+    private readonly PostgreSqlContainer _container = new PostgreSqlBuilder("imresamu/postgis:18-3.6-alpine")
         .WithDatabase("simando")
         .WithUsername("simando")
         .WithPassword("simando")

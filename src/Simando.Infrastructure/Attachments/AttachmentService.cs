@@ -12,7 +12,7 @@ internal sealed class AttachmentService(
     IAttachmentStore store) : IAttachmentService
 {
     public async Task<GetCompanyAttachmentsResult> GetCompanyAttachmentsAsync(
-        Guid companyId, EffectivePermissions permissions, CancellationToken ct = default)
+        Guid companyId, EffectivePermissions permissions, bool isBreakGlass = false, CancellationToken ct = default)
     {
         await using var db = await dbContextFactory.CreateDbContextAsync(ct);
 
@@ -26,16 +26,22 @@ internal sealed class AttachmentService(
         if (company is null)
             return GetCompanyAttachmentsResult.NotFoundResult();
 
-        if (!PermissionEvaluator.CanViewRecord(permissions, company.AreaId, company.RegionId))
+        if (!isBreakGlass && !PermissionEvaluator.CanViewRecord(permissions, company.AreaId, company.RegionId))
             return GetCompanyAttachmentsResult.ForbiddenResult();
 
-        var attachments = await db.Attachments.AsNoTracking()
+        var attachmentsQuery = db.Attachments.AsNoTracking();
+        if (isBreakGlass) attachmentsQuery = attachmentsQuery.IgnoreQueryFilters();
+
+        var attachments = await attachmentsQuery
             .Where(a => a.CompanyId == companyId)
             .OrderByDescending(a => a.UploadedAt)
             .ToListAsync(ct);
 
         var userIds = attachments.Select(a => a.UploadedBy).ToHashSet();
-        var userNames = await db.Users.AsNoTracking()
+        var usersQuery = db.Users.AsNoTracking();
+        if (isBreakGlass) usersQuery = usersQuery.IgnoreQueryFilters();
+
+        var userNames = await usersQuery
             .Where(u => userIds.Contains(u.Id))
             .ToDictionaryAsync(u => u.Id, u => u.FullName, ct);
 

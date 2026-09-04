@@ -24,11 +24,7 @@ public sealed class CapabilityAuthorizationPolicyProvider(IOptions<Authorization
             return new AuthorizationPolicyBuilder()
                 .RequireAuthenticatedUser()
                 .RequireAssertion(ctx =>
-                {
-                    var user = ctx.User;
-                    return user.HasClaim(SimandoUserClaimsPrincipalFactory.ScopeClaimType, AccessScope.All.ToString())
-                        || user.HasClaim(SimandoUserClaimsPrincipalFactory.CapabilityClaimType, capabilityName);
-                })
+                    ctx.User.HasClaim(SimandoUserClaimsPrincipalFactory.CapabilityClaimType, capabilityName))
                 .Build();
         }
 
@@ -38,11 +34,7 @@ public sealed class CapabilityAuthorizationPolicyProvider(IOptions<Authorization
             return new AuthorizationPolicyBuilder()
                 .RequireAuthenticatedUser()
                 .RequireAssertion(ctx =>
-                {
-                    var user = ctx.User;
-                    return user.HasClaim(SimandoUserClaimsPrincipalFactory.ScopeClaimType, AccessScope.All.ToString())
-                        || capabilities.Any(c => user.HasClaim(SimandoUserClaimsPrincipalFactory.CapabilityClaimType, c));
-                })
+                    capabilities.Any(c => ctx.User.HasClaim(SimandoUserClaimsPrincipalFactory.CapabilityClaimType, c)))
                 .Build();
         }
 

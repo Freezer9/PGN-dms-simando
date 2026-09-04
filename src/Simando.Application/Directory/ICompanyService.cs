@@ -21,7 +21,7 @@ public interface ICompanyService
 
     Task<IReadOnlyList<CompanyMapPinDto>> GetMapPinsAsync(CancellationToken ct = default);
 
-    Task<PlottingDetail?> GetPlottingAsync(Guid companyId, CancellationToken ct = default);
+    Task<PlottingDetail?> GetPlottingAsync(Guid companyId, bool isBreakGlass = false, CancellationToken ct = default);
 
     Task<StageEditResult> SavePlottingAsync(
         Guid companyId, SavePlottingRequest request, Guid actorUserId, EffectivePermissions actor, CancellationToken ct = default);
@@ -29,7 +29,7 @@ public interface ICompanyService
     Task<StageEditResult> PromoteToProspekAsync(
         Guid companyId, Guid actorUserId, EffectivePermissions actor, CancellationToken ct = default);
 
-    Task<IReadOnlyList<ContactDetail>> GetContactsAsync(Guid companyId, CancellationToken ct = default);
+    Task<IReadOnlyList<ContactDetail>> GetContactsAsync(Guid companyId, bool isBreakGlass = false, CancellationToken ct = default);
 
     Task<StageEditResult> AddContactAsync(
         Guid companyId, SaveContactRequest request, Guid actorUserId, EffectivePermissions actor, CancellationToken ct = default);
@@ -43,7 +43,7 @@ public interface ICompanyService
     Task<StageEditResult> UpdateLocationAsync(
         Guid companyId, double latitude, double longitude, Guid actorUserId, EffectivePermissions actor, CancellationToken ct = default);
 
-    Task<SurveyDetail> GetSurveyAsync(Guid companyId, CancellationToken ct = default);
+    Task<SurveyDetail> GetSurveyAsync(Guid companyId, bool isBreakGlass = false, CancellationToken ct = default);
 
     Task<StageEditResult> SaveSurveyFullAsync(
         Guid companyId,
@@ -54,22 +54,22 @@ public interface ICompanyService
         IReadOnlyList<SaveSurveyEquipmentRequest> equipment,
         Guid actorUserId, EffectivePermissions actor, CancellationToken ct = default);
 
-    Task<A1RegistrationDetail?> GetA1RegistrationAsync(Guid companyId, CancellationToken ct = default);
+    Task<A1RegistrationDetail?> GetA1RegistrationAsync(Guid companyId, bool isBreakGlass = false, CancellationToken ct = default);
 
     Task<StageEditResult> SaveA1RegistrationAsync(
         Guid companyId, SaveA1RegistrationRequest request, Guid actorUserId, EffectivePermissions actor, CancellationToken ct = default);
 
-    Task<NolRequestDetail?> GetNolRequestAsync(Guid companyId, CancellationToken ct = default);
+    Task<NolRequestDetail?> GetNolRequestAsync(Guid companyId, bool isBreakGlass = false, CancellationToken ct = default);
 
     Task<StageEditResult> SaveNolRequestAsync(
         Guid companyId, SaveNolRequestRequest request, Guid actorUserId, EffectivePermissions actor, CancellationToken ct = default);
 
-    Task<NolEvaluationDetail?> GetNolEvaluationAsync(Guid companyId, CancellationToken ct = default);
+    Task<NolEvaluationDetail?> GetNolEvaluationAsync(Guid companyId, bool isBreakGlass = false, CancellationToken ct = default);
 
     Task<StageEditResult> SaveNolEvaluationAsync(
         Guid companyId, SaveNolEvaluationRequest request, Guid actorUserId, EffectivePermissions actor, CancellationToken ct = default);
 
-    Task<NolIssuanceDetail?> GetNolIssuanceAsync(Guid companyId, CancellationToken ct = default);
+    Task<NolIssuanceDetail?> GetNolIssuanceAsync(Guid companyId, bool isBreakGlass = false, CancellationToken ct = default);
 
     Task<StageEditResult> SaveNolIssuanceAsync(
         Guid companyId, SaveNolIssuanceRequest request, Guid actorUserId, EffectivePermissions actor, CancellationToken ct = default);

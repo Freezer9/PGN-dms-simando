@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Simando.Api.Security;
 using Simando.Application.Attachments;
+using Simando.Application.Security;
 using Simando.Domain.Attachments;
 using Simando.Domain.Registration;
 using Simando.Domain.Security;
@@ -17,6 +18,7 @@ namespace Simando.Api.Controllers;
 [Authorize]
 public sealed class AttachmentsController(
     IAttachmentService attachmentService,
+    IBreakGlassService breakGlassService,
     ICurrentUser currentUser) : ControllerBase
 {
     private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
@@ -32,7 +34,12 @@ public sealed class AttachmentsController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetCompanyAttachments(Guid companyId, CancellationToken ct)
     {
-        var result = await attachmentService.GetCompanyAttachmentsAsync(companyId, currentUser.Permissions, ct);
+        var hasViewCapability = currentUser.HasCapability(Capability.ViewCompanyRecords);
+        var hasActiveBreakGlass = !hasViewCapability && await breakGlassService.HasActiveAccessAsync(currentUser.UserId, companyId, ct);
+
+        if (!hasViewCapability && !hasActiveBreakGlass) return Forbid();
+
+        var result = await attachmentService.GetCompanyAttachmentsAsync(companyId, currentUser.Permissions, hasActiveBreakGlass, ct);
         if (result.NotFound) return NotFound();
         if (result.Forbidden) return Forbid();
 
