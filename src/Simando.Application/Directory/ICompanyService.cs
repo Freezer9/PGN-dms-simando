@@ -19,7 +19,7 @@ public interface ICompanyService
 
     Task<SoftDeleteResult> SoftDeleteAsync(Guid companyId, Guid actorUserId, CancellationToken ct = default);
 
-    Task<IReadOnlyList<CompanyMapPinDto>> GetMapPinsAsync(CancellationToken ct = default);
+    Task<IReadOnlyList<CompanyMapPinDto>> GetMapPinsAsync(CompanyListFilter? filter = null, CancellationToken ct = default);
 
     Task<PlottingDetail?> GetPlottingAsync(Guid companyId, bool isBreakGlass = false, CancellationToken ct = default);
 

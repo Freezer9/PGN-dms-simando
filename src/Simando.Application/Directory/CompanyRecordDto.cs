@@ -17,7 +17,15 @@ public sealed record CompanyMapPinDto(
     string LocationLabel,
     PosisiPelanggan? PosisiPelanggan,
     Kawasan? Kawasan,
-    string? SalesUserName);
+    string? SalesUserName,
+    Guid? ProvinceId = null,
+    string? ProvinceName = null,
+    Guid? RegencyId = null,
+    string? RegencyName = null,
+    Guid? DistrictId = null,
+    string? DistrictName = null,
+    Guid? VillageId = null,
+    string? VillageName = null);
 
 public sealed record UpdateLocationRequest(double Latitude, double Longitude);
 

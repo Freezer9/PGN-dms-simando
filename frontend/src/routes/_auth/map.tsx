@@ -26,6 +26,7 @@ import {
 	MapMarker,
 	MarkerContent,
 	MarkerPopup,
+	useMap,
 } from "@/components/ui/map";
 import {
 	Select,
@@ -57,9 +58,32 @@ const STAGE_PIN_COLORS: Record<number, string> = {
 	8: "#22c55e", // Green
 };
 
+function MapViewController({
+	center,
+	zoom,
+}: {
+	center: [number, number];
+	zoom: number;
+}) {
+	const { map } = useMap();
+	React.useEffect(() => {
+		if (!map) return;
+		map.flyTo({
+			center,
+			zoom,
+			duration: 800,
+		});
+	}, [map, center, zoom]);
+	return null;
+}
+
 function GeospatialMapPage() {
 	// Filter states
 	const [searchTerm, setSearchTerm] = React.useState("");
+	const [selectedProvince, setSelectedProvince] = React.useState<string>("ALL");
+	const [selectedRegency, setSelectedRegency] = React.useState<string>("ALL");
+	const [selectedDistrict, setSelectedDistrict] = React.useState<string>("ALL");
+	const [selectedVillage, setSelectedVillage] = React.useState<string>("ALL");
 	const [selectedStages, setSelectedStages] = React.useState<number[]>([]);
 	const [selectedIndustry, setSelectedIndustry] = React.useState<string>("ALL");
 	const [selectedPosisi, setSelectedPosisi] = React.useState<string>("ALL");
@@ -69,12 +93,74 @@ function GeospatialMapPage() {
 	const [selectedPin, setSelectedPin] = React.useState<CompanyMapPinDto | null>(
 		null,
 	);
-	const [isFilterOpen, setIsFilterOpen] = React.useState(true);
+	const [isFilterOpen, setIsFilterOpen] = React.useState(false);
 
-	// Fetch Pins
+	// Responsive initial state: open filter panel on desktop (>= 768px), keep closed on mobile
+	React.useEffect(() => {
+		if (typeof window !== "undefined" && window.innerWidth >= 768) {
+			setIsFilterOpen(true);
+		}
+	}, []);
+
+	// Fetch Pins with 4-level cascading geography filters
 	const { data: pinsData, isLoading } = $api.useQuery(
 		"get",
 		"/api/companies/map-pins",
+		{
+			params: {
+				query: {
+					provinceId: selectedProvince !== "ALL" ? selectedProvince : undefined,
+					regencyId: selectedRegency !== "ALL" ? selectedRegency : undefined,
+					districtId: selectedDistrict !== "ALL" ? selectedDistrict : undefined,
+					villageId: selectedVillage !== "ALL" ? selectedVillage : undefined,
+				},
+			},
+		},
+	);
+
+	// Cascading Geography Queries (4 Levels)
+	const { data: provinces } = $api.useQuery("get", "/api/geography/provinces");
+	const { data: regencies } = $api.useQuery(
+		"get",
+		"/api/geography/regencies",
+		{
+			params: {
+				query: {
+					provinceId: selectedProvince === "ALL" ? "" : selectedProvince,
+				},
+			},
+		},
+		{
+			enabled: selectedProvince !== "ALL" && Boolean(selectedProvince),
+		},
+	);
+	const { data: districts } = $api.useQuery(
+		"get",
+		"/api/geography/districts",
+		{
+			params: {
+				query: {
+					regencyId: selectedRegency === "ALL" ? "" : selectedRegency,
+				},
+			},
+		},
+		{
+			enabled: selectedRegency !== "ALL" && Boolean(selectedRegency),
+		},
+	);
+	const { data: villages } = $api.useQuery(
+		"get",
+		"/api/geography/villages",
+		{
+			params: {
+				query: {
+					districtId: selectedDistrict === "ALL" ? "" : selectedDistrict,
+				},
+			},
+		},
+		{
+			enabled: selectedDistrict !== "ALL" && Boolean(selectedDistrict),
+		},
 	);
 
 	// Fetch Master Data
@@ -83,7 +169,7 @@ function GeospatialMapPage() {
 		"/api/master/industry-types",
 	);
 
-	// Filter Pins
+	// Filter Pins in memory
 	const filteredPins = React.useMemo(() => {
 		if (!pinsData) return [];
 
@@ -94,6 +180,30 @@ function GeospatialMapPage() {
 				const matchName = item.namaPerusahaan.toLowerCase().includes(term);
 				const matchNomor = item.nomor.toLowerCase().includes(term);
 				if (!matchName && !matchNomor) return false;
+			}
+
+			// Province filter
+			if (selectedProvince !== "ALL") {
+				if (item.provinceId && item.provinceId !== selectedProvince) {
+					return false;
+				}
+			}
+
+			// Regency filter
+			if (selectedRegency !== "ALL") {
+				if (item.regencyId && item.regencyId !== selectedRegency) return false;
+			}
+
+			// District filter (Kecamatan)
+			if (selectedDistrict !== "ALL") {
+				if (item.districtId && item.districtId !== selectedDistrict) {
+					return false;
+				}
+			}
+
+			// Village filter (Kelurahan / Desa)
+			if (selectedVillage !== "ALL") {
+				if (item.villageId && item.villageId !== selectedVillage) return false;
 			}
 
 			// Stage filter
@@ -121,6 +231,10 @@ function GeospatialMapPage() {
 	}, [
 		pinsData,
 		searchTerm,
+		selectedProvince,
+		selectedRegency,
+		selectedDistrict,
+		selectedVillage,
 		selectedStages,
 		selectedIndustry,
 		selectedPosisi,
@@ -135,11 +249,27 @@ function GeospatialMapPage() {
 
 	const resetFilters = () => {
 		setSearchTerm("");
+		setSelectedProvince("ALL");
+		setSelectedRegency("ALL");
+		setSelectedDistrict("ALL");
+		setSelectedVillage("ALL");
 		setSelectedStages([]);
 		setSelectedIndustry("ALL");
 		setSelectedPosisi("ALL");
 		setSelectedKawasan("ALL");
 	};
+
+	const activeFilterCount = [
+		selectedProvince !== "ALL",
+		selectedRegency !== "ALL",
+		selectedDistrict !== "ALL",
+		selectedVillage !== "ALL",
+		selectedIndustry !== "ALL",
+		selectedPosisi !== "ALL",
+		selectedKawasan !== "ALL",
+		selectedStages.length > 0,
+		Boolean(searchTerm),
+	].filter(Boolean).length;
 
 	const mapCenter: [number, number] = React.useMemo(() => {
 		if (filteredPins.length > 0) {
@@ -154,34 +284,62 @@ function GeospatialMapPage() {
 		return [106.8456, -6.2088]; // Jakarta center default
 	}, [filteredPins]);
 
+	const mapZoom = React.useMemo(() => {
+		if (selectedVillage !== "ALL") return 15;
+		if (selectedDistrict !== "ALL") return 13;
+		if (selectedRegency !== "ALL") return 11;
+		if (selectedProvince !== "ALL") return 8;
+		return 10;
+	}, [selectedProvince, selectedRegency, selectedDistrict, selectedVillage]);
+
 	return (
 		<div className="relative h-[calc(100vh-8rem)] w-full flex flex-col overflow-hidden rounded-lg border shadow-xs">
 			{/* Top Header Bar */}
-			<div className="h-12 bg-background border-b px-4 flex items-center justify-between shrink-0 z-10">
-				<div className="flex items-center gap-3">
-					<div className="flex items-center gap-1.5 font-semibold text-sm">
-						<MapPinIcon className="size-4 text-primary" />
-						<span>Peta Sebaran Pelanggan & Jaringan Pipa</span>
+			<div className="h-12 bg-background border-b px-3 sm:px-4 flex items-center justify-between shrink-0 z-10 gap-2">
+				<div className="flex items-center gap-2 sm:gap-3 min-w-0">
+					<div className="flex items-center gap-1.5 font-semibold text-xs sm:text-sm truncate">
+						<MapPinIcon className="size-4 text-primary shrink-0" />
+						<span className="hidden sm:inline truncate">
+							Peta Sebaran Pelanggan & Jaringan Pipa
+						</span>
+						<span className="sm:hidden font-medium truncate">Peta Spasial</span>
 					</div>
-					<Badge variant="outline" className="text-xs font-normal">
+					<Badge
+						variant="outline"
+						className="text-[10px] sm:text-xs font-normal shrink-0"
+					>
 						{filteredPins.length} dari {pinsData?.length || 0} Titik
 					</Badge>
 				</div>
 
-				<div className="flex items-center gap-2">
+				<div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
 					<Button
-						variant="outline"
+						variant={isFilterOpen ? "secondary" : "outline"}
 						size="sm"
 						onClick={() => setIsFilterOpen(!isFilterOpen)}
-						className="h-8 text-xs flex items-center gap-1.5"
+						className="h-8 text-xs flex items-center gap-1 px-2.5"
+						aria-label="Toggle Filter Spasial"
 					>
 						<Filter className="size-3.5" />
-						<span>Filter Spasial</span>
+						<span className="hidden sm:inline">Filter Spasial</span>
+						{activeFilterCount > 0 && (
+							<Badge
+								variant="secondary"
+								className="h-4.5 min-w-4 px-1 text-[10px] font-semibold"
+							>
+								{activeFilterCount}
+							</Badge>
+						)}
 					</Button>
-					<Button variant="default" size="sm" asChild className="h-8 text-xs">
+					<Button
+						variant="default"
+						size="sm"
+						asChild
+						className="h-8 text-xs px-2.5"
+					>
 						<Link to="/directory" className="flex items-center gap-1">
 							<Building2 className="size-3.5" />
-							<span>Tabel Direktori</span>
+							<span className="hidden sm:inline">Tabel Direktori</span>
 						</Link>
 					</Button>
 				</div>
@@ -200,14 +358,27 @@ function GeospatialMapPage() {
 
 				<Map
 					center={mapCenter}
-					zoom={11}
+					zoom={10}
 					className="h-full w-full rounded-none border-0"
 				>
 					<MapControls />
+					<MapViewController center={mapCenter} zoom={mapZoom} />
 					{filteredPins.map((item) => {
 						const stageNum = Number(item.currentStage);
 						const stageColor = STAGE_PIN_COLORS[stageNum] || "#3b82f6";
 						const stage = getStageInfo(stageNum);
+
+						const fullLocation =
+							[
+								item.villageName ? `Kel. ${item.villageName}` : null,
+								item.districtName ? `Kec. ${item.districtName}` : null,
+								item.regencyName,
+								item.provinceName,
+							]
+								.filter(Boolean)
+								.join(", ") ||
+							item.locationLabel ||
+							"-";
 
 						return (
 							<MapMarker
@@ -226,7 +397,7 @@ function GeospatialMapPage() {
 									</div>
 								</MarkerContent>
 								<MarkerPopup>
-									<div className="space-y-1.5 text-xs min-w-[200px]">
+									<div className="space-y-1.5 text-xs min-w-[220px]">
 										<div className="font-semibold text-foreground">
 											{item.namaPerusahaan}
 										</div>
@@ -239,6 +410,10 @@ function GeospatialMapPage() {
 												style={{ backgroundColor: stageColor }}
 											/>
 											<span>{stage.name}</span>
+										</div>
+										<div className="text-[11px] text-muted-foreground flex items-center gap-1 truncate pt-0.5">
+											<MapPinIcon className="size-3 shrink-0 text-muted-foreground" />
+											<span className="truncate">{fullLocation}</span>
 										</div>
 										<div className="pt-1 border-t">
 											<Link
@@ -257,9 +432,9 @@ function GeospatialMapPage() {
 					})}
 				</Map>
 
-				{/* Floating Filter Overlay Panel */}
+				{/* Floating / Responsive Filter Overlay Panel */}
 				{isFilterOpen && (
-					<Card className="absolute top-4 left-4 w-80 max-h-[calc(100%-2rem)] overflow-y-auto z-20 shadow-lg border-border/80 bg-background/95 backdrop-blur-xs">
+					<Card className="absolute left-3 right-3 bottom-3 max-h-[75vh] md:left-4 md:right-auto md:top-4 md:bottom-auto md:w-80 md:max-h-[calc(100%-2rem)] overflow-y-auto z-20 shadow-xl border-border/80 bg-background/95 backdrop-blur-xs rounded-xl md:rounded-lg">
 						<CardHeader className="p-3 pb-2 flex flex-row items-center justify-between">
 							<CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
 								Filter Peta
@@ -269,6 +444,7 @@ function GeospatialMapPage() {
 								size="icon"
 								className="size-6"
 								onClick={() => setIsFilterOpen(false)}
+								aria-label="Tutup filter peta"
 							>
 								<X className="size-3.5" />
 							</Button>
@@ -283,6 +459,124 @@ function GeospatialMapPage() {
 									onChange={(e) => setSearchTerm(e.target.value)}
 									className="pl-8 h-8 text-xs"
 								/>
+							</div>
+
+							{/* Wilayah Administratif 4 Tingkat */}
+							<div className="space-y-2 pt-1 border-t">
+								<Label className="text-[11px] font-semibold text-muted-foreground block">
+									Wilayah Administratif
+								</Label>
+								<div className="space-y-1">
+									<Label className="text-[10px] text-muted-foreground">
+										Provinsi
+									</Label>
+									<Combobox
+										value={selectedProvince === "ALL" ? "" : selectedProvince}
+										onValueChange={(val) => {
+											setSelectedProvince(val || "ALL");
+											setSelectedRegency("ALL");
+											setSelectedDistrict("ALL");
+											setSelectedVillage("ALL");
+										}}
+										options={[
+											{ value: "", label: "Semua Provinsi" },
+											...(provinces?.map((p) => ({
+												value: p.id,
+												label: p.name,
+											})) || []),
+										]}
+										placeholder="Semua Provinsi"
+										searchPlaceholder="Cari provinsi..."
+										emptyText="Provinsi tidak ditemukan."
+										aria-label="Filter Provinsi"
+										className="h-8 text-xs"
+									/>
+								</div>
+								<div className="space-y-1">
+									<Label className="text-[10px] text-muted-foreground">
+										Kota / Kabupaten
+									</Label>
+									<Combobox
+										value={selectedRegency === "ALL" ? "" : selectedRegency}
+										disabled={selectedProvince === "ALL" || !selectedProvince}
+										onValueChange={(val) => {
+											setSelectedRegency(val || "ALL");
+											setSelectedDistrict("ALL");
+											setSelectedVillage("ALL");
+										}}
+										options={[
+											{ value: "", label: "Semua Kota / Kab" },
+											...(regencies?.map((r) => ({
+												value: r.id,
+												label: r.name,
+											})) || []),
+										]}
+										placeholder={
+											selectedProvince !== "ALL"
+												? "Semua Kota / Kab"
+												: "Pilih Provinsi Dulu"
+										}
+										searchPlaceholder="Cari kota / kab..."
+										emptyText="Kota / Kabupaten tidak ditemukan."
+										aria-label="Filter Kota / Kabupaten"
+										className="h-8 text-xs"
+									/>
+								</div>
+								<div className="space-y-1">
+									<Label className="text-[10px] text-muted-foreground">
+										Kecamatan
+									</Label>
+									<Combobox
+										value={selectedDistrict === "ALL" ? "" : selectedDistrict}
+										disabled={selectedRegency === "ALL" || !selectedRegency}
+										onValueChange={(val) => {
+											setSelectedDistrict(val || "ALL");
+											setSelectedVillage("ALL");
+										}}
+										options={[
+											{ value: "", label: "Semua Kecamatan" },
+											...(districts?.map((d) => ({
+												value: d.id,
+												label: d.name,
+											})) || []),
+										]}
+										placeholder={
+											selectedRegency !== "ALL"
+												? "Semua Kecamatan"
+												: "Pilih Kota/Kab Dulu"
+										}
+										searchPlaceholder="Cari kecamatan..."
+										emptyText="Kecamatan tidak ditemukan."
+										aria-label="Filter Kecamatan"
+										className="h-8 text-xs"
+									/>
+								</div>
+								<div className="space-y-1">
+									<Label className="text-[10px] text-muted-foreground">
+										Kelurahan / Desa
+									</Label>
+									<Combobox
+										value={selectedVillage === "ALL" ? "" : selectedVillage}
+										disabled={selectedDistrict === "ALL" || !selectedDistrict}
+										onValueChange={(val) => setSelectedVillage(val || "ALL")}
+										options={[
+											{ value: "", label: "Semua Kelurahan / Desa" },
+											...(villages?.map((v) => ({
+												value: v.id,
+												label: v.name,
+											})) || []),
+										]}
+										placeholder={
+											selectedDistrict !== "ALL"
+												? "Semua Kelurahan"
+												: "Pilih Kecamatan Dulu"
+										}
+										searchPlaceholder="Cari kelurahan..."
+										emptyText="Kelurahan tidak ditemukan."
+										aria-label="Filter Kelurahan / Desa"
+										className="h-8 text-xs"
+									/>
+								</div>
 							</div>
 
 							{/* Sektor Industri */}
@@ -402,8 +696,8 @@ function GeospatialMapPage() {
 					</Card>
 				)}
 
-				{/* Floating Results Quick List (Bottom Right) */}
-				<div className="absolute bottom-4 right-4 left-4 sm:left-auto sm:w-80 max-h-48 overflow-y-auto z-10 flex flex-col gap-1.5 p-1 bg-background/90 backdrop-blur-xs rounded-lg border shadow-md">
+				{/* Floating Results Quick List (Bottom Right) - Responsive on Desktop */}
+				<div className="hidden md:flex absolute bottom-4 right-4 sm:w-80 max-h-48 overflow-y-auto z-10 flex-col gap-1.5 p-1 bg-background/90 backdrop-blur-xs rounded-lg border shadow-md">
 					<div className="px-2 py-1 text-[11px] font-semibold text-muted-foreground flex justify-between items-center border-b">
 						<span>Daftar Titik ({filteredPins.length})</span>
 						<span className="text-[10px] text-primary">
@@ -436,7 +730,7 @@ function GeospatialMapPage() {
 									{p.namaPerusahaan}
 								</div>
 								<div className="flex items-center justify-between text-[11px] text-muted-foreground">
-									<span>{stage.shortName}</span>
+									<span>{p.regencyName || stage.shortName}</span>
 									<Link
 										to="/directory/$companyId"
 										params={{ companyId: p.id }}
@@ -452,29 +746,30 @@ function GeospatialMapPage() {
 					})}
 				</div>
 
-				{/* Floating Detail Drawer for Selected Pin */}
+				{/* Floating / Responsive Detail Drawer for Selected Pin */}
 				{selectedPin && (
-					<Card className="absolute top-4 right-4 w-88 max-h-[calc(100%-2rem)] overflow-y-auto z-20 shadow-xl border-border/80 bg-background/95 backdrop-blur-xs">
+					<Card className="absolute left-3 right-3 bottom-3 max-h-[75vh] md:left-auto md:right-4 md:top-4 md:bottom-auto md:w-88 md:max-h-[calc(100%-2rem)] overflow-y-auto z-30 shadow-2xl border-border/80 bg-background/95 backdrop-blur-xs rounded-xl md:rounded-lg">
 						<CardHeader className="p-4 pb-2 flex flex-row items-center justify-between">
-							<div>
+							<div className="min-w-0 pr-2">
 								<Badge variant="outline" className="font-mono text-xs mb-1">
 									{selectedPin.nomor}
 								</Badge>
-								<CardTitle className="text-sm font-bold text-foreground">
+								<CardTitle className="text-sm font-bold text-foreground truncate">
 									{selectedPin.namaPerusahaan}
 								</CardTitle>
 							</div>
 							<Button
 								variant="ghost"
 								size="icon"
-								className="size-6"
+								className="size-6 shrink-0"
 								onClick={() => setSelectedPin(null)}
+								aria-label="Tutup detail titik"
 							>
 								<X className="size-4" />
 							</Button>
 						</CardHeader>
 						<CardContent className="p-4 pt-1 space-y-3 text-xs">
-							<div className="flex items-center gap-2">
+							<div className="flex items-center gap-2 flex-wrap">
 								<Badge
 									variant="outline"
 									className={`text-[10px] font-normal border ${getStatusLabel(selectedPin.status).badgeClass}`}
@@ -489,10 +784,23 @@ function GeospatialMapPage() {
 
 							<div className="space-y-1 border-t pt-2">
 								<div className="text-muted-foreground text-[11px]">
-									Lokasi Administratif
+									Lokasi Administratif (4 Tingkat)
 								</div>
-								<div className="font-medium text-foreground">
-									{selectedPin.locationLabel || "-"}
+								<div className="font-medium text-foreground text-xs leading-relaxed">
+									{[
+										selectedPin.villageName
+											? `Kel. ${selectedPin.villageName}`
+											: null,
+										selectedPin.districtName
+											? `Kec. ${selectedPin.districtName}`
+											: null,
+										selectedPin.regencyName,
+										selectedPin.provinceName,
+									]
+										.filter(Boolean)
+										.join(", ") ||
+										selectedPin.locationLabel ||
+										"-"}
 								</div>
 							</div>
 

@@ -12,6 +12,8 @@ import {
 	Plus,
 	RotateCcw,
 	Search,
+	SlidersHorizontal,
+	X,
 } from "lucide-react";
 import * as React from "react";
 import { z } from "zod";
@@ -34,6 +36,14 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import {
+	Sheet,
+	SheetContent,
+	SheetDescription,
+	SheetHeader,
+	SheetTitle,
+	SheetTrigger,
+} from "@/components/ui/sheet";
 import { useAuth } from "@/lib/auth";
 import {
 	getKawasanLabel,
@@ -50,6 +60,10 @@ const directorySearchSchema = z.object({
 	searchTerm: z.string().optional(),
 	posisiPelanggan: z.enum(["Pengembangan", "JalurExisting"]).optional(),
 	kawasan: z.enum(["KawasanIndustri", "NonKawasanIndustri"]).optional(),
+	provinceId: z.string().optional(),
+	regencyId: z.string().optional(),
+	districtId: z.string().optional(),
+	villageId: z.string().optional(),
 });
 
 export const Route = createFileRoute("/_auth/directory/")({
@@ -65,6 +79,7 @@ function CompanyDirectoryPage() {
 	const page = search.page || 1;
 	const pageSize = search.pageSize || 25;
 	const [searchInput, setSearchInput] = React.useState(search.searchTerm || "");
+	const [isMobileFilterOpen, setIsMobileFilterOpen] = React.useState(false);
 
 	// Fetch industry types for filter
 	const { data: industryTypes } = $api.useQuery(
@@ -72,7 +87,46 @@ function CompanyDirectoryPage() {
 		"/api/master/industry-types",
 	);
 
-	// Fetch paged companies list
+	// Cascading Geography Queries (4 Levels)
+	const { data: provinces } = $api.useQuery("get", "/api/geography/provinces");
+	const { data: regencies } = $api.useQuery(
+		"get",
+		"/api/geography/regencies",
+		{
+			params: {
+				query: { provinceId: search.provinceId },
+			},
+		},
+		{
+			enabled: Boolean(search.provinceId),
+		},
+	);
+	const { data: districts } = $api.useQuery(
+		"get",
+		"/api/geography/districts",
+		{
+			params: {
+				query: { regencyId: search.regencyId },
+			},
+		},
+		{
+			enabled: Boolean(search.regencyId),
+		},
+	);
+	const { data: villages } = $api.useQuery(
+		"get",
+		"/api/geography/villages",
+		{
+			params: {
+				query: { districtId: search.districtId },
+			},
+		},
+		{
+			enabled: Boolean(search.districtId),
+		},
+	);
+
+	// Fetch paged companies list with full 4-tier geography filters
 	const { data, isLoading } = $api.useQuery("get", "/api/companies", {
 		params: {
 			query: {
@@ -83,6 +137,10 @@ function CompanyDirectoryPage() {
 				searchTerm: search.searchTerm,
 				posisiPelanggan: search.posisiPelanggan || undefined,
 				kawasan: search.kawasan || undefined,
+				provinceId: search.provinceId || undefined,
+				regencyId: search.regencyId || undefined,
+				districtId: search.districtId || undefined,
+				villageId: search.villageId || undefined,
 			},
 		},
 	});
@@ -90,6 +148,16 @@ function CompanyDirectoryPage() {
 	const items = React.useMemo(() => data?.items || [], [data?.items]);
 	const totalCount = Number(data?.totalCount || 0);
 	const totalPages = Math.ceil(totalCount / pageSize) || 1;
+
+	const activeFilterCount = [
+		search.provinceId,
+		search.regencyId,
+		search.districtId,
+		search.villageId,
+		search.industryTypeId,
+		search.posisiPelanggan,
+		search.kawasan,
+	].filter(Boolean).length;
 
 	const handleResetFilters = React.useCallback(() => {
 		setSearchInput("");
@@ -374,7 +442,11 @@ function CompanyDirectoryPage() {
 							search.stage ||
 							search.industryTypeId ||
 							search.posisiPelanggan ||
-							search.kawasan) && (
+							search.kawasan ||
+							search.provinceId ||
+							search.regencyId ||
+							search.districtId ||
+							search.villageId) && (
 							<Button
 								variant="ghost"
 								size="sm"
@@ -387,61 +459,573 @@ function CompanyDirectoryPage() {
 					</div>
 				}
 			>
-				<div className="relative flex-1 min-w-[240px] max-w-md">
-					<Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
-					<Input
-						placeholder="Cari nama perusahaan atau nomor registrasi..."
-						value={searchInput}
-						onChange={(e) => setSearchInput(e.target.value)}
-						className="pl-9 h-9 text-xs"
-					/>
+				<div className="flex items-center gap-2 flex-1 min-w-[200px] max-w-full sm:max-w-sm">
+					<div className="relative flex-1">
+						<Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
+						<Input
+							placeholder="Cari nama perusahaan atau nomor registrasi..."
+							value={searchInput}
+							onChange={(e) => setSearchInput(e.target.value)}
+							className="pl-9 h-9 text-xs w-full"
+						/>
+					</div>
+
+					{/* Mobile Filter Sheet Trigger */}
+					<Sheet open={isMobileFilterOpen} onOpenChange={setIsMobileFilterOpen}>
+						<SheetTrigger asChild>
+							<Button
+								variant="outline"
+								size="sm"
+								className="md:hidden h-9 text-xs flex items-center gap-1.5 shrink-0"
+								aria-label="Filter Lengkap"
+							>
+								<SlidersHorizontal className="size-3.5 text-muted-foreground" />
+								<span>Filter</span>
+								{activeFilterCount > 0 && (
+									<Badge
+										variant="secondary"
+										className="h-4.5 min-w-4 px-1 text-[10px] font-semibold ml-0.5"
+									>
+										{activeFilterCount}
+									</Badge>
+								)}
+							</Button>
+						</SheetTrigger>
+						<SheetContent
+							side="bottom"
+							className="max-h-[85vh] overflow-y-auto rounded-t-2xl p-4 sm:p-6 space-y-4"
+						>
+							<SheetHeader className="p-0 text-left">
+								<div className="flex items-center justify-between">
+									<SheetTitle className="text-sm font-bold">
+										Filter Direktori Pelanggan
+									</SheetTitle>
+									{activeFilterCount > 0 && (
+										<Button
+											variant="ghost"
+											size="sm"
+											onClick={() => {
+												handleResetFilters();
+												setIsMobileFilterOpen(false);
+											}}
+											className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+										>
+											Reset Semua
+										</Button>
+									)}
+								</div>
+								<SheetDescription className="text-xs text-muted-foreground">
+									Filter hierarki wilayah 4 tingkat (Provinsi, Kota/Kab,
+									Kecamatan, Kelurahan) dan klasifikasi operasional
+								</SheetDescription>
+							</SheetHeader>
+
+							<div className="space-y-3 pt-2">
+								<div className="space-y-1.5">
+									<span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block">
+										Wilayah Administratif
+									</span>
+									<div className="space-y-2">
+										<div>
+											<span className="text-xs text-muted-foreground mb-1 block font-medium">
+												Provinsi
+											</span>
+											<Combobox
+												value={search.provinceId || ""}
+												onValueChange={(val) =>
+													updateFilters({
+														provinceId: val ? val : undefined,
+														regencyId: undefined,
+														districtId: undefined,
+														villageId: undefined,
+													})
+												}
+												options={[
+													{ value: "", label: "Semua Provinsi" },
+													...(provinces?.map((p) => ({
+														value: p.id,
+														label: p.name,
+													})) || []),
+												]}
+												placeholder="Pilih Provinsi"
+												searchPlaceholder="Cari provinsi..."
+												emptyText="Provinsi tidak ditemukan."
+											/>
+										</div>
+
+										<div>
+											<span className="text-xs text-muted-foreground mb-1 block font-medium">
+												Kota / Kabupaten
+											</span>
+											<Combobox
+												value={search.regencyId || ""}
+												disabled={!search.provinceId}
+												onValueChange={(val) =>
+													updateFilters({
+														regencyId: val ? val : undefined,
+														districtId: undefined,
+														villageId: undefined,
+													})
+												}
+												options={[
+													{ value: "", label: "Semua Kota / Kab" },
+													...(regencies?.map((r) => ({
+														value: r.id,
+														label: r.name,
+													})) || []),
+												]}
+												placeholder={
+													search.provinceId
+														? "Pilih Kota / Kab"
+														: "Pilih Provinsi Dulu"
+												}
+												searchPlaceholder="Cari kota / kabupaten..."
+												emptyText="Kota / Kabupaten tidak ditemukan."
+											/>
+										</div>
+
+										<div>
+											<span className="text-xs text-muted-foreground mb-1 block font-medium">
+												Kecamatan
+											</span>
+											<Combobox
+												value={search.districtId || ""}
+												disabled={!search.regencyId}
+												onValueChange={(val) =>
+													updateFilters({
+														districtId: val ? val : undefined,
+														villageId: undefined,
+													})
+												}
+												options={[
+													{ value: "", label: "Semua Kecamatan" },
+													...(districts?.map((d) => ({
+														value: d.id,
+														label: d.name,
+													})) || []),
+												]}
+												placeholder={
+													search.regencyId
+														? "Pilih Kecamatan"
+														: "Pilih Kota/Kab Dulu"
+												}
+												searchPlaceholder="Cari kecamatan..."
+												emptyText="Kecamatan tidak ditemukan."
+											/>
+										</div>
+
+										<div>
+											<span className="text-xs text-muted-foreground mb-1 block font-medium">
+												Kelurahan / Desa
+											</span>
+											<Combobox
+												value={search.villageId || ""}
+												disabled={!search.districtId}
+												onValueChange={(val) =>
+													updateFilters({
+														villageId: val ? val : undefined,
+													})
+												}
+												options={[
+													{ value: "", label: "Semua Kelurahan / Desa" },
+													...(villages?.map((v) => ({
+														value: v.id,
+														label: v.name,
+													})) || []),
+												]}
+												placeholder={
+													search.districtId
+														? "Pilih Kelurahan"
+														: "Pilih Kecamatan Dulu"
+												}
+												searchPlaceholder="Cari kelurahan/desa..."
+												emptyText="Kelurahan/Desa tidak ditemukan."
+											/>
+										</div>
+									</div>
+								</div>
+
+								<div className="space-y-1.5 pt-2 border-t">
+									<span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block">
+										Klasifikasi Industri & Jalur
+									</span>
+									<div className="space-y-2">
+										<div>
+											<span className="text-xs text-muted-foreground mb-1 block font-medium">
+												Sektor Industri
+											</span>
+											<Combobox
+												value={search.industryTypeId || ""}
+												onValueChange={(val) =>
+													updateFilters({
+														industryTypeId: val ? val : undefined,
+													})
+												}
+												options={[
+													{ value: "", label: "Semua Sektor Industri" },
+													...(industryTypes?.map((it) => ({
+														value: it.id,
+														label: it.name,
+													})) || []),
+												]}
+												placeholder="Pilih Sektor Industri"
+												searchPlaceholder="Cari sektor industri..."
+												emptyText="Sektor industri tidak ditemukan."
+											/>
+										</div>
+
+										<div>
+											<span className="text-xs text-muted-foreground mb-1 block font-medium">
+												Jalur Pipa
+											</span>
+											<Select
+												value={search.posisiPelanggan || "ALL"}
+												onValueChange={(val) =>
+													updateFilters({
+														posisiPelanggan:
+															val === "ALL"
+																? undefined
+																: (val as "Pengembangan" | "JalurExisting"),
+													})
+												}
+											>
+												<SelectTrigger className="h-9 text-xs w-full">
+													<SelectValue placeholder="Jalur Pipa" />
+												</SelectTrigger>
+												<SelectContent>
+													<SelectItem value="ALL">Semua Jalur Pipa</SelectItem>
+													<SelectItem value="JalurExisting">
+														Jalur Existing
+													</SelectItem>
+													<SelectItem value="Pengembangan">
+														Pengembangan
+													</SelectItem>
+												</SelectContent>
+											</Select>
+										</div>
+
+										<div>
+											<span className="text-xs text-muted-foreground mb-1 block font-medium">
+												Kawasan
+											</span>
+											<Select
+												value={search.kawasan || "ALL"}
+												onValueChange={(val) =>
+													updateFilters({
+														kawasan:
+															val === "ALL"
+																? undefined
+																: (val as
+																		| "KawasanIndustri"
+																		| "NonKawasanIndustri"),
+													})
+												}
+											>
+												<SelectTrigger className="h-9 text-xs w-full">
+													<SelectValue placeholder="Kawasan" />
+												</SelectTrigger>
+												<SelectContent>
+													<SelectItem value="ALL">Semua Kawasan</SelectItem>
+													<SelectItem value="KawasanIndustri">
+														Kawasan Industri
+													</SelectItem>
+													<SelectItem value="NonKawasanIndustri">
+														Non Kawasan Industri
+													</SelectItem>
+												</SelectContent>
+											</Select>
+										</div>
+									</div>
+								</div>
+
+								<Button
+									className="w-full mt-4 h-9 text-xs"
+									onClick={() => setIsMobileFilterOpen(false)}
+								>
+									Tutup & Terapkan Filter
+								</Button>
+							</div>
+						</SheetContent>
+					</Sheet>
 				</div>
 
-				<div className="w-[200px]">
-					<Combobox
-						value={search.industryTypeId || ""}
-						onValueChange={(val) =>
-							updateFilters({
-								industryTypeId: val ? val : undefined,
-							})
-						}
-						options={[
-							{ value: "", label: "Semua Sektor Industri" },
-							...(industryTypes?.map((it) => ({
-								value: it.id,
-								label: it.name,
-							})) || []),
-						]}
-						placeholder="Sektor Industri"
-						searchPlaceholder="Cari sektor industri..."
-						emptyText="Sektor industri tidak ditemukan."
-						aria-label="Filter Sektor Industri"
-					/>
-				</div>
+				{/* Desktop & Tablet Inline Cascading 4-Level Geography Filters */}
+				<div className="hidden md:flex flex-wrap items-center gap-2">
+					<div className="w-[155px]">
+						<Combobox
+							value={search.provinceId || ""}
+							onValueChange={(val) =>
+								updateFilters({
+									provinceId: val ? val : undefined,
+									regencyId: undefined,
+									districtId: undefined,
+									villageId: undefined,
+								})
+							}
+							options={[
+								{ value: "", label: "Semua Provinsi" },
+								...(provinces?.map((p) => ({
+									value: p.id,
+									label: p.name,
+								})) || []),
+							]}
+							placeholder="Pilih Provinsi"
+							searchPlaceholder="Cari provinsi..."
+							emptyText="Provinsi tidak ditemukan."
+							aria-label="Filter Provinsi"
+						/>
+					</div>
 
-				<div className="w-[160px]">
-					<Select
-						value={search.posisiPelanggan || "ALL"}
-						onValueChange={(val) =>
-							updateFilters({
-								posisiPelanggan:
-									val === "ALL"
-										? undefined
-										: (val as "Pengembangan" | "JalurExisting"),
-							})
-						}
-					>
-						<SelectTrigger className="h-9 text-xs w-full">
-							<SelectValue placeholder="Jalur Pipa" />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="ALL">Semua Jalur Pipa</SelectItem>
-							<SelectItem value="JalurExisting">Jalur Existing</SelectItem>
-							<SelectItem value="Pengembangan">Pengembangan</SelectItem>
-						</SelectContent>
-					</Select>
+					<div className="w-[155px]">
+						<Combobox
+							value={search.regencyId || ""}
+							disabled={!search.provinceId}
+							onValueChange={(val) =>
+								updateFilters({
+									regencyId: val ? val : undefined,
+									districtId: undefined,
+									villageId: undefined,
+								})
+							}
+							options={[
+								{ value: "", label: "Semua Kota / Kab" },
+								...(regencies?.map((r) => ({
+									value: r.id,
+									label: r.name,
+								})) || []),
+							]}
+							placeholder={
+								search.provinceId ? "Pilih Kota / Kab" : "Pilih Provinsi Dulu"
+							}
+							searchPlaceholder="Cari kota / kab..."
+							emptyText="Kota / Kab tidak ditemukan."
+							aria-label="Filter Kota / Kabupaten"
+						/>
+					</div>
+
+					<div className="w-[155px]">
+						<Combobox
+							value={search.districtId || ""}
+							disabled={!search.regencyId}
+							onValueChange={(val) =>
+								updateFilters({
+									districtId: val ? val : undefined,
+									villageId: undefined,
+								})
+							}
+							options={[
+								{ value: "", label: "Semua Kecamatan" },
+								...(districts?.map((d) => ({
+									value: d.id,
+									label: d.name,
+								})) || []),
+							]}
+							placeholder={
+								search.regencyId ? "Pilih Kecamatan" : "Pilih Kota/Kab Dulu"
+							}
+							searchPlaceholder="Cari kecamatan..."
+							emptyText="Kecamatan tidak ditemukan."
+							aria-label="Filter Kecamatan"
+						/>
+					</div>
+
+					<div className="w-[155px]">
+						<Combobox
+							value={search.villageId || ""}
+							disabled={!search.districtId}
+							onValueChange={(val) =>
+								updateFilters({
+									villageId: val ? val : undefined,
+								})
+							}
+							options={[
+								{ value: "", label: "Semua Kelurahan / Desa" },
+								...(villages?.map((v) => ({
+									value: v.id,
+									label: v.name,
+								})) || []),
+							]}
+							placeholder={
+								search.districtId ? "Pilih Kelurahan" : "Pilih Kecamatan Dulu"
+							}
+							searchPlaceholder="Cari kelurahan/desa..."
+							emptyText="Kelurahan/Desa tidak ditemukan."
+							aria-label="Filter Kelurahan / Desa"
+						/>
+					</div>
+
+					<div className="w-[155px]">
+						<Combobox
+							value={search.industryTypeId || ""}
+							onValueChange={(val) =>
+								updateFilters({
+									industryTypeId: val ? val : undefined,
+								})
+							}
+							options={[
+								{ value: "", label: "Semua Sektor Industri" },
+								...(industryTypes?.map((it) => ({
+									value: it.id,
+									label: it.name,
+								})) || []),
+							]}
+							placeholder="Sektor Industri"
+							searchPlaceholder="Cari sektor..."
+							emptyText="Sektor tidak ditemukan."
+							aria-label="Filter Sektor Industri"
+						/>
+					</div>
+
+					<div className="w-[140px]">
+						<Select
+							value={search.posisiPelanggan || "ALL"}
+							onValueChange={(val) =>
+								updateFilters({
+									posisiPelanggan:
+										val === "ALL"
+											? undefined
+											: (val as "Pengembangan" | "JalurExisting"),
+								})
+							}
+						>
+							<SelectTrigger className="h-9 text-xs w-full">
+								<SelectValue placeholder="Jalur Pipa" />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="ALL">Semua Jalur</SelectItem>
+								<SelectItem value="JalurExisting">Jalur Existing</SelectItem>
+								<SelectItem value="Pengembangan">Pengembangan</SelectItem>
+							</SelectContent>
+						</Select>
+					</div>
 				</div>
 			</DataTableToolbar>
+
+			{/* Mobile Active Filter Chips */}
+			{activeFilterCount > 0 && (
+				<div className="md:hidden flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+					<span className="text-[11px] text-muted-foreground shrink-0 font-medium">
+						Filter Aktif:
+					</span>
+					{search.provinceId && (
+						<Badge
+							variant="secondary"
+							className="h-6 gap-1 px-2 text-[11px] shrink-0 font-normal"
+						>
+							<span>
+								{provinces?.find((p) => p.id === search.provinceId)?.name ||
+									"Provinsi"}
+							</span>
+							<X
+								className="size-3 cursor-pointer hover:text-foreground"
+								onClick={() =>
+									updateFilters({
+										provinceId: undefined,
+										regencyId: undefined,
+										districtId: undefined,
+										villageId: undefined,
+									})
+								}
+							/>
+						</Badge>
+					)}
+					{search.regencyId && (
+						<Badge
+							variant="secondary"
+							className="h-6 gap-1 px-2 text-[11px] shrink-0 font-normal"
+						>
+							<span>
+								{regencies?.find((r) => r.id === search.regencyId)?.name ||
+									"Kota/Kab"}
+							</span>
+							<X
+								className="size-3 cursor-pointer hover:text-foreground"
+								onClick={() =>
+									updateFilters({
+										regencyId: undefined,
+										districtId: undefined,
+										villageId: undefined,
+									})
+								}
+							/>
+						</Badge>
+					)}
+					{search.districtId && (
+						<Badge
+							variant="secondary"
+							className="h-6 gap-1 px-2 text-[11px] shrink-0 font-normal"
+						>
+							<span>
+								{districts?.find((d) => d.id === search.districtId)?.name ||
+									"Kecamatan"}
+							</span>
+							<X
+								className="size-3 cursor-pointer hover:text-foreground"
+								onClick={() =>
+									updateFilters({
+										districtId: undefined,
+										villageId: undefined,
+									})
+								}
+							/>
+						</Badge>
+					)}
+					{search.villageId && (
+						<Badge
+							variant="secondary"
+							className="h-6 gap-1 px-2 text-[11px] shrink-0 font-normal"
+						>
+							<span>
+								{villages?.find((v) => v.id === search.villageId)?.name ||
+									"Kelurahan"}
+							</span>
+							<X
+								className="size-3 cursor-pointer hover:text-foreground"
+								onClick={() => updateFilters({ villageId: undefined })}
+							/>
+						</Badge>
+					)}
+					{search.industryTypeId && (
+						<Badge
+							variant="secondary"
+							className="h-6 gap-1 px-2 text-[11px] shrink-0 font-normal"
+						>
+							<span>
+								{industryTypes?.find((it) => it.id === search.industryTypeId)
+									?.name || "Industri"}
+							</span>
+							<X
+								className="size-3 cursor-pointer hover:text-foreground"
+								onClick={() => updateFilters({ industryTypeId: undefined })}
+							/>
+						</Badge>
+					)}
+					{search.posisiPelanggan && (
+						<Badge
+							variant="secondary"
+							className="h-6 gap-1 px-2 text-[11px] shrink-0 font-normal"
+						>
+							<span>{getPosisiPelangganLabel(search.posisiPelanggan)}</span>
+							<X
+								className="size-3 cursor-pointer hover:text-foreground"
+								onClick={() => updateFilters({ posisiPelanggan: undefined })}
+							/>
+						</Badge>
+					)}
+					{search.kawasan && (
+						<Badge
+							variant="secondary"
+							className="h-6 gap-1 px-2 text-[11px] shrink-0 font-normal"
+						>
+							<span>{getKawasanLabel(search.kawasan)}</span>
+							<X
+								className="size-3 cursor-pointer hover:text-foreground"
+								onClick={() => updateFilters({ kawasan: undefined })}
+							/>
+						</Badge>
+					)}
+				</div>
+			)}
 
 			{/* Clean Data Table */}
 			<DataTable

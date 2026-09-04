@@ -254,13 +254,63 @@ internal sealed class CompanyService(IDbContextFactory<SimandoDbContext> dbConte
         return StageEditResult.Success();
     }
 
-    public async Task<IReadOnlyList<CompanyMapPinDto>> GetMapPinsAsync(CancellationToken ct = default)
+    public async Task<IReadOnlyList<CompanyMapPinDto>> GetMapPinsAsync(CompanyListFilter? filter = null, CancellationToken ct = default)
     {
         await using var db = await dbContextFactory.CreateDbContextAsync(ct);
 
-        var companies = await db.Companies.AsNoTracking()
-            .Where(c => c.Location != null)
-            .ToListAsync(ct);
+        var query = db.Companies.AsNoTracking().Where(c => c.Location != null);
+
+        if (filter is not null)
+        {
+            if (filter.Stage is { } stage)
+                query = query.Where(c => c.CurrentStage == stage);
+
+            if (filter.IndustryTypeId is { } industryTypeId)
+                query = query.Where(c => c.IndustryTypeId == industryTypeId);
+
+            if (!string.IsNullOrWhiteSpace(filter.SearchTerm))
+            {
+                var term = filter.SearchTerm.Trim();
+                query = query.Where(c => EF.Functions.ILike(c.NamaPerusahaan, $"%{term}%") || EF.Functions.ILike(c.Nomor, $"%{term}%"));
+            }
+
+            if (filter.VillageId is { } villageId)
+            {
+                query = query.Where(c => c.VillageId == villageId);
+            }
+            else if (filter.DistrictId is { } districtId)
+            {
+                var vIds = db.Villages.Where(v => v.DistrictId == districtId).Select(v => v.Id);
+                query = query.Where(c => vIds.Contains(c.VillageId));
+            }
+            else if (filter.RegencyId is { } regencyId)
+            {
+                var dIds = db.Districts.Where(d => d.RegencyId == regencyId).Select(d => d.Id);
+                var vIds = db.Villages.Where(v => dIds.Contains(v.DistrictId)).Select(v => v.Id);
+                query = query.Where(c => vIds.Contains(c.VillageId));
+            }
+            else if (filter.ProvinceId is { } provinceId)
+            {
+                var rIds = db.Regencies.Where(r => r.ProvinceId == provinceId).Select(r => r.Id);
+                var dIds = db.Districts.Where(d => rIds.Contains(d.RegencyId)).Select(d => d.Id);
+                var vIds = db.Villages.Where(v => dIds.Contains(v.DistrictId)).Select(v => v.Id);
+                query = query.Where(c => vIds.Contains(c.VillageId));
+            }
+
+            if (filter.PosisiPelanggan is { } posisiPelanggan)
+            {
+                var pCompIds = db.Plottings.Where(p => p.PosisiPelanggan == posisiPelanggan).Select(p => p.CompanyId);
+                query = query.Where(c => pCompIds.Contains(c.Id));
+            }
+
+            if (filter.Kawasan is { } kawasan)
+            {
+                var pCompIds = db.Plottings.Where(p => p.Kawasan == kawasan).Select(p => p.CompanyId);
+                query = query.Where(c => pCompIds.Contains(c.Id));
+            }
+        }
+
+        var companies = await query.ToListAsync(ct);
 
         var industryTypeIds = companies.Select(c => c.IndustryTypeId).Distinct().ToList();
         var industryTypes = await db.IndustryTypes.AsNoTracking()
@@ -287,6 +337,11 @@ internal sealed class CompanyService(IDbContextFactory<SimandoDbContext> dbConte
             .Where(r => regencyIds.Contains(r.Id))
             .ToDictionaryAsync(r => r.Id, ct);
 
+        var provinceIds = regencies.Values.Select(r => r.ProvinceId).Distinct().ToList();
+        var provinces = await db.Provinces.AsNoTracking()
+            .Where(p => provinceIds.Contains(p.Id))
+            .ToDictionaryAsync(p => p.Id, ct);
+
         var userIds = companies.Select(c => c.CreatedBy).Distinct().ToList();
         var users = await db.Users.AsNoTracking()
             .Where(u => userIds.Contains(u.Id))
@@ -298,11 +353,37 @@ internal sealed class CompanyService(IDbContextFactory<SimandoDbContext> dbConte
             if (c.Location is null) continue;
 
             string locationLabel = "Lokasi";
-            if (villages.TryGetValue(c.VillageId, out var v) &&
-                districts.TryGetValue(v.DistrictId, out var d) &&
-                regencies.TryGetValue(d.RegencyId, out var r))
+            Guid? provId = null;
+            string? provName = null;
+            Guid? regId = null;
+            string? regName = null;
+            Guid? distId = null;
+            string? distName = null;
+            Guid? villId = null;
+            string? villName = null;
+
+            if (villages.TryGetValue(c.VillageId, out var v))
             {
-                locationLabel = $"{(r.Type == RegencyType.Kota ? "Kota" : "Kabupaten")} {r.Name}";
+                villId = v.Id;
+                villName = v.Name;
+
+                if (districts.TryGetValue(v.DistrictId, out var d))
+                {
+                    distId = d.Id;
+                    distName = d.Name;
+
+                    if (regencies.TryGetValue(d.RegencyId, out var r))
+                    {
+                        locationLabel = $"{(r.Type == RegencyType.Kota ? "Kota" : "Kabupaten")} {r.Name}";
+                        regId = r.Id;
+                        regName = r.Name;
+                        provId = r.ProvinceId;
+                        if (provinces.TryGetValue(r.ProvinceId, out var prov))
+                        {
+                            provName = prov.Name;
+                        }
+                    }
+                }
             }
 
             plottings.TryGetValue(c.Id, out var plotting);
@@ -321,7 +402,15 @@ internal sealed class CompanyService(IDbContextFactory<SimandoDbContext> dbConte
                 locationLabel,
                 plotting?.PosisiPelanggan,
                 plotting?.Kawasan,
-                salesName));
+                salesName,
+                provId,
+                provName,
+                regId,
+                regName,
+                distId,
+                distName,
+                villId,
+                villName));
         }
 
         return pins;

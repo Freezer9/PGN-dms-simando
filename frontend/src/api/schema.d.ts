@@ -1335,7 +1335,17 @@ export interface paths {
         };
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    provinceId?: string;
+                    regencyId?: string;
+                    districtId?: string;
+                    villageId?: string;
+                    industryTypeId?: string;
+                    stage?: number | string;
+                    posisiPelanggan?: components["schemas"]["PosisiPelanggan"];
+                    kawasan?: components["schemas"]["Kawasan"];
+                    searchTerm?: string;
+                };
                 header?: never;
                 path?: never;
                 cookie?: never;
@@ -6594,6 +6604,18 @@ export interface components {
             posisiPelanggan: null | components["schemas"]["PosisiPelanggan"];
             kawasan: null | components["schemas"]["Kawasan"];
             salesUserName: null | string;
+            /** Format: uuid */
+            provinceId?: null | string;
+            provinceName?: null | string;
+            /** Format: uuid */
+            regencyId?: null | string;
+            regencyName?: null | string;
+            /** Format: uuid */
+            districtId?: null | string;
+            districtName?: null | string;
+            /** Format: uuid */
+            villageId?: null | string;
+            villageName?: null | string;
         };
         CompanyRecordDto: {
             /** Format: uuid */
